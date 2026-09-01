@@ -4,11 +4,20 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Activity, Eye, EyeOff, KeyRound, Lock, Plug, ShieldCheck, User } from "lucide-react";
+import { Activity, Building2, Eye, EyeOff, KeyRound, Lock, Plug, ShieldCheck, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Logo } from "@/components/layout/logo";
+import { loginAction, selectDepartmentAction } from "./actions";
+import type { DepartmentOption } from "@/lib/api/auth";
 
 const features = [
   { icon: Activity, label: "Real-time dashboards & alerts" },
@@ -21,14 +30,61 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  // Department-selection step: set when the API reports the user has
+  // multiple active assignments and must pick one before a session is issued.
+  const [departmentStep, setDepartmentStep] = React.useState<{
+    token: string;
+    departments: DepartmentOption[];
+  } | null>(null);
+  const [selectedDepartment, setSelectedDepartment] = React.useState("");
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const username = String(formData.get("username") ?? "");
+    const password = String(formData.get("password") ?? "");
+
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    const result = await loginAction(username, password);
+    setLoading(false);
+
+    if (result.status === "success") {
       toast.success("Welcome back");
       router.push("/dashboard");
-    }, 700);
+      return;
+    }
+    if (result.status === "select-department") {
+      setDepartmentStep({
+        token: result.departmentSelectionToken,
+        departments: result.departments,
+      });
+      if (result.departments.length > 0) {
+        setSelectedDepartment(result.departments[0].userDepartmentRoleId);
+      }
+      return;
+    }
+    toast.error(result.message);
+  }
+
+  async function handleDepartmentSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!departmentStep || !selectedDepartment) return;
+
+    setLoading(true);
+    const result = await selectDepartmentAction(
+      departmentStep.token,
+      selectedDepartment
+    );
+    setLoading(false);
+
+    if (result.status === "success") {
+      toast.success("Welcome back");
+      router.push("/dashboard");
+      return;
+    }
+    if (result.status === "error") {
+      toast.error(result.message);
+    }
   }
 
   return (
@@ -187,100 +243,167 @@ export default function LoginPage() {
         <div className="relative z-10 flex flex-1 items-center justify-center py-6">
           <div className="w-full max-w-sm">
             <div className="flex flex-col gap-8">
-              {/* Header */}
-              <div className="flex flex-col items-start gap-4">
-                <span
-                  aria-hidden
-                  className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-soft text-primary"
-                >
-                  <KeyRound className="h-5 w-5" />
-                </span>
-                <div className="space-y-1.5">
-                  <h1 className="text-[26px] font-semibold leading-tight tracking-tight text-fg">
-                    Sign in to Panel
-                  </h1>
-                  <p className="text-sm text-fg-muted">
-                    Enter your username and password to continue.
-                  </p>
-                </div>
-              </div>
-
-              {/* Form */}
-              <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="username">Username</Label>
-                  <div className="relative">
-                    <User
+              {departmentStep ? (
+                <>
+                  {/* Header — department selection */}
+                  <div className="flex flex-col items-start gap-4">
+                    <span
                       aria-hidden
-                      className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-muted"
-                    />
-                    <Input
-                      id="username"
-                      name="username"
-                      type="text"
-                      placeholder="your.username"
-                      autoComplete="username"
-                      autoCapitalize="none"
-                      autoCorrect="off"
-                      spellCheck={false}
-                      required
-                      defaultValue="maya"
-                      className="h-10 pl-9"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <div className="flex items-baseline justify-between">
-                    <Label htmlFor="password">Password</Label>
-                    <Link
-                      href="/forgot-password"
-                      className="text-xs font-medium text-primary hover:underline"
+                      className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-soft text-primary"
                     >
-                      Forgot?
-                    </Link>
+                      <Building2 className="h-5 w-5" />
+                    </span>
+                    <div className="space-y-1.5">
+                      <h1 className="text-[26px] font-semibold leading-tight tracking-tight text-fg">
+                        Choose a department
+                      </h1>
+                      <p className="text-sm text-fg-muted">
+                        Your account has access to multiple departments. Pick
+                        one to continue.
+                      </p>
+                    </div>
                   </div>
-                  <div className="relative">
-                    <Lock
-                      aria-hidden
-                      className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-muted"
-                    />
-                    <Input
-                      id="password"
-                      name="password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="••••••••"
-                      autoComplete="current-password"
-                      required
-                      defaultValue="password123"
-                      className="h-10 pl-9 pr-10"
-                    />
+
+                  <form
+                    onSubmit={handleDepartmentSubmit}
+                    className="flex flex-col gap-4"
+                  >
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor="department">Department</Label>
+                      <Select
+                        value={selectedDepartment}
+                        onValueChange={setSelectedDepartment}
+                      >
+                        <SelectTrigger id="department" className="h-10">
+                          <SelectValue placeholder="Select a department" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {departmentStep.departments.map((dept) => (
+                            <SelectItem
+                              key={dept.userDepartmentRoleId}
+                              value={dept.userDepartmentRoleId}
+                            >
+                              {dept.departmentName} — {dept.roleCode}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <Button
+                      type="submit"
+                      size="lg"
+                      className="mt-2"
+                      disabled={loading || !selectedDepartment}
+                    >
+                      {loading ? "Signing in..." : "Continue"}
+                    </Button>
                     <button
                       type="button"
-                      onClick={() => setShowPassword((v) => !v)}
-                      className="absolute right-1.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded text-fg-muted transition-colors hover:bg-surface-2 hover:text-fg"
-                      aria-label={
-                        showPassword ? "Hide password" : "Show password"
-                      }
+                      onClick={() => setDepartmentStep(null)}
+                      className="text-center text-sm text-fg-muted hover:text-fg"
                     >
-                      {showPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
+                      Back to sign in
                     </button>
+                  </form>
+                </>
+              ) : (
+                <>
+                  {/* Header */}
+                  <div className="flex flex-col items-start gap-4">
+                    <span
+                      aria-hidden
+                      className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-soft text-primary"
+                    >
+                      <KeyRound className="h-5 w-5" />
+                    </span>
+                    <div className="space-y-1.5">
+                      <h1 className="text-[26px] font-semibold leading-tight tracking-tight text-fg">
+                        Sign in to Panel
+                      </h1>
+                      <p className="text-sm text-fg-muted">
+                        Enter your username and password to continue.
+                      </p>
+                    </div>
                   </div>
-                </div>
 
-                <Button
-                  type="submit"
-                  size="lg"
-                  className="mt-2"
-                  disabled={loading}
-                >
-                  {loading ? "Signing in..." : "Sign in"}
-                </Button>
-              </form>
+                  {/* Form */}
+                  <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor="username">Username</Label>
+                      <div className="relative">
+                        <User
+                          aria-hidden
+                          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-muted"
+                        />
+                        <Input
+                          id="username"
+                          name="username"
+                          type="text"
+                          placeholder="your.username"
+                          autoComplete="username"
+                          autoCapitalize="none"
+                          autoCorrect="off"
+                          spellCheck={false}
+                          required
+                          className="h-10 pl-9"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <div className="flex items-baseline justify-between">
+                        <Label htmlFor="password">Password</Label>
+                        <Link
+                          href="/forgot-password"
+                          className="text-xs font-medium text-primary hover:underline"
+                        >
+                          Forgot?
+                        </Link>
+                      </div>
+                      <div className="relative">
+                        <Lock
+                          aria-hidden
+                          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-muted"
+                        />
+                        <Input
+                          id="password"
+                          name="password"
+                          type={showPassword ? "text" : "password"}
+                          placeholder="••••••••"
+                          autoComplete="current-password"
+                          required
+                          minLength={6}
+                          className="h-10 pl-9 pr-10"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword((v) => !v)}
+                          className="absolute right-1.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded text-fg-muted transition-colors hover:bg-surface-2 hover:text-fg"
+                          aria-label={
+                            showPassword ? "Hide password" : "Show password"
+                          }
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    <Button
+                      type="submit"
+                      size="lg"
+                      className="mt-2"
+                      disabled={loading}
+                    >
+                      {loading ? "Signing in..." : "Sign in"}
+                    </Button>
+                  </form>
+                </>
+              )}
             </div>
           </div>
         </div>
