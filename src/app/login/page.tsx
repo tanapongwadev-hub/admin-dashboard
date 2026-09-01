@@ -1,10 +1,19 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Activity, Building2, Eye, EyeOff, KeyRound, Lock, Plug, ShieldCheck, User } from "lucide-react";
+import {
+  Activity,
+  Eye,
+  EyeOff,
+  Lock,
+  Plug,
+  ShieldCheck,
+  User,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,14 +24,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Logo } from "@/components/layout/logo";
 import { loginAction, selectDepartmentAction } from "./actions";
 import type { DepartmentOption } from "@/lib/api/auth";
 
 const features = [
-  { icon: Activity, label: "Real-time dashboards & alerts" },
+  { icon: Activity, label: "Production orders & stock in one view" },
   { icon: ShieldCheck, label: "Role-based access with audit logs" },
-  { icon: Plug, label: "Native integrations with your stack" },
+  { icon: Plug, label: "Native ERP integrations across the line" },
 ];
 
 export default function LoginPage() {
@@ -32,8 +40,9 @@ export default function LoginPage() {
 
   // Department-selection step: set when the API reports the user has
   // multiple active assignments and must pick one before a session is issued.
+  // The selection token itself stays server-side in a cookie (see actions.ts)
+  // — the client only ever sees the department list to render.
   const [departmentStep, setDepartmentStep] = React.useState<{
-    token: string;
     departments: DepartmentOption[];
   } | null>(null);
   const [selectedDepartment, setSelectedDepartment] = React.useState("");
@@ -54,10 +63,7 @@ export default function LoginPage() {
       return;
     }
     if (result.status === "select-department") {
-      setDepartmentStep({
-        token: result.departmentSelectionToken,
-        departments: result.departments,
-      });
+      setDepartmentStep({ departments: result.departments });
       if (result.departments.length > 0) {
         setSelectedDepartment(result.departments[0].userDepartmentRoleId);
       }
@@ -71,10 +77,7 @@ export default function LoginPage() {
     if (!departmentStep || !selectedDepartment) return;
 
     setLoading(true);
-    const result = await selectDepartmentAction(
-      departmentStep.token,
-      selectedDepartment
-    );
+    const result = await selectDepartmentAction(selectedDepartment);
     setLoading(false);
 
     if (result.status === "success") {
@@ -88,19 +91,33 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="grid min-h-dvh grid-cols-1 bg-bg lg:grid-cols-2">
+    <div className="relative min-h-dvh bg-bg lg:grid lg:grid-cols-2">
       {/* ============================================
-          LEFT — Brand panel (hidden on mobile)
+          LEFT — Brand pane (desktop only)
+          Factory photo + brand identity
           ============================================ */}
-      <aside className="relative hidden overflow-hidden bg-[#0B0E14] p-10 text-white lg:flex lg:flex-col lg:justify-between xl:p-14">
-        {/* Decorative layers */}
+      <aside className="relative hidden overflow-hidden bg-[#0A1628] text-white lg:flex lg:flex-col lg:justify-between">
+        {/* Background photo + dark wash */}
         <div className="pointer-events-none absolute inset-0">
-          {/* Grid pattern (masked to fade at edges) */}
+          <Image
+            src="/cps-factory-background.png"
+            alt=""
+            fill
+            priority
+            sizes="(min-width: 1024px) 50vw, 0"
+            className="object-cover object-center opacity-55"
+            aria-hidden
+          />
+          <div className="absolute inset-0 bg-gradient-to-br from-[#0A1628]/95 via-[#0A1628]/75 to-[#1E3A5F]/70" />
+          {/* Amber + teal corner glows */}
+          <div className="absolute -left-40 -top-40 h-[520px] w-[520px] rounded-full bg-[#F59E0B]/15 blur-3xl" />
+          <div className="absolute -right-32 -bottom-40 h-[480px] w-[480px] rounded-full bg-[#0EA5A4]/20 blur-3xl" />
+          {/* Subtle grid */}
           <div
             className="absolute inset-0 opacity-[0.07]"
             style={{
               backgroundImage:
-                "linear-gradient(rgba(255,255,255,0.7) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.7) 1px, transparent 1px)",
+                "linear-gradient(rgba(255,255,255,0.8) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.8) 1px, transparent 1px)",
               backgroundSize: "56px 56px",
               maskImage:
                 "radial-gradient(ellipse at center, black 25%, transparent 75%)",
@@ -108,56 +125,53 @@ export default function LoginPage() {
                 "radial-gradient(ellipse at center, black 25%, transparent 75%)",
             }}
           />
-          {/* Glow blobs */}
-          <div className="absolute -left-40 -top-40 h-[520px] w-[520px] rounded-full bg-primary/40 blur-3xl" />
-          <div className="absolute -right-32 -bottom-40 h-[480px] w-[480px] rounded-full bg-info/25 blur-3xl" />
         </div>
 
-        {/* Top — logo */}
-        <div className="relative z-10 flex items-center gap-2.5">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 backdrop-blur-sm">
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 16 16"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M2 12.5V6L8 2L14 6V12.5"
-                stroke="white"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M5.5 14V8.5H10.5V14"
-                stroke="white"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </span>
-          <span className="text-[15px] font-semibold tracking-tight">Panel</span>
-        </div>
-
-        {/* Middle — headline + features */}
-        <div className="relative z-10 max-w-md space-y-9">
-          <div className="space-y-5">
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-medium tracking-wide text-white/70 backdrop-blur-sm">
-              <span className="relative flex h-1.5 w-1.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success/70" />
-                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-success" />
-              </span>
-              ALL SYSTEMS OPERATIONAL
+        {/* Top — status + wordmark */}
+        <div className="relative z-10 flex items-start justify-between p-10 xl:p-14">
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-medium tracking-wide text-white/70 backdrop-blur-sm">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#F59E0B]/70" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#F59E0B]" />
             </span>
-            <h2 className="text-[32px] font-semibold leading-[1.1] tracking-tight text-white xl:text-[40px]">
-              Run your operations from one calm dashboard.
-            </h2>
-            <p className="text-[15px] leading-relaxed text-white/60">
-              Inventory, orders and customers in one place — without the tab juggling,
-              without the late-night spreadsheet fixes.
+            ALL SYSTEMS OPERATIONAL
+          </span>
+          <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-white/40">
+            v1.0
+          </span>
+        </div>
+
+        {/* Middle — logo + headline + features */}
+        <div className="relative z-10 max-w-md space-y-9 px-10 xl:px-14">
+          <div className="flex items-center gap-4">
+            <span className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white/95 shadow-2xl shadow-black/40 ring-1 ring-black/5">
+              <Image
+                src="/cci_logo.png"
+                alt="Chiewchan Industry"
+                width={80}
+                height={80}
+                className="h-16 w-16 object-contain"
+                priority
+              />
+            </span>
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#F59E0B]">
+                Chiewchan Industry
+              </p>
+              <h2 className="text-[28px] font-semibold leading-none tracking-tight text-white xl:text-[32px]">
+                CPS
+              </h2>
+              <p className="mt-0.5 text-xs text-white/60">
+                Chiewchan Production System
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <p className="text-[15px] leading-relaxed text-white/75">
+              Run the line from one calm console — orders, stock and
+              departments in a single place, without the tab juggling or
+              late-night spreadsheet fixes.
             </p>
           </div>
 
@@ -176,94 +190,105 @@ export default function LoginPage() {
           </ul>
         </div>
 
-        {/* Bottom — testimonial + copyright */}
-        <div className="relative z-10 max-w-md space-y-5">
-          <blockquote className="space-y-3 border-l-2 border-primary/70 pl-4">
-            <p className="text-[15px] leading-relaxed text-white/80">
-              &ldquo;Panel gave our ops team one place to see everything — orders,
-              inventory, customers — without switching tabs.&rdquo;
-            </p>
-            <footer className="flex items-center gap-3 text-xs">
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-[10px] font-semibold text-white/90">
-                RC
+        {/* Bottom — asset-tag strip + copyright */}
+        <div className="relative z-10 space-y-4 px-10 pb-10 xl:px-14 xl:pb-14">
+          <div className="relative flex h-7 items-stretch">
+            <div className="w-1/3 bg-[#F59E0B]" />
+            <div className="flex-1 bg-[#0A1628]" />
+            <div className="w-1/5 bg-[#1E3A5F]" />
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-end pr-3">
+              <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-white/85">
+                CPS · CHIEWCHAN INDUSTRY
               </span>
-              <div>
-                <p className="font-medium text-white/90">Ravi Costa</p>
-                <p className="text-white/50">COO, Northwind Retail</p>
-              </div>
-            </footer>
-          </blockquote>
-          <p className="text-[11px] tracking-wide text-white/30">
-            © 2026 Panel, Inc. — All rights reserved.
+            </div>
+          </div>
+          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/30">
+            © 2026 Chiewchan Industry Co., Ltd.
           </p>
         </div>
       </aside>
 
       {/* ============================================
-          RIGHT — Form panel
+          RIGHT — Form pane
+          White surface + centered card
           ============================================ */}
-      <main className="relative flex flex-col px-6 py-8 sm:px-12 lg:px-14 xl:px-20">
-        {/* Decorative layers */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-40 dark:opacity-20"
-          style={{
-            color: "var(--border)",
-            backgroundImage:
-              "radial-gradient(circle, currentColor 1px, transparent 1px)",
-            backgroundSize: "22px 22px",
-            maskImage:
-              "radial-gradient(ellipse 60% 60% at 100% 0%, black 0%, transparent 70%)",
-            WebkitMaskImage:
-              "radial-gradient(ellipse 60% 60% at 100% 0%, black 0%, transparent 70%)",
-          }}
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -left-32 -top-32 h-[320px] w-[320px] rounded-full bg-primary-soft/60 blur-3xl dark:bg-primary-soft/30"
-        />
-
-        {/* Mobile-only top bar (logo) */}
-        <div className="relative z-10 mb-8 flex items-center justify-between lg:hidden">
-          <Logo />
+      <main className="relative flex min-h-dvh flex-col bg-bg lg:min-h-0">
+        {/* Mobile-only top brand band */}
+        <div className="relative overflow-hidden bg-[#0A1628] px-4 py-4 lg:hidden">
+          <div
+            className="pointer-events-none absolute inset-0 opacity-40"
+            style={{
+              backgroundImage:
+                "linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)",
+              backgroundSize: "32px 32px",
+              maskImage:
+                "linear-gradient(to right, black 0%, transparent 100%)",
+              WebkitMaskImage:
+                "linear-gradient(to right, black 0%, transparent 100%)",
+            }}
+          />
+          <div className="relative flex items-center gap-3">
+            <span className="flex h-10 w-10 items-center justify-center rounded-md bg-white/95 shadow-md ring-1 ring-black/5">
+              <Image
+                src="/cci_logo.png"
+                alt="Chiewchan Industry"
+                width={32}
+                height={32}
+                className="h-8 w-8 object-contain"
+                priority
+              />
+            </span>
+            <div>
+              <p className="font-mono text-[9px] uppercase tracking-[0.22em] text-[#F59E0B]">
+                Chiewchan Industry
+              </p>
+              <p className="text-sm font-semibold leading-tight text-white">
+                CPS — Chiewchan Production System
+              </p>
+            </div>
+          </div>
         </div>
 
-        {/* Desktop-only top-right helper link */}
-        <div className="relative z-10 hidden text-sm text-fg-muted lg:flex lg:justify-end">
-          New to Panel?{" "}
-          <Link
-            href="/register"
-            className="ml-1.5 font-medium text-primary hover:underline"
-          >
-            Create an account
-          </Link>
-        </div>
+        {/* Centered card area */}
+        <div className="flex flex-1 items-center justify-center px-4 py-8 sm:px-6 sm:py-12 lg:px-10 xl:px-16">
+          <div className="w-full max-w-[440px] overflow-hidden rounded-2xl bg-white shadow-2xl shadow-black/10 ring-1 ring-black/5">
+            {/* Asset-tag strip — the signature element */}
+            <div className="relative flex h-7 items-stretch">
+              <div className="w-1/3 bg-[#F59E0B]" />
+              <div className="flex-1 bg-[#0A1628]" />
+              <div className="w-1/5 bg-[#1E3A5F]" />
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-end pr-3">
+                <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-white/85">
+                  CPS · CHIEWCHAN INDUSTRY
+                </span>
+              </div>
+            </div>
 
-        {/* Form — vertically centered */}
-        <div className="relative z-10 flex flex-1 items-center justify-center py-6">
-          <div className="w-full max-w-sm">
-            <div className="flex flex-col gap-8">
-              {departmentStep ? (
-                <>
-                  {/* Header — department selection */}
-                  <div className="flex flex-col items-start gap-4">
-                    <span
-                      aria-hidden
-                      className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-soft text-primary"
-                    >
-                      <Building2 className="h-5 w-5" />
-                    </span>
-                    <div className="space-y-1.5">
-                      <h1 className="text-[26px] font-semibold leading-tight tracking-tight text-fg">
-                        Choose a department
-                      </h1>
-                      <p className="text-sm text-fg-muted">
-                        Your account has access to multiple departments. Pick
-                        one to continue.
-                      </p>
-                    </div>
-                  </div>
+            {/* Card body */}
+            <div className="px-6 pb-6 pt-7 sm:px-8 sm:pb-7 sm:pt-8">
+              <div className="flex flex-col items-center text-center">
+                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-white shadow-md ring-1 ring-border sm:h-[72px] sm:w-[72px]">
+                  <Image
+                    src="/cci_logo.png"
+                    alt="Chiewchan Industry"
+                    width={72}
+                    height={72}
+                    className="h-12 w-12 object-contain sm:h-14 sm:w-14"
+                    priority
+                  />
+                </div>
+                <h1 className="text-[22px] font-semibold leading-tight tracking-tight text-fg sm:text-[24px]">
+                  {departmentStep ? "Choose a department" : "Sign in"}
+                </h1>
+                <p className="mt-1.5 text-sm text-fg-muted">
+                  {departmentStep
+                    ? "Your account has access to multiple departments. Pick one to continue."
+                    : "Access the CPS operations console."}
+                </p>
+              </div>
 
+              <div className="mt-7">
+                {departmentStep ? (
                   <form
                     onSubmit={handleDepartmentSubmit}
                     className="flex flex-col gap-4"
@@ -301,34 +326,17 @@ export default function LoginPage() {
                     <button
                       type="button"
                       onClick={() => setDepartmentStep(null)}
-                      className="text-center text-sm text-fg-muted hover:text-fg"
+                      className="text-center text-sm text-fg-muted transition-colors hover:text-fg"
                     >
                       Back to sign in
                     </button>
                   </form>
-                </>
-              ) : (
-                <>
-                  {/* Header */}
-                  <div className="flex flex-col items-start gap-4">
-                    <span
-                      aria-hidden
-                      className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-soft text-primary"
-                    >
-                      <KeyRound className="h-5 w-5" />
-                    </span>
-                    <div className="space-y-1.5">
-                      <h1 className="text-[26px] font-semibold leading-tight tracking-tight text-fg">
-                        Sign in to Panel
-                      </h1>
-                      <p className="text-sm text-fg-muted">
-                        Enter your username and password to continue.
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Form */}
-                  <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                ) : (
+                  <form
+                    onSubmit={handleSubmit}
+                    className="flex flex-col gap-4"
+                    noValidate
+                  >
                     <div className="flex flex-col gap-1.5">
                       <Label htmlFor="username">Username</Label>
                       <div className="relative">
@@ -402,24 +410,26 @@ export default function LoginPage() {
                       {loading ? "Signing in..." : "Sign in"}
                     </Button>
                   </form>
-                </>
-              )}
+                )}
+              </div>
+            </div>
+
+            {/* Card footer — compliance line */}
+            <div className="border-t border-border bg-surface-2 px-6 py-3 sm:px-8">
+              <p className="flex items-center justify-center gap-1.5 text-[11px] text-fg-muted">
+                <ShieldCheck className="h-3 w-3" />
+                <span>
+                  Secure session — protected by CPS access control.
+                </span>
+              </p>
             </div>
           </div>
         </div>
 
-        {/* Footer — terms */}
-        <div className="relative z-10 mt-6 text-center text-[11px] text-fg-muted">
-          By signing in, you agree to our{" "}
-          <Link href="#" className="text-fg-secondary hover:text-fg">
-            Terms
-          </Link>{" "}
-          and{" "}
-          <Link href="#" className="text-fg-secondary hover:text-fg">
-            Privacy Policy
-          </Link>
-          .
-        </div>
+        {/* Below-card meta (mobile only) */}
+        <p className="pb-6 text-center font-mono text-[10px] uppercase tracking-[0.2em] text-fg-muted lg:hidden">
+          © 2026 Chiewchan Industry Co., Ltd. — v1.0
+        </p>
       </main>
     </div>
   );

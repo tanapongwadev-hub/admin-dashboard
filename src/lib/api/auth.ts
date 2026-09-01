@@ -96,6 +96,24 @@ export function selectDepartment(payload: SelectDepartmentPayload) {
   });
 }
 
+// GET /auth/me — same response shape as login/select-department
+// (auth.service.ts#getMe calls the same buildAuthenticationResponse, just
+// with authentication.accessToken/refreshToken blanked out).
+export type MeResponse = LoginSuccess;
+
+export function getMe(accessToken: string) {
+  return apiFetch<MeResponse>("/auth/me", {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+}
+
+export function logout(accessToken: string) {
+  return apiFetch<{ success: boolean; message: string }>("/auth/logout", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+}
+
 export function isDepartmentSelectionRequired(
   response: LoginResponse
 ): response is DepartmentSelectionRequired {

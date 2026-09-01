@@ -11,6 +11,7 @@ import { NotificationsMenu } from "@/components/layout/notifications-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { UserMenu } from "@/components/layout/user-menu";
 import { primaryNav, secondaryNav } from "@/lib/nav";
+import type { AuthenticatedUser, CurrentDepartmentRole } from "@/lib/api/auth";
 
 function useBreadcrumb() {
   const pathname = usePathname();
@@ -19,7 +20,13 @@ function useBreadcrumb() {
   return match?.label ?? "Overview";
 }
 
-export function Topbar() {
+export function Topbar({
+  user,
+  currentDepartmentRole,
+}: {
+  user: AuthenticatedUser;
+  currentDepartmentRole: CurrentDepartmentRole | null;
+}) {
   const crumb = useBreadcrumb();
 
   return (
@@ -54,7 +61,7 @@ export function Topbar() {
         <NotificationsMenu />
         <ThemeToggle />
         <div className="mx-1 h-6 w-px bg-border" />
-        <UserMenu />
+        <UserMenu user={user} currentDepartmentRole={currentDepartmentRole} />
       </div>
     </header>
   );

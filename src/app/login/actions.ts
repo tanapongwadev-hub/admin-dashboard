@@ -12,12 +12,18 @@ import {
 
 export type LoginActionResult =
   | { status: "success" }
-  | {
-      status: "select-department";
-      departmentSelectionToken: string;
-      departments: DepartmentOption[];
-    }
+  | { status: "select-department"; departments: DepartmentOption[] }
   | { status: "error"; message: string };
+
+const DEPARTMENT_SELECTION_COOKIE = "deptSelectionToken";
+
+// httpOnly, secure by default — see setCookie(). Only "development" (the
+// Next.js dev server's own NODE_ENV, not attacker-controlled) opts out, so
+// any real deployment gets Secure cookies even if NODE_ENV isn't explicitly
+// "production".
+function secureCookies() {
+  return process.env.NODE_ENV !== "development";
+}
 
 export async function loginAction(
   username: string,
@@ -27,11 +33,13 @@ export async function loginAction(
     const result = await login({ username, password });
 
     if (isDepartmentSelectionRequired(result)) {
-      return {
-        status: "select-department",
-        departmentSelectionToken: result.departmentSelectionToken,
-        departments: result.departments,
-      };
+      // Keep the short-lived selection token server-side only — it never
+      // reaches client JS or gets echoed back in a fetchable response body.
+      const store = await cookies();
+      setCookie(store, DEPARTMENT_SELECTION_COOKIE, result.departmentSelectionToken, {
+        maxAge: 60 * 5,
+      });
+      return { status: "select-department", departments: result.departments };
     }
 
     await setSessionCookies(result);
@@ -42,14 +50,25 @@ export async function loginAction(
 }
 
 export async function selectDepartmentAction(
-  departmentSelectionToken: string,
   userDepartmentRoleId: string
 ): Promise<LoginActionResult> {
   try {
+    const store = await cookies();
+    const departmentSelectionToken = store.get(
+      DEPARTMENT_SELECTION_COOKIE
+    )?.value;
+    if (!departmentSelectionToken) {
+      return {
+        status: "error",
+        message: "Your session expired. Please sign in again.",
+      };
+    }
+
     const result = await selectDepartment({
       departmentSelectionToken,
       userDepartmentRoleId,
     });
+    store.delete(DEPARTMENT_SELECTION_COOKIE);
     await setSessionCookies(result);
     return { status: "success" };
   } catch (err) {
@@ -57,18 +76,26 @@ export async function selectDepartmentAction(
   }
 }
 
+function setCookie(
+  store: Awaited<ReturnType<typeof cookies>>,
+  name: string,
+  value: string,
+  opts: { maxAge: number }
+) {
+  store.set(name, value, {
+    httpOnly: true,
+    secure: secureCookies(),
+    sameSite: "lax",
+    path: "/",
+    maxAge: opts.maxAge,
+  });
+}
+
 async function setSessionCookies(result: LoginSuccess) {
   const { accessToken, refreshToken } = result.data.authentication;
   const store = await cookies();
-  const common = {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax" as const,
-    path: "/",
-  };
-  store.set("accessToken", accessToken, { ...common, maxAge: 60 * 60 * 8 });
-  store.set("refreshToken", refreshToken, {
-    ...common,
+  setCookie(store, "accessToken", accessToken, { maxAge: 60 * 60 * 8 });
+  setCookie(store, "refreshToken", refreshToken, {
     maxAge: 60 * 60 * 24 * 7,
   });
 }

@@ -65,14 +65,17 @@ src/
 │     ├─ layout.tsx              # 50/50: dark brand panel | form area
 │     ├─ register/page.tsx
 │     └─ forgot-password/page.tsx
-└─ (dashboard)/dashboard/        # route group — authed area
-   ├─ page.tsx                   # dashboard home
-   ├─ loading.tsx                # route-level Suspense fallback for /dashboard
-   ├─ analytics/page.tsx
-   ├─ orders/page.tsx
-   ├─ products/page.tsx
-   ├─ settings/page.tsx
-   └─ users/page.tsx
+└─ (dashboard)/                  # route group — authed area
+   ├─ layout.tsx                 # server; getCurrentSession() + redirect("/login") guard, feeds DashboardShell
+   ├─ actions.ts                 # "use server"; logoutAction — clears cookies, best-effort POST /auth/logout
+   └─ dashboard/
+      ├─ page.tsx                # dashboard home — greeting uses real session, not mock
+      ├─ loading.tsx             # route-level Suspense fallback for /dashboard
+      ├─ analytics/page.tsx
+      ├─ orders/page.tsx
+      ├─ products/page.tsx
+      ├─ settings/page.tsx
+      └─ users/page.tsx
 ```
 
 ```
@@ -85,6 +88,7 @@ src/
 ├─ hooks/
 └─ lib/                          # utils (cn), helpers, types, mock data
    ├─ nav.ts                     # sidebar nav item definitions (icons, labels, routes)
+   ├─ session.ts                 # getCurrentSession() — server-only, React.cache-wrapped GET /auth/me
    └─ api/                       # REST client — server-only, see Conventions § API
       ├─ client.ts               # apiFetch<T>() + ApiError, reads API_BASE_URL/API_AUTH_TOKEN
       ├─ auth.ts                 # login()/selectDepartment() — mirrors cps-api /auth contract
@@ -149,7 +153,7 @@ Tokens live in `src/app/globals.css` (`:root` + `.dark`). Use the Tailwind utili
 - Login is a two-step flow driven by the API, not the client: `POST /auth/login` returns either a full session or `{ requiresDepartmentSelection: true, departmentSelectionToken, departments[] }` when the user has >1 active assignment (SUPER_ADMIN and single-assignment users always skip straight to a session). `src/app/login/page.tsx` renders a second "choose a department" step (Radix `Select`) and calls `selectDepartmentAction` when that happens.
 - `src/app/login/actions.ts` (`"use server"`) is the only place that calls `src/lib/api/auth.ts`. It sets `accessToken`/`refreshToken` as **httpOnly** cookies (`sameSite: lax`, `secure` in production) via `cookies()` from `next/headers` — tokens never reach client JS. The login page calls these actions directly from a client-side event handler (not a `<form action>`), reads the typed result, and does its own `toast` + `router.push`.
 - `API_AUTH_TOKEN` in `.env.local.example` is now dead for the login flow specifically (login doesn't need a pre-existing token) but stays as a fallback static-bearer option for any future endpoint that's called before a user session exists.
-- Nothing currently reads the session cookies back out (no `/dashboard` route guard, no authenticated `apiFetch` calls yet). Adding that is a separate task — don't assume it exists.
+- **Resolved 2026-09-01 (see below):** session cookies are now read back out. `src/lib/session.ts#getCurrentSession()` (wrapped in `React.cache`) calls `GET /auth/me` with the `accessToken` cookie and returns `{ user, currentDepartmentRole } | null`. `(dashboard)/layout.tsx` calls it and `redirect("/login")`s if null — this is the `/dashboard` route guard. `src/app/(dashboard)/actions.ts#logoutAction` clears both cookies and best-effort calls `POST /auth/logout`.
 
 ### Windows / file editing
 - Prefer `read` + `edit` tools for UTF-8 source edits (PowerShell `Set-Content -Encoding UTF8` can silently mojibake CJK / Thai — see *Agent Memory*).
@@ -193,6 +197,24 @@ The `<!-- BEGIN:nextjs-agent-rules -->` ... `<!-- END:nextjs-agent-rules -->` bl
 ## Recent Changes
 
 > Append newest at the top. Use `### YYYY-MM-DD — short title` for multi-file changes; one-liner for trivial edits.
+
+### 2026-09-01 — Real logged-in user data replaces mock data in dashboard chrome
+- Added `src/lib/api/auth.ts#getMe(accessToken)` (`GET /auth/me`, same response shape as login) and `#logout(accessToken)` (`POST /auth/logout`)
+- Added `src/lib/session.ts#getCurrentSession()` — `React.cache`-wrapped, reads the `accessToken` cookie, calls `getMe`, returns `{ user, currentDepartmentRole } | null` (null on missing/expired/invalid token, not a thrown error)
+- Added `src/app/(dashboard)/actions.ts#logoutAction` — clears `accessToken`/`refreshToken` cookies, best-effort `POST /auth/logout` (failure doesn't block logout)
+- `src/app/(dashboard)/layout.tsx` is now `async`: calls `getCurrentSession()`, `redirect("/login")` if null — **this is the first real `/dashboard` route guard**, closing the gap ADR-002 flagged as missing
+- Threaded `user`/`currentDepartmentRole` as props: `layout.tsx` → `DashboardShell` → `Topbar` → `UserMenu`. `UserMenu` now renders the real name/role/email instead of hardcoded "Maya Chen" / "Owner" / "maya@panel.io", and its "Log out" item calls `logoutAction` then `router.push("/login")` (previously just a dead `<Link href="/login">`, cookies were never cleared)
+- `src/app/(dashboard)/dashboard/page.tsx` greeting ("Good morning, ...") now uses the real session's `firstName`/`username` instead of hardcoded "Maya" — page is now `async`
+- All other dashboard content (stats, charts, tables) is still `src/lib/data.ts` mock data — this change only touched **identity display** (who's logged in), not business data
+- Verified live: unauthenticated `GET /dashboard` → `307` to `/login` (curl); authenticated request (real `superadmin` session cookie from `cps-api`) renders `<h1>Good morning, System</h1>` and "System Administrator" / `superadmin@example.com` in the user menu — confirms mock name is fully gone from the authed chrome
+- `tsc --noEmit`, `eslint`, `next build` all pass; dashboard routes are now `ƒ` (dynamic) in the build output since they depend on `cookies()`, previously `○` (static) — expected, not a regression
+
+### 2026-09-01 — Auth hardening from security review
+- `src/app/login/actions.ts`: department-selection token no longer round-trips through client state/response — `loginAction` now stores it in a short-lived (5 min) httpOnly `deptSelectionToken` cookie instead of returning it in `LoginActionResult`; `selectDepartmentAction(userDepartmentRoleId)` reads the cookie server-side and deletes it after use. `LoginActionResult`'s `select-department` variant dropped the `departmentSelectionToken` field — only `departments[]` goes to the client now.
+- `src/app/login/actions.ts`: cookie `secure` flag flipped from allowlist (`NODE_ENV === "production"`) to denylist (`NODE_ENV !== "development"`) via new `secureCookies()` helper, so any non-dev deployment gets `Secure` cookies by default even if `NODE_ENV` isn't explicitly `"production"`
+- `src/app/login/page.tsx` updated to match: `departmentStep` state no longer holds a token, `selectDepartmentAction` called with just the chosen `userDepartmentRoleId`
+- Source: security-review pass on commit `d9c8239` flagged both as low-confidence (4/10, 3/10) hardening opportunities, not exploitable vulnerabilities — fixed anyway since they were cheap
+- `tsc --noEmit`, `eslint`, `next build` all pass; live browser click-through not done this pass (tool permission denied) — worth a manual smoke test of the multi-department flow before relying on this in prod
 
 ### 2026-09-01 — Structure audit cleanup
 - Removed `package-lock.json` (project standardizes on `pnpm`; having both lockfiles risked an `npm install` producing a dependency tree that drifts from what `pnpm-lock.yaml` pins) — see updated Quick Facts note
@@ -238,7 +260,7 @@ The `<!-- BEGIN:nextjs-agent-rules -->` ... `<!-- END:nextjs-agent-rules -->` bl
 ### ADR-002 — Session tokens live in httpOnly cookies, set by a Server Action — 2026-09-01
 **Decision**: `POST /auth/login` and `POST /auth/select-department` are called from `src/app/login/actions.ts` (`"use server"`), which sets `accessToken`/`refreshToken` via `cookies()` from `next/headers`. The client-side login page never sees the token values, only a typed status result.
 **Reason**: httpOnly cookies aren't readable by client JS, which closes off token theft via XSS — the standard tradeoff for an admin panel handling other people's data. The alternative (returning tokens to the client and storing in `localStorage`/state) is simpler but exposes them to any injected script.
-**Consequence**: any future code that needs to call the API on behalf of the logged-in user must read these cookies server-side (Server Component, Route Handler, or another Server Action) and attach `Authorization: Bearer <accessToken>` itself — `src/lib/api/client.ts`'s `apiFetch` currently only auto-attaches the static `API_AUTH_TOKEN`, not a per-request user token. No `/dashboard` route guard exists yet; unauthenticated users can currently still reach dashboard pages by URL since they render mock data with no auth check. Wiring that guard is future work, not assumed here.
+**Consequence**: any code that needs to call the API on behalf of the logged-in user must read the `accessToken` cookie server-side and attach `Authorization: Bearer <accessToken>` itself via `apiFetch`'s per-call `headers` override (`apiFetch`'s auto-attached header is only the static `API_AUTH_TOKEN`, unrelated to user sessions). **Resolved 2026-09-01**: `src/lib/session.ts#getCurrentSession()` does exactly this for `GET /auth/me`, and `(dashboard)/layout.tsx` now redirects unauthenticated requests to `/login` — this is the `/dashboard` route guard mentioned as missing when this ADR was first written.
 **Rule for future auth work**: don't introduce a second token-storage mechanism (e.g. a client-readable cookie or `localStorage`) without updating this ADR — that would fragment where "is the user logged in" is checked.
 
 ### ADR-001 — Login lives outside the `(auth)` route group — 2026-09-01

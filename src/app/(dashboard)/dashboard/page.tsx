@@ -9,14 +9,17 @@ import { RecentActivity } from "@/components/dashboard/recent-activity";
 import { TopProducts } from "@/components/dashboard/top-products";
 import { statsFor } from "@/lib/data";
 import { formatCurrency, formatNumber } from "@/lib/utils";
+import { getCurrentSession } from "@/lib/session";
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
   const stats = statsFor();
+  const session = await getCurrentSession();
+  const firstName = session?.user.firstName || session?.user.username || "there";
 
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-xl font-semibold text-fg">Good morning, Maya</h1>
+        <h1 className="text-xl font-semibold text-fg">Good morning, {firstName}</h1>
         <p className="mt-1 text-sm text-fg-muted">Here&apos;s what&apos;s happening with your store today.</p>
       </div>
 
