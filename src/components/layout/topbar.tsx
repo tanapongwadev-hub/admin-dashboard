@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { usePathname } from "next/navigation";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -35,20 +36,23 @@ export function Topbar({
   menus: MenuNode[];
 }) {
   const crumb = useBreadcrumb(menus);
+  const [mobileNavOpen, setMobileNavOpen] = React.useState(false);
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border bg-surface/90 px-4 backdrop-blur supports-[backdrop-filter]:bg-surface/70 sm:px-6">
-      <Sheet>
+    <header className="z-30 flex h-16 shrink-0 items-center gap-3 rounded-xl border border-border bg-surface/90 px-3 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-surface/70 sm:px-5">
+      <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
         <SheetTrigger asChild>
-          <Button variant="ghost" size="icon" className="text-fg-secondary lg:hidden">
+          <Button variant="ghost" size="icon" className="text-fg-secondary lg:hidden" aria-label="Open navigation">
             <Menu className="h-5 w-5" />
           </Button>
         </SheetTrigger>
-        <SheetContent className="flex flex-col">
-          <div className="flex h-16 items-center border-b border-border px-4">
-            <Logo />
+        <SheetContent className="flex flex-col bg-bg p-2 sm:p-3">
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
+            <div className="flex h-16 shrink-0 items-center border-b border-border px-4">
+              <Logo />
+            </div>
+            <SidebarNav menus={menus} onNavigate={() => setMobileNavOpen(false)} />
           </div>
-          <SidebarNav menus={menus} />
         </SheetContent>
       </Sheet>
 

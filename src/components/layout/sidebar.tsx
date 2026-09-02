@@ -18,7 +18,7 @@ export function Sidebar({
   return (
     <aside
       className={cn(
-        "hidden shrink-0 flex-col border-r border-border bg-surface transition-[width] duration-200 lg:flex",
+        "hidden shrink-0 flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-sm transition-[width] duration-200 lg:flex",
         collapsed ? "w-[72px]" : "w-64"
       )}
     >
@@ -28,8 +28,13 @@ export function Sidebar({
       <SidebarNav collapsed={collapsed} menus={menus} />
       <div className="border-t border-border p-3">
         <button
+          type="button"
           onClick={onToggle}
-          className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-sm text-fg-secondary transition-colors hover:bg-surface-2 hover:text-fg"
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          className={cn(
+            "flex min-h-10 w-full items-center gap-2 rounded-lg border border-transparent px-2.5 py-2 text-sm text-fg-secondary transition-colors hover:border-border hover:bg-surface-2 hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+            collapsed && "justify-center px-2"
+          )}
         >
           <ChevronsLeft className={cn("h-4 w-4 transition-transform", collapsed && "rotate-180")} />
           {!collapsed && "Collapse"}

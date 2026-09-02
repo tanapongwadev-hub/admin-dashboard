@@ -138,6 +138,13 @@ Tokens live in `src/app/globals.css` (`:root` + `.dark`). Use the Tailwind utili
 - A page that needs its own full-bleed layout (no parent chrome) lives at the top level (e.g. `src/app/login/`).
 - `(auth)/layout.tsx` provides the testimonial split — only routes that want that chrome stay inside.
 
+### Dashboard shell
+- Dashboard chrome uses a **floating-box app shell**: `DashboardShell` owns the full `h-dvh` viewport and outer responsive gap/padding; desktop `Sidebar`, `Topbar`, and the page-content scroller are separate rounded bordered surfaces.
+- The document/dashboard shell itself must not scroll. `Topbar` and desktop `Sidebar` remain fixed in the viewport; only the `main` surface scrolls (`min-h-0`, `overflow-y-auto`, contained overscroll, stable scrollbar gutter).
+- Below `lg`, the desktop sidebar is replaced by the existing Radix `Sheet`. Keep the mobile navbar visible, render the menu inside its own bordered surface, and close the Sheet through `SidebarNav#onNavigate` after a route is selected.
+- Collapsed desktop navigation is icon-only, so every hidden-label link/button must retain an accessible name and hover title.
+- `SidebarNav` hides its visual scrollbar with standard `scrollbar-width` plus a WebKit fallback while retaining `overflow-y-auto`; wheel, touch, and keyboard scrolling must keep working in both the desktop sidebar and mobile Sheet. Do not apply this treatment to the page-content scroller.
+
 ### State
 - Default to **server components**. Add `"use client"` only when you need interactivity, hooks, or browser APIs.
 - Use `useRouter` from `next/navigation` (not the deprecated `next/router`).
@@ -208,6 +215,16 @@ The `<!-- BEGIN:nextjs-agent-rules -->` ... `<!-- END:nextjs-agent-rules -->` bl
 ## Recent Changes
 
 > Append newest at the top. Use `### YYYY-MM-DD — short title` for multi-file changes; one-liner for trivial edits.
+
+### 2026-09-02 — Sidebar scrollbar indicator hidden
+- Hid only `SidebarNav`'s visual scrollbar on desktop and mobile using `scrollbar-width: none` with a WebKit fallback; the menu remains vertically scrollable and the page-content scrollbar is unchanged. Verified with `npx tsc --noEmit -p tsconfig.json`, `pnpm lint` (0 errors; the same 3 pre-existing React Compiler warnings), `pnpm build`, and confirmed both scrollbar rules are present in the production CSS.
+
+### 2026-09-02 — Dashboard navigation rebuilt as a responsive floating-box shell
+- `DashboardShell` now reserves the full dynamic viewport with responsive outer padding/gaps and three independent surfaces: fixed desktop sidebar, fixed navbar/topbar, and a dedicated scrolling page-content box. The document shell no longer follows page scrolling; overscroll is contained and scrollbar space is stable.
+- `Sidebar` and `Topbar` now use rounded bordered token-based surfaces with restrained shadows, matching the approved semi-box preview without adding colors or dependencies. Desktop collapse remains `72px`; mobile continues to use the Radix Sheet.
+- `SidebarNav` received the semi-box hierarchy: boxed top-level hover/open/active states, compact icon tiles, rail-and-dot nested items, and a stronger nested active marker. The recursive cps-api menu tree, active-chain expansion, manual overrides, and permission behavior are unchanged.
+- Responsive/accessibility follow-up: the mobile Sheet is controlled and closes after a menu route is selected; its menu is framed as a separate surface. Mobile menu and collapse controls have explicit accessible labels, while collapsed icon-only items retain `aria-label` and hover titles.
+- Verification: `npx tsc --noEmit -p tsconfig.json`, `pnpm lint` (0 errors; 3 pre-existing React Compiler compatibility warnings), `pnpm build`, and `git diff --check` pass. Live authenticated visual QA was not possible because the local database no longer accepts the seed password; no credentials or database state were changed.
 
 ### 2026-09-02 — Dashboard home redesigned around the real CPS subject (factory floor, not e-commerce)
 - User asked to apply the `frontend-design` skill to the dashboard home page specifically. Diagnosis: the page (and its 6 chart/list components) were still the original e-commerce demo template — "Total revenue," "Traffic sources," "visitors and sales" — despite the rest of the product (login page, sidebar) already being reskinned for Chiewchan Industry / CPS. Design brief: ground the page in what CPS actually is (a factory materials/production console), not swap colors on the same copy.
