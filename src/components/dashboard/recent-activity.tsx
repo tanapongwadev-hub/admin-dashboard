@@ -1,13 +1,13 @@
 import { UserAvatar } from "@/components/ui/user-avatar";
-import { activity } from "@/lib/data";
+import { floorActivity } from "@/lib/dashboard-data";
 import { formatDate } from "@/lib/utils";
 
 export function RecentActivity() {
   return (
     <div className="flex flex-col">
-      {activity.slice(0, 6).map((item, i) => (
+      {floorActivity.slice(0, 6).map((item, i) => (
         <div key={item.id} className="relative flex gap-3 pb-5 last:pb-0">
-          {i !== activity.slice(0, 6).length - 1 && (
+          {i !== floorActivity.slice(0, 6).length - 1 && (
             <span className="absolute left-[15px] top-9 h-[calc(100%-20px)] w-px bg-border" />
           )}
           <UserAvatar name={item.actor} color={item.avatarColor} className="h-8 w-8 shrink-0" />
