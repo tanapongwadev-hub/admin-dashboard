@@ -10,6 +10,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <DashboardShell
       user={session.user}
       currentDepartmentRole={session.currentDepartmentRole}
+      menus={session.menus}
     >
       {children}
     </DashboardShell>

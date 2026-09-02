@@ -4,13 +4,16 @@ import { ChevronsLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/layout/logo";
 import { SidebarNav } from "@/components/layout/sidebar-nav";
+import type { MenuNode } from "@/lib/api/auth";
 
 export function Sidebar({
   collapsed,
   onToggle,
+  menus,
 }: {
   collapsed: boolean;
   onToggle: () => void;
+  menus: MenuNode[];
 }) {
   return (
     <aside
@@ -22,7 +25,7 @@ export function Sidebar({
       <div className="flex h-16 items-center justify-between border-b border-border px-4">
         <Logo collapsed={collapsed} />
       </div>
-      <SidebarNav collapsed={collapsed} />
+      <SidebarNav collapsed={collapsed} menus={menus} />
       <div className="border-t border-border p-3">
         <button
           onClick={onToggle}

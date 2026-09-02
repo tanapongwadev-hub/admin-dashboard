@@ -71,6 +71,7 @@ src/
    └─ dashboard/
       ├─ page.tsx                # dashboard home — greeting uses real session, not mock
       ├─ loading.tsx             # route-level Suspense fallback for /dashboard
+      ├─ [...rest]/page.tsx      # catch-all placeholder for real-permission menu items with no page yet
       ├─ analytics/page.tsx
       ├─ orders/page.tsx
       ├─ products/page.tsx
@@ -87,11 +88,12 @@ src/
 │  └─ orders/  products/  users/  settings/
 ├─ hooks/
 └─ lib/                          # utils (cn), helpers, types, mock data
-   ├─ nav.ts                     # sidebar nav item definitions (icons, labels, routes)
-   ├─ session.ts                 # getCurrentSession() — server-only, React.cache-wrapped GET /auth/me
+   ├─ nav.ts                     # menuHref()/flattenMenus() + secondaryNav (static, account-level only) — see Conventions § Sidebar permissions
+   ├─ menu-icons.ts              # kebab-case cps-api icon name → LucideIcon map, resolveMenuIcons()
+   ├─ session.ts                 # getCurrentSession() — server-only, React.cache-wrapped GET /auth/me, returns menus + permissions
    └─ api/                       # REST client — server-only, see Conventions § API
       ├─ client.ts               # apiFetch<T>() + ApiError, reads API_BASE_URL/API_AUTH_TOKEN
-      ├─ auth.ts                 # login()/selectDepartment() — mirrors cps-api /auth contract
+      ├─ auth.ts                 # login()/selectDepartment()/getMe()/logout() — mirrors cps-api /auth contract; MenuNode type
       ├─ users.ts  products.ts  orders.ts   # typed resource fetchers
       └─ index.ts                # barrel export
 ```
@@ -147,6 +149,15 @@ Tokens live in `src/app/globals.css` (`:root` + `.dark`). Use the Tailwind utili
 - One file per resource (`users.ts`, `products.ts`, `orders.ts`), each returning the existing domain types from `src/lib/types.ts` — the API layer must not introduce parallel/duplicate types.
 - `src/lib/data.ts` (mock generator) is untouched and still what pages currently render (except `/login`, see below). Swapping a page from mock data to `src/lib/api/*` is a separate, explicit task per page — don't do it silently as a side effect of unrelated work.
 
+### Sidebar permissions — resolved, see ADR-004 (supersedes ADR-003)
+- **The sidebar is now driven directly by cps-api's real menu tree**, not a static list. `src/lib/session.ts#getCurrentSession()` exposes `menus: MenuNode[]` from `GET /auth/me`'s `accessControl.menus` — already filtered server-side to the active role's real permissions (see `cps-api/src/modules/access-control/services/menu-tree.service.ts`). `src/components/layout/sidebar-nav.tsx` renders that tree recursively (arbitrary depth, expand/collapse per node).
+- `src/lib/nav.ts#menuHref(path)` maps a backend path (e.g. `/materials`, `/products`) to a local route by prefixing with `/dashboard` (backend paths don't include it). `/dashboard` itself maps to `/dashboard`, not `/dashboard/dashboard`.
+- `src/app/(dashboard)/dashboard/[...rest]/page.tsx` is a catch-all placeholder ("this page isn't built yet") for real, permission-granted menu items that don't have a page implemented — keeps the dashboard chrome instead of falling through to the bare root `not-found.tsx`. Only two real backend paths currently land on an actually-built page: `/dashboard` (real dashboard) and, coincidentally, `/dashboard/products` / `/dashboard/users` (still mock content, not wired to the real API — see below).
+- `src/lib/menu-icons.ts#menuIcon(name)` maps cps-api's kebab-case `Menu.icon` (e.g. `"layout-dashboard"`) to a Lucide component via an explicit named-import map (not a blanket `import *`, to keep the bundle lean) — unmapped names fall back to a plain dot. **Add a new entry here whenever cps-api seeds a new menu icon**, or it'll render as a generic dot. `resolveMenuIcons()` pre-resolves an entire tree once (via `useMemo` in `SidebarNav`) — icons are intentionally resolved as data *before* being passed as props, not looked up inline inside the component that renders `<Icon />`, because the latter trips the React Compiler's "components created during render" lint rule (`react-hooks/static-components`).
+- `secondaryNav` in `src/lib/nav.ts` (currently just `Settings`) stays a small static, always-visible list for account-level items with no cps-api menu equivalent — not permission-gated, since every logged-in user can reach their own settings regardless of role.
+- **Known gap, unchanged from before**: a menu item being visible does not mean its page calls the real API — `/dashboard/products` and `/dashboard/users` still render `src/lib/data.ts` mock content regardless of what permission actually let the user click there. Wiring those pages to `src/lib/api/products.ts`/`users.ts` is a separate task.
+- Before wiring a new page to a real cps-api module: check `resolveMenuIcons`/the live tree for the exact `code`/`path` cps-api actually sends (don't guess) — `API_ENDPOINTS.md` documents the REST contract but not the seeded menu catalog itself; the menu catalog can drift from the endpoint list.
+
 ### Auth (login) — resolved, see ADR-002
 - Backend: `D:\project-cps\New\cps-api` (NestJS). Its `/auth` contract is documented in `D:\project-cps\New\cps-api\API_ENDPOINTS.md` § 3 — **re-read that file before touching auth code**, it is the source of truth for request/response shapes, not this section.
 - `src/lib/api/auth.ts` types (`LoginSuccess`, `DepartmentSelectionRequired`, etc.) were hand-derived from `cps-api/src/modules/auth/auth.service.ts` (`buildAuthenticationResponse`) because the endpoint doc doesn't spell out the full success body. If cps-api's auth service changes shape, these types will drift silently (no shared schema) — re-check both files together.
@@ -197,6 +208,25 @@ The `<!-- BEGIN:nextjs-agent-rules -->` ... `<!-- END:nextjs-agent-rules -->` bl
 ## Recent Changes
 
 > Append newest at the top. Use `### YYYY-MM-DD — short title` for multi-file changes; one-liner for trivial edits.
+
+### 2026-09-02 — Sidebar now renders cps-api's real menu tree (supersedes same-day static-gate attempt)
+- User reported the previous static-gate approach (below, "Sidebar gated by real user permissions") didn't visibly change anything and asked explicitly to read the real API — correct: with only a SUPER_ADMIN test account available, that approach's gates never triggered, and it only covered 2 of cps-api's 21 real menu items anyway
+- Deleted `NavAccess`, `isNavItemVisible`, `filterNav`, `requiresSuperAdmin`, `anyPermission`, and the static `primaryNav` array from `src/lib/nav.ts` — replaced with `menuHref()` (backend path → local `/dashboard`-prefixed route) and `flattenMenus()`
+- Added `src/lib/menu-icons.ts`: `menuIcon(name)` (kebab-case → `LucideIcon`, explicit named-import map, ~29 entries covering everything in cps-api's current seed, `Circle` fallback for anything unmapped) and `resolveMenuIcons(menus)` (pre-resolves an entire tree to `ResolvedMenuNode[]` with real component references, called once via `useMemo` — resolving icons *inside* the component that renders `<Icon />` trips `react-hooks/static-components`)
+- Rewrote `src/components/layout/sidebar-nav.tsx`: recursive `MenuTreeItem` renders `session.menus` at arbitrary depth (verified live tree goes 3 levels deep under Materials) with per-node expand/collapse; auto-expands the chain to the active route, computed fresh each render (`autoOpenIds`, no `useEffect`+`setState` — avoids `react-hooks/set-state-in-effect`); user's manual toggles tracked separately in an `overrides` map so auto-expand never fights a manual collapse
+- Added `src/app/(dashboard)/dashboard/[...rest]/page.tsx` — catch-all placeholder ("this page isn't built yet") so real-but-unimplemented menu items stay inside the dashboard chrome instead of hitting the bare root `not-found.tsx`
+- Rewired prop threading: `(dashboard)/layout.tsx` now passes `menus={session.menus}` (was `access={...}`) through `DashboardShell` → `Sidebar`/`Topbar` → `SidebarNav`; `Topbar`'s breadcrumb now matches against the flattened real tree instead of the deleted static `primaryNav`
+- Verified live against real `superadmin` session: rendered HTML contains real Thai/English menu labels from the backend (แดชบอร์ด/Dashboard, จัดการเมนู/Menu Management, จัดการผู้ใช้/User Management, วัสดุ/Materials, สินค้า) — confirms the sidebar is genuinely reading cps-api's menu tree, not a hardcoded list. Also verified `GET /dashboard/menus` (a real permission-granted item with no page) returns `200` with the catch-all's "isn't built yet" text and the literal path `/menus`
+- `tsc --noEmit`, `eslint`, `next build` all pass — see ADR-004
+
+### 2026-09-02 — Sidebar gated by real user permissions
+- `src/lib/api/auth.ts`: typed `accessControl.menus`/`.permissions` (were `unknown[]`) as `MenuNode[]`/`string[]` — added `MenuNode` interface mirroring cps-api's `MenuTreeService#MenuResponse`
+- `src/lib/session.ts`: `CurrentSession` now also carries `menus` and `permissions` from `GET /auth/me`
+- `src/lib/nav.ts`: `NavItem` gained optional `requiresSuperAdmin`/`anyPermission` fields, plus `isNavItemVisible`/`filterNav`/`NavAccess` — see Conventions § Sidebar permissions and ADR-003 for why the sidebar keeps its existing routes instead of rendering cps-api's real menu tree
+- Threaded `access: NavAccess` (`{ isSuperAdmin, permissions }`) from `(dashboard)/layout.tsx` → `DashboardShell` → `Sidebar`/`Topbar` → `SidebarNav` (both the desktop sidebar and the mobile `Sheet` instance)
+- Gated: `Users` (SUPER_ADMIN only), `Products` (`PRODUCTS_VIEW`). Left ungated (always visible): Overview, Analytics, Orders, Settings — no real backend permission maps to these routes' current mock content
+- Verified: unit-tested `isNavItemVisible` against three synthetic access states (SUPER_ADMIN, no permissions, `PRODUCTS_VIEW`-only) — output matched expected visible-item sets exactly; live-verified against real `superadmin` session (all 6 items present in rendered HTML). No second seeded test account exists in cps-api to live-verify the non-admin gated path — verified by logic/unit test only
+- `tsc --noEmit`, `eslint`, `next build` all pass
 
 ### 2026-09-01 — Real logged-in user data replaces mock data in dashboard chrome
 - Added `src/lib/api/auth.ts#getMe(accessToken)` (`GET /auth/me`, same response shape as login) and `#logout(accessToken)` (`POST /auth/logout`)
@@ -256,6 +286,12 @@ The `<!-- BEGIN:nextjs-agent-rules -->` ... `<!-- END:nextjs-agent-rules -->` bl
 ---
 
 ## Architecture Decisions (ADR)
+
+### ADR-004 — Sidebar renders cps-api's real menu tree directly — 2026-09-02 (supersedes ADR-003)
+**Decision**: reversed ADR-003. `src/lib/nav.ts` no longer keeps a static, hand-gated route list. The sidebar (`src/components/layout/sidebar-nav.tsx`) now renders `GET /auth/me`'s real `accessControl.menus` tree recursively — labels, paths, icons, and visibility all come from the backend, already scoped to the active role. `menuHref()` prefixes backend paths with `/dashboard`; a catch-all page shows a placeholder for real menu items with no built page yet.
+**Reason**: ADR-003's static-list-plus-gate approach technically worked but didn't actually reflect the backend's permission model — it hardcoded just 2 gates (`Users`, `Products`) on a 6-item template list, so it looked unchanged for the only real test account (SUPER_ADMIN, which bypasses all gates) and would have stayed wrong for every other role too, since most of cps-api's 21 real menu items (Materials, BOMs, Master Data, Access Control, ...) had no representation in the static list at all. The user explicitly asked to read the real API rather than approximate it after finding ADR-003's result unconvincing.
+**Consequence**: sidebar labels/structure can change whenever cps-api's menu seed changes, with no code deploy needed here — that's intended. Most menu items currently point at the catch-all placeholder since their pages aren't built. `menu-icons.ts`'s icon map needs a manual update when a genuinely new icon name appears in the backend (rare; see Conventions § Sidebar permissions). `NavAccess`/`isNavItemVisible`/`filterNav`/`requiresSuperAdmin`/`anyPermission` from ADR-003 were deleted — don't resurrect them; permission gating for navigation now happens entirely server-side in cps-api's `MenuTreeService`.
+**Rule for future nav work**: don't hardcode a client-side permission→nav-item mapping again. If a menu item needs different visibility than what cps-api sends, fix it in cps-api's menu/permission seed data, not in this app.
 
 ### ADR-002 — Session tokens live in httpOnly cookies, set by a Server Action — 2026-09-01
 **Decision**: `POST /auth/login` and `POST /auth/select-department` are called from `src/app/login/actions.ts` (`"use server"`), which sets `accessToken`/`refreshToken` via `cookies()` from `next/headers`. The client-side login page never sees the token values, only a typed status result.

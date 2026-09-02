@@ -10,24 +10,31 @@ import { CommandPalette } from "@/components/layout/command-palette";
 import { NotificationsMenu } from "@/components/layout/notifications-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { UserMenu } from "@/components/layout/user-menu";
-import { primaryNav, secondaryNav } from "@/lib/nav";
-import type { AuthenticatedUser, CurrentDepartmentRole } from "@/lib/api/auth";
+import { secondaryNav, menuHref, flattenMenus } from "@/lib/nav";
+import type { AuthenticatedUser, CurrentDepartmentRole, MenuNode } from "@/lib/api/auth";
 
-function useBreadcrumb() {
+function useBreadcrumb(menus: MenuNode[]) {
   const pathname = usePathname();
-  const all = [...primaryNav, ...secondaryNav];
-  const match = all.find((item) => (item.href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(item.href)));
+  const all = [
+    ...flattenMenus(menus)
+      .filter((m) => m.path)
+      .map((m) => ({ label: m.name, href: menuHref(m.path) })),
+    ...secondaryNav,
+  ];
+  const match = all.find((item) => (item.href === "/dashboard" ? pathname === "/dashboard" : pathname === item.href || pathname.startsWith(item.href + "/")));
   return match?.label ?? "Overview";
 }
 
 export function Topbar({
   user,
   currentDepartmentRole,
+  menus,
 }: {
   user: AuthenticatedUser;
   currentDepartmentRole: CurrentDepartmentRole | null;
+  menus: MenuNode[];
 }) {
-  const crumb = useBreadcrumb();
+  const crumb = useBreadcrumb(menus);
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border bg-surface/90 px-4 backdrop-blur supports-[backdrop-filter]:bg-surface/70 sm:px-6">
@@ -41,7 +48,7 @@ export function Topbar({
           <div className="flex h-16 items-center border-b border-border px-4">
             <Logo />
           </div>
-          <SidebarNav />
+          <SidebarNav menus={menus} />
         </SheetContent>
       </Sheet>
 

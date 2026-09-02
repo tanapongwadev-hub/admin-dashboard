@@ -57,6 +57,22 @@ export interface CurrentDepartmentRole {
   updatedAt: string;
 }
 
+// Mirrors cps-api's MenuTreeService#buildMenuTree output (MenuResponse) —
+// see cps-api/src/modules/access-control/services/menu-tree.service.ts.
+// Already filtered server-side to what the current role/permissions allow.
+export interface MenuNode {
+  id: string;
+  code: string;
+  name: string;
+  nameEn: string;
+  path: string | null;
+  icon: string | null;
+  menuType: "MAIN" | "SUB" | "BUTTON";
+  sortOrder: number;
+  permissions: string[];
+  children: MenuNode[];
+}
+
 export interface LoginSuccess {
   success: true;
   message: string;
@@ -65,8 +81,10 @@ export interface LoginSuccess {
     user: AuthenticatedUser;
     currentDepartmentRole: CurrentDepartmentRole | null;
     accessControl: {
-      menus: unknown[];
-      permissions: unknown[];
+      menus: MenuNode[];
+      // Effective permission codes for the active assignment, e.g.
+      // "PRODUCTS_VIEW" — see cps-api/API_ENDPOINTS.md § 12.
+      permissions: string[];
       userDepartmentRoleId: string | null;
       departmentId: string | null;
       roleId: string | null;
