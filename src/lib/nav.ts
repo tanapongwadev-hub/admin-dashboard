@@ -15,18 +15,28 @@ export interface NavItem {
 // menu tree (GET /auth/me's accessControl.menus) — see Conventions §
 // Sidebar permissions in AGENTS.md and ADR-004.
 export const secondaryNav: NavItem[] = [
-  { label: "Settings", href: "/dashboard/settings", icon: Settings },
+  { label: "Settings", href: "/settings", icon: Settings },
 ];
 
-// cps-api menu paths are backend-relative (e.g. "/products", "/materials")
-// and don't include this app's "/dashboard" prefix — every real page lives
-// under (dashboard)/dashboard/*, guarded by the session check in
-// (dashboard)/layout.tsx. Menu items whose page hasn't been built yet fall
-// through to (dashboard)/dashboard/[...rest]/page.tsx (a placeholder), so
-// they still render inside the dashboard chrome instead of a bare 404.
+// cps-api menu paths map 1:1 to this app's real routes — every page lives
+// directly under the (dashboard) route group at its own top-level path
+// (e.g. "/products", "/materials"), guarded by the session check in
+// (dashboard)/layout.tsx. The dashboard home page is the one exception:
+// cps-api's own path for it is "/dashboard", which already matches.
+// Menu items whose page hasn't been built yet fall through to
+// (dashboard)/[...rest]/page.tsx (a placeholder), so they still render
+// inside the dashboard chrome instead of a bare 404.
+//
+// cps-api's Menu.path is a free-form, optional string (no format
+// validation in CreateMenuDto/UpdateMenuDto) editable by any SUPER_ADMIN.
+// Reject anything that isn't a same-origin absolute path — otherwise a
+// menu row could carry an absolute/protocol-relative URL (e.g.
+// "//evil.example") and render as a same-looking sidebar link that
+// silently navigates elsewhere.
+const SAME_ORIGIN_PATH = /^\/(?!\/)/;
 export function menuHref(path: string | null): string {
-  if (!path || path === "/dashboard") return "/dashboard";
-  return path.startsWith("/dashboard") ? path : `/dashboard${path}`;
+  if (path && SAME_ORIGIN_PATH.test(path)) return path;
+  return "/dashboard";
 }
 
 export function flattenMenus(menus: MenuNode[]): MenuNode[] {

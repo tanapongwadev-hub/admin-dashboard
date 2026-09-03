@@ -64,13 +64,13 @@ export function UserMenu({
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link href="/dashboard/settings"><User className="h-4 w-4" /> Profile</Link>
+          <Link href="/settings"><User className="h-4 w-4" /> Profile</Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href="/dashboard/settings?tab=billing"><CreditCard className="h-4 w-4" /> Billing</Link>
+          <Link href="/settings?tab=billing"><CreditCard className="h-4 w-4" /> Billing</Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href="/dashboard/settings"><Settings className="h-4 w-4" /> Settings</Link>
+          <Link href="/settings"><Settings className="h-4 w-4" /> Settings</Link>
         </DropdownMenuItem>
         <DropdownMenuItem>
           <LifeBuoy className="h-4 w-4" /> Support

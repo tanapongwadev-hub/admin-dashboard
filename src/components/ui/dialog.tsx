@@ -24,16 +24,36 @@ const DialogOverlay = React.forwardRef<
 ));
 DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
+const dialogSizes = {
+  lg: "sm:max-w-2xl",
+  xl: "sm:max-w-4xl",
+};
+
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, ...props }, ref) => (
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
+    // Only meaningful together with fullScreenOnMobile — the default
+    // (unset) path below is untouched from its original fixed max-w-lg.
+    size?: keyof typeof dialogSizes;
+    // Full-screen sheet on mobile, centered dialog from `sm:` up — opt-in so
+    // existing call sites (which expect the always-centered small dialog)
+    // are unaffected. Pure CSS breakpoint, no JS viewport detection/hydration risk.
+    fullScreenOnMobile?: boolean;
+  }
+>(({ className, children, size = "lg", fullScreenOnMobile = false, ...props }, ref) => (
   <DialogPrimitive.Portal>
     <DialogOverlay />
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-surface shadow-xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 max-h-[90vh] overflow-y-auto",
+        fullScreenOnMobile
+          ? cn(
+              "fixed z-50 flex flex-col border-border bg-surface shadow-xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+              "inset-0 h-dvh w-full max-h-none overflow-y-auto border-0 rounded-none",
+              "sm:inset-1/2 sm:h-auto sm:max-h-[90vh] sm:w-full sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:border data-[state=closed]:sm:zoom-out-95 data-[state=open]:sm:zoom-in-95",
+              dialogSizes[size]
+            )
+          : "fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-surface shadow-xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 max-h-[90vh] overflow-y-auto",
         className
       )}
       {...props}

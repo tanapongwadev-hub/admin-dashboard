@@ -58,16 +58,16 @@ export function CommandPalette() {
 
           <Command.Group heading="Navigate" className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-fg-muted">
             <Item icon={LayoutGrid} onSelect={() => go("/dashboard")}>Overview</Item>
-            <Item icon={LineChart} onSelect={() => go("/dashboard/analytics")}>Analytics</Item>
-            <Item icon={Users} onSelect={() => go("/dashboard/users")}>Users</Item>
-            <Item icon={Package} onSelect={() => go("/dashboard/products")}>Products</Item>
-            <Item icon={ShoppingCart} onSelect={() => go("/dashboard/orders")}>Orders</Item>
-            <Item icon={Settings} onSelect={() => go("/dashboard/settings")}>Settings</Item>
+            <Item icon={LineChart} onSelect={() => go("/analytics")}>Analytics</Item>
+            <Item icon={Users} onSelect={() => go("/users")}>Users</Item>
+            <Item icon={Package} onSelect={() => go("/products")}>Products</Item>
+            <Item icon={ShoppingCart} onSelect={() => go("/orders")}>Orders</Item>
+            <Item icon={Settings} onSelect={() => go("/settings")}>Settings</Item>
           </Command.Group>
 
           <Command.Group heading="Actions" className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-fg-muted">
-            <Item icon={Plus} onSelect={() => go("/dashboard/users?new=1")}>Invite user</Item>
-            <Item icon={Plus} onSelect={() => go("/dashboard/products?new=1")}>Add product</Item>
+            <Item icon={Plus} onSelect={() => go("/users?new=1")}>Invite user</Item>
+            <Item icon={Plus} onSelect={() => go("/products?new=1")}>Add product</Item>
             <Item
               icon={resolvedTheme === "dark" ? Sun : Moon}
               onSelect={() => {

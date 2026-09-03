@@ -1,9 +1,9 @@
 // Mock data for the dashboard home page only — scoped separately from
 // src/lib/data.ts (which is e-commerce-shaped mock data still used by
-// /dashboard/{products,users,orders}). This file models what the real
-// cps-api domain actually is: a factory materials/production floor, not a
-// storefront. See AGENTS.md § Conventions › API for why pages still render
-// mock data instead of the real endpoints.
+// /{products,users,orders}). This file models what the real cps-api domain
+// actually is: a factory materials/production floor, not a storefront. See
+// AGENTS.md § Conventions › API for why pages still render mock data
+// instead of the real endpoints.
 
 function seededRandom(seed: number) {
   let value = seed;

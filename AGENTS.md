@@ -28,6 +28,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 | **Dev** | `pnpm dev` → http://localhost:3000 |
 | **Build** | `pnpm build` |
 | **Lint** | `pnpm lint` (ESLint flat config) |
+| **Test** | `pnpm test` (Node test runner through `tsx`) |
 | **Typecheck** | `npx tsc --noEmit -p tsconfig.json` |
 
 ## Stack
@@ -47,7 +48,9 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 | Toast | `sonner` |
 | Theme | `next-themes` |
 | Utility | `clsx`, `tailwind-merge`, `cmdk` |
+| Drag-and-drop | `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities` (added for the menu-management tree editor — see Conventions § Menu management) |
 | Dates | `date-fns` |
+| Tests | Node test runner + `tsx` |
 
 ## Project Structure
 
@@ -65,18 +68,24 @@ src/
 │     ├─ layout.tsx              # 50/50: dark brand panel | form area
 │     ├─ register/page.tsx
 │     └─ forgot-password/page.tsx
-└─ (dashboard)/                  # route group — authed area
+└─ (dashboard)/                  # route group — authed area; every page here is a real top-level route (see ADR-005)
    ├─ layout.tsx                 # server; getCurrentSession() + redirect("/login") guard, feeds DashboardShell
    ├─ actions.ts                 # "use server"; logoutAction — clears cookies, best-effort POST /auth/logout
-   └─ dashboard/
-      ├─ page.tsx                # dashboard home — greeting uses real session, not mock
-      ├─ loading.tsx             # route-level Suspense fallback for /dashboard
-      ├─ [...rest]/page.tsx      # catch-all placeholder for real-permission menu items with no page yet
-      ├─ analytics/page.tsx
-      ├─ orders/page.tsx
-      ├─ products/page.tsx
-      ├─ settings/page.tsx
-      └─ users/page.tsx
+   ├─ [...rest]/page.tsx         # catch-all placeholder for real-permission menu items with no page yet
+   ├─ dashboard/
+   │  ├─ page.tsx                # dashboard home (URL /dashboard — the one route that keeps this segment)
+   │  └─ loading.tsx             # route-level Suspense fallback for /dashboard
+   ├─ analytics/page.tsx         # URL /analytics
+   ├─ orders/page.tsx            # URL /orders
+   ├─ products/page.tsx          # URL /products
+   ├─ settings/page.tsx          # URL /settings
+   ├─ users/page.tsx             # URL /users
+   ├─ menus/                     # URL /menus — SUPER_ADMIN-only drag-and-drop menu tree editor, see Conventions § Menu management
+   │  ├─ page.tsx                 # server; SUPER_ADMIN gate + initial GET /menus/management-tree fetch
+   │  └─ actions.ts               # "use server"; saveMenuOrderAction/refreshMenuTreeAction (PATCH /menus/reorder)
+   └─ materials/pc/               # URL /materials/pc — real CRUD against cps-api, see Conventions § Materials PC
+      ├─ page.tsx                 # server; MATERIAL_VIEW gate + list/lookups fetch, reads page/search/status from searchParams
+      └─ actions.ts               # "use server"; create/update/deactivate/restore, each revalidatePath("/materials/pc")
 ```
 
 ```
@@ -85,15 +94,27 @@ src/
 │  ├─ ui/                        # shadcn-style primitives (Button, Input, Label, Card, Table, Sheet, Dialog, Tabs, ...)
 │  ├─ layout/                    # Logo, command palette, app shell
 │  ├─ dashboard/
+│  ├─ menus/                     # menu-management drag-and-drop tree editor (dnd-kit) — see Conventions § Menu management
+│  │  ├─ menu-tree-editor.tsx     # "use client"; DndContext wiring, save/reset, staged-changes state
+│  │  └─ menu-tree-row.tsx        # sortable row + DragOverlay preview
+│  ├─ materials-pc/              # /materials/pc CRUD — see Conventions § Materials PC
+│  │  ├─ material-pc-client.tsx   # orchestrates filters/table/dialogs, calls Server Actions, router.refresh()
+│  │  ├─ material-pc-filters.tsx  # search (debounced) + active/inactive/all pills, both drive URL searchParams
+│  │  ├─ material-pc-table.tsx    # list + pagination + row actions (edit, disable/enable)
+│  │  ├─ material-pc-form-dialog.tsx    # create/edit — responsive Dialog (full-screen on mobile, centered on desktop)
+│  │  └─ material-pc-status-dialog.tsx  # disable/enable confirmation, wraps ui/confirm-dialog
 │  └─ orders/  products/  users/  settings/
 ├─ hooks/
 └─ lib/                          # utils (cn), helpers, types, mock data
    ├─ nav.ts                     # menuHref()/flattenMenus() + secondaryNav (static, account-level only) — see Conventions § Sidebar permissions
    ├─ menu-icons.ts              # kebab-case cps-api icon name → LucideIcon map, resolveMenuIcons()
+   ├─ menu-tree.ts               # pure tree algorithms for the D&D editor — flatten/project/apply-move, framework-agnostic
    ├─ session.ts                 # getCurrentSession() — server-only, React.cache-wrapped GET /auth/me, returns menus + permissions
    └─ api/                       # REST client — server-only, see Conventions § API
       ├─ client.ts               # apiFetch<T>() + ApiError, reads API_BASE_URL/API_AUTH_TOKEN
       ├─ auth.ts                 # login()/selectDepartment()/getMe()/logout() — mirrors cps-api /auth contract; MenuNode type
+      ├─ menus.ts                # getManagementTree()/reorderMenus() — mirrors cps-api's undocumented /menus management contract
+      ├─ materials.ts            # listMaterials()/getMaterialLookups()/create/update/deactivate/restore — real cps-api /materials
       ├─ users.ts  products.ts  orders.ts   # typed resource fetchers
       └─ index.ts                # barrel export
 ```
@@ -137,6 +158,7 @@ Tokens live in `src/app/globals.css` (`:root` + `.dark`). Use the Tailwind utili
 - Route groups `(name)/` are for **layout sharing** — they do not affect URLs.
 - A page that needs its own full-bleed layout (no parent chrome) lives at the top level (e.g. `src/app/login/`).
 - `(auth)/layout.tsx` provides the testimonial split — only routes that want that chrome stay inside.
+- **Resolved 2026-09-03, see ADR-005**: pages under `(dashboard)/` are real top-level routes (`/products`, `/users`, `/menus`, ...) matching cps-api's own menu `path` values exactly — not nested under a `/dashboard/*` prefix. `/dashboard` itself is the one route that keeps that segment (it's cps-api's own path for the dashboard menu item too). Don't add a new dashboard page under a `dashboard/` subfolder — put it directly under `(dashboard)/` at its own path.
 
 ### Dashboard shell
 - Dashboard chrome uses a **floating-box app shell**: `DashboardShell` owns the full `h-dvh` viewport and outer responsive gap/padding; desktop `Sidebar`, `Topbar`, and the page-content scroller are separate rounded bordered surfaces.
@@ -156,14 +178,36 @@ Tokens live in `src/app/globals.css` (`:root` + `.dark`). Use the Tailwind utili
 - One file per resource (`users.ts`, `products.ts`, `orders.ts`), each returning the existing domain types from `src/lib/types.ts` — the API layer must not introduce parallel/duplicate types.
 - `src/lib/data.ts` (mock generator) is untouched and still what pages currently render (except `/login`, see below). Swapping a page from mock data to `src/lib/api/*` is a separate, explicit task per page — don't do it silently as a side effect of unrelated work.
 
-### Sidebar permissions — resolved, see ADR-004 (supersedes ADR-003)
+### Sidebar permissions — resolved, see ADR-004 (supersedes ADR-003) and ADR-005 (routes)
 - **The sidebar is now driven directly by cps-api's real menu tree**, not a static list. `src/lib/session.ts#getCurrentSession()` exposes `menus: MenuNode[]` from `GET /auth/me`'s `accessControl.menus` — already filtered server-side to the active role's real permissions (see `cps-api/src/modules/access-control/services/menu-tree.service.ts`). `src/components/layout/sidebar-nav.tsx` renders that tree recursively (arbitrary depth, expand/collapse per node).
-- `src/lib/nav.ts#menuHref(path)` maps a backend path (e.g. `/materials`, `/products`) to a local route by prefixing with `/dashboard` (backend paths don't include it). `/dashboard` itself maps to `/dashboard`, not `/dashboard/dashboard`.
-- `src/app/(dashboard)/dashboard/[...rest]/page.tsx` is a catch-all placeholder ("this page isn't built yet") for real, permission-granted menu items that don't have a page implemented — keeps the dashboard chrome instead of falling through to the bare root `not-found.tsx`. Only two real backend paths currently land on an actually-built page: `/dashboard` (real dashboard) and, coincidentally, `/dashboard/products` / `/dashboard/users` (still mock content, not wired to the real API — see below).
+- `src/lib/nav.ts#menuHref(path)` maps a backend path **directly** to a local route — cps-api's paths (`/materials`, `/products`, `/dashboard`, ...) already match this app's real top-level routes 1:1 (see ADR-005), so there's no prefixing left to do; `menuHref` only substitutes `/dashboard` when a menu node has no `path` at all.
+- `src/app/(dashboard)/[...rest]/page.tsx` is a catch-all placeholder ("this page isn't built yet") for real, permission-granted menu items that don't have a page implemented — keeps the dashboard chrome instead of falling through to the bare root `not-found.tsx`. Only three real backend paths currently land on an actually-built page: `/dashboard` (real dashboard), `/products`, and `/users` (the latter two still mock content, not wired to the real API — see below).
 - `src/lib/menu-icons.ts#menuIcon(name)` maps cps-api's kebab-case `Menu.icon` (e.g. `"layout-dashboard"`) to a Lucide component via an explicit named-import map (not a blanket `import *`, to keep the bundle lean) — unmapped names fall back to a plain dot. **Add a new entry here whenever cps-api seeds a new menu icon**, or it'll render as a generic dot. `resolveMenuIcons()` pre-resolves an entire tree once (via `useMemo` in `SidebarNav`) — icons are intentionally resolved as data *before* being passed as props, not looked up inline inside the component that renders `<Icon />`, because the latter trips the React Compiler's "components created during render" lint rule (`react-hooks/static-components`).
-- `secondaryNav` in `src/lib/nav.ts` (currently just `Settings`) stays a small static, always-visible list for account-level items with no cps-api menu equivalent — not permission-gated, since every logged-in user can reach their own settings regardless of role.
-- **Known gap, unchanged from before**: a menu item being visible does not mean its page calls the real API — `/dashboard/products` and `/dashboard/users` still render `src/lib/data.ts` mock content regardless of what permission actually let the user click there. Wiring those pages to `src/lib/api/products.ts`/`users.ts` is a separate task.
+- `secondaryNav` in `src/lib/nav.ts` (currently just `Settings`, href `/settings`) stays a small static, always-visible list for account-level items with no cps-api menu equivalent — not permission-gated, since every logged-in user can reach their own settings regardless of role.
+- **Known gap, unchanged from before**: a menu item being visible does not mean its page calls the real API — `/products` and `/users` still render `src/lib/data.ts` mock content regardless of what permission actually let the user click there. Wiring those pages to `src/lib/api/products.ts`/`users.ts` is a separate task.
 - Before wiring a new page to a real cps-api module: check `resolveMenuIcons`/the live tree for the exact `code`/`path` cps-api actually sends (don't guess) — `API_ENDPOINTS.md` documents the REST contract but not the seeded menu catalog itself; the menu catalog can drift from the endpoint list.
+
+### Menu management (drag-and-drop tree editor) — `/menus`
+- Backend contract for this page is **not in `API_ENDPOINTS.md`** (that doc's § 4.4 only lists the basic `/menus` CRUD routes) — it lives entirely in `cps-api/src/modules/menus/{menus.controller,menus.service,menu-tree-ordering}.ts`. Re-read those three files before touching this feature; don't rely on the endpoint doc here.
+- Two purpose-built endpoints drive it: `GET /menus/management-tree` → `{ version, menus: ManagementMenuNode[] }` (unfiltered — includes inactive/hidden menus, unlike `/menus/tree`), and `PATCH /menus/reorder` → `{ version, items: [{id, parentId, sortOrder}, ...] }`. Both are **SUPER_ADMIN only** (`@Roles(SUPER_ADMIN)` on the whole controller) — `src/app/(dashboard)/menus/page.tsx` gates on `session.user.isSuperAdmin` and shows a friendly message instead of letting the page hit a 403.
+- The reorder endpoint uses **optimistic concurrency**: `version` is a sha256 hash of every menu row's `(id, parentId, sortOrder, menuType, updatedAt)`, computed server-side. A stale `version` → `409`; the client must show that as a conflict and refetch, not retry blindly (`saveMenuOrderAction` in `menus/actions.ts` does this, calling `refreshMenuTreeAction` on `409`).
+- **`items` must include every menu record, not just the ones that moved** — the backend 400s on a partial set (`validateAndProjectMenuLayout` in `menu-tree-ordering.ts`). `src/lib/menu-tree.ts#toReorderItems()` always derives the full payload from the complete flattened tree.
+- Backend validation rules the client should avoid violating (it's re-validated server-side either way, but a client that ignores these just produces confusing 400s): sibling `sortOrder` must be contiguous 0-based per parent, max nesting depth is `cps-api`'s `MAX_MENU_DEPTH = 4` (mirrored client-side as `MAX_FLAT_DEPTH = 3`, 0-indexed), no cycles, and a `BUTTON`-type menu can't have children. `src/lib/menu-tree.ts#getDragProjection()` clamps the live drag preview to these constraints (see its `canHaveChildren` check) so the UI doesn't let you drop somewhere the API would reject.
+- The drag algorithm is the standard dnd-kit "sortable tree" pattern: `flattenMenuTree()` depth-first-flattens the tree (so a node and its descendants are always a contiguous array run), horizontal drag offset (`event.delta.x` ÷ `INDENT_WIDTH`) projects a new depth/parent per `getDragProjection()`, and `applyMoveNode()` rebuilds the full flattened order on drop — including reinserting the dragged node's hidden-during-drag descendant subtree right after it, depth-shifted by the same delta. Projection must inspect neighbours after moving the active row to its `overIndex`; using the source index retains the old `parentId` on cross-parent drops and makes saved moves appear to revert. It also subtracts `getSubtreeDepth()` from the allowed maximum so descendants cannot exceed level 4. When that subtree-safe maximum is below the insertion boundary's required minimum depth, the projection is invalid and the drop must be rejected rather than lowering the minimum (which would corrupt depth-first subtree boundaries). These are pure functions in `src/lib/menu-tree.ts`, deliberately kept framework-agnostic and separate from the dnd-kit wiring in `menu-tree-editor.tsx`.
+- Always pass a deterministic `id` to `DndContext` on server-rendered pages. dnd-kit's fallback `useUniqueId()` uses a module-level counter that persists across server requests, so omitting the ID makes the server's `aria-describedby` drift from the browser's initial value and triggers a hydration mismatch. The menu editor uses `menu-tree-dnd`; keep it unique within the page.
+- Icons: same "resolve as data, not inline" rule as the sidebar (see above) — `MenuTreeRow`/`MenuTreeDragPreview` receive `Icon: LucideIcon` as a prop resolved by the parent's `useMemo`, they never call `menuIcon()` themselves.
+- Edits are staged client-side (`items` state) until "Save changes" — no auto-save per drag, since every save must submit the complete, valid arrangement. "Reset" reverts to the last-saved snapshot.
+- **Known gap**: this page only reorders/reparents existing menus — no create/rename/delete/edit-permissions UI yet. That's `POST /menus`, `PATCH /menus/:id` (non-reorder fields), `DELETE /menus/:id` — separate task if needed.
+
+### Materials PC (CRUD) — `/materials/pc` — first real (non-mock) CRUD page, see ADR-006
+- `/materials/pc` is **not a distinct cps-api module** — cps-api's `MaterialsController` is a single generic `/materials` REST resource (`cps-api/src/modules/materials/{materials.controller,materials.service,dto/*}.ts`, documented in `API_ENDPOINTS.md` § 6). "PC" is one value of the `type` field (`PC | OF | OF_MAT`). This page always sends/filters `type: "PC"` — it's a *view* over the shared materials table, not its own backend concept. Don't go looking for a "materials-pc" controller in cps-api; there isn't one.
+- **This is the first page in the app wired to real cps-api data with real mutations** (menus was real data too, but reorder-only; this is full create/update/soft-delete/restore). Treat it as the reference pattern for wiring up the next mock page (Users, Products, Orders): Server Component fetches list + lookups directly (`src/lib/api/materials.ts`), filters live in the URL (`?page=&search=&status=`) so they're bookmookable and drive the server refetch, mutations go through Server Actions (`materials/pc/actions.ts`) that call `revalidatePath` on success, and the client only holds UI state (which dialog is open, for which row) — never a client-side copy of the list that could drift from the server.
+- **Soft delete, not hard delete**: `DELETE /materials/:id` (called via `deactivateMaterial`) sets `isActive: false` server-side; the row is never removed. There's a dedicated `PATCH /materials/:id/restore`. The UI must never call this "Delete" — it's "Disable" (with a confirm dialog) and "Enable" (also confirmed, non-destructively) for inactive rows. This mirrors a UX pattern already established in a separate sibling app (`cps-app`) for the same backend resource — keep using it for any future soft-delete resource (units, suppliers, etc. all follow the same `isActive`/restore shape per `API_ENDPOINTS.md` § 5.1).
+- **Update requires optimistic concurrency**: `UpdateMaterialDto.updatedAt` is a *required* ISO8601 field, not optional — the edit form must carry the row's current `updatedAt` forward and resubmit it; a stale value 409s. `material-pc-form-dialog.tsx` reads `material.updatedAt` at submit time; `materials/pc/actions.ts#errorResult()` maps a 409 to a "this was updated elsewhere, refresh" toast rather than a generic error. Don't make `updatedAt` optional or drop it from the payload.
+- **Responsive dialog**: `src/components/ui/dialog.tsx#DialogContent` gained two *opt-in* props — `size` (`"lg" | "xl"`, only meaningful with the prop below) and `fullScreenOnMobile` — that make it a full-screen sheet below the `sm:` breakpoint and a centered sized dialog from `sm:` up, pure CSS (Tailwind breakpoint classes), no JS viewport detection. Existing call sites (`product-form-dialog.tsx`, `user-form-dialog.tsx`, `confirm-dialog.tsx`) don't pass either prop and are byte-for-byte unaffected — the default path is untouched from before this change. Use `fullScreenOnMobile` for any new dialog with enough fields that a small mobile viewport needs the full screen (i.e. most create/edit forms); leave simple confirm dialogs on the default centered-always behavior.
+- `src/components/ui/confirm-dialog.tsx` gained an optional `variant?: "danger" | "default"` prop (default `"danger"`, so every existing call site is unaffected) — use `"default"` for a non-destructive confirmation like "Enable this material?" so the icon/button aren't alarming red for a reversible, positive action.
+- No image upload in this pass — `POST /materials/images` + `imagePath` staging/promotion exists on the backend (see `API_ENDPOINTS.md` § 6) but wasn't asked for and adds real scope (multipart upload, staged-path promotion, cleanup-on-failure); the form omits the image field entirely rather than half-implementing it. Add it as a separate task if needed.
+- Permission gating: real `MATERIAL_VIEW`/`CREATE`/`UPDATE`/`DELETE` codes (not the dotted `MATERIALS_PC_MANAGEMENTS.*` strings cps-api's own menu-permission seed uses for *display* — those are unrelated to what the `PermissionGuard` actually checks; the controller guards on the plain codes, confirmed by reading `material-permissions.ts` directly). `page.tsx` gates viewing; `MaterialPcClient` hides Add/Edit and Disable/Enable controls per `MATERIAL_CREATE`/`UPDATE` and `MATERIAL_DELETE` respectively, mirroring the backend's own per-route permission split — but note the backend re-checks on every call regardless, this is UX only, not the security boundary.
 
 ### Auth (login) — resolved, see ADR-002
 - Backend: `D:\project-cps\New\cps-api` (NestJS). Its `/auth` contract is documented in `D:\project-cps\New\cps-api\API_ENDPOINTS.md` § 3 — **re-read that file before touching auth code**, it is the source of truth for request/response shapes, not this section.
@@ -215,6 +259,50 @@ The `<!-- BEGIN:nextjs-agent-rules -->` ... `<!-- END:nextjs-agent-rules -->` bl
 ## Recent Changes
 
 > Append newest at the top. Use `### YYYY-MM-DD — short title` for multi-file changes; one-liner for trivial edits.
+
+### 2026-09-03 — Materials PC: first real CRUD page (list, create, edit, disable/restore)
+- User asked for CRUD on `/materials/pc` — dialog on desktop, full-screen on mobile — plus the standard soft-delete UX (backend already does soft delete + restore): active/inactive/all filter, "Delete" relabeled "Disable" with confirmation, disabled rows get an "Enable" action. Explicitly asked to follow "this pattern" (soft-delete-as-disable, not hard delete)
+- Researched cps-api directly rather than trusting `API_ENDPOINTS.md` alone (it's accurate here, but confirmed by reading `materials.controller.ts`/`materials.service.ts`/`dto/*.ts`): `/materials/pc` is **not a separate backend module** — it's the generic `/materials` resource filtered to `type: "PC"`. Also found a sibling app, `cps-app` (`D:\project-cps\New\cps-app`), that already implements a near-identical page against the same backend — read its UX/copy (status pills, disable/enable confirm-dialog wording, optimistic-concurrency handling) as the reference pattern, but deliberately did NOT copy its data layer (React Query) — see ADR-006
+- Added `src/lib/api/materials.ts` (list/lookups/get/create/update/deactivate/restore, typed to the exact backend response shape read from `materials.service.ts#mapSuppliers`/`mapLookup`) and `src/app/(dashboard)/materials/pc/{page.tsx,actions.ts}` (Server Component + Server Actions, filters live in `searchParams`, mutations `revalidatePath`)
+- Added `src/components/materials-pc/{material-pc-client,material-pc-filters,material-pc-table,material-pc-form-dialog,material-pc-status-dialog}.tsx`
+- Extended two shared primitives, both backward-compatible (existing call sites pass neither new prop and are unaffected): `ui/dialog.tsx#DialogContent` gained `size`/`fullScreenOnMobile` (pure CSS breakpoint, full-screen sheet below `sm:`, centered dialog from `sm:` up) for the responsive create/edit dialog; `ui/confirm-dialog.tsx` gained `variant?: "danger" | "default"` so the "Enable" confirmation isn't styled as a destructive red action
+- Added `src/components/ui/textarea.tsx` (didn't exist yet; specification/description fields needed it)
+- `UpdateMaterialDto.updatedAt` is a *required* field server-side (optimistic concurrency, not optional like most other fields) — the edit form threads `material.updatedAt` through on every save; a 409 is mapped to a specific "updated elsewhere, refresh" toast, not a generic error
+- Gated on the real `MATERIAL_VIEW/CREATE/UPDATE/DELETE` permission codes (confirmed via `material-permissions.ts`, not the dotted `MATERIALS_PC_MANAGEMENTS.*` strings that turned out to be a `cps-app`-only display naming unrelated to what the backend guard actually checks)
+- Verified live against the real backend (browser tool was unavailable this pass, so verified via `curl` with a real `superadmin` session cookie): `/materials/pc` returns 200, renders a real material code from the database (`MAT-2026-001`), the status filter pills, and the Add material button; no error boundary text. Did not click-test the dialog/mutations interactively this pass — do that before relying on this in prod
+- `tsc --noEmit`, `eslint`, `pnpm test` (4/4, unaffected), `next build` all pass — see ADR-006
+
+### 2026-09-03 — Structure/risk audit: closed a stored-open-redirect regression, removed debug cruft
+- Ran a security-review pass on the routing restructure. Found that `src/lib/nav.ts#menuHref()`'s simplification (`return path || "/dashboard"`) dropped the old code's incidental side effect of neutralizing an absolute/protocol-relative `path` (cps-api's `Menu.path` is a free-form, unvalidated string editable by any SUPER_ADMIN — `CreateMenuDto`/`UpdateMenuDto` have no format constraint on it). A menu row with `path: "//evil.example"` would previously always get glued onto `/dashboard...` (harmless garbage); after the simplification it would render as a same-looking sidebar/breadcrumb link that silently navigates off-site. Low severity (requires a compromised/malicious SUPER_ADMIN) and reported at only 5/10 confidence by the review, but the fix is a one-line, zero-behavior-change-for-legitimate-data regex guard, so applied it anyway: `menuHref()` now requires a same-origin absolute path (`/^\/(?!\/)/`) and falls back to `/dashboard` otherwise
+- Removed `me.json` — a leftover debug artifact from an earlier troubleshooting session (a real `GET /auth/me` response dump saved to the repo root while diagnosing the `management-tree` 500). Untracked, never committed, but shouldn't have been left on disk
+- Verified: `tsc --noEmit`, `eslint`, `pnpm test` (4/4), `next build` all pass after the `menuHref` change
+- No other findings from the review: `/menus`'s SUPER_ADMIN gate is UI-only by design (cps-api's `MenusController` independently enforces `@Roles(SUPER_ADMIN)` on every route including `management-tree`/`reorder`, so the frontend check isn't a real security boundary and doesn't need to be); `PATCH /menus/reorder` payloads are fully re-validated server-side (`menu-tree-ordering.ts#validateAndProjectMenuLayout` rejects unknown/missing/duplicate ids and recomputes `version` itself); `menus/actions.ts` never exposes the `accessToken` to client-visible state; the `[...rest]` catch-all renders its path through ordinary auto-escaped JSX, no unsafe sink
+
+### 2026-09-03 — Dropped the `/dashboard` URL prefix from every page except the dashboard itself
+- User asked to cut `/dashboard` out of every route's path except the dashboard page. Moved `(dashboard)/dashboard/{analytics,orders,products,settings,users,menus,[...rest]}` up to `(dashboard)/{analytics,orders,products,settings,users,menus,[...rest]}` — new URLs: `/analytics`, `/orders`, `/products`, `/settings`, `/users`, `/menus`. `(dashboard)/dashboard/{page.tsx,loading.tsx}` stayed put — `/dashboard` is cps-api's own path for that menu item too, so it was already correct
+- `src/lib/nav.ts#menuHref()` simplified to return cps-api's `path` unmodified (previously prefixed non-`/dashboard` paths with `/dashboard`) — see ADR-005
+- Updated every hardcoded `/dashboard/...` link to match: `secondaryNav` (Settings → `/settings`), `command-palette.tsx` (all nav/action items), `user-menu.tsx` (Profile/Billing/Settings), `recent-documents.tsx` ("View all documents" → `/materials`)
+- Fixed `src/components/menus/menu-tree-editor.tsx`'s import of `menus/actions` to the new path
+- No relative imports existed in any moved page (`@/...` alias only), so the moves themselves needed no import fixes — verified with a grep before moving, not just after
+- Verified: full grep sweep for lingering `/dashboard/` references after the move (found and fixed all real hits; remaining matches were `@/components/dashboard/*` import paths and one stale code comment, unrelated to routing). Clean `.next` rebuild confirms the new flat route list (`/analytics`, `/dashboard`, `/menus`, `/orders`, `/products`, `/settings`, `/users`, `/[...rest]`)
+- `tsc --noEmit`, `eslint`, `pnpm test` (4/4 pass, unaffected by the move), `next build` all pass. Verified live against a real `superadmin` session: sidebar → Menu Management now lands on `/menus` (not `/dashboard/menus`) and renders the real cps-api tree correctly; command palette → Users lands on `/users`; Settings link lands on `/settings`; `/dashboard` itself still resolves to the dashboard home. Also confirmed in this pass that the `GET /menus/management-tree` 500 blocking the previous session's work is gone — the backend was restarted since then and the drag-and-drop tree editor now loads real data end-to-end
+
+### 2026-09-03 — Menu editor hydration attributes stabilized
+- Fixed the `/menus` React hydration warning by giving its dnd-kit `DndContext` a deterministic ID, preventing request-persistent server counters from producing a different `aria-describedby` than the client. Added an SSR regression that renders the editor twice and verifies the drag instruction ID remains stable.
+
+### 2026-09-03 — Menu reorder saves the destination parent correctly
+- Fixed `/dashboard/menus` cross-parent drag saves: projection previously inspected the active row's neighbours at its source index, so the UI moved the row but the reorder payload retained its old `parentId`; after reload the menu returned to its original branch. `getDragProjection()` now projects against `overIndex` before deriving depth/parent.
+- Added subtree-height clamping so moving a branch cannot push a descendant beyond cps-api's maximum level 4 and produce a backend validation failure; structurally impossible insertion boundaries are rejected instead of corrupting the flattened subtree order.
+- Added `pnpm test` using the Node test runner through `tsx`, with regressions for cross-parent payloads, maximum-depth branches, and conflicting insertion boundaries. Verified test, typecheck, lint, and production build.
+
+### 2026-09-02 — Menu management: drag-and-drop nested tree editor
+- User asked for the Menu Management page (`/dashboard/menus`, previously the generic "isn't built yet" catch-all) to support drag-and-drop tree reordering, sourced from cps-api. Read `cps-api/src/modules/menus/{menus.controller,menus.service,menu-tree-ordering}.ts` directly since `API_ENDPOINTS.md` doesn't document this contract at all — found a purpose-built `GET /menus/management-tree` + `PATCH /menus/reorder` pair with optimistic concurrency and full server-side layout validation (see new Conventions § Menu management for the details)
+- Added dependency: `@dnd-kit/core` + `@dnd-kit/sortable` + `@dnd-kit/utilities` (accessible, actively-maintained; the modern standard over deprecated `react-beautiful-dnd`). Installed `@dnd-kit/modifiers` too but never ended up using it — removed again rather than leave a dead dependency
+- Added `src/lib/api/menus.ts` (`getManagementTree`, `reorderMenus`, types) and `src/lib/menu-tree.ts` (pure, framework-agnostic tree algorithms: `flattenMenuTree`, `getDragProjection`, `applyMoveNode`, `toReorderItems`, `collectDescendantIds` — the standard dnd-kit "sortable tree" depth-projection pattern, adapted to also respect cps-api's `BUTTON`-menus-can't-have-children and max-depth-4 rules)
+- Added `src/components/menus/{menu-tree-editor,menu-tree-row}.tsx` and `src/app/(dashboard)/dashboard/menus/{page,actions}.tsx`. Page is SUPER_ADMIN-gated (mirrors the controller's `@Roles(SUPER_ADMIN)`) with a friendly message instead of a raw 403. Edits are staged client-side and require an explicit "Save changes" (server validates the complete arrangement, not incremental diffs) with "Reset" to revert and a conflict→refetch flow on stale `version`
+- Hit the same `react-hooks/static-components` icon-resolution issue as the sidebar (see ADR-004) — fixed the same way: `MenuTreeRow`/`MenuTreeDragPreview` receive `Icon: LucideIcon` as a prop resolved by the parent's `useMemo`, never call `menuIcon()` themselves
+- **Blocked on a live backend bug, not a frontend issue**: `GET /menus/management-tree` 500s on the currently-running cps-api dev server. Isolated the cause — ran the exact compiled `findManagementTree()` logic (`buildManagementTree`/`computeMenuTreeVersion` from `dist/modules/menus/menu-tree-ordering.js`) standalone against the same live database via a throwaway script; it succeeded (21 root menus, valid version hash), so the data and business logic are both fine. The other route on the same controller (`GET /menus/tree`) also returns 200 normally. This points to the *running* dev server process having a stale/broken hot-reload for the newer `management-tree`/`reorder` routes, not a code defect — restarting that process should resolve it. Did not restart it myself (don't know how it was started or what's in that terminal) — **ask the user to restart the cps-api dev server**, then re-verify this feature live
+- `tsc --noEmit`, `eslint`, `next build` all pass. Not yet verified live end-to-end (blocked by the above) — do that before considering this done
 
 ### 2026-09-02 — Sidebar scrollbar indicator hidden
 - Hid only `SidebarNav`'s visual scrollbar on desktop and mobile using `scrollbar-width: none` with a WebKit fallback; the menu remains vertically scrollable and the page-content scrollbar is unchanged. Verified with `npx tsc --noEmit -p tsconfig.json`, `pnpm lint` (0 errors; the same 3 pre-existing React Compiler warnings), `pnpm build`, and confirmed both scrollbar rules are present in the production CSS.
@@ -314,6 +402,18 @@ The `<!-- BEGIN:nextjs-agent-rules -->` ... `<!-- END:nextjs-agent-rules -->` bl
 ---
 
 ## Architecture Decisions (ADR)
+
+### ADR-006 — First real CRUD page wired end-to-end: Server Components + Server Actions, no client-side data layer — 2026-09-03
+**Decision**: `/materials/pc` fetches its list/lookups directly in the Server Component (`src/lib/api/materials.ts`, reading the `accessToken` cookie), keeps filters in the URL's `searchParams` rather than client state, and every mutation (create/update/disable/restore) is a Server Action that calls `revalidatePath("/materials/pc")` on success. The client components (`material-pc-client.tsx` and friends) hold only ephemeral UI state — which dialog is open, for which row — never a client-side cache of the material list.
+**Reason**: this is the first page in the app with real mutations against live data (menus was real data but reorder-only). A sibling app (`cps-app`) already solves a near-identical page with React Query — client-side cache, optimistic updates, manual invalidation. That's the right choice for a SPA-style client-fetching app, but this app's established architecture (per Conventions § API, chosen in ADR-era work on the login flow) is Server Components + Server Actions throughout; introducing a client-side fetching/caching library here would fragment the codebase into two different data-fetching philosophies for no benefit, since Next.js's own `router.refresh()` + `revalidatePath` already gets a fresh server render after a mutation without a client cache to keep in sync.
+**Consequence**: this is now the reference pattern for wiring up any other still-mock page (Users, Products, Orders) to real cps-api data — copy this shape, not cps-app's React Query shape. Filters living in the URL means the list is only as fresh as the last navigation; there's no live/optimistic UI update mid-mutation (a disable/enable action shows its result only after the Server Action resolves and `router.refresh()` completes) — acceptable for an admin CRUD table, revisit if a page needs snappier optimistic UX.
+**Rule for future CRUD pages**: don't add React Query/SWR/client-side caching to match cps-app's pattern. Match cps-app's *UX/copy* (soft-delete-as-disable, status filters, confirm-dialog copy) but not its *data-fetching architecture* — those are two independent decisions and only the first one should carry over.
+
+### ADR-005 — Dashboard pages drop the `/dashboard` prefix, matching cps-api's own paths exactly — 2026-09-03
+**Decision**: `/dashboard/analytics`, `/dashboard/orders`, `/dashboard/products`, `/dashboard/settings`, `/dashboard/users`, `/dashboard/menus`, and the `[...rest]` catch-all all moved up one level to `/analytics`, `/orders`, `/products`, `/settings`, `/users`, `/menus`. Only the dashboard home page keeps the `/dashboard` URL (it lives at `(dashboard)/dashboard/page.tsx`, the one folder that still carries that segment). `src/lib/nav.ts#menuHref()` no longer prefixes backend paths with `/dashboard` — it returns cps-api's `path` value unmodified (falling back to `/dashboard` only when a menu node has no `path`).
+**Reason**: user asked directly to drop the `/dashboard` prefix except for the dashboard page. This also removes a mismatch ADR-004 introduced: cps-api's own menu `path` values (`/products`, `/materials`, `/dashboard`, ...) never included a `/dashboard` prefix — this app was the only thing adding one, via `menuHref()`. Local routes now match the backend's paths exactly.
+**Consequence**: every hardcoded `/dashboard/...` link had to move too — `secondaryNav`'s Settings entry, `command-palette.tsx`'s nav/action items, `user-menu.tsx`'s Profile/Billing/Settings links, and `recent-documents.tsx`'s "View all documents" link. Bookmarks or hardcoded links anywhere else to the old `/dashboard/*` paths will now hit the catch-all/404 — there is no redirect shim, since this app has no external users yet to carry old links forward. If that changes later, add explicit `redirect()` routes for the old paths rather than resurrecting the prefix.
+**Rule for future routes**: a new dashboard page's folder path under `(dashboard)/` must equal its final URL — don't nest it under a `dashboard/` subfolder like the old layout did.
 
 ### ADR-004 — Sidebar renders cps-api's real menu tree directly — 2026-09-02 (supersedes ADR-003)
 **Decision**: reversed ADR-003. `src/lib/nav.ts` no longer keeps a static, hand-gated route list. The sidebar (`src/components/layout/sidebar-nav.tsx`) now renders `GET /auth/me`'s real `accessControl.menus` tree recursively — labels, paths, icons, and visibility all come from the backend, already scoped to the active role. `menuHref()` prefixes backend paths with `/dashboard`; a catch-all page shows a placeholder for real menu items with no built page yet.

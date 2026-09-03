@@ -58,7 +58,7 @@ export function RecentDocuments() {
 export function RecentDocumentsFooter() {
   return (
     <Button variant="ghost" size="sm" asChild className="text-fg-secondary">
-      <Link href="/dashboard/materials">View all documents</Link>
+      <Link href="/materials">View all documents</Link>
     </Button>
   );
 }
