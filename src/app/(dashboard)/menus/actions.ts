@@ -15,7 +15,7 @@ export async function saveMenuOrderAction(
 ): Promise<SaveMenuOrderResult> {
   const accessToken = await requireAccessToken();
   if (!accessToken) {
-    return { status: "error", message: "Your session expired. Please sign in again." };
+    return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
   }
 
   try {
@@ -25,14 +25,14 @@ export async function saveMenuOrderAction(
     if (err instanceof ApiError && err.status === 409) {
       return {
         status: "conflict",
-        message: "Someone else changed the menu arrangement. Refresh to see the latest version before saving again.",
+        message: "มีคนอื่นเปลี่ยนแปลงลำดับเมนูไปแล้ว กรุณารีเฟรชเพื่อดูข้อมูลล่าสุดก่อนบันทึกอีกครั้ง",
       };
     }
     if (err instanceof ApiError) {
       const body = err.body as { message?: string } | undefined;
-      return { status: "error", message: body?.message ?? "Could not save the new menu order." };
+      return { status: "error", message: body?.message ?? "ไม่สามารถบันทึกลำดับเมนูใหม่ได้" };
     }
-    return { status: "error", message: "Could not reach the server." };
+    return { status: "error", message: "ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้" };
   }
 }
 
@@ -43,14 +43,14 @@ export type RefreshMenuTreeResult =
 export async function refreshMenuTreeAction(): Promise<RefreshMenuTreeResult> {
   const accessToken = await requireAccessToken();
   if (!accessToken) {
-    return { status: "error", message: "Your session expired. Please sign in again." };
+    return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
   }
 
   try {
     const tree = await getManagementTree(accessToken);
     return { status: "success", version: tree.version, menus: tree.menus };
   } catch {
-    return { status: "error", message: "Could not reach the server." };
+    return { status: "error", message: "ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้" };
   }
 }
 

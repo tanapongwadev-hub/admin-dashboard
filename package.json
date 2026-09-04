@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsx --test src/lib/menu-tree.test.ts src/components/menus/menu-tree-editor.test.tsx"
+    "test": "tsx --test src/lib/menu-tree.test.ts src/components/menus/menu-tree-editor.test.tsx src/components/materials-pc/material-pc-table.test.tsx src/components/materials-pc/material-pc-image-upload.test.ts src/components/ui/row-actions-menu.test.tsx src/components/products/products-table.test.tsx src/components/users/columns.test.tsx src/components/orders/columns.test.tsx"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

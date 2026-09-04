@@ -15,7 +15,7 @@ export interface NavItem {
 // menu tree (GET /auth/me's accessControl.menus) — see Conventions §
 // Sidebar permissions in AGENTS.md and ADR-004.
 export const secondaryNav: NavItem[] = [
-  { label: "Settings", href: "/settings", icon: Settings },
+  { label: "ตั้งค่า", href: "/settings", icon: Settings },
 ];
 
 // cps-api menu paths map 1:1 to this app's real routes — every page lives

@@ -38,7 +38,7 @@ export function CategoryBreakdownChart() {
         </ResponsiveContainer>
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
           <span className="text-lg font-semibold tabular-nums text-fg">{formatWeight(total)}</span>
-          <span className="text-[11px] text-fg-muted">on hand</span>
+          <span className="text-[11px] text-fg-muted">คงเหลือในสต็อก</span>
         </div>
       </div>
       <div className="flex flex-1 flex-col gap-2.5">

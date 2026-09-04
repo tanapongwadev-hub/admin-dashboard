@@ -9,11 +9,11 @@ import { SecuritySettings } from "@/components/settings/security-settings";
 import { BillingSettings } from "@/components/settings/billing-settings";
 
 const tabs = [
-  { value: "profile", label: "Profile" },
-  { value: "account", label: "Account" },
-  { value: "notifications", label: "Notifications" },
-  { value: "security", label: "Security" },
-  { value: "billing", label: "Billing" },
+  { value: "profile", label: "โปรไฟล์" },
+  { value: "account", label: "บัญชี" },
+  { value: "notifications", label: "การแจ้งเตือน" },
+  { value: "security", label: "ความปลอดภัย" },
+  { value: "billing", label: "การเรียกเก็บเงิน" },
 ];
 
 export function SettingsTabs() {

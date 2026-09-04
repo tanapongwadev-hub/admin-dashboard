@@ -7,10 +7,10 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "Panel — Admin Dashboard",
+    default: "Panel — แดชบอร์ดผู้ดูแลระบบ",
     template: "%s · Panel",
   },
-  description: "Admin dashboard template built with Next.js 16",
+  description: "เทมเพลตแดชบอร์ดผู้ดูแลระบบที่สร้างด้วย Next.js 16",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

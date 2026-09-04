@@ -50,7 +50,13 @@ const DialogContent = React.forwardRef<
           ? cn(
               "fixed z-50 flex flex-col border-border bg-surface shadow-xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
               "inset-0 h-dvh w-full max-h-none overflow-y-auto border-0 rounded-none",
-              "sm:inset-1/2 sm:h-auto sm:max-h-[90vh] sm:w-full sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:border data-[state=closed]:sm:zoom-out-95 data-[state=open]:sm:zoom-in-95",
+              // Only top/left (not inset-1/2, which also sets right/bottom —
+              // with `position: fixed` that pins both edges and collapses
+              // the computed height to 0, since height:auto doesn't override
+              // a fully-constrained top+bottom box). Centering comes from
+              // the translate, same technique as the non-fullScreenOnMobile
+              // branch below.
+              "sm:inset-auto sm:left-1/2 sm:top-1/2 sm:h-auto sm:max-h-[90vh] sm:w-full sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:border data-[state=closed]:sm:zoom-out-95 data-[state=open]:sm:zoom-in-95",
               dialogSizes[size]
             )
           : "fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-surface shadow-xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 max-h-[90vh] overflow-y-auto",
@@ -61,7 +67,7 @@ const DialogContent = React.forwardRef<
       {children}
       <DialogPrimitive.Close className="absolute right-4 top-4 rounded-md p-1 text-fg-muted opacity-70 transition-opacity hover:opacity-100 hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
         <X className="h-4 w-4" />
-        <span className="sr-only">Close</span>
+        <span className="sr-only">ปิด</span>
       </DialogPrimitive.Close>
     </DialogPrimitive.Content>
   </DialogPrimitive.Portal>

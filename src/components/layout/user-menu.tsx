@@ -22,7 +22,7 @@ function displayName(user: AuthenticatedUser) {
 
 function roleLabel(user: AuthenticatedUser, currentDepartmentRole: CurrentDepartmentRole | null) {
   if (currentDepartmentRole) return currentDepartmentRole.roleName;
-  if (user.isSuperAdmin) return "Super Admin";
+  if (user.isSuperAdmin) return "ผู้ดูแลระบบสูงสุด";
   return user.roles[0]?.name ?? "—";
 }
 
@@ -64,20 +64,20 @@ export function UserMenu({
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link href="/settings"><User className="h-4 w-4" /> Profile</Link>
+          <Link href="/settings"><User className="h-4 w-4" /> โปรไฟล์</Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href="/settings?tab=billing"><CreditCard className="h-4 w-4" /> Billing</Link>
+          <Link href="/settings?tab=billing"><CreditCard className="h-4 w-4" /> การเรียกเก็บเงิน</Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href="/settings"><Settings className="h-4 w-4" /> Settings</Link>
+          <Link href="/settings"><Settings className="h-4 w-4" /> ตั้งค่า</Link>
         </DropdownMenuItem>
         <DropdownMenuItem>
-          <LifeBuoy className="h-4 w-4" /> Support
+          <LifeBuoy className="h-4 w-4" /> ฝ่ายสนับสนุน
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem destructive disabled={loggingOut} onSelect={handleLogout}>
-          <LogOut className="h-4 w-4" /> {loggingOut ? "Signing out..." : "Log out"}
+          <LogOut className="h-4 w-4" /> {loggingOut ? "กำลังออกจากระบบ..." : "ออกจากระบบ"}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

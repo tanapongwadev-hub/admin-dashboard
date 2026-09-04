@@ -60,7 +60,7 @@ export async function selectDepartmentAction(
     if (!departmentSelectionToken) {
       return {
         status: "error",
-        message: "Your session expired. Please sign in again.",
+        message: "เซสชันของคุณหมดอายุ กรุณาเข้าสู่ระบบอีกครั้ง",
       };
     }
 
@@ -104,14 +104,14 @@ function authErrorMessage(err: unknown): string {
   if (err instanceof ApiError) {
     if (err.status === 401) {
       const body = err.body as { message?: string } | undefined;
-      return body?.message ?? "Invalid username or password.";
+      return body?.message ?? "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง";
     }
     if (err.status === 403) {
       const body = err.body as { message?: string } | undefined;
-      return body?.message ?? "This account cannot sign in right now.";
+      return body?.message ?? "บัญชีนี้ไม่สามารถเข้าสู่ระบบได้ในขณะนี้";
     }
     const body = err.body as { message?: string } | undefined;
-    return body?.message ?? "Something went wrong. Please try again.";
+    return body?.message ?? "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง";
   }
-  return "Could not reach the server. Please try again.";
+  return "ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง";
 }

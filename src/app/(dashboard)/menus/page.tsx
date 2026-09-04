@@ -15,9 +15,9 @@ export default async function MenuManagementPage() {
     return (
       <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border py-24 text-center">
         <ShieldAlert className="h-8 w-8 text-fg-muted" />
-        <p className="text-lg font-semibold text-fg">Super Admin access required</p>
+        <p className="text-lg font-semibold text-fg">ต้องใช้สิทธิ์ Super Admin</p>
         <p className="max-w-sm text-sm text-fg-muted">
-          Menu management changes the navigation every user sees, so only Super Admin accounts can open it.
+          การจัดการเมนูมีผลต่อการนำทางที่ผู้ใช้ทุกคนมองเห็น จึงเปิดใช้งานได้เฉพาะบัญชี Super Admin เท่านั้น
         </p>
       </div>
     );
@@ -30,16 +30,16 @@ export default async function MenuManagementPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-xl font-semibold text-fg">Menu management</h1>
+        <h1 className="text-xl font-semibold text-fg">จัดการเมนู</h1>
         <p className="mt-1 text-sm text-fg-muted">
-          Drag a menu to reorder it or drop it onto another menu to nest it. Changes are staged until you save.
+          ลากเมนูเพื่อจัดลำดับใหม่ หรือวางลงบนเมนูอื่นเพื่อซ้อนเป็นเมนูย่อย การเปลี่ยนแปลงจะยังไม่บันทึกจนกว่าคุณจะกดบันทึก
         </p>
       </div>
 
       {tree ? (
         <MenuTreeEditor initialMenus={tree.menus} initialVersion={tree.version} />
       ) : (
-        <p className="text-sm text-danger">Could not load the menu tree. Please refresh the page.</p>
+        <p className="text-sm text-danger">ไม่สามารถโหลดโครงสร้างเมนูได้ กรุณารีเฟรชหน้านี้</p>
       )}
     </div>
   );

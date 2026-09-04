@@ -21,7 +21,7 @@ export function ConfirmDialog({
   onOpenChange,
   title,
   description,
-  confirmLabel = "Delete",
+  confirmLabel = "ลบ",
   variant = "danger",
   onConfirm,
 }: {
@@ -50,7 +50,7 @@ export function ConfirmDialog({
         </DialogHeader>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            ยกเลิก
           </Button>
           <Button
             variant={variant === "danger" ? "danger" : "primary"}

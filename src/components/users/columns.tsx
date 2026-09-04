@@ -1,18 +1,11 @@
 "use client";
 
 import { type ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal, Pencil, Trash2, ShieldCheck } from "lucide-react";
+import { Pencil, Trash2, ShieldCheck } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/ui/user-avatar";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
+import { RowActionsMenu, type RowAction } from "@/components/ui/row-actions-menu";
 import { formatDate } from "@/lib/utils";
 import type { AppUser, UserStatus } from "@/lib/types";
 
@@ -33,14 +26,14 @@ export function getUserColumns(opts: {
         <Checkbox
           checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
           onCheckedChange={(v) => table.toggleAllPageRowsSelected(!!v)}
-          aria-label="Select all"
+          aria-label="เลือกทั้งหมด"
         />
       ),
       cell: ({ row }) => (
         <Checkbox
           checked={row.getIsSelected()}
           onCheckedChange={(v) => row.toggleSelected(!!v)}
-          aria-label="Select row"
+          aria-label="เลือกแถว"
         />
       ),
       enableSorting: false,
@@ -48,7 +41,7 @@ export function getUserColumns(opts: {
     },
     {
       accessorKey: "name",
-      header: "Name",
+      header: "ชื่อ",
       cell: ({ row }) => (
         <div className="flex items-center gap-3">
           <UserAvatar name={row.original.name} color={row.original.avatarColor} className="h-8 w-8" />
@@ -61,7 +54,7 @@ export function getUserColumns(opts: {
     },
     {
       accessorKey: "role",
-      header: "Role",
+      header: "บทบาท",
       cell: ({ row }) => (
         <span className="inline-flex items-center gap-1.5 text-sm text-fg-secondary">
           {row.original.role === "Owner" && <ShieldCheck className="h-3.5 w-3.5 text-primary" />}
@@ -71,7 +64,7 @@ export function getUserColumns(opts: {
     },
     {
       accessorKey: "status",
-      header: "Status",
+      header: "สถานะ",
       cell: ({ row }) => (
         <Badge variant={statusVariant[row.original.status]} dot>
           {row.original.status}
@@ -80,12 +73,12 @@ export function getUserColumns(opts: {
     },
     {
       accessorKey: "lastActive",
-      header: "Last active",
+      header: "ใช้งานล่าสุด",
       cell: ({ row }) => <span className="text-fg-muted">{formatDate(row.original.lastActive)}</span>,
     },
     {
       accessorKey: "joined",
-      header: "Joined",
+      header: "เข้าร่วมเมื่อ",
       cell: ({ row }) => <span className="text-fg-muted">{formatDate(row.original.joined)}</span>,
     },
     {
@@ -93,23 +86,24 @@ export function getUserColumns(opts: {
       header: "",
       enableSorting: false,
       cell: ({ row }) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-fg-muted">
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onSelect={() => opts.onEdit(row.original)}>
-              <Pencil className="h-4 w-4" /> Edit user
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem destructive onSelect={() => opts.onDelete(row.original)}>
-              <Trash2 className="h-4 w-4" /> Delete user
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex justify-end">
+          <RowActionsMenu itemLabel={row.original.name} actions={getUserRowActions(row.original, opts)} />
+        </div>
       ),
     },
+  ];
+}
+
+// Pure — exported for tests. This page still has no real permission wiring
+// (mock data, not yet connected to cps-api — see AGENTS.md § Sidebar
+// permissions "known gap"), so both actions are always offered; there is no
+// existing permission logic to preserve here yet.
+export function getUserRowActions(
+  user: AppUser,
+  handlers: { onEdit: (user: AppUser) => void; onDelete: (user: AppUser) => void }
+): RowAction[] {
+  return [
+    { label: "แก้ไขผู้ใช้", icon: Pencil, onSelect: () => handlers.onEdit(user), variant: "default" },
+    { label: "ลบผู้ใช้", icon: Trash2, onSelect: () => handlers.onDelete(user), variant: "danger" },
   ];
 }

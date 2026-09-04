@@ -9,7 +9,7 @@ export function Logo({ collapsed = false }: { collapsed?: boolean }) {
           <path d="M5.5 14V8.5H10.5V14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </span>
-      {!collapsed && <span className="text-[15px] font-semibold tracking-tight text-fg">Panel</span>}
+      {!collapsed && <span className="text-[15px] font-semibold tracking-tight text-fg">แผงควบคุม</span>}
     </Link>
   );
 }

@@ -33,7 +33,7 @@ export function NotificationsMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative text-fg-secondary" aria-label="Notifications">
+        <Button variant="ghost" size="icon" className="relative text-fg-secondary" aria-label="การแจ้งเตือน">
           <Bell className="h-[18px] w-[18px]" />
           {unread > 0 && (
             <span className="absolute right-1.5 top-1.5 flex h-2 w-2 rounded-full bg-danger ring-2 ring-surface" />
@@ -42,13 +42,13 @@ export function NotificationsMenu() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80 p-0">
         <div className="flex items-center justify-between px-3 py-2.5 border-b border-border">
-          <p className="text-sm font-semibold text-fg">Notifications</p>
+          <p className="text-sm font-semibold text-fg">การแจ้งเตือน</p>
           {unread > 0 && (
             <button
               onClick={() => setItems((prev) => prev.map((n) => ({ ...n, read: true })))}
               className="flex items-center gap-1 text-xs font-medium text-primary hover:underline"
             >
-              <Check className="h-3 w-3" /> Mark all read
+              <Check className="h-3 w-3" /> ทำเครื่องหมายว่าอ่านแล้วทั้งหมด
             </button>
           )}
         </div>
@@ -73,7 +73,7 @@ export function NotificationsMenu() {
         </div>
         <div className="border-t border-border p-2">
           <Button variant="ghost" size="sm" className="w-full justify-center text-fg-secondary">
-            View all notifications
+            ดูการแจ้งเตือนทั้งหมด
           </Button>
         </div>
       </DropdownMenuContent>

@@ -22,14 +22,14 @@ export function AccountSettings() {
       <Card>
         <CardHeader>
           <div>
-            <CardTitle>Preferences</CardTitle>
-            <CardDescription>Language, timezone and how dates are shown across the workspace.</CardDescription>
+            <CardTitle>การตั้งค่าทั่วไป</CardTitle>
+            <CardDescription>ภาษา เขตเวลา และรูปแบบการแสดงวันที่ทั่วทั้งพื้นที่ทำงาน</CardDescription>
           </div>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
-              <Label>Language</Label>
+              <Label>ภาษา</Label>
               <Select defaultValue="en">
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -41,19 +41,19 @@ export function AccountSettings() {
               </Select>
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label>Timezone</Label>
+              <Label>เขตเวลา</Label>
               <Select defaultValue="bangkok">
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="bangkok">(GMT+7) Bangkok</SelectItem>
+                  <SelectItem value="bangkok">(GMT+7) กรุงเทพฯ</SelectItem>
                   <SelectItem value="utc">(GMT+0) UTC</SelectItem>
-                  <SelectItem value="ny">(GMT-5) New York</SelectItem>
-                  <SelectItem value="tokyo">(GMT+9) Tokyo</SelectItem>
+                  <SelectItem value="ny">(GMT-5) นิวยอร์ก</SelectItem>
+                  <SelectItem value="tokyo">(GMT+9) โตเกียว</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label>Date format</Label>
+              <Label>รูปแบบวันที่</Label>
               <Select defaultValue="mdy">
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -64,7 +64,7 @@ export function AccountSettings() {
               </Select>
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label>Currency</Label>
+              <Label>สกุลเงิน</Label>
               <Select defaultValue="usd">
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -77,33 +77,33 @@ export function AccountSettings() {
           </div>
         </CardContent>
         <CardFooter className="justify-end">
-          <Button onClick={() => toast.success("Preferences saved")}>Save preferences</Button>
+          <Button onClick={() => toast.success("บันทึกการตั้งค่าแล้ว")}>บันทึกการตั้งค่า</Button>
         </CardFooter>
       </Card>
 
       <Card className="border-danger/30">
         <CardHeader>
           <div>
-            <CardTitle className="text-danger">Danger zone</CardTitle>
-            <CardDescription>Irreversible actions for this account.</CardDescription>
+            <CardTitle className="text-danger">โซนอันตราย</CardTitle>
+            <CardDescription>การดำเนินการที่ไม่สามารถย้อนกลับได้สำหรับบัญชีนี้</CardDescription>
           </div>
         </CardHeader>
         <CardContent className="flex items-center justify-between gap-4">
           <div>
-            <p className="text-sm font-medium text-fg">Delete account</p>
-            <p className="text-sm text-fg-muted">Permanently delete your account and all associated data.</p>
+            <p className="text-sm font-medium text-fg">ลบบัญชี</p>
+            <p className="text-sm text-fg-muted">ลบบัญชีของคุณและข้อมูลที่เกี่ยวข้องทั้งหมดอย่างถาวร</p>
           </div>
-          <Button variant="danger" onClick={() => setDeleteOpen(true)}>Delete account</Button>
+          <Button variant="danger" onClick={() => setDeleteOpen(true)}>ลบบัญชี</Button>
         </CardContent>
       </Card>
 
       <ConfirmDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        title="Delete your account?"
-        description="This will permanently delete your account, workspace access and all associated data. This action can't be undone."
-        confirmLabel="Delete account"
-        onConfirm={() => toast.success("Account deletion scheduled")}
+        title="ลบบัญชีของคุณหรือไม่?"
+        description="การดำเนินการนี้จะลบบัญชี สิทธิ์การเข้าถึงพื้นที่ทำงาน และข้อมูลที่เกี่ยวข้องทั้งหมดอย่างถาวร และไม่สามารถย้อนกลับได้"
+        confirmLabel="ลบบัญชี"
+        onConfirm={() => toast.success("กำหนดการลบบัญชีเรียบร้อยแล้ว")}
       />
     </div>
   );

@@ -51,7 +51,7 @@ export function RevenueChart() {
             boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
           }}
           labelStyle={{ color: "var(--fg)", fontWeight: 600, marginBottom: 4 }}
-          formatter={(value, name) => [formatCurrency(Number(value)), name === "revenue" ? "Revenue" : "Expenses"]}
+          formatter={(value, name) => [formatCurrency(Number(value)), name === "revenue" ? "รายได้" : "ค่าใช้จ่าย"]}
         />
         <Area type="monotone" dataKey="expenses" stroke="var(--chart-2)" strokeWidth={2} fill="url(#expenseFill)" />
         <Area type="monotone" dataKey="revenue" stroke="var(--chart-1)" strokeWidth={2.5} fill="url(#revenueFill)" />

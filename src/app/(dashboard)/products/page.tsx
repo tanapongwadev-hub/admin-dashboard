@@ -1,22 +1,18 @@
 import type { Metadata } from "next";
-import { ProductsTable } from "@/components/products/product-table";
+import { ProductsPageContent } from "./products-page-content";
 
-export const metadata: Metadata = { title: "Products" };
+export const metadata: Metadata = { title: "สินค้า" };
 
-export default async function ProductsPage({
+export default function ProductsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ new?: string }>;
+  searchParams: Promise<{ search?: string; status?: string; new?: string }>;
 }) {
-  const params = await searchParams;
-
   return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-xl font-semibold text-fg">Products</h1>
-        <p className="mt-1 text-sm text-fg-muted">Manage your catalog, pricing and inventory levels.</p>
-      </div>
-      <ProductsTable openNew={params.new === "1"} />
-    </div>
+    <ProductsPageContent
+      searchParams={searchParams}
+      title="สินค้า"
+      description="จัดการแคตตาล็อกสินค้า ราคา และระดับสินค้าคงคลัง"
+    />
   );
 }

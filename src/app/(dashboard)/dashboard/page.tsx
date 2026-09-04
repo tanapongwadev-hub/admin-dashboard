@@ -13,9 +13,9 @@ import { getCurrentSession } from "@/lib/session";
 
 function shiftGreeting() {
   const hour = new Date().getHours();
-  if (hour < 12) return "Good morning";
-  if (hour < 18) return "Good afternoon";
-  return "Good evening";
+  if (hour < 12) return "สวัสดีตอนเช้า";
+  if (hour < 18) return "สวัสดีตอนบ่าย";
+  return "สวัสดีตอนเย็น";
 }
 
 export default async function DashboardPage() {
@@ -31,7 +31,7 @@ export default async function DashboardPage() {
           <h1 className="text-xl font-semibold text-fg">
             {shiftGreeting()}, {firstName}
           </h1>
-          <p className="mt-1 text-sm text-fg-muted">Here&apos;s what&apos;s moving on the floor today.</p>
+          <p className="mt-1 text-sm text-fg-muted">นี่คือความเคลื่อนไหวบนพื้นโรงงานวันนี้</p>
         </div>
         <span
           className={cn(
@@ -50,13 +50,13 @@ export default async function DashboardPage() {
             />
             <span className={cn("relative inline-flex h-1.5 w-1.5 rounded-full", needsAttention ? "bg-warning" : "bg-success")} />
           </span>
-          {needsAttention ? `${stats.lowStockCount} MATERIALS NEED ATTENTION` : "ALL LINES NORMAL"}
+          {needsAttention ? `วัสดุ ${stats.lowStockCount} รายการต้องการความสนใจ` : "ทุกสายการผลิตปกติ"}
         </span>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
-          label="Stock on hand"
+          label="สต็อกคงเหลือ"
           value={formatWeight(stats.stockValue)}
           change="3.1%"
           trend="up"
@@ -64,7 +64,7 @@ export default async function DashboardPage() {
           accent="chart-1"
         />
         <StatCard
-          label="Received today"
+          label="รับเข้าวันนี้"
           value={formatWeight(stats.receivedToday)}
           change="8.4%"
           trend="up"
@@ -72,7 +72,7 @@ export default async function DashboardPage() {
           accent="chart-2"
         />
         <StatCard
-          label="Disbursed today"
+          label="เบิกจ่ายวันนี้"
           value={formatWeight(stats.disbursedToday)}
           change="2.7%"
           trend="down"
@@ -80,7 +80,7 @@ export default async function DashboardPage() {
           accent="chart-3"
         />
         <StatCard
-          label="Low stock alerts"
+          label="แจ้งเตือนสต็อกต่ำ"
           value={formatNumber(stats.lowStockCount)}
           change="1"
           trend={stats.lowStockCount > 0 ? "down" : "up"}
@@ -93,12 +93,12 @@ export default async function DashboardPage() {
         <Card className="xl:col-span-2">
           <CardHeader>
             <div>
-              <CardTitle>Stock movement</CardTitle>
-              <CardDescription>Received vs disbursed, last 14 days</CardDescription>
+              <CardTitle>การเคลื่อนไหวสต็อก</CardTitle>
+              <CardDescription>เปรียบเทียบรับเข้าและเบิกจ่าย 14 วันที่ผ่านมา</CardDescription>
             </div>
             <div className="flex items-center gap-4 text-xs text-fg-secondary">
-              <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[color:var(--chart-2)]" /> Received</span>
-              <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[color:var(--chart-3)]" /> Disbursed</span>
+              <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[color:var(--chart-2)]" /> รับเข้า</span>
+              <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[color:var(--chart-3)]" /> เบิกจ่าย</span>
             </div>
           </CardHeader>
           <CardContent>
@@ -109,8 +109,8 @@ export default async function DashboardPage() {
         <Card>
           <CardHeader>
             <div>
-              <CardTitle>Stock by category</CardTitle>
-              <CardDescription>Material on hand right now</CardDescription>
+              <CardTitle>สต็อกตามหมวดหมู่</CardTitle>
+              <CardDescription>วัสดุคงเหลือในขณะนี้</CardDescription>
             </div>
           </CardHeader>
           <CardContent>
@@ -122,7 +122,7 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         <Card className="xl:col-span-2">
           <CardHeader>
-            <CardTitle>Recent documents</CardTitle>
+            <CardTitle>เอกสารล่าสุด</CardTitle>
             <RecentDocumentsFooter />
           </CardHeader>
           <CardContent className="p-0">
@@ -132,7 +132,7 @@ export default async function DashboardPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Floor activity</CardTitle>
+            <CardTitle>กิจกรรมบนพื้นโรงงาน</CardTitle>
           </CardHeader>
           <CardContent>
             <RecentActivity />
@@ -144,8 +144,8 @@ export default async function DashboardPage() {
         <Card className="xl:col-span-2">
           <CardHeader>
             <div>
-              <CardTitle>Weekly throughput</CardTitle>
-              <CardDescription>Received vs disbursed, this week</CardDescription>
+              <CardTitle>ปริมาณงานรายสัปดาห์</CardTitle>
+              <CardDescription>เปรียบเทียบรับเข้าและเบิกจ่ายในสัปดาห์นี้</CardDescription>
             </div>
           </CardHeader>
           <CardContent>
@@ -155,7 +155,7 @@ export default async function DashboardPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Low stock watchlist</CardTitle>
+            <CardTitle>รายการเฝ้าระวังสต็อกต่ำ</CardTitle>
           </CardHeader>
           <CardContent>
             <LowStockWatchlist />

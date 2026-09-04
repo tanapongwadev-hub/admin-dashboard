@@ -21,7 +21,7 @@ export function SecuritySettings() {
 
   function handlePasswordChange(e: React.FormEvent) {
     e.preventDefault();
-    toast.success("Password updated");
+    toast.success("อัปเดตรหัสผ่านแล้ว");
     (e.target as HTMLFormElement).reset();
   }
 
@@ -30,29 +30,29 @@ export function SecuritySettings() {
       <Card>
         <CardHeader>
           <div>
-            <CardTitle>Change password</CardTitle>
-            <CardDescription>Use a strong password you don&apos;t use elsewhere.</CardDescription>
+            <CardTitle>เปลี่ยนรหัสผ่าน</CardTitle>
+            <CardDescription>ใช้รหัสผ่านที่รัดกุมและไม่ซ้ำกับที่อื่น</CardDescription>
           </div>
         </CardHeader>
         <form onSubmit={handlePasswordChange}>
           <CardContent className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="current">Current password</Label>
+              <Label htmlFor="current">รหัสผ่านปัจจุบัน</Label>
               <Input id="current" type="password" required />
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="new">New password</Label>
+                <Label htmlFor="new">รหัสผ่านใหม่</Label>
                 <Input id="new" type="password" required minLength={8} />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="confirm">Confirm new password</Label>
+                <Label htmlFor="confirm">ยืนยันรหัสผ่านใหม่</Label>
                 <Input id="confirm" type="password" required minLength={8} />
               </div>
             </div>
           </CardContent>
           <CardFooter className="justify-end">
-            <Button type="submit">Update password</Button>
+            <Button type="submit">อัปเดตรหัสผ่าน</Button>
           </CardFooter>
         </form>
       </Card>
@@ -60,8 +60,8 @@ export function SecuritySettings() {
       <Card>
         <CardHeader>
           <div>
-            <CardTitle>Two-factor authentication</CardTitle>
-            <CardDescription>Add an extra layer of security to your account.</CardDescription>
+            <CardTitle>การยืนยันตัวตนสองขั้นตอน</CardTitle>
+            <CardDescription>เพิ่มความปลอดภัยอีกขั้นให้กับบัญชีของคุณ</CardDescription>
           </div>
         </CardHeader>
         <CardContent className="flex items-center justify-between">
@@ -70,8 +70,8 @@ export function SecuritySettings() {
               <ShieldCheck className="h-[18px] w-[18px]" />
             </span>
             <div>
-              <p className="text-sm font-medium text-fg">Authenticator app</p>
-              <p className="text-sm text-fg-muted">{twoFactor ? "Enabled" : "Not enabled"}</p>
+              <p className="text-sm font-medium text-fg">แอปยืนยันตัวตน</p>
+              <p className="text-sm text-fg-muted">{twoFactor ? "เปิดใช้งาน" : "ไม่ได้เปิดใช้งาน"}</p>
             </div>
           </div>
           <Switch checked={twoFactor} onCheckedChange={setTwoFactor} />
@@ -81,8 +81,8 @@ export function SecuritySettings() {
       <Card>
         <CardHeader>
           <div>
-            <CardTitle>Active sessions</CardTitle>
-            <CardDescription>Devices currently signed in to your account.</CardDescription>
+            <CardTitle>เซสชันที่ใช้งานอยู่</CardTitle>
+            <CardDescription>อุปกรณ์ที่เข้าสู่ระบบบัญชีของคุณอยู่ในขณะนี้</CardDescription>
           </div>
         </CardHeader>
         <CardContent className="flex flex-col divide-y divide-border">
@@ -95,14 +95,14 @@ export function SecuritySettings() {
                 <div>
                   <p className="flex items-center gap-2 text-sm font-medium text-fg">
                     {session.device}
-                    {session.current && <Badge variant="success" className="text-[10px]">This device</Badge>}
+                    {session.current && <Badge variant="success" className="text-[10px]">อุปกรณ์นี้</Badge>}
                   </p>
                   <p className="text-sm text-fg-muted">{session.location}</p>
                 </div>
               </div>
               {!session.current && (
-                <Button variant="ghost" size="sm" className="text-danger" onClick={() => toast.success("Session revoked")}>
-                  Revoke
+                <Button variant="ghost" size="sm" className="text-danger" onClick={() => toast.success("เพิกถอนเซสชันแล้ว")}>
+                  เพิกถอน
                 </Button>
               )}
             </div>

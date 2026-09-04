@@ -74,13 +74,13 @@ export function UsersTable({ openInvite }: { openInvite?: boolean }) {
 
   function handleDelete(user: AppUser) {
     setUsers((prev) => prev.filter((u) => u.id !== user.id));
-    toast.success("User deleted", { description: `${user.name} was removed from the workspace.` });
+    toast.success("ลบผู้ใช้แล้ว", { description: `นำ ${user.name} ออกจากพื้นที่ทำงานแล้ว` });
   }
 
   function handleBulkDelete() {
     const ids = new Set(selected.map((u) => u.id));
     setUsers((prev) => prev.filter((u) => !ids.has(u.id)));
-    toast.success(`${selected.length} user${selected.length > 1 ? "s" : ""} deleted`);
+    toast.success(`ลบผู้ใช้ ${selected.length} คนแล้ว`);
     setSelected([]);
   }
 
@@ -90,25 +90,25 @@ export function UsersTable({ openInvite }: { openInvite?: boolean }) {
         <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center">
           <div className="relative w-full sm:max-w-xs">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-muted" />
-            <Input placeholder="Search by name or email" className="pl-8" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <Input placeholder="ค้นหาด้วยชื่อหรืออีเมล" className="pl-8" value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
           <Select value={roleFilter} onValueChange={setRoleFilter}>
-            <SelectTrigger className="w-full sm:w-36"><SelectValue placeholder="Role" /></SelectTrigger>
+            <SelectTrigger className="w-full sm:w-36"><SelectValue placeholder="บทบาท" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All roles</SelectItem>
-              <SelectItem value="Owner">Owner</SelectItem>
-              <SelectItem value="Admin">Admin</SelectItem>
-              <SelectItem value="Editor">Editor</SelectItem>
-              <SelectItem value="Viewer">Viewer</SelectItem>
+              <SelectItem value="all">ทุกบทบาท</SelectItem>
+              <SelectItem value="Owner">เจ้าของ</SelectItem>
+              <SelectItem value="Admin">ผู้ดูแลระบบ</SelectItem>
+              <SelectItem value="Editor">ผู้แก้ไข</SelectItem>
+              <SelectItem value="Viewer">ผู้ดู</SelectItem>
             </SelectContent>
           </Select>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-full sm:w-36"><SelectValue placeholder="Status" /></SelectTrigger>
+            <SelectTrigger className="w-full sm:w-36"><SelectValue placeholder="สถานะ" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All statuses</SelectItem>
-              <SelectItem value="Active">Active</SelectItem>
-              <SelectItem value="Invited">Invited</SelectItem>
-              <SelectItem value="Suspended">Suspended</SelectItem>
+              <SelectItem value="all">ทุกสถานะ</SelectItem>
+              <SelectItem value="Active">ใช้งานอยู่</SelectItem>
+              <SelectItem value="Invited">เชิญแล้ว</SelectItem>
+              <SelectItem value="Suspended">ถูกระงับ</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -116,11 +116,11 @@ export function UsersTable({ openInvite }: { openInvite?: boolean }) {
         <div className="flex items-center gap-2">
           {selected.length > 0 && (
             <Button variant="outline" size="sm" className="text-danger hover:bg-danger-soft" onClick={() => setBulkDeleteOpen(true)}>
-              <Trash2 className="h-4 w-4" /> Delete ({selected.length})
+              <Trash2 className="h-4 w-4" /> ลบ ({selected.length})
             </Button>
           )}
           <Button variant="outline" size="sm">
-            <Download className="h-4 w-4" /> Export
+            <Download className="h-4 w-4" /> ส่งออก
           </Button>
           <Button
             size="sm"
@@ -129,13 +129,13 @@ export function UsersTable({ openInvite }: { openInvite?: boolean }) {
               setFormOpen(true);
             }}
           >
-            <Plus className="h-4 w-4" /> Invite user
+            <Plus className="h-4 w-4" /> เชิญผู้ใช้
           </Button>
         </div>
       </div>
 
       <div className="rounded-xl border border-border bg-surface">
-        <DataTable columns={columns} data={filteredData} onRowSelectionChange={setSelected} emptyMessage="No users match your filters." />
+        <DataTable columns={columns} data={filteredData} onRowSelectionChange={setSelected} emptyMessage="ไม่พบผู้ใช้ที่ตรงกับตัวกรองของคุณ" />
       </div>
 
       <UserFormDialog open={formOpen} onOpenChange={setFormOpen} user={editingUser} onSave={handleSave} />
@@ -143,16 +143,16 @@ export function UsersTable({ openInvite }: { openInvite?: boolean }) {
       <ConfirmDialog
         open={!!deleteTarget}
         onOpenChange={(v) => !v && setDeleteTarget(null)}
-        title="Delete this user?"
-        description={`This will permanently remove ${deleteTarget?.name ?? "this user"} from your workspace. This action can't be undone.`}
+        title="ลบผู้ใช้นี้หรือไม่?"
+        description={`การดำเนินการนี้จะลบ ${deleteTarget?.name ?? "ผู้ใช้นี้"} ออกจากพื้นที่ทำงานอย่างถาวร และไม่สามารถย้อนกลับได้`}
         onConfirm={() => deleteTarget && handleDelete(deleteTarget)}
       />
 
       <ConfirmDialog
         open={bulkDeleteOpen}
         onOpenChange={setBulkDeleteOpen}
-        title={`Delete ${selected.length} users?`}
-        description="This will permanently remove the selected users from your workspace. This action can't be undone."
+        title={`ลบผู้ใช้ ${selected.length} คนหรือไม่?`}
+        description="การดำเนินการนี้จะลบผู้ใช้ที่เลือกออกจากพื้นที่ทำงานอย่างถาวร และไม่สามารถย้อนกลับได้"
         onConfirm={handleBulkDelete}
       />
     </div>

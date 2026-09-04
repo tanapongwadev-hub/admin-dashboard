@@ -52,7 +52,7 @@ export function StockMovementChart() {
             boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
           }}
           labelStyle={{ color: "var(--fg)", fontWeight: 600, marginBottom: 4 }}
-          formatter={(value, name) => [formatWeight(Number(value)), name === "received" ? "Received" : "Disbursed"]}
+          formatter={(value, name) => [formatWeight(Number(value)), name === "received" ? "รับเข้า" : "เบิกออก"]}
         />
         <Area type="monotone" dataKey="disbursed" stroke="var(--chart-3)" strokeWidth={2} fill="url(#disbursedFill)" />
         <Area type="monotone" dataKey="received" stroke="var(--chart-2)" strokeWidth={2.5} fill="url(#receivedFill)" />

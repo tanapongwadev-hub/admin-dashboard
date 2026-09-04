@@ -31,8 +31,8 @@ export function WeeklyThroughputChart() {
           iconSize={8}
           wrapperStyle={{ fontSize: 12, color: "var(--fg-secondary)" }}
         />
-        <Bar dataKey="received" name="Received" fill="var(--chart-2)" radius={[4, 4, 0, 0]} maxBarSize={28} />
-        <Bar dataKey="disbursed" name="Disbursed" fill="var(--chart-3)" radius={[4, 4, 0, 0]} maxBarSize={28} />
+        <Bar dataKey="received" name="รับเข้า" fill="var(--chart-2)" radius={[4, 4, 0, 0]} maxBarSize={28} />
+        <Bar dataKey="disbursed" name="เบิกออก" fill="var(--chart-3)" radius={[4, 4, 0, 0]} maxBarSize={28} />
       </BarChart>
     </ResponsiveContainer>
   );

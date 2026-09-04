@@ -8,9 +8,9 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const statusOptions = [
-  { value: "all", label: "All" },
-  { value: "active", label: "Active" },
-  { value: "inactive", label: "Inactive" },
+  { value: "all", label: "ทั้งหมด" },
+  { value: "active", label: "ใช้งาน" },
+  { value: "inactive", label: "ไม่ใช้งาน" },
 ] as const;
 
 export function MaterialPcFilters() {
@@ -47,7 +47,7 @@ export function MaterialPcFilters() {
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search code or name..."
+          placeholder="ค้นหารหัสหรือชื่อ..."
           className="pl-9"
         />
       </div>

@@ -51,7 +51,7 @@ export function MenuTreeRow({
           type="button"
           {...attributes}
           {...listeners}
-          aria-label={`Drag to reorder ${item.nameEn}`}
+          aria-label={`ลากเพื่อจัดลำดับ ${item.nameEn}`}
           className="flex h-7 w-7 shrink-0 cursor-grab touch-none items-center justify-center rounded text-fg-muted hover:bg-surface-2 hover:text-fg active:cursor-grabbing"
         >
           <GripVertical className="h-4 w-4" />
@@ -71,12 +71,12 @@ export function MenuTreeRow({
 
         <div className="flex shrink-0 items-center gap-1.5">
           {!item.isActive && (
-            <span title="Inactive" className="text-danger">
+            <span title="ไม่ใช้งาน" className="text-danger">
               <CircleSlash className="h-3.5 w-3.5" />
             </span>
           )}
           {!item.isVisible && (
-            <span title="Hidden from sidebar" className="text-fg-muted">
+            <span title="ซ่อนจากแถบเมนู" className="text-fg-muted">
               <EyeOff className="h-3.5 w-3.5" />
             </span>
           )}

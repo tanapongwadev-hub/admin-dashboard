@@ -42,7 +42,7 @@ export function Topbar({
     <header className="z-30 flex h-16 shrink-0 items-center gap-3 rounded-xl border border-border bg-surface/90 px-3 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-surface/70 sm:px-5">
       <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
         <SheetTrigger asChild>
-          <Button variant="ghost" size="icon" className="text-fg-secondary lg:hidden" aria-label="Open navigation">
+          <Button variant="ghost" size="icon" className="text-fg-secondary lg:hidden" aria-label="เปิดเมนูนำทาง">
             <Menu className="h-5 w-5" />
           </Button>
         </SheetTrigger>
@@ -57,7 +57,7 @@ export function Topbar({
       </Sheet>
 
       <div className="hidden items-center gap-1.5 text-sm text-fg-muted lg:flex">
-        <span>Panel</span>
+        <span>แผงควบคุม</span>
         <span>/</span>
         <span className="font-medium text-fg">{crumb}</span>
       </div>
@@ -66,7 +66,7 @@ export function Topbar({
         <div className="hidden sm:block sm:w-64 md:w-80">
           <CommandPalette />
         </div>
-        <Button variant="ghost" size="icon" className="text-fg-secondary sm:hidden" aria-label="Search">
+        <Button variant="ghost" size="icon" className="text-fg-secondary sm:hidden" aria-label="ค้นหา">
           <CommandPaletteMobileIcon />
         </Button>
         <NotificationsMenu />

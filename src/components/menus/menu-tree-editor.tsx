@@ -123,7 +123,7 @@ export function MenuTreeEditor({
     if (result.status === "success") {
       setVersion(result.version);
       setSavedItems(items);
-      toast.success("Menu order saved");
+      toast.success("บันทึกลำดับเมนูแล้ว");
       return;
     }
 
@@ -148,22 +148,22 @@ export function MenuTreeEditor({
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface-2 px-3 py-2">
         <p className="text-xs text-fg-muted">
-          {dirty ? "You have unsaved changes." : "No unsaved changes."}
+          {dirty ? "คุณมีการเปลี่ยนแปลงที่ยังไม่ได้บันทึก" : "ไม่มีการเปลี่ยนแปลงที่ยังไม่ได้บันทึก"}
           {projection && activeItem && (
             <span className="ml-2 text-fg-secondary">
               {projection.parentId
-                ? `Will nest under "${items.find((i) => i.id === projection.parentId)?.nameEn}"`
-                : "Will become a top-level menu"}
+                ? `จะซ้อนอยู่ภายใต้ "${items.find((i) => i.id === projection.parentId)?.nameEn}"`
+                : "จะกลายเป็นเมนูระดับบนสุด"}
             </span>
           )}
         </p>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={handleReset} disabled={!dirty || saving}>
-            <RotateCcw className="h-3.5 w-3.5" /> Reset
+            <RotateCcw className="h-3.5 w-3.5" /> รีเซ็ต
           </Button>
           <Button size="sm" onClick={handleSave} disabled={!dirty || saving}>
             {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-            Save changes
+            บันทึกการเปลี่ยนแปลง
           </Button>
         </div>
       </div>

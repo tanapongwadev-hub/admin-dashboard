@@ -187,7 +187,7 @@ function MenuTreeItem({
             type="button"
             onClick={() => onToggle(node.id, isOpen)}
             aria-expanded={isOpen}
-            aria-label={isOpen ? "Collapse" : "Expand"}
+            aria-label={isOpen ? "ยุบ" : "ขยาย"}
             className="mr-1 flex size-7 shrink-0 items-center justify-center rounded-md text-fg-muted transition-colors hover:bg-surface hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
           >
             <ChevronRight className={cn("h-3.5 w-3.5 transition-transform", isOpen && "rotate-90")} />
@@ -241,9 +241,9 @@ export function SidebarNav({
   return (
     <nav className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-2 py-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       <div className="flex flex-col gap-1">
-        {!collapsed && <p className="px-2.5 pb-1 text-[11px] font-semibold uppercase tracking-wider text-fg-muted">Workspace</p>}
+        {!collapsed && <p className="px-2.5 pb-1 text-[11px] font-semibold uppercase tracking-wider text-fg-muted">พื้นที่ทำงาน</p>}
         {items.length === 0 && !collapsed && (
-          <p className="px-2.5 py-1 text-xs text-fg-muted">No menu items available for your role.</p>
+          <p className="px-2.5 py-1 text-xs text-fg-muted">ไม่มีรายการเมนูสำหรับสิทธิ์การใช้งานของคุณ</p>
         )}
         {items.map((item) => (
           <MenuTreeItem
@@ -260,7 +260,7 @@ export function SidebarNav({
         ))}
       </div>
       <div className="mt-auto flex flex-col gap-1">
-        {!collapsed && <p className="px-2.5 pb-1 text-[11px] font-semibold uppercase tracking-wider text-fg-muted">General</p>}
+        {!collapsed && <p className="px-2.5 pb-1 text-[11px] font-semibold uppercase tracking-wider text-fg-muted">ทั่วไป</p>}
         {secondaryNav.map((item) => (
           <StaticNavLink key={item.href} item={item} collapsed={collapsed} onNavigate={onNavigate} pathname={pathname} />
         ))}

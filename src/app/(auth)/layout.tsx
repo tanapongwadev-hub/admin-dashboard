@@ -23,19 +23,19 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
         <div className="relative z-10 max-w-md">
           <p className="text-2xl font-medium leading-snug text-white/95">
-            &ldquo;Panel gave our ops team one place to see everything — orders, inventory and customers, without
-            switching tabs.&rdquo;
+            &ldquo;Panel ทำให้ทีมปฏิบัติการของเรามีที่เดียวที่เห็นทุกอย่าง — ออเดอร์ สต็อก
+            และลูกค้า โดยไม่ต้องสลับแท็บไปมา&rdquo;
           </p>
           <div className="mt-6 flex items-center gap-3">
             <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-xs font-semibold">RC</span>
             <div>
               <p className="text-sm font-medium">Ravi Costa</p>
-              <p className="text-xs text-white/60">COO, Northwind Retail</p>
+              <p className="text-xs text-white/60">ประธานเจ้าหน้าที่ฝ่ายปฏิบัติการ, Northwind Retail</p>
             </div>
           </div>
         </div>
 
-        <p className="relative z-10 text-xs text-white/40">© 2026 Panel, Inc. All rights reserved.</p>
+        <p className="relative z-10 text-xs text-white/40">© 2026 Panel, Inc. สงวนลิขสิทธิ์</p>
       </div>
 
       <div className="flex flex-col justify-center px-6 py-12 sm:px-12 lg:px-16">

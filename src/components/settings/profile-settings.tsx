@@ -17,7 +17,7 @@ export function ProfileSettings() {
     setSaving(true);
     setTimeout(() => {
       setSaving(false);
-      toast.success("Profile updated");
+      toast.success("อัปเดตโปรไฟล์แล้ว");
     }, 600);
   }
 
@@ -26,15 +26,15 @@ export function ProfileSettings() {
       <Card>
         <CardHeader>
           <div>
-            <CardTitle>Profile photo</CardTitle>
-            <CardDescription>This is displayed on your profile and in the sidebar.</CardDescription>
+            <CardTitle>รูปโปรไฟล์</CardTitle>
+            <CardDescription>รูปนี้จะแสดงในโปรไฟล์ของคุณและแถบด้านข้าง</CardDescription>
           </div>
         </CardHeader>
         <CardContent className="flex items-center gap-4">
           <UserAvatar name="Maya Chen" className="h-16 w-16 text-base" />
           <div className="flex gap-2">
-            <Button type="button" variant="outline" size="sm">Upload new</Button>
-            <Button type="button" variant="ghost" size="sm" className="text-danger">Remove</Button>
+            <Button type="button" variant="outline" size="sm">อัปโหลดใหม่</Button>
+            <Button type="button" variant="ghost" size="sm" className="text-danger">ลบ</Button>
           </div>
         </CardContent>
       </Card>
@@ -42,32 +42,32 @@ export function ProfileSettings() {
       <Card>
         <CardHeader>
           <div>
-            <CardTitle>Personal information</CardTitle>
-            <CardDescription>Update your name, email and a short bio.</CardDescription>
+            <CardTitle>ข้อมูลส่วนตัว</CardTitle>
+            <CardDescription>อัปเดตชื่อ อีเมล และประวัติย่อของคุณ</CardDescription>
           </div>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="firstName">First name</Label>
+              <Label htmlFor="firstName">ชื่อจริง</Label>
               <Input id="firstName" defaultValue="Maya" />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="lastName">Last name</Label>
+              <Label htmlFor="lastName">นามสกุล</Label>
               <Input id="lastName" defaultValue="Chen" />
             </div>
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="email">Email address</Label>
+            <Label htmlFor="email">ที่อยู่อีเมล</Label>
             <Input id="email" type="email" defaultValue="maya@panel.io" />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="title">Job title</Label>
+            <Label htmlFor="title">ตำแหน่งงาน</Label>
             <Input id="title" defaultValue="Head of Operations" />
           </div>
           <Separator />
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="bio">Bio</Label>
+            <Label htmlFor="bio">ประวัติย่อ</Label>
             <textarea
               id="bio"
               rows={3}
@@ -78,7 +78,7 @@ export function ProfileSettings() {
         </CardContent>
         <CardFooter className="justify-end">
           <Button type="submit" disabled={saving}>
-            {saving ? "Saving..." : "Save changes"}
+            {saving ? "กำลังบันทึก..." : "บันทึกการเปลี่ยนแปลง"}
           </Button>
         </CardFooter>
       </Card>

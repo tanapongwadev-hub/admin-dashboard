@@ -35,39 +35,39 @@ export function CommandPalette() {
         className="flex h-9 w-full max-w-sm items-center gap-2 rounded-md border border-border-strong bg-surface px-3 text-sm text-fg-muted transition-colors hover:border-border-strong hover:bg-surface-2"
       >
         <Search className="h-4 w-4" />
-        <span className="flex-1 text-left">Search or jump to...</span>
+        <span className="flex-1 text-left">ค้นหาหรือไปยัง...</span>
         <kbd className="rounded border border-border bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] text-fg-muted">⌘K</kbd>
       </button>
 
       <Command.Dialog
         open={open}
         onOpenChange={setOpen}
-        label="Global command menu"
+        label="เมนูคำสั่งทั่วไป"
         overlayClassName="fixed inset-0 z-[100] bg-black/50 backdrop-blur-[2px] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
         contentClassName="fixed left-1/2 top-[20%] z-[100] w-full max-w-lg -translate-x-1/2 overflow-hidden rounded-xl border border-border bg-surface shadow-2xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
       >
         <div className="flex items-center gap-2 border-b border-border px-3">
           <Search className="h-4 w-4 text-fg-muted" />
           <Command.Input
-            placeholder="Type a command or search..."
+            placeholder="พิมพ์คำสั่งหรือค้นหา..."
             className="h-12 w-full bg-transparent text-sm text-fg outline-none placeholder:text-fg-muted"
           />
         </div>
         <Command.List className="max-h-80 overflow-y-auto p-2">
-          <Command.Empty className="py-6 text-center text-sm text-fg-muted">No results found.</Command.Empty>
+          <Command.Empty className="py-6 text-center text-sm text-fg-muted">ไม่พบผลลัพธ์</Command.Empty>
 
-          <Command.Group heading="Navigate" className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-fg-muted">
-            <Item icon={LayoutGrid} onSelect={() => go("/dashboard")}>Overview</Item>
-            <Item icon={LineChart} onSelect={() => go("/analytics")}>Analytics</Item>
-            <Item icon={Users} onSelect={() => go("/users")}>Users</Item>
-            <Item icon={Package} onSelect={() => go("/products")}>Products</Item>
-            <Item icon={ShoppingCart} onSelect={() => go("/orders")}>Orders</Item>
-            <Item icon={Settings} onSelect={() => go("/settings")}>Settings</Item>
+          <Command.Group heading="นำทาง" className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-fg-muted">
+            <Item icon={LayoutGrid} onSelect={() => go("/dashboard")}>ภาพรวม</Item>
+            <Item icon={LineChart} onSelect={() => go("/analytics")}>การวิเคราะห์</Item>
+            <Item icon={Users} onSelect={() => go("/users")}>ผู้ใช้งาน</Item>
+            <Item icon={Package} onSelect={() => go("/products")}>สินค้า</Item>
+            <Item icon={ShoppingCart} onSelect={() => go("/orders")}>คำสั่งซื้อ</Item>
+            <Item icon={Settings} onSelect={() => go("/settings")}>ตั้งค่า</Item>
           </Command.Group>
 
-          <Command.Group heading="Actions" className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-fg-muted">
-            <Item icon={Plus} onSelect={() => go("/users?new=1")}>Invite user</Item>
-            <Item icon={Plus} onSelect={() => go("/products?new=1")}>Add product</Item>
+          <Command.Group heading="การดำเนินการ" className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-fg-muted">
+            <Item icon={Plus} onSelect={() => go("/users?new=1")}>เชิญผู้ใช้งาน</Item>
+            <Item icon={Plus} onSelect={() => go("/products?new=1")}>เพิ่มสินค้า</Item>
             <Item
               icon={resolvedTheme === "dark" ? Sun : Moon}
               onSelect={() => {
@@ -75,7 +75,7 @@ export function CommandPalette() {
                 setOpen(false);
               }}
             >
-              Toggle theme
+              สลับธีม
             </Item>
           </Command.Group>
         </Command.List>

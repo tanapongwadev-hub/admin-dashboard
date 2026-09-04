@@ -20,8 +20,8 @@ export function BillingSettings() {
       <Card>
         <CardHeader>
           <div>
-            <CardTitle>Current plan</CardTitle>
-            <CardDescription>You&apos;re on the Growth plan, billed monthly.</CardDescription>
+            <CardTitle>แพ็กเกจปัจจุบัน</CardTitle>
+            <CardDescription>คุณกำลังใช้แพ็กเกจ Growth เรียกเก็บเงินรายเดือน</CardDescription>
           </div>
           <Badge variant="primary">Growth</Badge>
         </CardHeader>
@@ -29,13 +29,13 @@ export function BillingSettings() {
           <div>
             <p className="text-3xl font-semibold text-fg">
               {formatCurrency(149)}
-              <span className="text-base font-normal text-fg-muted">/month</span>
+              <span className="text-base font-normal text-fg-muted">/เดือน</span>
             </p>
-            <p className="mt-1 text-sm text-fg-muted">Next billing date: September 1, 2026</p>
+            <p className="mt-1 text-sm text-fg-muted">วันที่เรียกเก็บเงินถัดไป: 1 กันยายน 2026</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm">Compare plans</Button>
-            <Button size="sm">Upgrade plan</Button>
+            <Button variant="outline" size="sm">เปรียบเทียบแพ็กเกจ</Button>
+            <Button size="sm">อัปเกรดแพ็กเกจ</Button>
           </div>
         </CardContent>
       </Card>
@@ -43,8 +43,8 @@ export function BillingSettings() {
       <Card>
         <CardHeader>
           <div>
-            <CardTitle>Payment method</CardTitle>
-            <CardDescription>Used for your monthly subscription.</CardDescription>
+            <CardTitle>วิธีการชำระเงิน</CardTitle>
+            <CardDescription>ใช้สำหรับการสมัครสมาชิกรายเดือนของคุณ</CardDescription>
           </div>
         </CardHeader>
         <CardContent className="flex items-center justify-between">
@@ -53,30 +53,30 @@ export function BillingSettings() {
               <CreditCard className="h-4 w-4" />
             </span>
             <div>
-              <p className="text-sm font-medium text-fg">Visa ending in 4242</p>
-              <p className="text-sm text-fg-muted">Expires 09/2028</p>
+              <p className="text-sm font-medium text-fg">Visa ลงท้ายด้วย 4242</p>
+              <p className="text-sm text-fg-muted">หมดอายุ 09/2028</p>
             </div>
           </div>
-          <Button variant="outline" size="sm">Update</Button>
+          <Button variant="outline" size="sm">อัปเดต</Button>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
           <div>
-            <CardTitle>Billing history</CardTitle>
-            <CardDescription>Download past invoices for your records.</CardDescription>
+            <CardTitle>ประวัติการเรียกเก็บเงิน</CardTitle>
+            <CardDescription>ดาวน์โหลดใบแจ้งหนี้ย้อนหลังเพื่อเก็บไว้เป็นหลักฐาน</CardDescription>
           </div>
         </CardHeader>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Invoice</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Receipt</TableHead>
+                <TableHead>ใบแจ้งหนี้</TableHead>
+                <TableHead>วันที่</TableHead>
+                <TableHead>จำนวนเงิน</TableHead>
+                <TableHead>สถานะ</TableHead>
+                <TableHead className="text-right">ใบเสร็จ</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

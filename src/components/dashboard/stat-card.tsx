@@ -37,7 +37,7 @@ export function StatCard({
               {trend === "up" ? <ArrowUpRight className="h-3.5 w-3.5" /> : <ArrowDownRight className="h-3.5 w-3.5" />}
               {change}
             </span>
-            <span className="text-xs text-fg-muted">vs last month</span>
+            <span className="text-xs text-fg-muted">เทียบกับเดือนที่แล้ว</span>
           </div>
         </div>
         <div

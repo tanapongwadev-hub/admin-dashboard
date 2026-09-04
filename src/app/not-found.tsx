@@ -10,13 +10,13 @@ export default function NotFound() {
       </span>
       <div>
         <p className="text-sm font-medium text-primary">404</p>
-        <h1 className="mt-1 text-2xl font-semibold text-fg">Page not found</h1>
+        <h1 className="mt-1 text-2xl font-semibold text-fg">ไม่พบหน้าที่ค้นหา</h1>
         <p className="mt-2 max-w-sm text-sm text-fg-muted">
-          The page you&apos;re looking for doesn&apos;t exist or may have been moved.
+          หน้าที่คุณกำลังค้นหาไม่มีอยู่ หรืออาจถูกย้ายไปแล้ว
         </p>
       </div>
       <Button asChild className="mt-2">
-        <Link href="/dashboard">Back to dashboard</Link>
+        <Link href="/dashboard">กลับไปหน้าแดชบอร์ด</Link>
       </Button>
     </div>
   );

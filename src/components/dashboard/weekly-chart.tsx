@@ -31,8 +31,8 @@ export function WeeklyChart() {
           iconSize={8}
           wrapperStyle={{ fontSize: 12, color: "var(--fg-secondary)" }}
         />
-        <Bar dataKey="visitors" name="Visitors" fill="var(--chart-1)" radius={[4, 4, 0, 0]} maxBarSize={28} />
-        <Bar dataKey="sales" name="Sales" fill="var(--chart-3)" radius={[4, 4, 0, 0]} maxBarSize={28} />
+        <Bar dataKey="visitors" name="ผู้เข้าชม" fill="var(--chart-1)" radius={[4, 4, 0, 0]} maxBarSize={28} />
+        <Bar dataKey="sales" name="ยอดขาย" fill="var(--chart-3)" radius={[4, 4, 0, 0]} maxBarSize={28} />
       </BarChart>
     </ResponsiveContainer>
   );

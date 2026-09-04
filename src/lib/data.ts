@@ -61,7 +61,7 @@ export const users: AppUser[] = Array.from({ length: 64 }).map((_, i) => {
   };
 });
 
-const categories = ["Apparel", "Electronics", "Home & Living", "Beauty", "Sporting Goods", "Stationery"];
+const categories = ["เครื่องแต่งกาย", "อิเล็กทรอนิกส์", "ของแต่งบ้าน", "ความงาม", "อุปกรณ์กีฬา", "เครื่องเขียน"];
 const productAdjectives = ["Classic", "Essential", "Pro", "Studio", "Lightweight", "Heritage", "Urban", "Nomad", "Aria", "Nova"];
 const productNouns = ["Backpack", "Headphones", "Desk Lamp", "Sneakers", "Water Bottle", "Notebook", "Jacket", "Keyboard", "Sunglasses", "Mug"];
 
@@ -133,36 +133,36 @@ export const notifications: NotificationItem[] = [
 ];
 
 export const revenueTrend = [
-  { month: "Jan", revenue: 42500, expenses: 28100 },
-  { month: "Feb", revenue: 46800, expenses: 29900 },
-  { month: "Mar", revenue: 51200, expenses: 31200 },
-  { month: "Apr", revenue: 48900, expenses: 30500 },
-  { month: "May", revenue: 57300, expenses: 33800 },
-  { month: "Jun", revenue: 62100, expenses: 35100 },
-  { month: "Jul", revenue: 59800, expenses: 34700 },
-  { month: "Aug", revenue: 66400, expenses: 36900 },
-  { month: "Sep", revenue: 71200, expenses: 38200 },
-  { month: "Oct", revenue: 68500, expenses: 37600 },
-  { month: "Nov", revenue: 74900, expenses: 39800 },
-  { month: "Dec", revenue: 81300, expenses: 42100 },
+  { month: "ม.ค.", revenue: 42500, expenses: 28100 },
+  { month: "ก.พ.", revenue: 46800, expenses: 29900 },
+  { month: "มี.ค.", revenue: 51200, expenses: 31200 },
+  { month: "เม.ย.", revenue: 48900, expenses: 30500 },
+  { month: "พ.ค.", revenue: 57300, expenses: 33800 },
+  { month: "มิ.ย.", revenue: 62100, expenses: 35100 },
+  { month: "ก.ค.", revenue: 59800, expenses: 34700 },
+  { month: "ส.ค.", revenue: 66400, expenses: 36900 },
+  { month: "ก.ย.", revenue: 71200, expenses: 38200 },
+  { month: "ต.ค.", revenue: 68500, expenses: 37600 },
+  { month: "พ.ย.", revenue: 74900, expenses: 39800 },
+  { month: "ธ.ค.", revenue: 81300, expenses: 42100 },
 ];
 
 export const trafficSources = [
-  { name: "Organic search", value: 4820, color: "chart-1" },
-  { name: "Direct", value: 3210, color: "chart-2" },
-  { name: "Social", value: 2140, color: "chart-3" },
-  { name: "Referral", value: 1380, color: "chart-4" },
-  { name: "Email", value: 960, color: "chart-5" },
+  { name: "ค้นหาแบบออร์แกนิก", value: 4820, color: "chart-1" },
+  { name: "เข้าชมโดยตรง", value: 3210, color: "chart-2" },
+  { name: "โซเชียลมีเดีย", value: 2140, color: "chart-3" },
+  { name: "ลิงก์อ้างอิง", value: 1380, color: "chart-4" },
+  { name: "อีเมล", value: 960, color: "chart-5" },
 ];
 
 export const weeklyVisitors = [
-  { day: "Mon", visitors: 2400, sales: 1200 },
-  { day: "Tue", visitors: 2210, sales: 1398 },
-  { day: "Wed", visitors: 2290, sales: 1800 },
-  { day: "Thu", visitors: 2000, sales: 1908 },
-  { day: "Fri", visitors: 2780, sales: 2400 },
-  { day: "Sat", visitors: 1890, sales: 2100 },
-  { day: "Sun", visitors: 1590, sales: 1500 },
+  { day: "จ.", visitors: 2400, sales: 1200 },
+  { day: "อ.", visitors: 2210, sales: 1398 },
+  { day: "พ.", visitors: 2290, sales: 1800 },
+  { day: "พฤ.", visitors: 2000, sales: 1908 },
+  { day: "ศ.", visitors: 2780, sales: 2400 },
+  { day: "ส.", visitors: 1890, sales: 2100 },
+  { day: "อา.", visitors: 1590, sales: 1500 },
 ];
 
 export function statsFor() {
@@ -184,9 +184,9 @@ export function categoryPerformance() {
 }
 
 export const conversionFunnel = [
-  { stage: "Visitors", value: 12480 },
-  { stage: "Product views", value: 8210 },
-  { stage: "Added to cart", value: 3640 },
-  { stage: "Checkout started", value: 2120 },
-  { stage: "Purchased", value: 1480 },
+  { stage: "ผู้เข้าชม", value: 12480 },
+  { stage: "ดูสินค้า", value: 8210 },
+  { stage: "เพิ่มลงตะกร้า", value: 3640 },
+  { stage: "เริ่มชำระเงิน", value: 2120 },
+  { stage: "ซื้อสำเร็จ", value: 1480 },
 ];

@@ -30,14 +30,14 @@ export function Sidebar({
         <button
           type="button"
           onClick={onToggle}
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-label={collapsed ? "ขยายแถบด้านข้าง" : "ยุบแถบด้านข้าง"}
           className={cn(
             "flex min-h-10 w-full items-center gap-2 rounded-lg border border-transparent px-2.5 py-2 text-sm text-fg-secondary transition-colors hover:border-border hover:bg-surface-2 hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
             collapsed && "justify-center px-2"
           )}
         >
           <ChevronsLeft className={cn("h-4 w-4 transition-transform", collapsed && "rotate-180")} />
-          {!collapsed && "Collapse"}
+          {!collapsed && "ยุบ"}
         </button>
       </div>
     </aside>

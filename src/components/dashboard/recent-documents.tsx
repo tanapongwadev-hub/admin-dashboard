@@ -18,11 +18,11 @@ export function RecentDocuments() {
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Document</TableHead>
-          <TableHead>Material</TableHead>
-          <TableHead>Supplier / Line</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead className="text-right">Qty</TableHead>
+          <TableHead>เอกสาร</TableHead>
+          <TableHead>วัสดุ</TableHead>
+          <TableHead>ผู้จัดจำหน่าย / สายการผลิต</TableHead>
+          <TableHead>สถานะ</TableHead>
+          <TableHead className="text-right">จำนวน</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -58,7 +58,7 @@ export function RecentDocuments() {
 export function RecentDocumentsFooter() {
   return (
     <Button variant="ghost" size="sm" asChild className="text-fg-secondary">
-      <Link href="/materials">View all documents</Link>
+      <Link href="/materials">ดูเอกสารทั้งหมด</Link>
     </Button>
   );
 }

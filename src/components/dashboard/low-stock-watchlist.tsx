@@ -27,7 +27,7 @@ export function LowStockWatchlist() {
                   />
                 </div>
                 <span className={cn("shrink-0 text-xs", critical ? "text-danger" : "text-warning")}>
-                  {critical ? "Reorder now" : "Below reorder point"}
+                  {critical ? "ต้องสั่งซื้อด่วน" : "ต่ำกว่าจุดสั่งซื้อ"}
                 </span>
               </div>
             </div>

@@ -38,8 +38,8 @@ export function OrderDetailsDialog({
             <DialogHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <DialogTitle>Order {order.id}</DialogTitle>
-                  <DialogDescription>Placed on {formatDate(order.date)}</DialogDescription>
+                  <DialogTitle>คำสั่งซื้อ {order.id}</DialogTitle>
+                  <DialogDescription>สั่งซื้อเมื่อ {formatDate(order.date)}</DialogDescription>
                 </div>
                 <Badge variant={statusVariant[order.status]} dot>
                   {order.status}
@@ -60,19 +60,19 @@ export function OrderDetailsDialog({
 
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <p className="text-fg-muted">Items</p>
+                  <p className="text-fg-muted">จำนวนรายการ</p>
                   <p className="mt-0.5 font-medium text-fg">{order.items}</p>
                 </div>
                 <div>
-                  <p className="text-fg-muted">Payment</p>
+                  <p className="text-fg-muted">การชำระเงิน</p>
                   <p className="mt-0.5 font-medium text-fg">{order.payment}</p>
                 </div>
                 <div>
-                  <p className="text-fg-muted">Amount</p>
+                  <p className="text-fg-muted">ยอดเงิน</p>
                   <p className="mt-0.5 font-medium tabular-nums text-fg">{formatCurrency(order.amount)}</p>
                 </div>
                 <div>
-                  <p className="text-fg-muted">Order ID</p>
+                  <p className="text-fg-muted">รหัสคำสั่งซื้อ</p>
                   <p className="mt-0.5 font-medium text-fg">{order.id}</p>
                 </div>
               </div>
@@ -80,10 +80,10 @@ export function OrderDetailsDialog({
               <Separator />
 
               <div>
-                <p className="mb-3 text-sm font-medium text-fg">Fulfillment timeline</p>
+                <p className="mb-3 text-sm font-medium text-fg">ไทม์ไลน์การดำเนินการ</p>
                 <ol className="flex flex-col gap-3">
                   {(() => {
-                    const steps = ["Order placed", "Processing", "Shipped", "Delivered"];
+                    const steps = ["สั่งซื้อแล้ว", "กำลังดำเนินการ", "จัดส่งแล้ว", "ส่งถึงแล้ว"];
                     const statusToStep: Record<OrderStatus, number> = {
                       Pending: 0,
                       Processing: 1,
@@ -107,7 +107,7 @@ export function OrderDetailsDialog({
                   {order.status === "Cancelled" && (
                     <li className="flex items-center gap-3 text-sm">
                       <span className="h-2 w-2 shrink-0 rounded-full bg-danger" />
-                      <span className="text-danger">Order cancelled</span>
+                      <span className="text-danger">คำสั่งซื้อถูกยกเลิก</span>
                     </li>
                   )}
                 </ol>
@@ -116,7 +116,7 @@ export function OrderDetailsDialog({
 
             <DialogFooter>
               <Button variant="outline" onClick={() => onOpenChange(false)}>
-                Close
+                ปิด
               </Button>
             </DialogFooter>
           </>

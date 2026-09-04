@@ -28,9 +28,9 @@ import { loginAction, selectDepartmentAction } from "./actions";
 import type { DepartmentOption } from "@/lib/api/auth";
 
 const features = [
-  { icon: Activity, label: "Production orders & stock in one view" },
-  { icon: ShieldCheck, label: "Role-based access with audit logs" },
-  { icon: Plug, label: "Native ERP integrations across the line" },
+  { icon: Activity, label: "ออเดอร์ผลิตและสต็อกในหน้าจอเดียว" },
+  { icon: ShieldCheck, label: "สิทธิ์การเข้าถึงตามบทบาท พร้อมบันทึกการตรวจสอบ" },
+  { icon: Plug, label: "เชื่อมต่อระบบ ERP ได้โดยตรงทั่วทั้งสายการผลิต" },
 ];
 
 export default function LoginPage() {
@@ -58,7 +58,7 @@ export default function LoginPage() {
     setLoading(false);
 
     if (result.status === "success") {
-      toast.success("Welcome back");
+      toast.success("ยินดีต้อนรับกลับ");
       router.push("/dashboard");
       return;
     }
@@ -81,7 +81,7 @@ export default function LoginPage() {
     setLoading(false);
 
     if (result.status === "success") {
-      toast.success("Welcome back");
+      toast.success("ยินดีต้อนรับกลับ");
       router.push("/dashboard");
       return;
     }
@@ -134,7 +134,7 @@ export default function LoginPage() {
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#F59E0B]/70" />
               <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#F59E0B]" />
             </span>
-            ALL SYSTEMS OPERATIONAL
+            ระบบทำงานปกติทั้งหมด
           </span>
           <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-white/40">
             v1.0
@@ -169,9 +169,9 @@ export default function LoginPage() {
 
           <div className="space-y-3">
             <p className="text-[15px] leading-relaxed text-white/75">
-              Run the line from one calm console — orders, stock and
-              departments in a single place, without the tab juggling or
-              late-night spreadsheet fixes.
+              บริหารสายการผลิตจากคอนโซลเดียวอย่างเป็นระบบ — ออเดอร์ สต็อก
+              และแผนกต่าง ๆ อยู่ในที่เดียว ไม่ต้องสลับหน้าจอไปมา
+              หรือมานั่งแก้สเปรดชีตดึกดื่น
             </p>
           </div>
 
@@ -278,12 +278,12 @@ export default function LoginPage() {
                   />
                 </div>
                 <h1 className="text-[22px] font-semibold leading-tight tracking-tight text-fg sm:text-[24px]">
-                  {departmentStep ? "Choose a department" : "Sign in"}
+                  {departmentStep ? "เลือกแผนก" : "เข้าสู่ระบบ"}
                 </h1>
                 <p className="mt-1.5 text-sm text-fg-muted">
                   {departmentStep
-                    ? "Your account has access to multiple departments. Pick one to continue."
-                    : "Access the CPS operations console."}
+                    ? "บัญชีของคุณมีสิทธิ์เข้าถึงหลายแผนก กรุณาเลือกแผนกเพื่อดำเนินการต่อ"
+                    : "เข้าสู่คอนโซลปฏิบัติการของ CPS"}
                 </p>
               </div>
 
@@ -294,13 +294,13 @@ export default function LoginPage() {
                     className="flex flex-col gap-4"
                   >
                     <div className="flex flex-col gap-1.5">
-                      <Label htmlFor="department">Department</Label>
+                      <Label htmlFor="department">แผนก</Label>
                       <Select
                         value={selectedDepartment}
                         onValueChange={setSelectedDepartment}
                       >
                         <SelectTrigger id="department" className="h-10">
-                          <SelectValue placeholder="Select a department" />
+                          <SelectValue placeholder="เลือกแผนก" />
                         </SelectTrigger>
                         <SelectContent>
                           {departmentStep.departments.map((dept) => (
@@ -321,14 +321,14 @@ export default function LoginPage() {
                       className="mt-2"
                       disabled={loading || !selectedDepartment}
                     >
-                      {loading ? "Signing in..." : "Continue"}
+                      {loading ? "กำลังเข้าสู่ระบบ..." : "ดำเนินการต่อ"}
                     </Button>
                     <button
                       type="button"
                       onClick={() => setDepartmentStep(null)}
                       className="text-center text-sm text-fg-muted transition-colors hover:text-fg"
                     >
-                      Back to sign in
+                      กลับไปหน้าเข้าสู่ระบบ
                     </button>
                   </form>
                 ) : (
@@ -338,7 +338,7 @@ export default function LoginPage() {
                     noValidate
                   >
                     <div className="flex flex-col gap-1.5">
-                      <Label htmlFor="username">Username</Label>
+                      <Label htmlFor="username">ชื่อผู้ใช้</Label>
                       <div className="relative">
                         <User
                           aria-hidden
@@ -348,7 +348,7 @@ export default function LoginPage() {
                           id="username"
                           name="username"
                           type="text"
-                          placeholder="your.username"
+                          placeholder="ชื่อผู้ใช้ของคุณ"
                           autoComplete="username"
                           autoCapitalize="none"
                           autoCorrect="off"
@@ -361,12 +361,12 @@ export default function LoginPage() {
 
                     <div className="flex flex-col gap-1.5">
                       <div className="flex items-baseline justify-between">
-                        <Label htmlFor="password">Password</Label>
+                        <Label htmlFor="password">รหัสผ่าน</Label>
                         <Link
                           href="/forgot-password"
                           className="text-xs font-medium text-primary hover:underline"
                         >
-                          Forgot?
+                          ลืมรหัสผ่าน?
                         </Link>
                       </div>
                       <div className="relative">
@@ -389,7 +389,7 @@ export default function LoginPage() {
                           onClick={() => setShowPassword((v) => !v)}
                           className="absolute right-1.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded text-fg-muted transition-colors hover:bg-surface-2 hover:text-fg"
                           aria-label={
-                            showPassword ? "Hide password" : "Show password"
+                            showPassword ? "ซ่อนรหัสผ่าน" : "แสดงรหัสผ่าน"
                           }
                         >
                           {showPassword ? (
@@ -407,7 +407,7 @@ export default function LoginPage() {
                       className="mt-2"
                       disabled={loading}
                     >
-                      {loading ? "Signing in..." : "Sign in"}
+                      {loading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
                     </Button>
                   </form>
                 )}
@@ -419,7 +419,7 @@ export default function LoginPage() {
               <p className="flex items-center justify-center gap-1.5 text-[11px] text-fg-muted">
                 <ShieldCheck className="h-3 w-3" />
                 <span>
-                  Secure session — protected by CPS access control.
+                  เซสชันปลอดภัย ได้รับการปกป้องโดยระบบควบคุมการเข้าถึงของ CPS
                 </span>
               </p>
             </div>

@@ -40,7 +40,7 @@ export function DataTable<TData, TValue>({
   globalFilter,
   columnFilters,
   onRowSelectionChange,
-  emptyMessage = "No results found.",
+  emptyMessage = "ไม่พบข้อมูล",
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
@@ -134,7 +134,7 @@ export function DataTable<TData, TValue>({
 
       <div className="flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2 text-sm text-fg-muted">
-          <span>Rows per page</span>
+          <span>แถวต่อหน้า</span>
           <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
             <SelectTrigger className="h-8 w-[70px]">
               <SelectValue />
@@ -152,8 +152,8 @@ export function DataTable<TData, TValue>({
         <div className="flex items-center gap-4">
           <p className="text-sm text-fg-muted">
             {totalRows === 0
-              ? "0 results"
-              : `${pageIndex * pageSize + 1}–${Math.min((pageIndex + 1) * pageSize, totalRows)} of ${totalRows}`}
+              ? "0 รายการ"
+              : `${pageIndex * pageSize + 1}–${Math.min((pageIndex + 1) * pageSize, totalRows)} จาก ${totalRows}`}
           </p>
           <div className="flex items-center gap-1">
             <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}>

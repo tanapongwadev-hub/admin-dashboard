@@ -14,23 +14,23 @@ export default function AnalyticsPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-xl font-semibold text-fg">Analytics</h1>
-        <p className="mt-1 text-sm text-fg-muted">A closer look at growth, engagement and conversion.</p>
+        <h1 className="text-xl font-semibold text-fg">การวิเคราะห์</h1>
+        <p className="mt-1 text-sm text-fg-muted">เจาะลึกการเติบโต การมีส่วนร่วม และอัตราการเปลี่ยนเป็นลูกค้า</p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Conversion rate" value="3.42%" change="0.6%" trend="up" icon={Percent} accent="chart-1" />
-        <StatCard label="Avg. session" value="4m 12s" change="1.2%" trend="up" icon={MousePointerClick} accent="chart-2" />
-        <StatCard label="New signups" value="1,204" change="8.9%" trend="up" icon={Users} accent="chart-3" />
-        <StatCard label="Growth rate" value="18.2%" change="3.1%" trend="down" icon={TrendingUp} accent="chart-4" />
+        <StatCard label="อัตราการเปลี่ยนเป็นลูกค้า" value="3.42%" change="0.6%" trend="up" icon={Percent} accent="chart-1" />
+        <StatCard label="เวลาเฉลี่ยต่อเซสชัน" value="4m 12s" change="1.2%" trend="up" icon={MousePointerClick} accent="chart-2" />
+        <StatCard label="ผู้สมัครใหม่" value="1,204" change="8.9%" trend="up" icon={Users} accent="chart-3" />
+        <StatCard label="อัตราการเติบโต" value="18.2%" change="3.1%" trend="down" icon={TrendingUp} accent="chart-4" />
       </div>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         <Card className="xl:col-span-2">
           <CardHeader>
             <div>
-              <CardTitle>Revenue trend</CardTitle>
-              <CardDescription>Monthly revenue vs expenses</CardDescription>
+              <CardTitle>แนวโน้มรายได้</CardTitle>
+              <CardDescription>รายได้เทียบกับค่าใช้จ่ายรายเดือน</CardDescription>
             </div>
           </CardHeader>
           <CardContent>
@@ -40,8 +40,8 @@ export default function AnalyticsPage() {
         <Card>
           <CardHeader>
             <div>
-              <CardTitle>Traffic sources</CardTitle>
-              <CardDescription>Where visitors come from</CardDescription>
+              <CardTitle>แหล่งที่มาของการเข้าชม</CardTitle>
+              <CardDescription>ผู้เข้าชมมาจากที่ใด</CardDescription>
             </div>
           </CardHeader>
           <CardContent>
@@ -54,8 +54,8 @@ export default function AnalyticsPage() {
         <Card>
           <CardHeader>
             <div>
-              <CardTitle>Sales by category</CardTitle>
-              <CardDescription>Units sold across product categories</CardDescription>
+              <CardTitle>ยอดขายตามหมวดหมู่</CardTitle>
+              <CardDescription>จำนวนหน่วยที่ขายในแต่ละหมวดหมู่สินค้า</CardDescription>
             </div>
           </CardHeader>
           <CardContent>
@@ -65,8 +65,8 @@ export default function AnalyticsPage() {
         <Card>
           <CardHeader>
             <div>
-              <CardTitle>Conversion funnel</CardTitle>
-              <CardDescription>From visit to purchase</CardDescription>
+              <CardTitle>ช่องทางการเปลี่ยนเป็นลูกค้า</CardTitle>
+              <CardDescription>ตั้งแต่เข้าชมจนถึงซื้อสินค้า</CardDescription>
             </div>
           </CardHeader>
           <CardContent>
@@ -78,8 +78,8 @@ export default function AnalyticsPage() {
       <Card>
         <CardHeader>
           <div>
-            <CardTitle>Weekly performance</CardTitle>
-            <CardDescription>Visitors and sales, last 7 days</CardDescription>
+            <CardTitle>ผลการดำเนินงานรายสัปดาห์</CardTitle>
+            <CardDescription>ผู้เข้าชมและยอดขาย 7 วันที่ผ่านมา</CardDescription>
           </div>
         </CardHeader>
         <CardContent>

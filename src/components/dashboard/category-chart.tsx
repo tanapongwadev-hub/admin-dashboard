@@ -24,7 +24,7 @@ export function CategoryChart() {
         <Tooltip
           cursor={{ fill: "var(--surface-2)" }}
           contentStyle={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
-          formatter={(value) => [formatNumber(Number(value)), "Units sold"]}
+          formatter={(value) => [formatNumber(Number(value)), "จำนวนที่ขาย"]}
         />
         <Bar dataKey="sales" radius={[0, 4, 4, 0]} maxBarSize={20}>
           {data.map((_, i) => (

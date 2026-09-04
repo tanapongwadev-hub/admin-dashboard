@@ -16,11 +16,10 @@ export default async function DashboardCatchAllPage({
   return (
     <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border py-24 text-center">
       <Construction className="h-8 w-8 text-fg-muted" />
-      <p className="text-lg font-semibold text-fg">This page isn&apos;t built yet</p>
+      <p className="text-lg font-semibold text-fg">หน้านี้ยังไม่ได้สร้าง</p>
       <p className="max-w-sm text-sm text-fg-muted">
-        <code className="rounded bg-surface-2 px-1.5 py-0.5 text-xs">{path}</code> is a
-        real menu item your account has permission for, but the page for it
-        hasn&apos;t been implemented in this app yet.
+        <code className="rounded bg-surface-2 px-1.5 py-0.5 text-xs">{path}</code> เป็น
+        เมนูจริงที่บัญชีของคุณมีสิทธิ์เข้าถึง แต่หน้าดังกล่าวยังไม่ได้ถูกพัฒนาในแอปนี้
       </p>
     </div>
   );

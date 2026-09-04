@@ -53,11 +53,11 @@ export interface MaterialCategoryShare {
 }
 
 export const materialCategoryBreakdown: MaterialCategoryShare[] = [
-  { name: "Steel pipe", value: 18400, color: "chart-2" },
-  { name: "Sheet metal", value: 12100, color: "chart-3" },
-  { name: "Coil", value: 9600, color: "chart-1" },
-  { name: "Fasteners", value: 4200, color: "chart-4" },
-  { name: "Consumables", value: 2100, color: "chart-5" },
+  { name: "ท่อเหล็ก", value: 18400, color: "chart-2" },
+  { name: "แผ่นเหล็ก", value: 12100, color: "chart-3" },
+  { name: "ม้วนเหล็ก", value: 9600, color: "chart-1" },
+  { name: "อุปกรณ์ยึด", value: 4200, color: "chart-4" },
+  { name: "วัสดุสิ้นเปลือง", value: 2100, color: "chart-5" },
 ];
 
 // ---- Weekly throughput (this week, received vs disbursed) ----
@@ -68,13 +68,13 @@ export interface ThroughputPoint {
 }
 
 export const weeklyThroughput: ThroughputPoint[] = [
-  { day: "Mon", received: 2100, disbursed: 1850 },
-  { day: "Tue", received: 1950, disbursed: 2200 },
-  { day: "Wed", received: 2400, disbursed: 1980 },
-  { day: "Thu", received: 1800, disbursed: 2350 },
-  { day: "Fri", received: 2650, disbursed: 2100 },
-  { day: "Sat", received: 1200, disbursed: 900 },
-  { day: "Sun", received: 400, disbursed: 250 },
+  { day: "จ.", received: 2100, disbursed: 1850 },
+  { day: "อ.", received: 1950, disbursed: 2200 },
+  { day: "พ.", received: 2400, disbursed: 1980 },
+  { day: "พฤ.", received: 1800, disbursed: 2350 },
+  { day: "ศ.", received: 2650, disbursed: 2100 },
+  { day: "ส.", received: 1200, disbursed: 900 },
+  { day: "อา.", received: 400, disbursed: 250 },
 ];
 
 // ---- Recent receiving / disbursement documents ----
@@ -135,12 +135,12 @@ export interface FloorActivityItem {
 const staff = ["Somchai P.", "Nattapong K.", "Ploy S.", "Wichai T.", "Ananya R.", "Kittipong W."];
 const avatarColors = ["chart-1", "chart-2", "chart-3", "chart-4", "chart-5"];
 const floorActions = [
-  "confirmed receiving for",
-  "disbursed stock to",
-  "flagged low stock on",
-  "updated BOM for",
-  "recorded a stock adjustment on",
-  "confirmed disbursement to",
+  "ยืนยันการรับเข้าสำหรับ",
+  "เบิกจ่ายสต็อกให้กับ",
+  "แจ้งเตือนสต็อกต่ำสำหรับ",
+  "อัปเดตสูตรการผลิต (BOM) สำหรับ",
+  "บันทึกการปรับปรุงสต็อกของ",
+  "ยืนยันการเบิกจ่ายให้กับ",
 ];
 
 export const floorActivity: FloorActivityItem[] = Array.from({ length: 7 }).map((_, i) => ({

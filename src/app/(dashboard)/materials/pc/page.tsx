@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { ShieldAlert } from "lucide-react";
 import { getCurrentSession } from "@/lib/session";
-import { listMaterials, getMaterialLookups } from "@/lib/api/materials";
+import { listMaterials, getMaterialLookups, listStockBalances, type StockBalance } from "@/lib/api/materials";
 import { MaterialPcClient } from "@/components/materials-pc/material-pc-client";
 
 const PAGE_SIZE = 20;
@@ -18,9 +18,9 @@ export default async function MaterialsPcPage({
     return (
       <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border py-24 text-center">
         <ShieldAlert className="h-8 w-8 text-fg-muted" />
-        <p className="text-lg font-semibold text-fg">You don&apos;t have access to Materials</p>
+        <p className="text-lg font-semibold text-fg">คุณไม่มีสิทธิ์เข้าถึงหน้าวัสดุ</p>
         <p className="max-w-sm text-sm text-fg-muted">
-          Viewing materials requires the Material View permission. Ask an administrator for access.
+          การดูวัสดุต้องมีสิทธิ์ Material View กรุณาติดต่อผู้ดูแลระบบเพื่อขอสิทธิ์เข้าถึง
         </p>
       </div>
     );
@@ -34,7 +34,13 @@ export default async function MaterialsPcPage({
   const store = await cookies();
   const accessToken = store.get("accessToken")!.value;
 
-  const [list, lookups] = await Promise.all([
+  // Stock quantity is a separate cps-api resource (`/stock-balances`) gated
+  // on MATERIALS_RECEIVING_VIEW, not MATERIAL_VIEW — a user can see the
+  // materials list without being able to see stock, so this is optional and
+  // only fetched when permitted (see AGENTS.md § Materials PC).
+  const canViewStock = session.user.isSuperAdmin || session.permissions.includes("MATERIALS_RECEIVING_VIEW");
+
+  const [list, lookups, stockBalances] = await Promise.all([
     listMaterials(accessToken, {
       page,
       limit: PAGE_SIZE,
@@ -45,7 +51,15 @@ export default async function MaterialsPcPage({
       sortOrder: "asc",
     }),
     getMaterialLookups(accessToken),
+    canViewStock ? listStockBalances(accessToken) : Promise.resolve(null),
   ]);
+
+  const stockByMaterialId = stockBalances
+    ? stockBalances.reduce<Record<string, StockBalance>>((map, balance) => {
+        map[balance.materialId] = balance;
+        return map;
+      }, {})
+    : null;
 
   const canEdit = session.user.isSuperAdmin || session.permissions.includes("MATERIAL_CREATE") || session.permissions.includes("MATERIAL_UPDATE");
   const canDelete = session.user.isSuperAdmin || session.permissions.includes("MATERIAL_DELETE");
@@ -53,8 +67,8 @@ export default async function MaterialsPcPage({
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-xl font-semibold text-fg">Materials · PC</h1>
-        <p className="mt-1 text-sm text-fg-muted">Purchased-component materials used across the line.</p>
+        <h1 className="text-xl font-semibold text-fg">วัสดุ · PC</h1>
+        <p className="mt-1 text-sm text-fg-muted">วัสดุประเภทชิ้นส่วนจัดซื้อที่ใช้งานทั่วทั้งสายการผลิต</p>
       </div>
 
       <MaterialPcClient
@@ -63,6 +77,7 @@ export default async function MaterialsPcPage({
         lookups={lookups}
         canEdit={canEdit}
         canDelete={canDelete}
+        stockByMaterialId={stockByMaterialId}
       />
     </div>
   );

@@ -8,15 +8,15 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 
 const emailOptions = [
-  { id: "orders", label: "New orders", description: "Get notified when a new order comes in." },
-  { id: "stock", label: "Low stock alerts", description: "Get notified when a product is running low." },
-  { id: "team", label: "Team activity", description: "Updates when teammates join, edit or comment." },
-  { id: "reports", label: "Weekly reports", description: "A summary of performance every Monday." },
+  { id: "orders", label: "คำสั่งซื้อใหม่", description: "รับการแจ้งเตือนเมื่อมีคำสั่งซื้อใหม่เข้ามา" },
+  { id: "stock", label: "การแจ้งเตือนสินค้าใกล้หมด", description: "รับการแจ้งเตือนเมื่อสินค้าใกล้หมด" },
+  { id: "team", label: "กิจกรรมของทีม", description: "อัปเดตเมื่อสมาชิกในทีมเข้าร่วม แก้ไข หรือแสดงความคิดเห็น" },
+  { id: "reports", label: "รายงานประจำสัปดาห์", description: "สรุปผลการดำเนินงานทุกวันจันทร์" },
 ];
 
 const pushOptions = [
-  { id: "mentions", label: "Mentions", description: "When someone mentions you in a comment." },
-  { id: "payments", label: "Payment failures", description: "Immediate alerts for failed payments." },
+  { id: "mentions", label: "การกล่าวถึง", description: "เมื่อมีคนกล่าวถึงคุณในความคิดเห็น" },
+  { id: "payments", label: "การชำระเงินล้มเหลว", description: "แจ้งเตือนทันทีเมื่อการชำระเงินล้มเหลว" },
 ];
 
 export function NotificationSettings() {
@@ -29,8 +29,8 @@ export function NotificationSettings() {
       <Card>
         <CardHeader>
           <div>
-            <CardTitle>Email notifications</CardTitle>
-            <CardDescription>Choose what you want to be emailed about.</CardDescription>
+            <CardTitle>การแจ้งเตือนทางอีเมล</CardTitle>
+            <CardDescription>เลือกสิ่งที่คุณต้องการให้แจ้งเตือนทางอีเมล</CardDescription>
           </div>
         </CardHeader>
         <CardContent className="flex flex-col divide-y divide-border">
@@ -49,8 +49,8 @@ export function NotificationSettings() {
       <Card>
         <CardHeader>
           <div>
-            <CardTitle>Push notifications</CardTitle>
-            <CardDescription>Real-time alerts sent to your browser or device.</CardDescription>
+            <CardTitle>การแจ้งเตือนแบบพุช</CardTitle>
+            <CardDescription>การแจ้งเตือนแบบเรียลไทม์ที่ส่งไปยังเบราว์เซอร์หรืออุปกรณ์ของคุณ</CardDescription>
           </div>
         </CardHeader>
         <CardContent className="flex flex-col divide-y divide-border">
@@ -70,16 +70,16 @@ export function NotificationSettings() {
       <Card>
         <CardHeader>
           <div>
-            <CardTitle>Marketing emails</CardTitle>
-            <CardDescription>Product updates, tips and occasional offers.</CardDescription>
+            <CardTitle>อีเมลการตลาด</CardTitle>
+            <CardDescription>อัปเดตผลิตภัณฑ์ เคล็ดลับ และข้อเสนอเป็นครั้งคราว</CardDescription>
           </div>
         </CardHeader>
         <CardContent className="flex items-center justify-between">
-          <p className="text-sm text-fg-secondary">Receive marketing emails from Panel</p>
+          <p className="text-sm text-fg-secondary">รับอีเมลการตลาดจาก Panel</p>
           <Switch checked={marketing} onCheckedChange={setMarketing} />
         </CardContent>
         <CardFooter className="justify-end">
-          <Button onClick={() => toast.success("Notification preferences saved")}>Save preferences</Button>
+          <Button onClick={() => toast.success("บันทึกการตั้งค่าการแจ้งเตือนแล้ว")}>บันทึกการตั้งค่า</Button>
         </CardFooter>
       </Card>
     </div>

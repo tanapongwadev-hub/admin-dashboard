@@ -20,13 +20,13 @@ export function MaterialPcStatusDialog({
       open={!!material}
       onOpenChange={onOpenChange}
       variant={disabling ? "danger" : "default"}
-      title={disabling ? "Disable this material?" : "Enable this material?"}
+      title={disabling ? "ปิดใช้งานวัสดุนี้หรือไม่?" : "เปิดใช้งานวัสดุนี้หรือไม่?"}
       description={
         disabling
-          ? `"${material.name}" (${material.code}) will stop appearing in active material lists. It isn't deleted — you can enable it again anytime.`
-          : `"${material.name}" (${material.code}) will become available again in active material lists and lookups.`
+          ? `"${material.name}" (${material.code}) จะไม่ปรากฏในรายการวัสดุที่ใช้งานอยู่อีกต่อไป ข้อมูลจะไม่ถูกลบ — คุณสามารถเปิดใช้งานได้อีกครั้งทุกเมื่อ`
+          : `"${material.name}" (${material.code}) จะกลับมาใช้งานได้อีกครั้งในรายการและตัวเลือกวัสดุที่ใช้งานอยู่`
       }
-      confirmLabel={disabling ? "Disable" : "Enable"}
+      confirmLabel={disabling ? "ปิดใช้งาน" : "เปิดใช้งาน"}
       onConfirm={() => onConfirm(material)}
     />
   );
