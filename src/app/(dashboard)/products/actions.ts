@@ -7,8 +7,10 @@ import {
   updateProduct,
   deactivateProduct,
   restoreProduct,
+  uploadProductImage,
   type Product,
   type ProductPayload,
+  type StagedProductImage,
   type UpdateProductPayload,
 } from "@/lib/api/products";
 import { ApiError } from "@/lib/api/client";
@@ -18,12 +20,18 @@ export type ProductActionResult =
   | { status: "conflict"; message: string }
   | { status: "error"; message: string };
 
+export type ProductImageUploadActionResult =
+  | { status: "success"; image: StagedProductImage }
+  | { status: "error"; message: string };
+
+type ProductActionFailure = Exclude<ProductActionResult, { status: "success" }>;
+
 async function requireAccessToken() {
   const store = await cookies();
   return store.get("accessToken")?.value ?? null;
 }
 
-function errorResult(err: unknown): ProductActionResult {
+function errorResult(err: unknown): ProductActionFailure {
   if (err instanceof ApiError) {
     if (err.status === 409) {
       return {
@@ -41,6 +49,25 @@ function errorResult(err: unknown): ProductActionResult {
 function revalidateProductPaths() {
   revalidatePath("/products");
   revalidatePath("/products/list");
+}
+
+export async function uploadProductImageAction(formData: FormData): Promise<ProductImageUploadActionResult> {
+  const accessToken = await requireAccessToken();
+  if (!accessToken) {
+    return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
+  }
+
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) {
+    return { status: "error", message: "กรุณาเลือกรูปภาพสินค้า" };
+  }
+
+  try {
+    const image = await uploadProductImage(accessToken, file, file.name);
+    return { status: "success", image };
+  } catch (err) {
+    return { status: "error", message: errorResult(err).message };
+  }
 }
 
 export async function createProductAction(payload: ProductPayload): Promise<ProductActionResult> {

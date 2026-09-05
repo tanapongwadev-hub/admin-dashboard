@@ -1,10 +1,12 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
+import { CircleAlert, ImagePlus } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -23,8 +25,130 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import { createProductAction, updateProductAction } from "@/app/(dashboard)/products/actions";
+import {
+  createProductAction,
+  updateProductAction,
+  uploadProductImageAction,
+} from "@/app/(dashboard)/products/actions";
 import type { Product, ProductLookups } from "@/lib/api/products";
+import { cn } from "@/lib/utils";
+
+const PRODUCT_IMAGE_MAX_SIZE = 5 * 1024 * 1024;
+const PRODUCT_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+
+// Unlike Materials PC's imagePath (required on create — a business decision
+// specific to that resource), cps-api's CreateProductDto/UpdateProductDto
+// both declare productImagePath optional (confirmed by reading the DTOs
+// directly), so this picker is always optional — no `required` prop to
+// thread through, just a plain nullable validation.
+export function validateProductImage(file: Pick<File, "type" | "size"> | null): string | null {
+  if (!file) return null;
+  if (!PRODUCT_IMAGE_TYPES.has(file.type)) {
+    return "รองรับเฉพาะไฟล์ JPEG, PNG หรือ WebP";
+  }
+  if (file.size > PRODUCT_IMAGE_MAX_SIZE) {
+    return "รูปภาพต้องมีขนาดไม่เกิน 5 MiB";
+  }
+  return null;
+}
+
+// Same "dashed selection card" pattern as Materials PC's MaterialImagePicker
+// (see material-pc-form-dialog.tsx) — visually hidden native file input,
+// clickable label, preview/content split on sm+. Kept as its own local copy
+// rather than a shared component, per this project's established "hand-write
+// each resource's own form pieces" convention (see AGENTS.md § Materials PC
+// "Not (yet) applied to Products/Users/Orders").
+function ProductImagePicker({
+  file,
+  previewUrl,
+  error,
+  hasExistingImage = false,
+  inputRef,
+  onChange,
+}: {
+  file: Pick<File, "name" | "size"> | null;
+  previewUrl: string | null;
+  error: string | null;
+  hasExistingImage?: boolean;
+  inputRef: React.RefObject<HTMLInputElement | null>;
+  onChange: React.ChangeEventHandler<HTMLInputElement>;
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-baseline justify-between gap-3">
+        <Label htmlFor="product-image">รูปภาพสินค้า</Label>
+        <span className="text-xs text-fg-muted">ไม่บังคับ</span>
+      </div>
+
+      <Input
+        ref={inputRef}
+        id="product-image"
+        name="productImage"
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        aria-describedby="product-image-hint product-image-error"
+        aria-invalid={error ? true : undefined}
+        onChange={onChange}
+        className="peer sr-only"
+      />
+
+      <label
+        htmlFor="product-image"
+        className={cn(
+          "group grid min-h-44 cursor-pointer overflow-hidden rounded-lg border-2 border-dashed bg-surface transition-colors",
+          "sm:grid-cols-[12rem_1fr]",
+          "hover:border-primary/60 hover:bg-primary-soft/30",
+          "peer-focus-visible:border-primary peer-focus-visible:ring-2 peer-focus-visible:ring-ring/40",
+          error ? "border-danger bg-danger-soft/30" : "border-border-strong"
+        )}
+      >
+        <span className="relative flex min-h-36 items-center justify-center overflow-hidden border-b border-border bg-surface-2 sm:min-h-full sm:border-r sm:border-b-0">
+          {previewUrl ? (
+            <Image
+              src={previewUrl}
+              alt={hasExistingImage && !file ? "รูปภาพสินค้าปัจจุบัน" : "ตัวอย่างรูปภาพสินค้าที่เลือก"}
+              fill
+              unoptimized
+              sizes="(min-width: 640px) 192px, 100vw"
+              className="object-contain p-2"
+            />
+          ) : (
+            <span className="flex size-14 items-center justify-center rounded-full bg-primary-soft text-primary transition-transform group-hover:scale-105">
+              <ImagePlus className="size-7" aria-hidden="true" />
+            </span>
+          )}
+        </span>
+
+        <span className="flex min-w-0 flex-col items-start justify-center gap-2.5 p-5">
+          <span className="text-sm font-semibold text-fg">
+            {file ? "เปลี่ยนรูปภาพ" : hasExistingImage ? "รูปภาพปัจจุบัน" : "เลือกรูปภาพ"}
+          </span>
+          {file ? (
+            <span className="w-full min-w-0">
+              <span className="block truncate text-sm text-fg-secondary">{file.name}</span>
+              <span className="mt-0.5 block text-xs text-fg-muted">{(file.size / 1024 / 1024).toFixed(2)} MiB</span>
+            </span>
+          ) : hasExistingImage ? (
+            <span className="text-sm leading-5 text-fg-secondary">หากไม่เลือก รูปปัจจุบันจะยังคงอยู่</span>
+          ) : (
+            <span className="text-sm leading-5 text-fg-secondary">คลิกบริเวณนี้เพื่อเลือกรูปสินค้าจากอุปกรณ์ (ไม่บังคับ)</span>
+          )}
+          <span id="product-image-hint" className="text-xs text-fg-muted">
+            JPEG, PNG หรือ WebP · สูงสุด 5 MiB
+          </span>
+          <span className="inline-flex h-8 items-center rounded-md bg-primary px-3 text-xs font-medium text-primary-fg shadow-sm transition-colors group-hover:bg-primary-hover">
+            {file || hasExistingImage ? "เลือกรูปใหม่" : "เลือกไฟล์"}
+          </span>
+        </span>
+      </label>
+
+      <p id="product-image-error" className="flex min-h-5 items-center gap-1.5 text-xs text-danger" aria-live="polite">
+        {error && <CircleAlert className="size-3.5 shrink-0" aria-hidden="true" />}
+        {error}
+      </p>
+    </div>
+  );
+}
 
 const schema = z.object({
   code: z.string().min(1, "กรุณากรอกรหัส").max(50),
@@ -81,6 +205,10 @@ export function ProductsFormDialog({
   onSaved: () => void;
 }) {
   const isEdit = !!product;
+  const [imageFile, setImageFile] = React.useState<File | null>(null);
+  const [imagePreview, setImagePreview] = React.useState<string | null>(null);
+  const [imageError, setImageError] = React.useState<string | null>(null);
+  const imageInputRef = React.useRef<HTMLInputElement>(null);
 
   const {
     register,
@@ -95,8 +223,24 @@ export function ProductsFormDialog({
   });
 
   React.useEffect(() => {
-    if (open) reset(toDefaultValues(product));
+    if (open) {
+      reset(toDefaultValues(product));
+      setImageFile(null);
+      setImageError(null);
+      setImagePreview((current) => {
+        if (current?.startsWith("blob:")) URL.revokeObjectURL(current);
+        return product?.productImagePath ?? null;
+      });
+      if (imageInputRef.current) imageInputRef.current.value = "";
+    }
   }, [open, product, reset]);
+
+  React.useEffect(
+    () => () => {
+      if (imagePreview?.startsWith("blob:")) URL.revokeObjectURL(imagePreview);
+    },
+    [imagePreview]
+  );
 
   async function onSubmit(input: FormInput) {
     const values: FormValues = schema.parse(input);
@@ -118,9 +262,30 @@ export function ProductsFormDialog({
       scale: values.scale || null,
     };
 
+    let productImagePath: string | undefined;
+    if (imageFile) {
+      const imageFormData = new FormData();
+      imageFormData.set("file", imageFile);
+      const uploadResult = await uploadProductImageAction(imageFormData);
+      if (uploadResult.status === "error") {
+        setImageError(uploadResult.message);
+        toast.error(uploadResult.message);
+        return;
+      }
+      productImagePath = uploadResult.image.imagePath;
+    }
+
     const result = isEdit
-      ? await updateProductAction(product!.id, { ...payload, updatedAt: product!.updatedAt })
-      : await createProductAction(payload);
+      ? await updateProductAction(product!.id, {
+          ...payload,
+          // Omit entirely (not `null`) unless a replacement was actually
+          // staged, so an edit with no new file leaves the existing image
+          // untouched — same distinction Materials PC's materialImageUpdateFields
+          // makes, just inlined here since Products only has the one field.
+          ...(productImagePath ? { productImagePath } : {}),
+          updatedAt: product!.updatedAt,
+        })
+      : await createProductAction({ ...payload, productImagePath });
 
     if (result.status === "success") {
       toast.success(isEdit ? "อัปเดตสินค้าแล้ว" : "สร้างสินค้าแล้ว", {
@@ -145,6 +310,34 @@ export function ProductsFormDialog({
           </DialogHeader>
 
           <div className="flex-1 overflow-y-auto px-6 py-5">
+            <div className="mb-5">
+              <ProductImagePicker
+                file={imageFile}
+                previewUrl={imagePreview}
+                error={imageError}
+                hasExistingImage={isEdit && !!product?.productImagePath && !imageFile}
+                inputRef={imageInputRef}
+                onChange={(event) => {
+                  const file = event.currentTarget.files?.[0] ?? null;
+                  const validationMessage = validateProductImage(file);
+                  setImageError(validationMessage);
+                  if (validationMessage || !file) {
+                    setImageFile(null);
+                    setImagePreview((current) => {
+                      if (current?.startsWith("blob:")) URL.revokeObjectURL(current);
+                      return product?.productImagePath ?? null;
+                    });
+                    event.currentTarget.value = "";
+                    return;
+                  }
+                  setImageFile(file);
+                  setImagePreview((current) => {
+                    if (current?.startsWith("blob:")) URL.revokeObjectURL(current);
+                    return URL.createObjectURL(file);
+                  });
+                }}
+              />
+            </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="code">รหัส</Label>

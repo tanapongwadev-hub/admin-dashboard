@@ -45,6 +45,7 @@ test("table view renders one row-actions trigger per product, labelled with the 
       canDelete
       onEdit={() => undefined}
       onToggleStatus={() => undefined}
+      onViewDetails={() => undefined}
     />
   );
 
@@ -53,7 +54,10 @@ test("table view renders one row-actions trigger per product, labelled with the 
   assert.equal(html.match(/aria-label="ตัวเลือกสำหรับ Rear Seat Frame"/g)?.length, 1);
 });
 
-test("table view hides the row-actions trigger entirely when the row has no permitted actions", () => {
+test("table view still shows the action trigger (for 'view details') even when edit/disable are not permitted", () => {
+  // "ดูรายละเอียด" isn't permission-gated — it's always offered, so the
+  // trigger itself is never omitted, unlike edit/disable (same as list view
+  // below, and Materials PC's identical pattern).
   const html = renderToStaticMarkup(
     <ProductsTable
       products={[product]}
@@ -63,13 +67,17 @@ test("table view hides the row-actions trigger entirely when the row has no perm
       canDelete={false}
       onEdit={() => undefined}
       onToggleStatus={() => undefined}
+      onViewDetails={() => undefined}
     />
   );
 
-  assert.doesNotMatch(html, /aria-label="ตัวเลือกสำหรับ Rear Seat Frame"/);
+  assert.match(html, /aria-label="ตัวเลือกสำหรับ Rear Seat Frame"/);
 });
 
 test("card view renders one card per product with code, name, status, and safety/min stock as the primary numbers", () => {
+  // The card view's own Data Sheet is a real <table> (same pattern as
+  // Materials PC) — what must be absent is the table-view's distinctive
+  // bordered wrapper chrome, not literally any <table> tag.
   const html = renderToStaticMarkup(
     <ProductsTable
       products={[product]}
@@ -79,22 +87,24 @@ test("card view renders one card per product with code, name, status, and safety
       canDelete
       onEdit={() => undefined}
       onToggleStatus={() => undefined}
+      onViewDetails={() => undefined}
     />
   );
 
-  assert.doesNotMatch(html, /<table/);
+  assert.doesNotMatch(html, /<div class="overflow-x-auto rounded-xl border border-border bg-surface">/);
+  assert.match(html, /<table class="w-full text-sm">/);
   assert.match(html, /<ul[^>]+aria-label="รายการสินค้าแบบการ์ด"/);
   assert.equal(html.match(/PRD-001/g)?.length, 1);
-  // "Rear Seat Frame" legitimately appears 3x by design: the <h2> text, its
-  // title="" attribute (truncation tooltip), and the image-fallback
-  // aria-label — assert the heading itself, not a raw substring count.
+  // "Rear Seat Frame" legitimately appears more than once by design: the
+  // <h2> text, its title="" attribute (truncation tooltip), and the
+  // Switch's aria-label — assert the heading itself, not a raw substring count.
   assert.match(html, /<h2[^>]*>Rear Seat Frame<\/h2>/);
   assert.match(html, /bg-success-soft[^>]*><span class="h-1\.5[^>]*><\/span>ใช้งาน<\/span>/);
   assert.match(html, /Safety Stock/);
   assert.match(html, /Min Stock/);
 });
 
-test("card view shows edit and disable as visible buttons (not a hidden Meatballs menu) when both permissions are granted", () => {
+test("card view shows edit as a visible button; active/inactive is a Switch, not a text button", () => {
   const html = renderToStaticMarkup(
     <ProductsTable
       products={[product]}
@@ -104,14 +114,17 @@ test("card view shows edit and disable as visible buttons (not a hidden Meatball
       canDelete
       onEdit={() => undefined}
       onToggleStatus={() => undefined}
+      onViewDetails={() => undefined}
     />
   );
 
   assert.match(html, />\s*แก้ไข\s*</);
-  assert.match(html, />\s*ปิดใช้งาน\s*</);
+  assert.match(html, /role="switch"/);
+  assert.match(html, />ใช้งานอยู่</);
+  assert.doesNotMatch(html, />\s*ปิดใช้งาน\s*</);
 });
 
-test("card view omits the action row entirely when the row has no permitted actions", () => {
+test("card view omits the edit button and the status switch when the row has no permitted actions", () => {
   const html = renderToStaticMarkup(
     <ProductsTable
       products={[product]}
@@ -121,11 +134,32 @@ test("card view omits the action row entirely when the row has no permitted acti
       canDelete={false}
       onEdit={() => undefined}
       onToggleStatus={() => undefined}
+      onViewDetails={() => undefined}
     />
   );
 
   assert.doesNotMatch(html, /แก้ไข/);
-  assert.doesNotMatch(html, /ปิดใช้งาน/);
+  assert.doesNotMatch(html, /role="switch"/);
+});
+
+test("card view's status switch reflects an inactive product and offers to enable it", () => {
+  const html = renderToStaticMarkup(
+    <ProductsTable
+      products={[{ ...product, isActive: false }]}
+      totalItems={1}
+      view="card"
+      canEdit={false}
+      canDelete
+      onEdit={() => undefined}
+      onToggleStatus={() => undefined}
+      onViewDetails={() => undefined}
+    />
+  );
+
+  assert.match(html, /role="switch"/);
+  assert.doesNotMatch(html, /data-state="checked"/);
+  assert.match(html, />ไม่ได้ใช้งาน</);
+  assert.match(html, /aria-label="เปิดใช้งาน Rear Seat Frame"/);
 });
 
 test("card view shows an accessible image fallback when a product has no image", () => {
@@ -138,10 +172,95 @@ test("card view shows an accessible image fallback when a product has no image",
       canDelete={false}
       onEdit={() => undefined}
       onToggleStatus={() => undefined}
+      onViewDetails={() => undefined}
     />
   );
 
   assert.match(html, /aria-label="ไม่มีรูปภาพสำหรับ Rear Seat Frame"/);
+});
+
+test("list view renders only the list presentation (no table, no card grid)", () => {
+  const html = renderToStaticMarkup(
+    <ProductsTable
+      products={[product]}
+      totalItems={1}
+      view="list"
+      canEdit
+      canDelete
+      onEdit={() => undefined}
+      onToggleStatus={() => undefined}
+      onViewDetails={() => undefined}
+    />
+  );
+
+  assert.doesNotMatch(html, /<table/);
+  assert.doesNotMatch(html, /aria-label="รายการสินค้าแบบการ์ด"/);
+  assert.match(html, /<ul[^>]+aria-label="รายการสินค้าแบบแถว"/);
+  assert.match(html, /aria-label="รายการสินค้า Rear Seat Frame"/);
+});
+
+test("list view uses the row-actions Meatballs menu instead of visible edit/status buttons", () => {
+  const html = renderToStaticMarkup(
+    <ProductsTable
+      products={[product]}
+      totalItems={1}
+      view="list"
+      canEdit
+      canDelete
+      onEdit={() => undefined}
+      onToggleStatus={() => undefined}
+      onViewDetails={() => undefined}
+    />
+  );
+
+  assert.match(html, /aria-label="ตัวเลือกสำหรับ Rear Seat Frame"/);
+  assert.doesNotMatch(html, />\s*แก้ไข\s*</);
+  assert.doesNotMatch(html, />\s*ปิดใช้งาน\s*</);
+});
+
+test("list view still shows the action trigger (for 'view details') even when edit/disable are not permitted", () => {
+  const html = renderToStaticMarkup(
+    <ProductsTable
+      products={[product]}
+      totalItems={1}
+      view="list"
+      canEdit={false}
+      canDelete={false}
+      onEdit={() => undefined}
+      onToggleStatus={() => undefined}
+      onViewDetails={() => undefined}
+    />
+  );
+
+  assert.match(html, /aria-label="ตัวเลือกสำหรับ Rear Seat Frame"/);
+});
+
+test("getProductRowActions includes 'view details' first, regardless of edit/disable permission, when onViewDetails is passed", () => {
+  const withNoPermissions = getProductRowActions(product, false, false, {
+    onEdit: () => undefined,
+    onToggleStatus: () => undefined,
+    onViewDetails: () => undefined,
+  });
+  assert.deepEqual(withNoPermissions.map((a) => [a.label, a.variant]), [["ดูรายละเอียด", "default"]]);
+
+  const withBothPermissions = getProductRowActions(product, true, true, {
+    onEdit: () => undefined,
+    onToggleStatus: () => undefined,
+    onViewDetails: () => undefined,
+  });
+  assert.deepEqual(
+    withBothPermissions.map((a) => [a.label, a.variant]),
+    [
+      ["ดูรายละเอียด", "default"],
+      ["แก้ไข", "default"],
+      ["ปิดใช้งาน", "danger"],
+    ]
+  );
+});
+
+test("getProductRowActions omits 'view details' when onViewDetails is not passed (backward compatible)", () => {
+  const actions = getProductRowActions(product, true, true, { onEdit: () => undefined, onToggleStatus: () => undefined });
+  assert.equal(actions.some((a) => a.label === "ดูรายละเอียด"), false);
 });
 
 test("getProductRowActions includes edit and destructive disable when active and both permissions are granted", () => {

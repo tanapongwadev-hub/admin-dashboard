@@ -11,6 +11,7 @@ import { ProductsFilters } from "@/components/products/products-filters";
 import { ProductsTable } from "@/components/products/products-table";
 import { ProductsFormDialog } from "@/components/products/products-form-dialog";
 import { ProductsStatusDialog } from "@/components/products/products-status-dialog";
+import { ProductsDetailsDialog } from "@/components/products/products-details-dialog";
 import { deactivateProductAction, restoreProductAction } from "@/app/(dashboard)/products/actions";
 import type { Product, ProductLookups } from "@/lib/api/products";
 
@@ -33,6 +34,7 @@ export function ProductsClient({
   const [view, setView] = useViewMode("products", "table");
   const [formTarget, setFormTarget] = React.useState<Product | null | undefined>(openNew ? null : undefined);
   const [statusTarget, setStatusTarget] = React.useState<Product | null>(null);
+  const [detailsTarget, setDetailsTarget] = React.useState<Product | null>(null);
 
   function handleSaved() {
     router.refresh();
@@ -58,7 +60,7 @@ export function ProductsClient({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <ProductsFilters />
         <div className="flex shrink-0 items-center gap-2">
-          <ViewToggle value={view} onChange={setView} />
+          <ViewToggle value={view} onChange={setView} modes={["table", "card", "list"]} />
           {canEdit && (
             <Button onClick={() => setFormTarget(null)} className="shrink-0">
               <Plus className="h-4 w-4" /> เพิ่มสินค้า
@@ -75,6 +77,14 @@ export function ProductsClient({
         canDelete={canDelete}
         onEdit={(product) => setFormTarget(product)}
         onToggleStatus={(product) => setStatusTarget(product)}
+        onViewDetails={(product) => setDetailsTarget(product)}
+      />
+
+      <ProductsDetailsDialog
+        product={detailsTarget}
+        canEdit={canEdit}
+        onEdit={(product) => setFormTarget(product)}
+        onOpenChange={(open) => !open && setDetailsTarget(null)}
       />
 
       {canEdit && (

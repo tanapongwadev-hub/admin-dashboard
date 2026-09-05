@@ -88,7 +88,34 @@ export interface ProductPayload {
   safetyStock?: number | null;
   minStock?: number | null;
   scale?: string | null;
+  // Optional on both create and update per cps-api's CreateProductDto/
+  // UpdateProductDto (unlike Materials PC's imagePath, which is required on
+  // create) — confirmed by reading the DTOs directly, not assumed from the
+  // Materials PC pattern. `null` clears an existing image; `undefined` (the
+  // default) leaves it untouched on update.
+  productImagePath?: string | null;
   isActive?: boolean;
+}
+
+// Mirrors cps-api's StagedProductImage (`product-image-storage.service.ts`)
+// — same two-step stage-then-save flow as Materials PC's images:
+// POST /products/images stages the file and returns a path, which is then
+// sent as `productImagePath` on the create/update payload.
+export interface StagedProductImage {
+  imagePath: string;
+  previewUrl: string;
+}
+
+export function uploadProductImage(accessToken: string, file: Blob, filename?: string) {
+  const body = new FormData();
+  if (filename) body.append("file", file, filename);
+  else body.append("file", file);
+
+  return apiFetch<StagedProductImage>("/products/images", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${accessToken}` },
+    body,
+  });
 }
 
 export interface UpdateProductPayload extends Partial<ProductPayload> {
