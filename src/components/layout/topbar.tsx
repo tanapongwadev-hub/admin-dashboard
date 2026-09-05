@@ -46,13 +46,16 @@ export function Topbar({
             <Menu className="h-5 w-5" />
           </Button>
         </SheetTrigger>
-        <SheetContent className="flex flex-col bg-bg p-2 sm:p-3">
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
-            <div className="flex h-16 shrink-0 items-center border-b border-border px-4">
-              <Logo />
-            </div>
-            <SidebarNav menus={menus} onNavigate={() => setMobileNavOpen(false)} />
+        {/* The Sheet panel is itself the floating rounded surface now (see
+            ui/sheet.tsx), so this no longer wraps a second bordered box
+            inside it — same structure as the desktop Sidebar: a h-16 logo
+            header, then the shared nav. Behavior is unchanged: the trigger,
+            the open state, and closing on navigate all work as before. */}
+        <SheetContent title="เมนูนำทาง">
+          <div className="flex h-16 shrink-0 items-center border-b border-border pl-4 pr-14">
+            <Logo />
           </div>
+          <SidebarNav menus={menus} onNavigate={() => setMobileNavOpen(false)} />
         </SheetContent>
       </Sheet>
 

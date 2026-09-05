@@ -44,20 +44,25 @@ export function MaterialPcFilters() {
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="relative w-full sm:max-w-xs">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-muted" />
+        <label htmlFor="material-search" className="sr-only">
+          ค้นหาวัสดุ PC ด้วยรหัสหรือชื่อ
+        </label>
         <Input
+          id="material-search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="ค้นหารหัสหรือชื่อ..."
           className="pl-9"
         />
       </div>
-      <div className="flex items-center gap-1 rounded-lg border border-border bg-surface p-1">
+      <div role="group" aria-label="กรองตามสถานะ" className="flex items-center gap-1 rounded-lg border border-border bg-surface p-1">
         {statusOptions.map((option) => (
           <Button
             key={option.value}
             type="button"
             size="sm"
             variant="ghost"
+            aria-pressed={status === option.value}
             onClick={() => updateParams({ status: option.value === "all" ? null : option.value })}
             className={cn(
               "px-3",

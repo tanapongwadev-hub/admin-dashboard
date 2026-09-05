@@ -2,7 +2,13 @@
 
 import * as React from "react";
 
-export type ViewMode = "table" | "card";
+// "list" was added 2026-09-05 for Materials PC's compact row view — see
+// AGENTS.md § Materials PC. Pages that don't offer a list view should
+// pass `modes={["table", "card"]}` to <ViewToggle /> so the third button
+// is never rendered; the type widening here is safe because every existing
+// call site is a `view === "table" ? <Table/> : <Card/>` ternary, and an
+// unknown value would fall through to the card branch harmlessly.
+export type ViewMode = "table" | "card" | "list";
 
 // `storage` events only fire in *other* tabs, not the one that wrote the
 // value — dispatch one manually so same-tab updates also notify subscribers.
@@ -11,8 +17,8 @@ function subscribe(callback: () => void) {
   return () => window.removeEventListener("storage", callback);
 }
 
-// Persists a table/card view preference to localStorage, namespaced by
-// `key` so multiple lists (this page or others) don't collide — pass a
+// Persists a table/card/list view preference to localStorage, namespaced
+// by `key` so multiple lists (this page or others) don't collide — pass a
 // stable per-list identifier, e.g. "materials-pc".
 //
 // Reads localStorage via useSyncExternalStore rather than useState+useEffect
@@ -28,7 +34,8 @@ export function useViewMode(key: string, defaultValue: ViewMode = "table") {
   const getSnapshot = React.useCallback((): ViewMode => {
     try {
       const stored = window.localStorage.getItem(storageKey);
-      return stored === "table" || stored === "card" ? stored : defaultValue;
+      if (stored === "table" || stored === "card" || stored === "list") return stored;
+      return defaultValue;
     } catch {
       return defaultValue;
     }

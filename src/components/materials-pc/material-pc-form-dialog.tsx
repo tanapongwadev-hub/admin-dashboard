@@ -377,19 +377,39 @@ export function MaterialPcFormDialog({
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="code">รหัส</Label>
-                <Input id="code" placeholder="MAT-0231" {...register("code")} />
-                {errors.code && <p className="text-xs text-danger">{errors.code.message}</p>}
+                <Input
+                  id="code"
+                  placeholder="MAT-0231"
+                  aria-invalid={errors.code ? true : undefined}
+                  aria-describedby={errors.code ? "code-error" : undefined}
+                  {...register("code")}
+                />
+                {errors.code && (
+                  <p id="code-error" className="text-xs text-danger" role="alert">
+                    {errors.code.message}
+                  </p>
+                )}
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="name">ชื่อ</Label>
-                <Input id="name" placeholder="Hex Bolt M8x40" {...register("name")} />
-                {errors.name && <p className="text-xs text-danger">{errors.name.message}</p>}
+                <Input
+                  id="name"
+                  placeholder="Hex Bolt M8x40"
+                  aria-invalid={errors.name ? true : undefined}
+                  aria-describedby={errors.name ? "name-error" : undefined}
+                  {...register("name")}
+                />
+                {errors.name && (
+                  <p id="name-error" className="text-xs text-danger" role="alert">
+                    {errors.name.message}
+                  </p>
+                )}
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <Label>รูปทรง</Label>
+                <Label htmlFor="materialType">รูปทรง</Label>
                 <Select value={materialType} onValueChange={(v) => setValue("materialType", v as MaterialShape)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger id="materialType"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {shapes.map((shape) => (
                       <SelectItem key={shape} value={shape}>{shape}</SelectItem>
@@ -401,21 +421,39 @@ export function MaterialPcFormDialog({
                 <Label htmlFor="ratio">
                   อัตราส่วน {materialType !== "PCS" && <span className="text-danger">*</span>}
                 </Label>
-                <Input id="ratio" type="number" min="1" disabled={materialType === "PCS"} {...register("ratio")} />
-                {errors.ratio && <p className="text-xs text-danger">{errors.ratio.message}</p>}
+                <Input
+                  id="ratio"
+                  type="number"
+                  min="1"
+                  disabled={materialType === "PCS"}
+                  aria-invalid={errors.ratio ? true : undefined}
+                  aria-describedby={errors.ratio ? "ratio-error" : undefined}
+                  {...register("ratio")}
+                />
+                {errors.ratio && (
+                  <p id="ratio-error" className="text-xs text-danger" role="alert">
+                    {errors.ratio.message}
+                  </p>
+                )}
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <Label>หน่วย</Label>
+                <Label htmlFor="unitId">หน่วย</Label>
                 <Select value={watch("unitId")} onValueChange={(v) => setValue("unitId", v)}>
-                  <SelectTrigger><SelectValue placeholder="เลือกหน่วย" /></SelectTrigger>
+                  <SelectTrigger id="unitId" aria-invalid={errors.unitId ? true : undefined} aria-describedby={errors.unitId ? "unitId-error" : undefined}>
+                    <SelectValue placeholder="เลือกหน่วย" />
+                  </SelectTrigger>
                   <SelectContent>
                     {lookups.units.map((unit) => (
                       <SelectItem key={unit.id} value={unit.id}>{unit.nameEn ?? unit.code}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                {errors.unitId && <p className="text-xs text-danger">{errors.unitId.message}</p>}
+                {errors.unitId && (
+                  <p id="unitId-error" className="text-xs text-danger" role="alert">
+                    {errors.unitId.message}
+                  </p>
+                )}
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="packingQuantity">จำนวนต่อแพ็ก</Label>
@@ -423,9 +461,9 @@ export function MaterialPcFormDialog({
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <Label>ประเภทการจัดส่ง</Label>
+                <Label htmlFor="deliveryTypeId">ประเภทการจัดส่ง</Label>
                 <Select value={watch("deliveryTypeId")} onValueChange={(v) => setValue("deliveryTypeId", v)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger id="deliveryTypeId"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value={NONE}>ไม่ระบุ</SelectItem>
                     {lookups.deliveryTypes.map((item) => (
@@ -435,9 +473,9 @@ export function MaterialPcFormDialog({
                 </Select>
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label>รุ่น</Label>
+                <Label htmlFor="modelId">รุ่น</Label>
                 <Select value={watch("modelId")} onValueChange={(v) => setValue("modelId", v)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger id="modelId"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value={NONE}>ไม่ระบุ</SelectItem>
                     {lookups.models.map((item) => (
@@ -448,9 +486,9 @@ export function MaterialPcFormDialog({
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <Label>จุดขึ้นสินค้า</Label>
+                <Label htmlFor="loadingPointId">จุดขึ้นสินค้า</Label>
                 <Select value={watch("loadingPointId")} onValueChange={(v) => setValue("loadingPointId", v)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger id="loadingPointId"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value={NONE}>ไม่ระบุ</SelectItem>
                     {lookups.loadingPoints.map((item) => (
@@ -471,10 +509,10 @@ export function MaterialPcFormDialog({
             </div>
 
             <div className="mt-4 flex flex-col gap-1.5">
-              <Label>ซัพพลายเออร์</Label>
+              <Label htmlFor="addSupplierId">ซัพพลายเออร์</Label>
               <div className="flex gap-2">
                 <Select value={addSupplierId} onValueChange={setAddSupplierId}>
-                  <SelectTrigger className="flex-1"><SelectValue placeholder="เพิ่มซัพพลายเออร์..." /></SelectTrigger>
+                  <SelectTrigger id="addSupplierId" className="flex-1"><SelectValue placeholder="เพิ่มซัพพลายเออร์..." /></SelectTrigger>
                   <SelectContent>
                     {availableSuppliers.map((s) => (
                       <SelectItem key={s.id} value={s.id}>{s.nameEn ?? s.code}</SelectItem>
