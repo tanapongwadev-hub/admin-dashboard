@@ -251,7 +251,7 @@ export default function LoginPage() {
 
         {/* Centered card area */}
         <div className="flex flex-1 items-center justify-center px-4 py-8 sm:px-6 sm:py-12 lg:px-10 xl:px-16">
-          <div className="w-full max-w-[440px] overflow-hidden rounded-2xl bg-white shadow-2xl shadow-black/10 ring-1 ring-black/5">
+          <div className="w-full max-w-[440px] overflow-hidden rounded-2xl bg-surface shadow-2xl shadow-black/10 ring-1 ring-border">
             {/* Asset-tag strip — the signature element */}
             <div className="relative flex h-7 items-stretch">
               <div className="w-1/3 bg-[#F59E0B]" />
