@@ -124,6 +124,55 @@ test("performCreateMaterial POSTs to /materials with type forced to PC and forwa
   assert.equal(body.unitId, "unit-1");
 });
 
+// --- supplierIds forwarding (added in response to a bug report that
+// adding/editing material doesn't save suppliers). The existing tests above
+// never included supplierIds in the fixture, so a silent drop would have
+// passed.
+test('performCreateMaterial forwards supplierIds in the request body', async (t) => {
+  let requestInit;
+  t.mock.method(globalThis, 'fetch', async (_input, init) => {
+    requestInit = init;
+    return jsonResponse(201, makeMaterialFixture());
+  });
+  const { performCreateMaterial } = await import('./actions');
+  await performCreateMaterial('test-token', {
+    ...makeCreatePayload(),
+    supplierIds: ['supplier-1', 'supplier-2'],
+  });
+  const body = JSON.parse(requestInit.body);
+  assert.deepEqual(body.supplierIds, ['supplier-1', 'supplier-2']);
+});
+test('performCreateMaterial forwards an empty supplierIds array', async (t) => {
+  let requestInit;
+  t.mock.method(globalThis, 'fetch', async (_input, init) => {
+    requestInit = init;
+    return jsonResponse(201, makeMaterialFixture());
+  });
+  const { performCreateMaterial } = await import('./actions');
+  await performCreateMaterial('test-token', {
+    ...makeCreatePayload(),
+    supplierIds: [],
+  });
+  const body = JSON.parse(requestInit.body);
+  assert.deepEqual(body.supplierIds, []);
+});
+test('performUpdateMaterial forwards supplierIds in the PATCH body', async (t) => {
+  let requestInit;
+  t.mock.method(globalThis, 'fetch', async (_input, init) => {
+    requestInit = init;
+    return jsonResponse(200, makeMaterialFixture());
+  });
+  const { performUpdateMaterial } = await import('./actions');
+  await performUpdateMaterial('test-token', 'material-1', {
+    ...makeUpdatePayload(),
+    supplierIds: ['supplier-3', 'supplier-4', 'supplier-5'],
+  });
+  const body = JSON.parse(requestInit.body);
+  assert.deepEqual(body.supplierIds, ['supplier-3', 'supplier-4', 'supplier-5']);
+  assert.equal(body.updatedAt, '2026-09-04T00:00:00.000Z');
+});
+
+
 test("performCreateMaterial returns 'conflict' on 409 (optimistic-concurrency)", async (t) => {
   t.mock.method(globalThis, "fetch", async () =>
     jsonResponse(409, { message: "Material was updated by another user" })
