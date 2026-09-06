@@ -17,9 +17,13 @@ import type { Material } from "@/lib/api/materials";
 // spaced around a circle), computed as plain percentages so an SVG line
 // layer and the HTML image nodes can share the same coordinate space
 // (both measured against the same square container).
-const CENTER_SIZE = 96;
-const NODE_SIZE = 72;
-const RADIUS_PERCENT = 38;
+// The old 38% ring put a top node's centre at just 12% of the square. Once
+// its icon and two text lines were included, that node crossed the dialog's
+// top edge on narrow phones. These values reserve an 18% outer safe zone
+// while keeping a clear gap between the centre product and each component.
+const CENTER_SIZE = 80;
+const NODE_SIZE = 60;
+const RADIUS_PERCENT = 32;
 
 function useRadialPositions(count: number): { x: number; y: number }[] {
   return React.useMemo(() => {

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Image from "next/image";
-import { Package, Loader2 } from "lucide-react";
+import { GitBranch, Info, Package, Loader2 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
@@ -166,14 +166,18 @@ export function ProductsDetailsView({
   }
 
   return (
-    <div className="flex h-full flex-col">
+    // Mobile deliberately has no fixed-height inner flex layout: the dialog
+    // itself is the one viewport scroller, so every tab's final row remains
+    // above the action footer. From `sm` up the dialog has a bounded height
+    // and the tab pane becomes its own scroller, keeping the actions in view.
+    <div className="flex flex-col sm:h-full">
       {/* HERO SECTION — image (left) + identity (right), same 320×240 4:3
           frame as Materials PC's dialog. Read-only display here (edit-mode
           image replacement lives in ProductsFormDialog, see
           products-form-dialog.tsx#ProductImagePicker) — no lightbox in this
           particular dialog, unlike the table/card thumbnails which open
           ProductsImagePreview. */}
-      <header className="shrink-0 border-b border-border px-6 py-6">
+      <header className="border-b border-border px-4 py-5 sm:shrink-0 sm:px-6 sm:py-6">
         <div className="flex flex-col gap-5 sm:flex-row">
           <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden rounded-lg border border-border bg-surface-2 sm:h-[240px] sm:w-[320px]">
             {imagePath ? (
@@ -236,34 +240,38 @@ export function ProductsDetailsView({
           denied" treatment used everywhere else in this app. */}
       <Tabs
         defaultValue="info"
-        className="min-h-0 flex-1 overflow-y-auto px-6 py-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="px-4 py-4 sm:min-h-0 sm:flex-1 sm:overflow-y-auto sm:px-6 sm:py-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {/* Bigger, bolder, and underline-style so the active tab is
             unmistakable at a glance — the default TabsList/TabsTrigger
             styling (a small pill toggle) reads more like a segmented
             control than a real section switch, easy to miss next to the
             hero above it. */}
-        <TabsList className="sticky top-0 z-10 -mt-1 h-auto w-full justify-start gap-1 rounded-none border-b border-border bg-surface p-0">
+        <TabsList className="sticky top-0 z-10 -mt-1 grid h-auto w-full grid-flow-col auto-cols-fr gap-0 rounded-none border-b border-border bg-surface p-0">
           <TabsTrigger
             value="info"
-            className="rounded-none border-b-2 border-transparent px-1 pb-2.5 pt-1 text-sm font-semibold text-fg-muted data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none"
+            className="min-w-0 gap-1 rounded-none border-b-2 border-transparent px-1 pb-2.5 pt-1 text-xs font-semibold text-fg-muted data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none sm:text-sm"
           >
-            ข้อมูล
+            <Info className="size-3.5 shrink-0" aria-hidden="true" />
+            <span className="truncate">ข้อมูล</span>
           </TabsTrigger>
           {canViewBom && (
             <TabsTrigger
               value="bom"
-              className="ml-4 rounded-none border-b-2 border-transparent px-1 pb-2.5 pt-1 text-sm font-semibold text-fg-muted data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none"
+              className="min-w-0 gap-1 rounded-none border-b-2 border-transparent px-1 pb-2.5 pt-1 text-xs font-semibold text-fg-muted data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none sm:text-sm"
             >
-              BOM
+              <Package className="size-3.5 shrink-0" aria-hidden="true" />
+              <span className="truncate">BOM</span>
             </TabsTrigger>
           )}
           {canViewWorkflow && (
             <TabsTrigger
               value="workflow"
-              className="ml-4 rounded-none border-b-2 border-transparent px-1 pb-2.5 pt-1 text-sm font-semibold text-fg-muted data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none"
+              className="min-w-0 gap-1 rounded-none border-b-2 border-transparent px-1 pb-2.5 pt-1 text-xs font-semibold text-fg-muted data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none sm:text-sm"
             >
-              กระบวนการผลิต
+              <GitBranch className="size-3.5 shrink-0" aria-hidden="true" />
+              <span className="truncate sm:hidden">การผลิต</span>
+              <span className="hidden truncate sm:inline">กระบวนการผลิต</span>
             </TabsTrigger>
           )}
         </TabsList>
@@ -339,7 +347,27 @@ export function ProductsDetailsView({
                       {bom.specification && (
                         <p className="border-b border-border px-4 py-2 text-xs text-fg-secondary">{bom.specification}</p>
                       )}
-                      <table className="w-full text-sm">
+                      <div className="divide-y divide-border sm:hidden">
+                        {bom.items.map((item) => (
+                          <div key={item.id} className="space-y-2 px-3 py-3">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className="font-mono text-[11px] text-fg-muted">{item.materialCode}</p>
+                                <p className="mt-0.5 text-sm font-medium text-fg">{item.materialName}</p>
+                              </div>
+                              <p className="shrink-0 text-sm font-semibold tabular-nums text-fg">
+                                {formatNumber(item.quantity)} <span className="text-xs font-medium text-fg-muted">{item.unitNameTh}</span>
+                              </p>
+                            </div>
+                            <div className="flex flex-wrap gap-1.5">
+                              {item.isScrap && <Badge variant="outline">เศษ</Badge>}
+                              {item.wastagePercent != null && <Badge variant="neutral">สูญเสีย {item.wastagePercent}%</Badge>}
+                              {item.remark && <span className="text-xs text-fg-muted">{item.remark}</span>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <table className="hidden w-full text-sm sm:table">
                         <thead>
                           <tr className="border-b border-border text-left text-[11px] uppercase tracking-wide text-fg-muted">
                             <th className="px-4 py-2 font-medium">วัตถุดิบ</th>
@@ -413,13 +441,16 @@ export function ProductsDetailsView({
                         {workflow.steps.map((step, index) => (
                           <li
                             key={step.id}
-                            className="flex items-start gap-3 border-b border-border px-4 py-2.5 last:border-b-0"
+                            className="relative flex items-start gap-3 border-b border-border px-4 py-3 last:border-b-0"
                           >
-                            <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary-soft text-[11px] font-semibold text-primary">
+                            <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary-soft text-[11px] font-semibold text-primary">
                               {index + 1}
                             </span>
-                            <div className="min-w-0">
-                              <p className="text-sm text-fg">{step.stepName}</p>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                                <p className="text-sm font-medium text-fg">{step.stepName}</p>
+                                <span className="font-mono text-[10px] text-fg-muted">{step.processStepCode}</span>
+                              </div>
                               {step.description && <p className="mt-0.5 text-xs text-fg-muted">{step.description}</p>}
                             </div>
                           </li>
@@ -434,7 +465,7 @@ export function ProductsDetailsView({
         )}
       </Tabs>
 
-      <footer className="flex shrink-0 items-center justify-end gap-2 border-t border-border px-6 py-4">
+      <footer className="flex items-center justify-end gap-2 border-t border-border px-4 py-4 sm:shrink-0 sm:px-6">
         <Button variant="outline" onClick={onClose}>
           ปิด
         </Button>

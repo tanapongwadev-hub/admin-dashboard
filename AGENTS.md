@@ -291,6 +291,15 @@ Tokens live in `src/app/globals.css` (`:root` + `.dark`). Use the Tailwind utili
 
 > **These are non-negotiable. A change that violates them is considered incomplete.**
 
+### R0 — No automatic validation commands; keep inspection tightly scoped
+
+> **DO NOT RUN LINT, TESTS, BUILD, OR TYPE CHECKS UNLESS I EXPLICITLY ASK YOU TO.**
+
+- After editing code, do **not** automatically run lint, tests, builds, or type checks. Inspect only the changed code to the degree needed for the assigned task, then report the files and changes made.
+- Do not run `npm run lint`, `npm test`, `npm run test`, `npm run test:*`, `npm run build`, `npx eslint`, `npx tsc`, or any equivalent lint/test/build/type-check command unless the user explicitly asks in the current request.
+- If validation would be useful, tell the user which targeted command is recommended and why; never run it without that direct instruction.
+- Minimize token and context use: avoid unrelated file reads, repository-wide scans, large logs/output, and rereading files without need. Prefer targeted search and file inspection, change only task-relevant code, and do not refactor unrelated areas.
+
 ### R1 — Read AGENTS.md on every turn
 
 - ทุกครั้งที่เริ่มทำงาน (ทุก prompt) ต้องอ่านไฟล์ AGENTS.md นี้ก่อนเสมอ
@@ -323,6 +332,16 @@ The `<!-- BEGIN:nextjs-agent-rules -->` ... `<!-- END:nextjs-agent-rules -->` bl
 ## Recent Changes
 
 > Append newest at the top. Use `### YYYY-MM-DD — short title` for multi-file changes; one-liner for trivial edits.
+
+### 2026-09-07 — BOM component diagram: symmetric mobile safe ring
+- `products-bom-diagram.tsx` now uses a 32% radial ring with compact 60px component nodes and an 80px centre product node. The old 38% geometry placed the upper node centre at 12% of the square; its image and labels crossed the diagram/dialog top edge on small phones. The new 18% outer safe zone contains the complete node-and-label block while preserving a clear centre-to-component gap and radial symmetry.
+- Visually inspected at 390px with six components: all nodes are evenly positioned, the upper component clears the dialog header, and no content clips. Per R0, no lint/test/build/typecheck was run.
+
+### 2026-09-07 — Products details dialog: mobile content flow + responsive BOM/workflow tabs
+- `ProductsDetailsView` now leaves its inner column unconstrained below `sm`, so the full-screen dialog owns mobile scrolling and the Close/Edit footer follows every tab's content instead of reserving/fixing space over it. The bounded desktop layout keeps its independent tab scroller and persistent action footer.
+- Rebuilt the section tabs into equal-width icon-and-label controls: `ข้อมูล`, `BOM`, and mobile-shortened `การผลิต` (the full `กระบวนการผลิต` label returns at `sm`). This prevents the third tab being clipped on narrow screens while retaining Radix tabs semantics.
+- BOM content now swaps its four-column desktop table for a mobile item-card list with material identity, quantity/unit, scrap/wastage badges, and notes. Production workflows retain their ordered list but now surface each master process-step code alongside its name.
+- Verified at 390px: all 11 detail rows scroll completely before the footer, all three tabs remain visible and selectable, and no content is covered. `pnpm lint -- src/components/products/products-details-dialog.tsx` passes. Full typecheck remains blocked by pre-existing errors in `materials-pc-actions.test.ts` (implicit-any / optional `RequestInit`), unrelated to this dialog.
 
 - 2026-09-07 — Hardened the responsive hamburger trigger in `layout/topbar.tsx`: it now uses an explicit non-submit button click to open the controlled Radix Sheet and cannot shrink out of its tap target in a crowded mobile topbar.
 
