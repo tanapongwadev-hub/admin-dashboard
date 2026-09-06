@@ -64,7 +64,14 @@ export function Topbar({
       </Button>
       <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
         <SheetTrigger asChild>
-          <Button variant="ghost" size="icon" className="text-fg-secondary lg:hidden" aria-label="เปิดเมนูนำทาง">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="shrink-0 text-fg-secondary lg:hidden"
+            aria-label="เปิดเมนูนำทาง"
+            onClick={() => setMobileNavOpen(true)}
+          >
             <Menu className="h-5 w-5" />
           </Button>
         </SheetTrigger>

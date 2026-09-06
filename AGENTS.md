@@ -324,6 +324,8 @@ The `<!-- BEGIN:nextjs-agent-rules -->` ... `<!-- END:nextjs-agent-rules -->` bl
 
 > Append newest at the top. Use `### YYYY-MM-DD — short title` for multi-file changes; one-liner for trivial edits.
 
+- 2026-09-07 — Hardened the responsive hamburger trigger in `layout/topbar.tsx`: it now uses an explicit non-submit button click to open the controlled Radix Sheet and cannot shrink out of its tap target in a crowded mobile topbar.
+
 ### 2026-09-06 — `lib/menu-tree.ts` algorithm test coverage (CRUD /menu → tree helpers)
 - User asked for "CRUD /menu" — after the earlier Server-Action round covered `saveMenuOrderAction` + `refreshMenuTreeAction` (the only public Server Actions under `app/(dashboard)/menus/`), this round filled the gap in the underlying pure-function layer at `src/lib/menu-tree.ts`. The actions just call `apiFetch` endpoints; the real menu logic is in the **tree-algorithm helpers** that compute the visible-state, the drag projection, the moved row order, and the per-parent sortOrder re-numbering that cps-api requires for the PATCH `/menus/reorder` to accept the payload. These are pure functions (no `next/headers`, no `fetch`, no React), so they test the fastest and are the layer a future "refactor menu-tree" change is most likely to break.
 - **`src/lib/menu-tree.test.ts` extended from 3 → 18 tests** (15 new), all pure-function unit tests — no fetch mock, no cookies, no React. Coverage added for 6 of the 7 exports in the file:

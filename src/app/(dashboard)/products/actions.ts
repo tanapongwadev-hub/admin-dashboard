@@ -18,6 +18,7 @@ import {
   createProductWorkflow,
   activateProductWorkflow,
   listProductWorkflowsByProduct,
+  uploadProductWorkflowImage,
   type ProductWorkflow,
   type CreateProductWorkflowPayload,
 } from "@/lib/api/product-workflows";
@@ -321,4 +322,35 @@ export async function listProductWorkflowsByProductAction(
   const accessToken = await requireAccessToken();
   if (!accessToken) return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
   return performListProductWorkflowsByProduct(accessToken, productId);
+}
+
+export type ProductWorkflowImageUploadActionResult =
+  | { status: "success"; image: { imagePath: string; previewUrl: string } }
+  | { status: "error"; message: string };
+
+export async function performUploadProductWorkflowImage(
+  accessToken: string,
+  formData: FormData
+): Promise<ProductWorkflowImageUploadActionResult> {
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) {
+    return { status: "error", message: "กรุณาเลือกรูปภาพกระบวนการผลิต" };
+  }
+  try {
+    const image = await uploadProductWorkflowImage(accessToken, file, file.name);
+    return { status: "success", image };
+  } catch (err) {
+    const result = errorResult(err);
+    return { status: "error", message: result.message };
+  }
+}
+
+export async function uploadProductWorkflowImageAction(
+  formData: FormData
+): Promise<ProductWorkflowImageUploadActionResult> {
+  const accessToken = await requireAccessToken();
+  if (!accessToken) {
+    return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
+  }
+  return performUploadProductWorkflowImage(accessToken, formData);
 }
