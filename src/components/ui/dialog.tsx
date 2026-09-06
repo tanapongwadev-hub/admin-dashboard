@@ -49,7 +49,7 @@ const DialogContent = React.forwardRef<
         fullScreenOnMobile
           ? cn(
               "fixed z-50 flex flex-col border-border bg-surface shadow-xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
-              "inset-0 h-dvh w-full max-h-none overflow-y-auto border-0 rounded-none",
+              "inset-0 h-dvh w-full max-h-none overflow-y-auto border-0 rounded-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
               // Only top/left (not inset-1/2, which also sets right/bottom —
               // with `position: fixed` that pins both edges and collapses
               // the computed height to 0, since height:auto doesn't override
@@ -59,7 +59,7 @@ const DialogContent = React.forwardRef<
               "sm:inset-auto sm:left-1/2 sm:top-1/2 sm:h-auto sm:max-h-[90vh] sm:w-full sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:border data-[state=closed]:sm:zoom-out-95 data-[state=open]:sm:zoom-in-95",
               dialogSizes[size]
             )
-          : "fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-surface shadow-xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 max-h-[90vh] overflow-y-auto",
+          : "fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-surface shadow-xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 max-h-[90vh] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
         className
       )}
       {...props}

@@ -9,30 +9,47 @@ import { ViewToggle } from "@/components/ui/view-toggle";
 import { useViewMode } from "@/hooks/use-view-mode";
 import { ProductsFilters } from "@/components/products/products-filters";
 import { ProductsTable } from "@/components/products/products-table";
-import { ProductsFormDialog } from "@/components/products/products-form-dialog";
+import { ProductsWizardDialog } from "@/components/products/products-wizard-dialog";
 import { ProductsStatusDialog } from "@/components/products/products-status-dialog";
 import { ProductsDetailsDialog } from "@/components/products/products-details-dialog";
 import { deactivateProductAction, restoreProductAction } from "@/app/(dashboard)/products/actions";
 import type { Product, ProductLookups } from "@/lib/api/products";
+import type { Material } from "@/lib/api/materials";
 
 export function ProductsClient({
   products,
   totalItems,
   lookups,
+  materials,
   canEdit,
   canDelete,
+  canCreateBom,
+  canViewBom,
   openNew,
 }: {
   products: Product[];
   totalItems: number;
   lookups: ProductLookups;
+  // BOM item component picker in the wizard's post-create BOM step — see
+  // AGENTS.md § Products. Not gated behind canEdit since a BOM references
+  // Materials, not Products, permissions.
+  materials: Material[];
   canEdit: boolean;
   canDelete: boolean;
+  // Separate from canEdit: BOMS_CREATE is its own permission, independent
+  // of PRODUCTS_CREATE/UPDATE — a user could have one without the other.
+  canCreateBom: boolean;
+  // Separate again from canCreateBom — a read-only viewer could see BOMs
+  // without being able to author them.
+  canViewBom: boolean;
   openNew?: boolean;
 }) {
   const router = useRouter();
   const [view, setView] = useViewMode("products", "table");
-  const [formTarget, setFormTarget] = React.useState<Product | null | undefined>(openNew ? null : undefined);
+  // Single entry point for both add and edit now (see AGENTS.md § Products)
+  // — undefined = closed, null = create mode, a Product = edit mode. Mirrors
+  // the same "undefined vs null vs value" shape the old formTarget used.
+  const [wizardTarget, setWizardTarget] = React.useState<Product | null | undefined>(openNew ? null : undefined);
   const [statusTarget, setStatusTarget] = React.useState<Product | null>(null);
   const [detailsTarget, setDetailsTarget] = React.useState<Product | null>(null);
 
@@ -62,7 +79,7 @@ export function ProductsClient({
         <div className="flex shrink-0 items-center gap-2">
           <ViewToggle value={view} onChange={setView} modes={["table", "card", "list"]} />
           {canEdit && (
-            <Button onClick={() => setFormTarget(null)} className="shrink-0">
+            <Button onClick={() => setWizardTarget(null)} className="shrink-0">
               <Plus className="h-4 w-4" /> เพิ่มสินค้า
             </Button>
           )}
@@ -75,7 +92,7 @@ export function ProductsClient({
         view={view}
         canEdit={canEdit}
         canDelete={canDelete}
-        onEdit={(product) => setFormTarget(product)}
+        onEdit={(product) => setWizardTarget(product)}
         onToggleStatus={(product) => setStatusTarget(product)}
         onViewDetails={(product) => setDetailsTarget(product)}
       />
@@ -83,16 +100,20 @@ export function ProductsClient({
       <ProductsDetailsDialog
         product={detailsTarget}
         canEdit={canEdit}
-        onEdit={(product) => setFormTarget(product)}
+        canViewBom={canViewBom}
+        materials={materials}
+        onEdit={(product) => setWizardTarget(product)}
         onOpenChange={(open) => !open && setDetailsTarget(null)}
       />
 
       {canEdit && (
-        <ProductsFormDialog
-          open={formTarget !== undefined}
-          onOpenChange={(open) => !open && setFormTarget(undefined)}
-          product={formTarget}
+        <ProductsWizardDialog
+          open={wizardTarget !== undefined}
+          onOpenChange={(open) => !open && setWizardTarget(undefined)}
+          product={wizardTarget}
           lookups={lookups}
+          materials={materials}
+          canCreateBom={canCreateBom}
           onSaved={handleSaved}
         />
       )}

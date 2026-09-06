@@ -55,6 +55,9 @@ export function UserFormDialog({
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { name: "", email: "", role: "Viewer", status: "Invited" },
+    // Validate on every change, not just on submit — see AGENTS.md § Products
+    // for why every form dialog in this app uses this now.
+    mode: "onChange",
   });
 
   React.useEffect(() => {
@@ -102,7 +105,7 @@ export function UserFormDialog({
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
                 <Label>บทบาท</Label>
-                <Select value={watch("role")} onValueChange={(v) => setValue("role", v as UserRole)}>
+                <Select value={watch("role")} onValueChange={(v) => setValue("role", v as UserRole, { shouldValidate: true })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -118,7 +121,7 @@ export function UserFormDialog({
 
               <div className="flex flex-col gap-1.5">
                 <Label>สถานะ</Label>
-                <Select value={watch("status")} onValueChange={(v) => setValue("status", v as UserStatus)}>
+                <Select value={watch("status")} onValueChange={(v) => setValue("status", v as UserStatus, { shouldValidate: true })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>

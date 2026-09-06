@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { ShieldAlert } from "lucide-react";
 import { getCurrentSession } from "@/lib/session";
 import { listProducts, getProductLookups } from "@/lib/api/products";
+import { listMaterials } from "@/lib/api/materials";
 import { ProductsClient } from "@/components/products/products-client";
 
 export async function ProductsPageContent({
@@ -35,13 +36,24 @@ export async function ProductsPageContent({
   const store = await cookies();
   const accessToken = store.get("accessToken")!.value;
 
-  const [list, lookups] = await Promise.all([
+  // Materials list is fetched here too (not just Products' own lookups) so
+  // the wizard's post-create "insert BOM" step (see AGENTS.md § Products)
+  // has a component picker — a BOM item references any Material regardless
+  // of type (PC/OF/OF_MAT), so this intentionally has no `type` filter,
+  // unlike /materials/pc's own list. `isActive: true` since a BOM shouldn't
+  // be built from a disabled material; `limit: 100` is the backend's max.
+  const [list, lookups, materialsList] = await Promise.all([
     listProducts(accessToken, { search, isActive, sortBy: "code", sortOrder: "asc" }),
     getProductLookups(accessToken),
+    listMaterials(accessToken, { limit: 100, isActive: true, sortBy: "name", sortOrder: "asc" }),
   ]);
 
   const canEdit = session.user.isSuperAdmin || session.permissions.includes("PRODUCTS_CREATE") || session.permissions.includes("PRODUCTS_UPDATE");
   const canDelete = session.user.isSuperAdmin || session.permissions.includes("PRODUCTS_DELETE") || session.permissions.includes("PRODUCTS_RESTORE");
+  const canCreateBom = session.user.isSuperAdmin || session.permissions.includes("BOMS_CREATE");
+  // Separate permission from BOMS_CREATE — a viewer could have one without
+  // the other (e.g. read-only staff who can see BOMs but not author them).
+  const canViewBom = session.user.isSuperAdmin || session.permissions.includes("BOMS_VIEW");
 
   return (
     <div className="flex flex-col gap-6">
@@ -54,8 +66,11 @@ export async function ProductsPageContent({
         products={list.items}
         totalItems={list.meta.totalItems}
         lookups={lookups}
+        materials={materialsList.items}
         canEdit={canEdit}
         canDelete={canDelete}
+        canCreateBom={canCreateBom}
+        canViewBom={canViewBom}
         openNew={params.new === "1"}
       />
     </div>

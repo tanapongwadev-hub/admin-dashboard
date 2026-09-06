@@ -25,7 +25,7 @@ export function DashboardShell({
         <Sidebar collapsed={collapsed} onToggle={() => setCollapsed((v) => !v)} menus={menus} />
         <div className="flex min-w-0 flex-1 flex-col gap-2 sm:gap-3 lg:gap-4">
           <Topbar user={user} currentDepartmentRole={currentDepartmentRole} menus={menus} />
-          <main className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain rounded-xl border border-border bg-surface [scrollbar-gutter:stable]">
+          <main className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain rounded-xl border border-border bg-surface [scrollbar-gutter:stable] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <div className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">{children}</div>
           </main>
         </div>

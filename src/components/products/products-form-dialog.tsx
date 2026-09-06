@@ -58,7 +58,7 @@ export function validateProductImage(file: Pick<File, "type" | "size"> | null): 
 // rather than a shared component, per this project's established "hand-write
 // each resource's own form pieces" convention (see AGENTS.md § Materials PC
 // "Not (yet) applied to Products/Users/Orders").
-function ProductImagePicker({
+export function ProductImagePicker({
   file,
   previewUrl,
   error,
@@ -150,7 +150,11 @@ function ProductImagePicker({
   );
 }
 
-const schema = z.object({
+// Exported so ProductsWizardDialog (the step-by-step create flow, see
+// products-wizard-dialog.tsx) shares the exact same validation rules and
+// default values as the single-page form — one schema, two UIs onto it,
+// so the two creation paths can never validate a field differently.
+export const productSchema = z.object({
   code: z.string().min(1, "กรุณากรอกรหัส").max(50),
   name: z.string().min(1, "กรุณากรอกชื่อ").max(255),
   unitId: z.string().min(1, "กรุณาเลือกหน่วย"),
@@ -167,11 +171,14 @@ const schema = z.object({
   minStock: z.coerce.number().int().min(0).optional().or(z.literal("")),
   scale: z.string().max(50).optional(),
 });
+const schema = productSchema;
 
-type FormInput = z.input<typeof schema>;
-type FormValues = z.output<typeof schema>;
+export type ProductFormInput = z.input<typeof productSchema>;
+export type ProductFormValues = z.output<typeof productSchema>;
+type FormInput = ProductFormInput;
+type FormValues = ProductFormValues;
 
-function toDefaultValues(product?: Product | null): FormInput {
+export function toProductDefaultValues(product?: Product | null): ProductFormInput {
   return {
     code: product?.code ?? "",
     name: product?.name ?? "",
@@ -219,12 +226,16 @@ export function ProductsFormDialog({
     formState: { errors, isSubmitting },
   } = useForm<FormInput>({
     resolver: zodResolver(schema),
-    defaultValues: toDefaultValues(product),
+    defaultValues: toProductDefaultValues(product),
+    // Validate on every change, not just on submit — see AGENTS.md § Products
+    // and the same setting in products-wizard-dialog.tsx/material-pc-form-dialog.tsx
+    // for why every form dialog in this app uses this now.
+    mode: "onChange",
   });
 
   React.useEffect(() => {
     if (open) {
-      reset(toDefaultValues(product));
+      reset(toProductDefaultValues(product));
       setImageFile(null);
       setImageError(null);
       setImagePreview((current) => {
@@ -309,7 +320,7 @@ export function ProductsFormDialog({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex-1 overflow-y-auto px-6 py-5">
+          <div className="flex-1 overflow-y-auto px-6 py-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <div className="mb-5">
               <ProductImagePicker
                 file={imageFile}
@@ -352,7 +363,7 @@ export function ProductsFormDialog({
 
               <div className="flex flex-col gap-1.5">
                 <Label>หน่วย</Label>
-                <Select value={watch("unitId")} onValueChange={(v) => setValue("unitId", v)}>
+                <Select value={watch("unitId")} onValueChange={(v) => setValue("unitId", v, { shouldValidate: true })}>
                   <SelectTrigger><SelectValue placeholder="เลือกหน่วย" /></SelectTrigger>
                   <SelectContent>
                     {lookups.units.map((item) => (
@@ -364,7 +375,7 @@ export function ProductsFormDialog({
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label>รุ่น</Label>
-                <Select value={watch("modelId")} onValueChange={(v) => setValue("modelId", v)}>
+                <Select value={watch("modelId")} onValueChange={(v) => setValue("modelId", v, { shouldValidate: true })}>
                   <SelectTrigger><SelectValue placeholder="เลือกรุ่น" /></SelectTrigger>
                   <SelectContent>
                     {lookups.productModels.map((item) => (
@@ -377,7 +388,7 @@ export function ProductsFormDialog({
 
               <div className="flex flex-col gap-1.5">
                 <Label>ลูกค้า</Label>
-                <Select value={watch("customerId")} onValueChange={(v) => setValue("customerId", v)}>
+                <Select value={watch("customerId")} onValueChange={(v) => setValue("customerId", v, { shouldValidate: true })}>
                   <SelectTrigger><SelectValue placeholder="เลือกลูกค้า" /></SelectTrigger>
                   <SelectContent>
                     {lookups.customers.map((item) => (
@@ -389,7 +400,7 @@ export function ProductsFormDialog({
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label>สถานที่</Label>
-                <Select value={watch("locationId")} onValueChange={(v) => setValue("locationId", v)}>
+                <Select value={watch("locationId")} onValueChange={(v) => setValue("locationId", v, { shouldValidate: true })}>
                   <SelectTrigger><SelectValue placeholder="เลือกสถานที่" /></SelectTrigger>
                   <SelectContent>
                     {lookups.locations.map((item) => (
@@ -402,7 +413,7 @@ export function ProductsFormDialog({
 
               <div className="flex flex-col gap-1.5">
                 <Label>ประเภทสินค้า</Label>
-                <Select value={watch("productTypeId")} onValueChange={(v) => setValue("productTypeId", v)}>
+                <Select value={watch("productTypeId")} onValueChange={(v) => setValue("productTypeId", v, { shouldValidate: true })}>
                   <SelectTrigger><SelectValue placeholder="เลือกประเภทสินค้า" /></SelectTrigger>
                   <SelectContent>
                     {lookups.productTypes.map((item) => (
@@ -414,7 +425,7 @@ export function ProductsFormDialog({
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label>ประเภทการจัดส่ง</Label>
-                <Select value={watch("deliveryTypeId")} onValueChange={(v) => setValue("deliveryTypeId", v)}>
+                <Select value={watch("deliveryTypeId")} onValueChange={(v) => setValue("deliveryTypeId", v, { shouldValidate: true })}>
                   <SelectTrigger><SelectValue placeholder="เลือกประเภทการจัดส่ง" /></SelectTrigger>
                   <SelectContent>
                     {lookups.deliveryTypes.map((item) => (
@@ -427,7 +438,7 @@ export function ProductsFormDialog({
 
               <div className="flex flex-col gap-1.5">
                 <Label>จุดขึ้นสินค้า</Label>
-                <Select value={watch("loadingPointId")} onValueChange={(v) => setValue("loadingPointId", v)}>
+                <Select value={watch("loadingPointId")} onValueChange={(v) => setValue("loadingPointId", v, { shouldValidate: true })}>
                   <SelectTrigger><SelectValue placeholder="เลือกจุดขึ้นสินค้า" /></SelectTrigger>
                   <SelectContent>
                     {lookups.loadingPoints.map((item) => (
@@ -439,7 +450,7 @@ export function ProductsFormDialog({
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label>สายการผลิต</Label>
-                <Select value={watch("processLineId")} onValueChange={(v) => setValue("processLineId", v)}>
+                <Select value={watch("processLineId")} onValueChange={(v) => setValue("processLineId", v, { shouldValidate: true })}>
                   <SelectTrigger><SelectValue placeholder="เลือกสายการผลิต" /></SelectTrigger>
                   <SelectContent>
                     {lookups.processLines.map((item) => (

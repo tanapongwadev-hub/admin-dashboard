@@ -53,7 +53,7 @@ export function CommandPalette() {
             className="h-12 w-full bg-transparent text-sm text-fg outline-none placeholder:text-fg-muted"
           />
         </div>
-        <Command.List className="max-h-80 overflow-y-auto p-2">
+        <Command.List className="max-h-80 overflow-y-auto p-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <Command.Empty className="py-6 text-center text-sm text-fg-muted">ไม่พบผลลัพธ์</Command.Empty>
 
           <Command.Group heading="นำทาง" className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-fg-muted">

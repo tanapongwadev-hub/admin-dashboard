@@ -13,6 +13,7 @@ import {
   type StagedProductImage,
   type UpdateProductPayload,
 } from "@/lib/api/products";
+import { createBom, activateBom, listBomsByProduct, type Bom, type CreateBomPayload } from "@/lib/api/boms";
 import { ApiError } from "@/lib/api/client";
 
 export type ProductActionResult =
@@ -22,6 +23,14 @@ export type ProductActionResult =
 
 export type ProductImageUploadActionResult =
   | { status: "success"; image: StagedProductImage }
+  | { status: "error"; message: string };
+
+export type BomActionResult =
+  | { status: "success"; bom: Bom }
+  | { status: "error"; message: string };
+
+export type BomListActionResult =
+  | { status: "success"; boms: Bom[] }
   | { status: "error"; message: string };
 
 type ProductActionFailure = Exclude<ProductActionResult, { status: "success" }>;
@@ -122,5 +131,49 @@ export async function restoreProductAction(id: string): Promise<ProductActionRes
     return { status: "success", product };
   } catch (err) {
     return errorResult(err);
+  }
+}
+
+// BOM actions — used by the products wizard's post-create "insert BOM" step
+// (see products-wizard-dialog.tsx and AGENTS.md § Products). Every create
+// defaults to status: "DRAFT" server-side; "บันทึกร่าง" in the wizard calls
+// only this, "บันทึกและเปิดใช้งาน" calls this then activateBomAction.
+export async function createBomAction(payload: CreateBomPayload): Promise<BomActionResult> {
+  const accessToken = await requireAccessToken();
+  if (!accessToken) return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
+
+  try {
+    const bom = await createBom(accessToken, payload);
+    return { status: "success", bom };
+  } catch (err) {
+    return { status: "error", message: errorResult(err).message };
+  }
+}
+
+export async function activateBomAction(id: string): Promise<BomActionResult> {
+  const accessToken = await requireAccessToken();
+  if (!accessToken) return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
+
+  try {
+    const bom = await activateBom(accessToken, id);
+    return { status: "success", bom };
+  } catch (err) {
+    return { status: "error", message: errorResult(err).message };
+  }
+}
+
+// Used by ProductsDetailsDialog to show a product's BOM history (see
+// AGENTS.md § Products) — called client-side on demand when the dialog
+// opens, not fetched upfront for the whole product list, since most viewers
+// opening the list will never open this dialog for most rows.
+export async function listBomsByProductAction(productId: string): Promise<BomListActionResult> {
+  const accessToken = await requireAccessToken();
+  if (!accessToken) return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
+
+  try {
+    const boms = await listBomsByProduct(accessToken, productId);
+    return { status: "success", boms };
+  } catch (err) {
+    return { status: "error", message: errorResult(err).message };
   }
 }

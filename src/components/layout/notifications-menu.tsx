@@ -52,7 +52,7 @@ export function NotificationsMenu() {
             </button>
           )}
         </div>
-        <div className="max-h-80 overflow-y-auto py-1">
+        <div className="max-h-80 overflow-y-auto py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {items.map((n) => {
             const Icon = typeIcon[n.type];
             return (

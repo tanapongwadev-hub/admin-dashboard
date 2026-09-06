@@ -243,6 +243,13 @@ export function MaterialPcFormDialog({
   } = useForm<FormInput>({
     resolver: zodResolver(schema),
     defaultValues: toDefaultValues(material),
+    // Validate on every change, not just on submit — without this, an error
+    // shown after a failed submit only clears once react-hook-form's default
+    // reValidateMode kicks in, which itself only activates after
+    // `isSubmitted`. mode: "onChange" makes an error disappear the instant a
+    // field becomes valid, even before the user has attempted to submit at
+    // all — consistent with every form dialog in this app (see AGENTS.md).
+    mode: "onChange",
   });
 
   React.useEffect(() => {
@@ -344,7 +351,7 @@ export function MaterialPcFormDialog({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex-1 overflow-y-auto px-6 py-5">
+          <div className="flex-1 overflow-y-auto px-6 py-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <div className="mb-5">
               <MaterialImagePicker
                 file={imageFile}
@@ -408,7 +415,7 @@ export function MaterialPcFormDialog({
 
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="materialType">รูปทรง</Label>
-                <Select value={materialType} onValueChange={(v) => setValue("materialType", v as MaterialShape)}>
+                <Select value={materialType} onValueChange={(v) => setValue("materialType", v as MaterialShape, { shouldValidate: true })}>
                   <SelectTrigger id="materialType"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {shapes.map((shape) => (
@@ -439,7 +446,7 @@ export function MaterialPcFormDialog({
 
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="unitId">หน่วย</Label>
-                <Select value={watch("unitId")} onValueChange={(v) => setValue("unitId", v)}>
+                <Select value={watch("unitId")} onValueChange={(v) => setValue("unitId", v, { shouldValidate: true })}>
                   <SelectTrigger id="unitId" aria-invalid={errors.unitId ? true : undefined} aria-describedby={errors.unitId ? "unitId-error" : undefined}>
                     <SelectValue placeholder="เลือกหน่วย" />
                   </SelectTrigger>
@@ -462,7 +469,7 @@ export function MaterialPcFormDialog({
 
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="deliveryTypeId">ประเภทการจัดส่ง</Label>
-                <Select value={watch("deliveryTypeId")} onValueChange={(v) => setValue("deliveryTypeId", v)}>
+                <Select value={watch("deliveryTypeId")} onValueChange={(v) => setValue("deliveryTypeId", v, { shouldValidate: true })}>
                   <SelectTrigger id="deliveryTypeId"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value={NONE}>ไม่ระบุ</SelectItem>
@@ -474,7 +481,7 @@ export function MaterialPcFormDialog({
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="modelId">รุ่น</Label>
-                <Select value={watch("modelId")} onValueChange={(v) => setValue("modelId", v)}>
+                <Select value={watch("modelId")} onValueChange={(v) => setValue("modelId", v, { shouldValidate: true })}>
                   <SelectTrigger id="modelId"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value={NONE}>ไม่ระบุ</SelectItem>
@@ -487,7 +494,7 @@ export function MaterialPcFormDialog({
 
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="loadingPointId">จุดขึ้นสินค้า</Label>
-                <Select value={watch("loadingPointId")} onValueChange={(v) => setValue("loadingPointId", v)}>
+                <Select value={watch("loadingPointId")} onValueChange={(v) => setValue("loadingPointId", v, { shouldValidate: true })}>
                   <SelectTrigger id="loadingPointId"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value={NONE}>ไม่ระบุ</SelectItem>
