@@ -30,16 +30,38 @@ export function Topbar({
   user,
   currentDepartmentRole,
   menus,
+  collapsed,
+  onToggleCollapsed,
 }: {
   user: AuthenticatedUser;
   currentDepartmentRole: CurrentDepartmentRole | null;
   menus: MenuNode[];
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
 }) {
   const crumb = useBreadcrumb(menus);
   const [mobileNavOpen, setMobileNavOpen] = React.useState(false);
 
   return (
     <header className="z-30 flex h-16 shrink-0 items-center gap-3 rounded-xl border border-border bg-surface/90 px-3 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-surface/70 sm:px-5">
+      {/* Left-side controls: the mobile Sheet trigger and the desktop
+          collapse toggle are mutually exclusive (`lg:hidden` vs
+          `hidden lg:flex`) and live at the same horizontal slot so the
+          left edge of the topbar is always a "menu / sidebar" affordance
+          regardless of breakpoint. The same hamburger `Menu` icon is used
+          in both — the breakpoint (mobile Sheet vs desktop collapse) is the
+          only state difference. */}
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        onClick={onToggleCollapsed}
+        aria-label={collapsed ? "ขยายแถบด้านข้าง" : "ยุบแถบด้านข้าง"}
+        title={collapsed ? "ขยาย" : "ยุบ"}
+        className="hidden text-fg-secondary hover:text-fg lg:flex"
+      >
+        <Menu className="h-5 w-5" />
+      </Button>
       <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
         <SheetTrigger asChild>
           <Button variant="ghost" size="icon" className="text-fg-secondary lg:hidden" aria-label="เปิดเมนูนำทาง">

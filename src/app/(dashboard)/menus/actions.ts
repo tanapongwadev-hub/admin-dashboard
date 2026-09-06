@@ -9,15 +9,25 @@ export type SaveMenuOrderResult =
   | { status: "conflict"; message: string }
   | { status: "error"; message: string };
 
-export async function saveMenuOrderAction(
+export type RefreshMenuTreeResult =
+  | { status: "success"; version: string; menus: Awaited<ReturnType<typeof getManagementTree>>["menus"] }
+  | { status: "error"; message: string };
+
+async function requireAccessToken() {
+  const store = await cookies();
+  return store.get("accessToken")?.value ?? null;
+}
+
+// `perform*` helpers — the testable inner functions. The public `*Action`
+// exports below are thin cookie-reading wrappers around them (same pattern
+// as `materials/pc/actions.ts` and `products/actions.ts`). The helpers
+// take the accessToken as a parameter so tests can call them directly
+// with a controlled token without needing to mock `next/headers`.
+export async function performSaveMenuOrder(
+  accessToken: string,
   version: string,
   items: ReorderMenuItem[]
 ): Promise<SaveMenuOrderResult> {
-  const accessToken = await requireAccessToken();
-  if (!accessToken) {
-    return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
-  }
-
   try {
     const result = await reorderMenus(accessToken, { version, items });
     return { status: "success", version: result.version };
@@ -36,16 +46,9 @@ export async function saveMenuOrderAction(
   }
 }
 
-export type RefreshMenuTreeResult =
-  | { status: "success"; version: string; menus: Awaited<ReturnType<typeof getManagementTree>>["menus"] }
-  | { status: "error"; message: string };
-
-export async function refreshMenuTreeAction(): Promise<RefreshMenuTreeResult> {
-  const accessToken = await requireAccessToken();
-  if (!accessToken) {
-    return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
-  }
-
+export async function performRefreshMenuTree(
+  accessToken: string
+): Promise<RefreshMenuTreeResult> {
   try {
     const tree = await getManagementTree(accessToken);
     return { status: "success", version: tree.version, menus: tree.menus };
@@ -54,7 +57,21 @@ export async function refreshMenuTreeAction(): Promise<RefreshMenuTreeResult> {
   }
 }
 
-async function requireAccessToken() {
-  const store = await cookies();
-  return store.get("accessToken")?.value ?? null;
+export async function saveMenuOrderAction(
+  version: string,
+  items: ReorderMenuItem[]
+): Promise<SaveMenuOrderResult> {
+  const accessToken = await requireAccessToken();
+  if (!accessToken) {
+    return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
+  }
+  return performSaveMenuOrder(accessToken, version, items);
+}
+
+export async function refreshMenuTreeAction(): Promise<RefreshMenuTreeResult> {
+  const accessToken = await requireAccessToken();
+  if (!accessToken) {
+    return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
+  }
+  return performRefreshMenuTree(accessToken);
 }

@@ -5,9 +5,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
 import { resolveMenuIcons, type ResolvedMenuNode } from "@/lib/menu-icons";
-import { secondaryNav, menuHref, type NavItem } from "@/lib/nav";
+import { menuHref } from "@/lib/nav";
 import type { MenuNode } from "@/lib/api/auth";
 
 function isActiveHref(pathname: string, href: string) {
@@ -38,55 +37,36 @@ function activeChainIds(menus: ResolvedMenuNode[], pathname: string): Set<string
 // Shared row chrome for every nav row (static link, tree link, tree button)
 // so the three can't drift. Borderless by design: the old look put a border
 // box + a bordered icon tile on every single row, which made a 20-item menu
-// read as 20 competing cards. State is carried by fill + text color instead:
-//   active leaf  → solid primary fill, inverted text (the one unmistakable row)
-//   open parent  → surface-2 fill, full-strength text
-//   idle         → transparent, secondary text, surface-2 on hover
+// read as 20 competing cards. State is carried by a 3px left accent bar +
+// subtle bg tint instead of a full primary fill, which was visually loud
+// for a 20-item menu and felt out of step with the rest of the design
+// system (cards, dialogs, tables all use border + bg-surface-2):
+//   active leaf  → bg-primary-soft tint + text-primary + 3px primary accent
+//                   bar on the left edge (the one unmistakable row)
+//   open parent  → bg-surface-2 fill + full-strength text
+//   idle         → transparent + secondary text + bg-surface-2 on hover
 const rowBase =
   "group relative flex w-full min-w-0 items-center rounded-lg text-[13px] font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
 
 function rowTone(active: boolean, emphasized = false) {
-  if (active) return "bg-primary text-primary-fg shadow-sm";
+  if (active) return "bg-primary-soft text-primary font-semibold";
   if (emphasized) return "bg-surface-2 text-fg";
   return "text-fg-secondary hover:bg-surface-2 hover:text-fg";
 }
 
 function iconTone(active: boolean, emphasized = false) {
-  if (active) return "text-primary-fg";
+  if (active) return "text-primary";
   if (emphasized) return "text-fg";
   return "text-fg-muted group-hover:text-fg-secondary";
 }
 
-function StaticNavLink({ item, collapsed, onNavigate, pathname }: { item: NavItem; collapsed?: boolean; onNavigate?: () => void; pathname: string }) {
-  const active = isActiveHref(pathname, item.href);
-  const Icon = item.icon;
-
-  return (
-    <Link
-      href={item.href}
-      onClick={onNavigate}
-      aria-label={collapsed ? item.label : undefined}
-      title={collapsed ? item.label : undefined}
-      className={cn(
-        rowBase,
-        rowTone(active),
-        collapsed ? "h-9 justify-center px-0" : "min-h-9 gap-3 px-2.5 py-1.5"
-      )}
-    >
-      <Icon className={cn("size-[18px] shrink-0 transition-colors", iconTone(active))} strokeWidth={1.75} />
-      {!collapsed && (
-        <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
-          <span className="truncate">{item.label}</span>
-          {item.badge && (
-            <Badge variant={active ? "neutral" : "primary"} className="shrink-0 px-1.5 py-0 text-[10px]">
-              {item.badge}
-            </Badge>
-          )}
-        </span>
-      )}
-    </Link>
-  );
-}
+// 3px left accent bar marks the active row. Same shape for top-level and
+// nested — the previous design only added it for nested (so the indent
+// guide rail had a clear active node), but the new bg-primary-soft tint
+// alone isn't loud enough to be unmistakable, so every active row gets
+// the accent bar regardless of depth.
+const activeAccentBar =
+  "absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-primary";
 
 function MenuTreeItem({
   node,
@@ -138,11 +118,11 @@ function MenuTreeItem({
   return (
     <div className="min-w-0">
       <div className={cn(rowBase, rowTone(active, emphasized), !collapsed && "pr-0.5")}>
-        {/* Accent bar marks the active nested row — the indent means it can't
-            rely on the icon slot the way a top-level row does. */}
-        {active && !topLevel && (
-          <span className="absolute -left-[13px] top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-primary" />
-        )}
+        {/* 3px accent bar on the left edge — same shape for top-level and
+            nested rows. The previous design only added it for nested items
+            (to anchor the indent guide rail), but with the new bg-primary-soft
+            tint a left bar on every active row is the unmistakable cue. */}
+        {active && <span className={activeAccentBar} aria-hidden="true" />}
         {href ? (
           <Link
             href={href}
@@ -245,16 +225,6 @@ export function SidebarNav({
             onToggle={toggle}
             onNavigate={onNavigate}
           />
-        ))}
-      </div>
-      {/* Account-level items are pinned to the bottom and separated by a rule
-          so they read as a different tier from the permission-driven tree. */}
-      <div className="mt-auto flex flex-col gap-0.5 border-t border-border pt-3">
-        {!collapsed && (
-          <p className="mb-2 px-2.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-fg-muted">ทั่วไป</p>
-        )}
-        {secondaryNav.map((item) => (
-          <StaticNavLink key={item.href} item={item} collapsed={collapsed} onNavigate={onNavigate} pathname={pathname} />
         ))}
       </div>
     </nav>

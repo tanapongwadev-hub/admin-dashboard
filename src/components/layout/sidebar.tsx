@@ -1,18 +1,143 @@
 "use client";
 
-import { ChevronsLeft } from "lucide-react";
+import * as React from "react";
+import { useRouter } from "next/navigation";
+import { LogOut, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/layout/logo";
 import { SidebarNav } from "@/components/layout/sidebar-nav";
-import type { MenuNode } from "@/lib/api/auth";
+import { UserAvatar } from "@/components/ui/user-avatar";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
+import { logoutAction } from "@/app/(dashboard)/actions";
+import type { AuthenticatedUser, CurrentDepartmentRole, MenuNode } from "@/lib/api/auth";
+
+function displayName(user: AuthenticatedUser) {
+  return user.displayName || `${user.firstName} ${user.lastName}`.trim() || user.username;
+}
+
+function roleLabel(_user: AuthenticatedUser, currentDepartmentRole: CurrentDepartmentRole | null) {
+  if (currentDepartmentRole) return currentDepartmentRole.roleName;
+  return "ผู้ดูแลระบบ";
+}
+
+// Bottom-of-sidebar user block — avatar + name + role + a sign-out
+// affordance. The collapse/expand toggle is NOT here — it lives in the
+// topbar (where the mobile Sheet trigger also lives, as a sibling at the
+// same horizontal slot) so a user can always see + reach the sidebar toggle
+// from the topbar, and the bottom of the sidebar is reserved for the
+// identity block alone. Reuses the same `logoutAction` that the topbar's
+// `UserMenu` uses; on click, we sign out, route to /login, and refresh
+// so every Server Component in the tree re-runs `getCurrentSession()` (which
+// now returns null because the cookies are gone — see the auto-logout-on-
+// 401 entry in AGENTS.md Recent Changes). The topbar's `UserMenu` is kept
+// for the mobile Sheet (where this block is hidden by `hidden lg:flex`).
+function SidebarUserProfile({
+  user,
+  currentDepartmentRole,
+  collapsed,
+}: {
+  user: AuthenticatedUser;
+  currentDepartmentRole: CurrentDepartmentRole | null;
+  collapsed: boolean;
+}) {
+  const router = useRouter();
+  const [signingOut, setSigningOut] = React.useState(false);
+
+  async function handleSignOut() {
+    setSigningOut(true);
+    await logoutAction();
+    router.push("/login");
+    router.refresh();
+  }
+
+  const name = displayName(user);
+  const role = roleLabel(user, currentDepartmentRole);
+  const tooltipLabel = `${name} · ${role}`;
+
+  // Collapsed: avatar as the visual anchor + sign-out icon below.
+  if (collapsed) {
+    return (
+      <div className="flex flex-col items-center gap-1 border-t border-border p-2.5">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="rounded-lg p-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+              <UserAvatar name={name} color="chart-1" className="h-9 w-9" />
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="right">{tooltipLabel}</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={handleSignOut}
+              disabled={signingOut}
+              aria-label="ออกจากระบบ"
+              className="h-8 w-8 text-fg-muted hover:text-fg"
+            >
+              {signingOut ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogOut className="h-4 w-4" />}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="right">ออกจากระบบ</TooltipContent>
+        </Tooltip>
+      </div>
+    );
+  }
+
+  // Expanded: avatar + name + role + sign-out (no collapse button — that
+  // lives in the topbar now).
+  return (
+    <div className="border-t border-border">
+      <div className="flex items-center gap-3 px-3 py-3">
+        <UserAvatar name={name} color="chart-1" className="h-9 w-9 shrink-0" />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <p className="truncate text-[13px] font-semibold text-fg" title={name}>
+            {name}
+          </p>
+          <p className="truncate text-[11px] text-fg-muted" title={role}>
+            {role}
+          </p>
+        </div>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={handleSignOut}
+              disabled={signingOut}
+              aria-label="ออกจากระบบ"
+              className="h-8 w-8 shrink-0 text-fg-muted hover:text-fg"
+            >
+              {signingOut ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogOut className="h-4 w-4" />}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="top">ออกจากระบบ</TooltipContent>
+        </Tooltip>
+      </div>
+    </div>
+  );
+}
 
 export function Sidebar({
   collapsed,
-  onToggle,
+  user,
+  currentDepartmentRole,
   menus,
 }: {
   collapsed: boolean;
-  onToggle: () => void;
+  // No onToggle / onToggleCollapsed — the collapse button moved to the
+  // topbar (see the Topbar changes in this same change). The Sidebar no
+  // longer needs to know how to collapse itself.
+  user: AuthenticatedUser;
+  currentDepartmentRole: CurrentDepartmentRole | null;
   menus: MenuNode[];
 }) {
   return (
@@ -26,20 +151,11 @@ export function Sidebar({
         <Logo collapsed={collapsed} />
       </div>
       <SidebarNav collapsed={collapsed} menus={menus} />
-      <div className="border-t border-border p-3">
-        <button
-          type="button"
-          onClick={onToggle}
-          aria-label={collapsed ? "ขยายแถบด้านข้าง" : "ยุบแถบด้านข้าง"}
-          className={cn(
-            "flex min-h-10 w-full items-center gap-2 rounded-lg border border-transparent px-2.5 py-2 text-sm text-fg-secondary transition-colors hover:border-border hover:bg-surface-2 hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
-            collapsed && "justify-center px-2"
-          )}
-        >
-          <ChevronsLeft className={cn("h-4 w-4 transition-transform", collapsed && "rotate-180")} />
-          {!collapsed && "ยุบ"}
-        </button>
-      </div>
+      <SidebarUserProfile
+        user={user}
+        currentDepartmentRole={currentDepartmentRole}
+        collapsed={collapsed}
+      />
     </aside>
   );
 }
