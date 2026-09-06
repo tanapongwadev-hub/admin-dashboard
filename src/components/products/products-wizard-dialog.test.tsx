@@ -5,8 +5,10 @@ import { ProductsWizardDialog, ProductsWizardView } from "./products-wizard-dial
 import { Dialog } from "@/components/ui/dialog";
 import type { Product, ProductLookups } from "@/lib/api/products";
 import type { Material } from "@/lib/api/materials";
+import type { ProcessStep } from "@/lib/api/process-steps";
 
 const materials: Material[] = [];
+const processSteps: ProcessStep[] = [];
 
 const product: Product = {
   id: "product-1",
@@ -64,6 +66,7 @@ test("renders nothing when closed", () => {
       onOpenChange={() => undefined}
       lookups={lookups}
       materials={materials}
+      processSteps={processSteps}
       canCreateBom
       canCreateWorkflow
       onSaved={() => undefined}
@@ -86,6 +89,7 @@ test("opens on step 1 with the basic-info fields, the stepper, and a 'ถัด�
         onOpenChange={() => undefined}
         lookups={lookups}
         materials={materials}
+        processSteps={processSteps}
         canCreateBom
         canCreateWorkflow
         onSaved={() => undefined}
@@ -121,6 +125,7 @@ test("opens in edit mode with the title switched to editing wording", () => {
         product={product}
         lookups={lookups}
         materials={materials}
+        processSteps={processSteps}
         canCreateBom
         canCreateWorkflow
         onSaved={() => undefined}

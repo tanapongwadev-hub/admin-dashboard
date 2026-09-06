@@ -15,12 +15,14 @@ import { ProductsDetailsDialog } from "@/components/products/products-details-di
 import { deactivateProductAction, restoreProductAction } from "@/app/(dashboard)/products/actions";
 import type { Product, ProductLookups } from "@/lib/api/products";
 import type { Material } from "@/lib/api/materials";
+import type { ProcessStep } from "@/lib/api/process-steps";
 
 export function ProductsClient({
   products,
   totalItems,
   lookups,
   materials,
+  processSteps,
   canEdit,
   canDelete,
   canCreateBom,
@@ -36,6 +38,9 @@ export function ProductsClient({
   // AGENTS.md § Products. Not gated behind canEdit since a BOM references
   // Materials, not Products, permissions.
   materials: Material[];
+  // Workflow step dropdown options in the wizard's post-BOM workflow step —
+  // master data, not gated behind canEdit for the same reason as materials.
+  processSteps: ProcessStep[];
   canEdit: boolean;
   canDelete: boolean;
   // Separate from canEdit: BOMS_CREATE is its own permission, independent
@@ -120,6 +125,7 @@ export function ProductsClient({
           product={wizardTarget}
           lookups={lookups}
           materials={materials}
+          processSteps={processSteps}
           canCreateBom={canCreateBom}
           canCreateWorkflow={canCreateWorkflow}
           onSaved={handleSaved}

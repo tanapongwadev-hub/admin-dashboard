@@ -45,6 +45,7 @@ import type { Product, ProductLookupItem, ProductLookups } from "@/lib/api/produ
 import type { Material } from "@/lib/api/materials";
 import type { Bom, CreateBomItemPayload } from "@/lib/api/boms";
 import type { ProductWorkflow, CreateProductWorkflowStepPayload } from "@/lib/api/product-workflows";
+import type { ProcessStep } from "@/lib/api/process-steps";
 import { cn } from "@/lib/utils";
 
 // The single "add/edit a product" flow (see AGENTS.md § Products) — same
@@ -127,40 +128,25 @@ let workflowRowKeySeed = 0;
 
 interface WorkflowStepDraft {
   key: number;
-  stepName: string;
+  processStepId: string;
   description: string;
 }
 
-function newWorkflowStepDraft(stepName = ""): WorkflowStepDraft {
+// Rows start empty — the user picks each step from the process-steps master
+// data dropdown (see AGENTS.md § Product Workflow) rather than the row
+// arriving pre-filled with a template name to edit or delete.
+function newWorkflowStepDraft(): WorkflowStepDraft {
   workflowRowKeySeed += 1;
-  return { key: workflowRowKeySeed, stepName, description: "" };
-}
-
-// A starting template matching the example the feature was requested with
-// (order production → weld → CNC → stamp → polish → inspect → QC → close) —
-// fully editable/removable/reorderable, not a fixed enum; a product's real
-// routing rarely matches this exactly, but it saves re-typing the common
-// shape from scratch every time.
-function defaultWorkflowSteps(): WorkflowStepDraft[] {
-  return [
-    "สั่งผลิต",
-    "นำไปเชื่อมชิ้นงาน",
-    "นำไป CNC",
-    "นำไปปั๊ม",
-    "นำไปขัด",
-    "นำไปเช็ค",
-    "นำไป QC",
-    "ปิดกระบวนการผลิต",
-  ].map((name) => newWorkflowStepDraft(name));
+  return { key: workflowRowKeySeed, processStepId: "", description: "" };
 }
 
 function isCompleteWorkflowStep(item: WorkflowStepDraft): boolean {
-  return item.stepName.trim() !== "";
+  return item.processStepId !== "";
 }
 
 function toWorkflowStepPayload(item: WorkflowStepDraft): CreateProductWorkflowStepPayload {
   return {
-    stepName: item.stepName.trim(),
+    processStepId: item.processStepId,
     description: item.description.trim() || null,
   };
 }
@@ -213,6 +199,7 @@ export function ProductsWizardView({
   product,
   lookups,
   materials,
+  processSteps,
   canCreateBom,
   canCreateWorkflow,
   onSaved,
@@ -224,6 +211,9 @@ export function ProductsWizardView({
   product?: Product | null;
   lookups: ProductLookups;
   materials: Material[];
+  // Dropdown options for the workflow step picker below — master data, see
+  // AGENTS.md § Product Workflow.
+  processSteps: ProcessStep[];
   canCreateBom: boolean;
   // Separate permission from canCreateBom — Product Workflow is its own
   // resource (see AGENTS.md § Products), a user could have one without the
@@ -252,7 +242,7 @@ export function ProductsWizardView({
   const [bomItems, setBomItems] = React.useState<BomItemDraft[]>([newBomItemDraft()]);
   const [bomSpecification, setBomSpecification] = React.useState("");
   const [isSavingBom, setIsSavingBom] = React.useState(false);
-  const [workflowSteps, setWorkflowSteps] = React.useState<WorkflowStepDraft[]>(defaultWorkflowSteps());
+  const [workflowSteps, setWorkflowSteps] = React.useState<WorkflowStepDraft[]>([newWorkflowStepDraft()]);
   const [isSavingWorkflow, setIsSavingWorkflow] = React.useState(false);
   const [stepIndex, setStepIndex] = React.useState(0);
   const [imageFile, setImageFile] = React.useState<File | null>(null);
@@ -291,7 +281,7 @@ export function ProductsWizardView({
       setConfirmOpen(false);
       setBomItems([newBomItemDraft()]);
       setBomSpecification("");
-      setWorkflowSteps(defaultWorkflowSteps());
+      setWorkflowSteps([newWorkflowStepDraft()]);
       setStepIndex(0);
       reset(toProductDefaultValues(product));
       setImageFile(null);
@@ -705,6 +695,7 @@ export function ProductsWizardView({
           <div className="flex flex-col gap-3">
             {workflowSteps.map((item, index) => {
               const accent = BOM_ROW_ACCENTS[index % BOM_ROW_ACCENTS.length];
+              const selectedStep = processSteps.find((p) => p.id === item.processStepId);
               return (
                 <div
                   key={item.key}
@@ -718,10 +709,10 @@ export function ProductsWizardView({
                       <span
                         className={cn(
                           "truncate text-sm font-semibold",
-                          item.stepName.trim() ? "text-fg" : "italic text-fg-muted"
+                          selectedStep ? "text-fg" : "italic text-fg-muted"
                         )}
                       >
-                        {item.stepName.trim() || "ยังไม่ได้ระบุชื่อขั้นตอน"}
+                        {selectedStep ? `${selectedStep.code} · ${selectedStep.nameTh}` : "ยังไม่ได้เลือกขั้นตอน"}
                       </span>
                     </div>
                     <div className="flex shrink-0 items-center gap-0.5">
@@ -756,12 +747,23 @@ export function ProductsWizardView({
                   </div>
                   <div className="grid grid-cols-1 gap-3 p-3 sm:grid-cols-2">
                     <div className="flex flex-col gap-1.5">
-                      <Label>ชื่อขั้นตอน</Label>
-                      <Input
-                        placeholder="เช่น นำไปเชื่อมชิ้นงาน"
-                        value={item.stepName}
-                        onChange={(e) => updateWorkflowStep(item.key, { stepName: e.target.value })}
-                      />
+                      <Label>ขั้นตอน</Label>
+                      <Select
+                        value={item.processStepId}
+                        onValueChange={(v) => updateWorkflowStep(item.key, { processStepId: v })}
+                      >
+                        <SelectTrigger><SelectValue placeholder="เลือกขั้นตอน" /></SelectTrigger>
+                        <SelectContent>
+                          {processSteps.map((processStep) => (
+                            <SelectItem key={processStep.id} value={processStep.id}>
+                              {processStep.code} · {processStep.nameTh}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {processSteps.length === 0 && (
+                        <p className="text-[11px] text-danger">ไม่มีข้อมูลขั้นตอนกระบวนการผลิตให้เลือก กรุณาติดต่อผู้ดูแลระบบ</p>
+                      )}
                     </div>
                     <div className="flex flex-col gap-1.5">
                       <Label>คำอธิบายเพิ่มเติม (ไม่บังคับ)</Label>
@@ -1212,6 +1214,7 @@ export function ProductsWizardDialog({
   product,
   lookups,
   materials,
+  processSteps,
   canCreateBom,
   canCreateWorkflow,
   onSaved,
@@ -1221,6 +1224,7 @@ export function ProductsWizardDialog({
   product?: Product | null;
   lookups: ProductLookups;
   materials: Material[];
+  processSteps: ProcessStep[];
   canCreateBom: boolean;
   canCreateWorkflow: boolean;
   onSaved: () => void;
@@ -1234,6 +1238,7 @@ export function ProductsWizardDialog({
           product={product}
           lookups={lookups}
           materials={materials}
+          processSteps={processSteps}
           canCreateBom={canCreateBom}
           canCreateWorkflow={canCreateWorkflow}
           onSaved={onSaved}

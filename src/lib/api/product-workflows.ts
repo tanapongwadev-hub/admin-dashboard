@@ -14,16 +14,21 @@ import { apiFetch } from "./client";
 // This is deliberately a *separate* resource from BOMs (see AGENTS.md §
 // Products): a BOM records *what materials* a product uses, a workflow
 // records *what production steps* it must go through, in order (e.g. order
-// production → weld → CNC → stamp → polish → inspect → QC → close). Each
-// step is a plain free-text name (mirrors Material's `processLineName`
-// being a plain string, not a FK to a "process type" master table) — there
-// is intentionally no separate process-type catalog.
+// production → weld → CNC → stamp → polish → inspect → QC → close).
+//
+// Changed 2026-09-06: a step used to be a plain free-text name; it's now a
+// `processStepId` FK into `/process-steps` master data (see process-steps.ts)
+// so the wizard can offer a dropdown instead of a text field. The API still
+// returns `stepName`/`processStepCode` per step for display — derived
+// server-side by joining the referenced process step, not stored on the row.
 
 export type ProductWorkflowStatus = "DRAFT" | "ACTIVE" | "INACTIVE";
 
 export interface ProductWorkflowStep {
   id: string;
   sortOrder: number;
+  processStepId: string;
+  processStepCode: string;
   stepName: string;
   description: string | null;
 }
@@ -42,7 +47,7 @@ export interface ProductWorkflow {
 }
 
 export interface CreateProductWorkflowStepPayload {
-  stepName: string;
+  processStepId: string;
   description?: string | null;
 }
 
