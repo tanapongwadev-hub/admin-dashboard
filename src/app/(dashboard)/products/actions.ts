@@ -14,6 +14,13 @@ import {
   type UpdateProductPayload,
 } from "@/lib/api/products";
 import { createBom, activateBom, listBomsByProduct, type Bom, type CreateBomPayload } from "@/lib/api/boms";
+import {
+  createProductWorkflow,
+  activateProductWorkflow,
+  listProductWorkflowsByProduct,
+  type ProductWorkflow,
+  type CreateProductWorkflowPayload,
+} from "@/lib/api/product-workflows";
 import { ApiError } from "@/lib/api/client";
 
 export type ProductActionResult =
@@ -31,6 +38,14 @@ export type BomActionResult =
 
 export type BomListActionResult =
   | { status: "success"; boms: Bom[] }
+  | { status: "error"; message: string };
+
+export type ProductWorkflowActionResult =
+  | { status: "success"; workflow: ProductWorkflow }
+  | { status: "error"; message: string };
+
+export type ProductWorkflowListActionResult =
+  | { status: "success"; workflows: ProductWorkflow[] }
   | { status: "error"; message: string };
 
 type ProductActionFailure = Exclude<ProductActionResult, { status: "success" }>;
@@ -173,6 +188,54 @@ export async function listBomsByProductAction(productId: string): Promise<BomLis
   try {
     const boms = await listBomsByProduct(accessToken, productId);
     return { status: "success", boms };
+  } catch (err) {
+    return { status: "error", message: errorResult(err).message };
+  }
+}
+
+// Product Workflow actions — used by the products wizard's post-BOM "define
+// production workflow" step (see products-wizard-dialog.tsx and AGENTS.md §
+// Products). A workflow is a distinct resource from a BOM: it records the
+// ordered production steps a product must go through (weld → CNC → stamp →
+// polish → inspect → QC → close), not what materials it uses. Every create
+// defaults to status: "DRAFT" server-side, same shape as BOM actions above.
+export async function createProductWorkflowAction(
+  payload: CreateProductWorkflowPayload
+): Promise<ProductWorkflowActionResult> {
+  const accessToken = await requireAccessToken();
+  if (!accessToken) return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
+
+  try {
+    const workflow = await createProductWorkflow(accessToken, payload);
+    return { status: "success", workflow };
+  } catch (err) {
+    return { status: "error", message: errorResult(err).message };
+  }
+}
+
+export async function activateProductWorkflowAction(id: string): Promise<ProductWorkflowActionResult> {
+  const accessToken = await requireAccessToken();
+  if (!accessToken) return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
+
+  try {
+    const workflow = await activateProductWorkflow(accessToken, id);
+    return { status: "success", workflow };
+  } catch (err) {
+    return { status: "error", message: errorResult(err).message };
+  }
+}
+
+// Used by ProductsDetailsDialog to show a product's workflow history,
+// mirroring listBomsByProductAction — called client-side on demand.
+export async function listProductWorkflowsByProductAction(
+  productId: string
+): Promise<ProductWorkflowListActionResult> {
+  const accessToken = await requireAccessToken();
+  if (!accessToken) return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
+
+  try {
+    const workflows = await listProductWorkflowsByProduct(accessToken, productId);
+    return { status: "success", workflows };
   } catch (err) {
     return { status: "error", message: errorResult(err).message };
   }

@@ -4,7 +4,7 @@ import * as React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { Check, ChevronLeft, ChevronRight, Plus, Trash2, CheckCircle2 } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Plus, Trash2, CheckCircle2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -30,6 +30,8 @@ import {
   uploadProductImageAction,
   createBomAction,
   activateBomAction,
+  createProductWorkflowAction,
+  activateProductWorkflowAction,
 } from "@/app/(dashboard)/products/actions";
 import {
   productSchema,
@@ -42,6 +44,7 @@ import {
 import type { Product, ProductLookupItem, ProductLookups } from "@/lib/api/products";
 import type { Material } from "@/lib/api/materials";
 import type { Bom, CreateBomItemPayload } from "@/lib/api/boms";
+import type { ProductWorkflow, CreateProductWorkflowStepPayload } from "@/lib/api/product-workflows";
 import { cn } from "@/lib/utils";
 
 // The single "add/edit a product" flow (see AGENTS.md § Products) — same
@@ -116,6 +119,52 @@ function toBomItemPayload(item: BomItemDraft): CreateBomItemPayload {
   };
 }
 
+// Draft row for the post-BOM "define production workflow" step — same
+// plain-component-state shape as BomItemDraft above, for the same reason
+// (short-lived, dialog-local repeatable list, no elaborate field-level
+// validation needed beyond "is this row complete").
+let workflowRowKeySeed = 0;
+
+interface WorkflowStepDraft {
+  key: number;
+  stepName: string;
+  description: string;
+}
+
+function newWorkflowStepDraft(stepName = ""): WorkflowStepDraft {
+  workflowRowKeySeed += 1;
+  return { key: workflowRowKeySeed, stepName, description: "" };
+}
+
+// A starting template matching the example the feature was requested with
+// (order production → weld → CNC → stamp → polish → inspect → QC → close) —
+// fully editable/removable/reorderable, not a fixed enum; a product's real
+// routing rarely matches this exactly, but it saves re-typing the common
+// shape from scratch every time.
+function defaultWorkflowSteps(): WorkflowStepDraft[] {
+  return [
+    "สั่งผลิต",
+    "นำไปเชื่อมชิ้นงาน",
+    "นำไป CNC",
+    "นำไปปั๊ม",
+    "นำไปขัด",
+    "นำไปเช็ค",
+    "นำไป QC",
+    "ปิดกระบวนการผลิต",
+  ].map((name) => newWorkflowStepDraft(name));
+}
+
+function isCompleteWorkflowStep(item: WorkflowStepDraft): boolean {
+  return item.stepName.trim() !== "";
+}
+
+function toWorkflowStepPayload(item: WorkflowStepDraft): CreateProductWorkflowStepPayload {
+  return {
+    stepName: item.stepName.trim(),
+    description: item.description.trim() || null,
+  };
+}
+
 function Stepper({ current }: { current: number }) {
   return (
     <ol className="flex items-center gap-1.5 px-6 pb-1 pt-4" aria-label="ขั้นตอนการเพิ่มสินค้า">
@@ -165,6 +214,7 @@ export function ProductsWizardView({
   lookups,
   materials,
   canCreateBom,
+  canCreateWorkflow,
   onSaved,
 }: {
   open: boolean;
@@ -175,6 +225,10 @@ export function ProductsWizardView({
   lookups: ProductLookups;
   materials: Material[];
   canCreateBom: boolean;
+  // Separate permission from canCreateBom — Product Workflow is its own
+  // resource (see AGENTS.md § Products), a user could have one without the
+  // other.
+  canCreateWorkflow: boolean;
   onSaved: () => void;
 }) {
   const isEdit = !!product;
@@ -183,14 +237,23 @@ export function ProductsWizardView({
   // created/updated (see AGENTS.md § Products) — never entered if the
   // viewer lacks BOMS_CREATE, since there'd be nothing they could do there.
   // "bom-done" = a status screen confirming the BOM save actually
-  // succeeded, shown instead of closing the dialog immediately.
-  const [phase, setPhase] = React.useState<"form" | "bom" | "bom-done">("form");
+  // succeeded, shown instead of closing the dialog immediately — its footer
+  // offers to continue into "workflow" (define the production routing) when
+  // the viewer has PRODUCT_WORKFLOWS_CREATE, else just closes. "workflow"
+  // mirrors "bom" (an ordered, repeatable step list); "workflow-done" mirrors
+  // "bom-done".
+  const [phase, setPhase] = React.useState<"form" | "bom" | "bom-done" | "workflow" | "workflow-done">("form");
   const [savedProduct, setSavedProduct] = React.useState<Product | null>(null);
   const [bomDoneResult, setBomDoneResult] = React.useState<{ bom: Bom; activated: boolean } | null>(null);
+  const [workflowDoneResult, setWorkflowDoneResult] = React.useState<{ workflow: ProductWorkflow; activated: boolean } | null>(
+    null
+  );
   const [confirmOpen, setConfirmOpen] = React.useState(false);
   const [bomItems, setBomItems] = React.useState<BomItemDraft[]>([newBomItemDraft()]);
   const [bomSpecification, setBomSpecification] = React.useState("");
   const [isSavingBom, setIsSavingBom] = React.useState(false);
+  const [workflowSteps, setWorkflowSteps] = React.useState<WorkflowStepDraft[]>(defaultWorkflowSteps());
+  const [isSavingWorkflow, setIsSavingWorkflow] = React.useState(false);
   const [stepIndex, setStepIndex] = React.useState(0);
   const [imageFile, setImageFile] = React.useState<File | null>(null);
   const [imagePreview, setImagePreview] = React.useState<string | null>(null);
@@ -224,9 +287,11 @@ export function ProductsWizardView({
       setPhase("form");
       setSavedProduct(null);
       setBomDoneResult(null);
+      setWorkflowDoneResult(null);
       setConfirmOpen(false);
       setBomItems([newBomItemDraft()]);
       setBomSpecification("");
+      setWorkflowSteps(defaultWorkflowSteps());
       setStepIndex(0);
       reset(toProductDefaultValues(product));
       setImageFile(null);
@@ -435,6 +500,85 @@ export function ProductsWizardView({
     setPhase("bom-done");
   }
 
+  function updateWorkflowStep(key: number, patch: Partial<WorkflowStepDraft>) {
+    setWorkflowSteps((prev) => prev.map((item) => (item.key === key ? { ...item, ...patch } : item)));
+  }
+
+  function removeWorkflowStep(key: number) {
+    setWorkflowSteps((prev) => (prev.length > 1 ? prev.filter((item) => item.key !== key) : prev));
+  }
+
+  function moveWorkflowStep(key: number, direction: "up" | "down") {
+    setWorkflowSteps((prev) => {
+      const index = prev.findIndex((item) => item.key === key);
+      const targetIndex = direction === "up" ? index - 1 : index + 1;
+      if (index === -1 || targetIndex < 0 || targetIndex >= prev.length) return prev;
+      const next = prev.slice();
+      [next[index], next[targetIndex]] = [next[targetIndex], next[index]];
+      return next;
+    });
+  }
+
+  function collectValidWorkflowSteps(): CreateProductWorkflowStepPayload[] | null {
+    const complete = workflowSteps.filter(isCompleteWorkflowStep);
+    if (complete.length === 0) {
+      toast.error("กรุณาเพิ่มขั้นตอนอย่างน้อย 1 ขั้นตอน (ระบุชื่อขั้นตอน)");
+      return null;
+    }
+    return complete.map(toWorkflowStepPayload);
+  }
+
+  async function handleSaveWorkflowDraft() {
+    if (!savedProduct) return;
+    const steps = collectValidWorkflowSteps();
+    if (!steps) return;
+
+    setIsSavingWorkflow(true);
+    const result = await createProductWorkflowAction({ productId: savedProduct.id, steps });
+    setIsSavingWorkflow(false);
+
+    if (result.status === "success") {
+      toast.success("บันทึกร่างกระบวนการผลิตสำเร็จ", {
+        description: `${savedProduct.name} · ${result.workflow.version} (ร่าง)`,
+      });
+      setWorkflowDoneResult({ workflow: result.workflow, activated: false });
+      setPhase("workflow-done");
+      return;
+    }
+    toast.error(result.message);
+  }
+
+  async function handleSaveAndActivateWorkflow() {
+    if (!savedProduct) return;
+    const steps = collectValidWorkflowSteps();
+    if (!steps) return;
+
+    setIsSavingWorkflow(true);
+    const createResult = await createProductWorkflowAction({ productId: savedProduct.id, steps });
+    if (createResult.status === "error") {
+      setIsSavingWorkflow(false);
+      toast.error(createResult.message);
+      return;
+    }
+
+    const activateResult = await activateProductWorkflowAction(createResult.workflow.id);
+    setIsSavingWorkflow(false);
+
+    if (activateResult.status === "success") {
+      toast.success("สร้างและเปิดใช้งานกระบวนการผลิตสำเร็จ", {
+        description: `${savedProduct.name} · ${activateResult.workflow.version}`,
+      });
+      setWorkflowDoneResult({ workflow: activateResult.workflow, activated: true });
+      setPhase("workflow-done");
+      return;
+    }
+    // Workflow was created (as DRAFT) but activation failed — same "truthful
+    // partial success" treatment as the BOM equivalent above.
+    toast.error(`สร้างกระบวนการผลิตแล้วแต่เปิดใช้งานไม่สำเร็จ: ${activateResult.message}`);
+    setWorkflowDoneResult({ workflow: createResult.workflow, activated: false });
+    setPhase("workflow-done");
+  }
+
   function handleImageChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.currentTarget.files?.[0] ?? null;
     const validationMessage = validateProductImage(file);
@@ -486,9 +630,175 @@ export function ProductsWizardView({
           </span>
         </div>
         <DialogFooter>
+          {canCreateWorkflow ? (
+            <>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                ปิด
+              </Button>
+              <Button type="button" onClick={() => setPhase("workflow")}>
+                ตั้งค่ากระบวนการผลิต
+              </Button>
+            </>
+          ) : (
+            <Button type="button" onClick={() => onOpenChange(false)}>
+              ปิด
+            </Button>
+          )}
+        </DialogFooter>
+      </div>
+    );
+  }
+
+  if (phase === "workflow-done" && savedProduct && workflowDoneResult) {
+    return (
+      <div className="flex h-full flex-col">
+        <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 py-10 text-center">
+          <span
+            className={cn(
+              "flex size-14 items-center justify-center rounded-full",
+              workflowDoneResult.activated ? "bg-success-soft text-success" : "bg-primary-soft text-primary"
+            )}
+          >
+            <CheckCircle2 className="size-8" aria-hidden="true" />
+          </span>
+          <div>
+            <p className="text-lg font-semibold text-fg">
+              {workflowDoneResult.activated ? "บันทึกและเปิดใช้งานกระบวนการผลิตสำเร็จ" : "บันทึกร่างกระบวนการผลิตสำเร็จ"}
+            </p>
+            <p className="mt-1 text-sm text-fg-muted">
+              {savedProduct.name} ({savedProduct.code}) · {workflowDoneResult.workflow.version}
+            </p>
+          </div>
+          <span
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium",
+              workflowDoneResult.activated
+                ? "border-transparent bg-success-soft text-success"
+                : "border-border-strong bg-transparent text-fg-secondary"
+            )}
+          >
+            <span className="size-1.5 rounded-full bg-current" />
+            สถานะ: {workflowDoneResult.activated ? "เปิดใช้งานแล้ว" : "ร่าง"}
+          </span>
+        </div>
+        <DialogFooter>
           <Button type="button" onClick={() => onOpenChange(false)}>
             ปิด
           </Button>
+        </DialogFooter>
+      </div>
+    );
+  }
+
+  if (phase === "workflow" && savedProduct) {
+    return (
+      <div className="flex h-full flex-col">
+        <DialogHeader className="pb-0">
+          <DialogTitle>กำหนดกระบวนการผลิตสำหรับ {savedProduct.name}</DialogTitle>
+          <DialogDescription>
+            ระบุลำดับขั้นตอนที่สินค้า &quot;{savedProduct.code}&quot; ต้องผ่านตั้งแต่เริ่มผลิตจนปิดงาน
+            (กระบวนการผลิตใหม่จะถูกบันทึกเป็นร่างเสมอจนกว่าจะเปิดใช้งาน)
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex-1 overflow-y-auto border-t border-border px-6 py-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex flex-col gap-3">
+            {workflowSteps.map((item, index) => {
+              const accent = BOM_ROW_ACCENTS[index % BOM_ROW_ACCENTS.length];
+              return (
+                <div
+                  key={item.key}
+                  className={cn("overflow-hidden rounded-lg border border-l-4 border-border-strong", accent.strip)}
+                >
+                  <div className={cn("flex items-center justify-between gap-2 border-b border-border px-3 py-2", accent.band)}>
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span className={cn("flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold", accent.badge)}>
+                        {index + 1}
+                      </span>
+                      <span
+                        className={cn(
+                          "truncate text-sm font-semibold",
+                          item.stepName.trim() ? "text-fg" : "italic text-fg-muted"
+                        )}
+                      >
+                        {item.stepName.trim() || "ยังไม่ได้ระบุชื่อขั้นตอน"}
+                      </span>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-0.5">
+                      <button
+                        type="button"
+                        onClick={() => moveWorkflowStep(item.key, "up")}
+                        disabled={index === 0}
+                        aria-label={`เลื่อนขั้นตอนที่ ${index + 1} ขึ้น`}
+                        className="rounded-md p-1 text-fg-muted transition-colors hover:bg-surface-2 hover:text-fg disabled:pointer-events-none disabled:opacity-30"
+                      >
+                        <ChevronUp className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => moveWorkflowStep(item.key, "down")}
+                        disabled={index === workflowSteps.length - 1}
+                        aria-label={`เลื่อนขั้นตอนที่ ${index + 1} ลง`}
+                        className="rounded-md p-1 text-fg-muted transition-colors hover:bg-surface-2 hover:text-fg disabled:pointer-events-none disabled:opacity-30"
+                      >
+                        <ChevronDown className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removeWorkflowStep(item.key)}
+                        disabled={workflowSteps.length === 1}
+                        aria-label={`ลบขั้นตอนที่ ${index + 1}`}
+                        className="rounded-md p-1 text-fg-muted transition-colors hover:bg-danger-soft hover:text-danger disabled:pointer-events-none disabled:opacity-40"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 gap-3 p-3 sm:grid-cols-2">
+                    <div className="flex flex-col gap-1.5">
+                      <Label>ชื่อขั้นตอน</Label>
+                      <Input
+                        placeholder="เช่น นำไปเชื่อมชิ้นงาน"
+                        value={item.stepName}
+                        onChange={(e) => updateWorkflowStep(item.key, { stepName: e.target.value })}
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <Label>คำอธิบายเพิ่มเติม (ไม่บังคับ)</Label>
+                      <Input
+                        value={item.description}
+                        onChange={(e) => updateWorkflowStep(item.key, { description: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="self-start"
+              onClick={() => setWorkflowSteps((prev) => [...prev, newWorkflowStepDraft()])}
+            >
+              <Plus className="h-3.5 w-3.5" /> เพิ่มขั้นตอน
+            </Button>
+          </div>
+        </div>
+
+        <DialogFooter className="justify-between sm:justify-between">
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            ข้ามขั้นตอนนี้
+          </Button>
+          <div className="flex gap-2">
+            <Button type="button" variant="outline" onClick={handleSaveWorkflowDraft} disabled={isSavingWorkflow}>
+              บันทึกร่าง
+            </Button>
+            <Button type="button" onClick={handleSaveAndActivateWorkflow} disabled={isSavingWorkflow}>
+              บันทึกและเปิดใช้งาน
+            </Button>
+          </div>
         </DialogFooter>
       </div>
     );
@@ -903,6 +1213,7 @@ export function ProductsWizardDialog({
   lookups,
   materials,
   canCreateBom,
+  canCreateWorkflow,
   onSaved,
 }: {
   open: boolean;
@@ -911,6 +1222,7 @@ export function ProductsWizardDialog({
   lookups: ProductLookups;
   materials: Material[];
   canCreateBom: boolean;
+  canCreateWorkflow: boolean;
   onSaved: () => void;
 }) {
   return (
@@ -923,6 +1235,7 @@ export function ProductsWizardDialog({
           lookups={lookups}
           materials={materials}
           canCreateBom={canCreateBom}
+          canCreateWorkflow={canCreateWorkflow}
           onSaved={onSaved}
         />
       </DialogContent>

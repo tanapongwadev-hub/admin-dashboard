@@ -10,8 +10,9 @@ import { Button } from "@/components/ui/button";
 import { formatNumber } from "@/lib/utils";
 import type { Product } from "@/lib/api/products";
 import type { Bom, BomStatus } from "@/lib/api/boms";
+import type { ProductWorkflow, ProductWorkflowStatus } from "@/lib/api/product-workflows";
 import type { Material } from "@/lib/api/materials";
-import { listBomsByProductAction } from "@/app/(dashboard)/products/actions";
+import { listBomsByProductAction, listProductWorkflowsByProductAction } from "@/app/(dashboard)/products/actions";
 import { ProductBomDiagram } from "@/components/products/products-bom-diagram";
 import {
   productTypeLabel,
@@ -31,6 +32,15 @@ import {
 // (DRAFT/ACTIVE/INACTIVE, see boms.entity.ts), not something this app
 // invents; label/variant here are just the Thai display mapping.
 const BOM_STATUS_DISPLAY: Record<BomStatus, { label: string; variant: BadgeProps["variant"] }> = {
+  DRAFT: { label: "ร่าง", variant: "warning" },
+  ACTIVE: { label: "เปิดใช้งาน", variant: "success" },
+  INACTIVE: { label: "ปิดใช้งาน", variant: "neutral" },
+};
+
+// Workflow section — see AGENTS.md § Products. Same DRAFT/ACTIVE/INACTIVE
+// shape as BOMs (a separate resource — records production steps, not
+// materials), so the display mapping mirrors BOM_STATUS_DISPLAY exactly.
+const WORKFLOW_STATUS_DISPLAY: Record<ProductWorkflowStatus, { label: string; variant: BadgeProps["variant"] }> = {
   DRAFT: { label: "ร่าง", variant: "warning" },
   ACTIVE: { label: "เปิดใช้งาน", variant: "success" },
   INACTIVE: { label: "ปิดใช้งาน", variant: "neutral" },
@@ -65,6 +75,7 @@ export function ProductsDetailsView({
   product,
   canEdit = false,
   canViewBom = false,
+  canViewWorkflow = false,
   materials = [],
   onEdit,
   onClose,
@@ -75,6 +86,8 @@ export function ProductsDetailsView({
   // Materials PC's stock section when the viewer lacks its own view
   // permission — not shown as empty/denied, just absent.
   canViewBom?: boolean;
+  // Same "absent, not denied" treatment for the Workflow tab.
+  canViewWorkflow?: boolean;
   // For ProductBomDiagram's material-image lookup (BomItem carries a name/
   // code but not an image path) — the same list the wizard's BOM item
   // picker already uses, see AGENTS.md § Products. Defaults to [] so every
@@ -119,6 +132,32 @@ export function ProductsDetailsView({
   const isCurrentBomsResult = bomsResult?.productId === product.id;
   const boms = isCurrentBomsResult && bomsResult.status === "success" ? bomsResult.boms : null;
   const bomsError = isCurrentBomsResult && bomsResult.status === "error" ? bomsResult.message : null;
+
+  const [workflowsResult, setWorkflowsResult] = React.useState<
+    | { productId: string; status: "success"; workflows: ProductWorkflow[] }
+    | { productId: string; status: "error"; message: string }
+    | null
+  >(null);
+
+  React.useEffect(() => {
+    if (!canViewWorkflow) return;
+    let cancelled = false;
+    listProductWorkflowsByProductAction(product.id).then((result) => {
+      if (cancelled) return;
+      setWorkflowsResult(
+        result.status === "success"
+          ? { productId: product.id, status: "success", workflows: result.workflows }
+          : { productId: product.id, status: "error", message: result.message }
+      );
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [product.id, canViewWorkflow]);
+
+  const isCurrentWorkflowsResult = workflowsResult?.productId === product.id;
+  const workflows = isCurrentWorkflowsResult && workflowsResult.status === "success" ? workflowsResult.workflows : null;
+  const workflowsError = isCurrentWorkflowsResult && workflowsResult.status === "error" ? workflowsResult.message : null;
 
   function handleEdit() {
     if (!onEdit) return;
@@ -217,6 +256,14 @@ export function ProductsDetailsView({
               className="ml-4 rounded-none border-b-2 border-transparent px-1 pb-2.5 pt-1 text-sm font-semibold text-fg-muted data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none"
             >
               BOM
+            </TabsTrigger>
+          )}
+          {canViewWorkflow && (
+            <TabsTrigger
+              value="workflow"
+              className="ml-4 rounded-none border-b-2 border-transparent px-1 pb-2.5 pt-1 text-sm font-semibold text-fg-muted data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none"
+            >
+              กระบวนการผลิต
             </TabsTrigger>
           )}
         </TabsList>
@@ -330,6 +377,61 @@ export function ProductsDetailsView({
             )}
           </TabsContent>
         )}
+
+        {canViewWorkflow && (
+          <TabsContent value="workflow">
+            {/* Every workflow version cps-api has for this product
+                (GET /product-workflows/product/:productId, newest first),
+                each version's ordered step list. */}
+            {workflowsError ? (
+              <p className="text-sm text-danger">{workflowsError}</p>
+            ) : workflows === null ? (
+              <p className="flex items-center gap-2 text-sm text-fg-muted">
+                <Loader2 className="size-3.5 animate-spin" aria-hidden="true" /> กำลังโหลดกระบวนการผลิต...
+              </p>
+            ) : workflows.length === 0 ? (
+              <p className="text-sm text-fg-muted">ยังไม่มีกระบวนการผลิตสำหรับสินค้านี้</p>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {workflows.map((workflow) => {
+                  const status = WORKFLOW_STATUS_DISPLAY[workflow.status];
+                  return (
+                    <div key={workflow.id} className="overflow-hidden rounded-lg border border-border">
+                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-surface-2 px-4 py-2.5">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-sm font-semibold text-fg">{workflow.version}</span>
+                          <Badge variant={status.variant} dot>
+                            {status.label}
+                          </Badge>
+                        </div>
+                        <span className="text-xs text-fg-muted">{workflow.steps.length} ขั้นตอน</span>
+                      </div>
+                      {workflow.remark && (
+                        <p className="border-b border-border px-4 py-2 text-xs text-fg-secondary">{workflow.remark}</p>
+                      )}
+                      <ol className="flex flex-col">
+                        {workflow.steps.map((step, index) => (
+                          <li
+                            key={step.id}
+                            className="flex items-start gap-3 border-b border-border px-4 py-2.5 last:border-b-0"
+                          >
+                            <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary-soft text-[11px] font-semibold text-primary">
+                              {index + 1}
+                            </span>
+                            <div className="min-w-0">
+                              <p className="text-sm text-fg">{step.stepName}</p>
+                              {step.description && <p className="mt-0.5 text-xs text-fg-muted">{step.description}</p>}
+                            </div>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </TabsContent>
+        )}
       </Tabs>
 
       <footer className="flex shrink-0 items-center justify-end gap-2 border-t border-border px-6 py-4">
@@ -350,6 +452,7 @@ export function ProductsDetailsDialog({
   product,
   canEdit = false,
   canViewBom = false,
+  canViewWorkflow = false,
   materials = [],
   onEdit,
   onOpenChange,
@@ -357,6 +460,7 @@ export function ProductsDetailsDialog({
   product: Product | null;
   canEdit?: boolean;
   canViewBom?: boolean;
+  canViewWorkflow?: boolean;
   materials?: Material[];
   onEdit?: (product: Product) => void;
   onOpenChange: (open: boolean) => void;
@@ -370,6 +474,7 @@ export function ProductsDetailsDialog({
           product={product}
           canEdit={canEdit}
           canViewBom={canViewBom}
+          canViewWorkflow={canViewWorkflow}
           materials={materials}
           onEdit={onEdit}
           onClose={() => onOpenChange(false)}

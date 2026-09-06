@@ -54,6 +54,11 @@ export async function ProductsPageContent({
   // Separate permission from BOMS_CREATE — a viewer could have one without
   // the other (e.g. read-only staff who can see BOMs but not author them).
   const canViewBom = session.user.isSuperAdmin || session.permissions.includes("BOMS_VIEW");
+  // Product Workflow is a distinct resource/permission from BOMs (see
+  // AGENTS.md § Products) — a viewer could author BOMs without being able to
+  // define the production workflow, or vice versa.
+  const canCreateWorkflow = session.user.isSuperAdmin || session.permissions.includes("PRODUCT_WORKFLOWS_CREATE");
+  const canViewWorkflow = session.user.isSuperAdmin || session.permissions.includes("PRODUCT_WORKFLOWS_VIEW");
 
   return (
     <div className="flex flex-col gap-6">
@@ -71,6 +76,8 @@ export async function ProductsPageContent({
         canDelete={canDelete}
         canCreateBom={canCreateBom}
         canViewBom={canViewBom}
+        canCreateWorkflow={canCreateWorkflow}
+        canViewWorkflow={canViewWorkflow}
         openNew={params.new === "1"}
       />
     </div>

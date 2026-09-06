@@ -25,6 +25,8 @@ export function ProductsClient({
   canDelete,
   canCreateBom,
   canViewBom,
+  canCreateWorkflow,
+  canViewWorkflow,
   openNew,
 }: {
   products: Product[];
@@ -42,6 +44,10 @@ export function ProductsClient({
   // Separate again from canCreateBom — a read-only viewer could see BOMs
   // without being able to author them.
   canViewBom: boolean;
+  // Product Workflow is a distinct resource/permission from BOMs — see
+  // AGENTS.md § Products.
+  canCreateWorkflow: boolean;
+  canViewWorkflow: boolean;
   openNew?: boolean;
 }) {
   const router = useRouter();
@@ -101,6 +107,7 @@ export function ProductsClient({
         product={detailsTarget}
         canEdit={canEdit}
         canViewBom={canViewBom}
+        canViewWorkflow={canViewWorkflow}
         materials={materials}
         onEdit={(product) => setWizardTarget(product)}
         onOpenChange={(open) => !open && setDetailsTarget(null)}
@@ -114,6 +121,7 @@ export function ProductsClient({
           lookups={lookups}
           materials={materials}
           canCreateBom={canCreateBom}
+          canCreateWorkflow={canCreateWorkflow}
           onSaved={handleSaved}
         />
       )}

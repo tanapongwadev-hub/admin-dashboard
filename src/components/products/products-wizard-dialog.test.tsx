@@ -65,6 +65,7 @@ test("renders nothing when closed", () => {
       lookups={lookups}
       materials={materials}
       canCreateBom
+      canCreateWorkflow
       onSaved={() => undefined}
     />
   );
@@ -86,6 +87,7 @@ test("opens on step 1 with the basic-info fields, the stepper, and a 'ถัด�
         lookups={lookups}
         materials={materials}
         canCreateBom
+        canCreateWorkflow
         onSaved={() => undefined}
       />
     </Dialog>
@@ -120,6 +122,7 @@ test("opens in edit mode with the title switched to editing wording", () => {
         lookups={lookups}
         materials={materials}
         canCreateBom
+        canCreateWorkflow
         onSaved={() => undefined}
       />
     </Dialog>
