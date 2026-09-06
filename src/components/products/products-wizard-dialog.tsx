@@ -4,7 +4,19 @@ import * as React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { Check, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Plus, Trash2, CheckCircle2 } from "lucide-react";
+import {
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  ChevronDown,
+  Plus,
+  Trash2,
+  CheckCircle2,
+  GitBranch,
+  Workflow as WorkflowIcon,
+  Loader2,
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -17,6 +29,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectTrigger,
@@ -30,8 +43,10 @@ import {
   uploadProductImageAction,
   createBomAction,
   activateBomAction,
+  listBomsByProductAction,
   createProductWorkflowAction,
   activateProductWorkflowAction,
+  listProductWorkflowsByProductAction,
 } from "@/app/(dashboard)/products/actions";
 import {
   productSchema,
@@ -43,8 +58,12 @@ import {
 } from "@/components/products/products-form-dialog";
 import type { Product, ProductLookupItem, ProductLookups } from "@/lib/api/products";
 import type { Material } from "@/lib/api/materials";
-import type { Bom, CreateBomItemPayload } from "@/lib/api/boms";
-import type { ProductWorkflow, CreateProductWorkflowStepPayload } from "@/lib/api/product-workflows";
+import type { Bom, BomItem, CreateBomItemPayload } from "@/lib/api/boms";
+import type {
+  ProductWorkflow,
+  ProductWorkflowStep,
+  CreateProductWorkflowStepPayload,
+} from "@/lib/api/product-workflows";
 import type { ProcessStep } from "@/lib/api/process-steps";
 import { cn } from "@/lib/utils";
 
@@ -97,13 +116,32 @@ interface BomItemDraft {
   materialId: string;
   unitId: string;
   quantity: string;
+  isScrap: boolean;
   wastagePercent: string;
   remark: string;
 }
 
 function newBomItemDraft(): BomItemDraft {
   bomRowKeySeed += 1;
-  return { key: bomRowKeySeed, materialId: "", unitId: "", quantity: "", wastagePercent: "", remark: "" };
+  return { key: bomRowKeySeed, materialId: "", unitId: "", quantity: "", isScrap: false, wastagePercent: "", remark: "" };
+}
+
+// Rebuilds a draft row from an existing BOM item — used when the "edit BOM"
+// hub button loads a product's latest BOM version so its items are editable
+// instead of starting from a blank row (see AGENTS.md § Products, "edit
+// hub" entry). Carries `isScrap` forward too so re-saving an untouched row
+// doesn't silently drop that flag.
+function bomItemDraftFromExisting(item: BomItem): BomItemDraft {
+  bomRowKeySeed += 1;
+  return {
+    key: bomRowKeySeed,
+    materialId: item.materialId,
+    unitId: item.unitId,
+    quantity: String(item.quantity),
+    isScrap: item.isScrap,
+    wastagePercent: item.wastagePercent === null ? "" : String(item.wastagePercent),
+    remark: item.remark ?? "",
+  };
 }
 
 function isCompleteBomItem(item: BomItemDraft): boolean {
@@ -115,6 +153,7 @@ function toBomItemPayload(item: BomItemDraft): CreateBomItemPayload {
     materialId: item.materialId,
     unitId: item.unitId,
     quantity: Number(item.quantity),
+    isScrap: item.isScrap,
     wastagePercent: item.wastagePercent === "" ? null : Number(item.wastagePercent),
     remark: item.remark.trim() || null,
   };
@@ -138,6 +177,14 @@ interface WorkflowStepDraft {
 function newWorkflowStepDraft(): WorkflowStepDraft {
   workflowRowKeySeed += 1;
   return { key: workflowRowKeySeed, processStepId: "", description: "" };
+}
+
+// Rebuilds a draft row from an existing workflow step — used when the "edit
+// กระบวนการผลิต" hub button loads a product's latest workflow version, same
+// reasoning as bomItemDraftFromExisting above.
+function workflowStepDraftFromExisting(step: ProductWorkflowStep): WorkflowStepDraft {
+  workflowRowKeySeed += 1;
+  return { key: workflowRowKeySeed, processStepId: step.processStepId, description: step.description ?? "" };
 }
 
 function isCompleteWorkflowStep(item: WorkflowStepDraft): boolean {
@@ -222,17 +269,29 @@ export function ProductsWizardView({
   onSaved: () => void;
 }) {
   const isEdit = !!product;
-  // "form" = the 5-step product form; "bom" = the post-save BOM step this
-  // flow always continues into once the product is confirmed and
-  // created/updated (see AGENTS.md § Products) — never entered if the
-  // viewer lacks BOMS_CREATE, since there'd be nothing they could do there.
-  // "bom-done" = a status screen confirming the BOM save actually
-  // succeeded, shown instead of closing the dialog immediately — its footer
-  // offers to continue into "workflow" (define the production routing) when
-  // the viewer has PRODUCT_WORKFLOWS_CREATE, else just closes. "workflow"
-  // mirrors "bom" (an ordered, repeatable step list); "workflow-done" mirrors
-  // "bom-done".
-  const [phase, setPhase] = React.useState<"form" | "bom" | "bom-done" | "workflow" | "workflow-done">("form");
+  // "form" = the 5-step product form.
+  //
+  // "edit-hub" (edit mode only, see AGENTS.md § Products "edit hub" entry) —
+  // shown after a successful update instead of forcing the BOM step: lets
+  // the user independently choose to edit the product's BOM and/or its
+  // production workflow, in any order, any combination, or neither. Each
+  // choice fetches that product's latest existing version first so the
+  // editor opens pre-filled, not blank.
+  //
+  // In create mode there is no "edit-hub" — "bom" is still entered
+  // automatically right after a successful create (nothing exists yet to
+  // choose between), same behavior as before this hub was added.
+  //
+  // "bom" = the item-entry step (blank in create mode; pre-filled from the
+  // latest existing BOM when reached via edit-hub). "bom-done" = a status
+  // screen confirming the save succeeded — in create mode its footer offers
+  // to continue into "workflow" when the viewer has PRODUCT_WORKFLOWS_CREATE
+  // (same forced-cascade UX as before); in edit mode it instead offers to go
+  // back to "edit-hub" so workflow stays independently reachable. "workflow"
+  // mirrors "bom"; "workflow-done" mirrors "bom-done".
+  const [phase, setPhase] = React.useState<
+    "form" | "edit-hub" | "bom" | "bom-done" | "workflow" | "workflow-done"
+  >("form");
   const [savedProduct, setSavedProduct] = React.useState<Product | null>(null);
   const [bomDoneResult, setBomDoneResult] = React.useState<{ bom: Bom; activated: boolean } | null>(null);
   const [workflowDoneResult, setWorkflowDoneResult] = React.useState<{ workflow: ProductWorkflow; activated: boolean } | null>(
@@ -242,8 +301,10 @@ export function ProductsWizardView({
   const [bomItems, setBomItems] = React.useState<BomItemDraft[]>([newBomItemDraft()]);
   const [bomSpecification, setBomSpecification] = React.useState("");
   const [isSavingBom, setIsSavingBom] = React.useState(false);
+  const [isLoadingBom, setIsLoadingBom] = React.useState(false);
   const [workflowSteps, setWorkflowSteps] = React.useState<WorkflowStepDraft[]>([newWorkflowStepDraft()]);
   const [isSavingWorkflow, setIsSavingWorkflow] = React.useState(false);
+  const [isLoadingWorkflow, setIsLoadingWorkflow] = React.useState(false);
   const [stepIndex, setStepIndex] = React.useState(0);
   const [imageFile, setImageFile] = React.useState<File | null>(null);
   const [imagePreview, setImagePreview] = React.useState<string | null>(null);
@@ -365,11 +426,20 @@ export function ProductsWizardView({
         description: `บันทึก ${result.product.name} เรียบร้อยแล้ว`,
       });
       // Refresh the products list immediately — the save is real regardless
-      // of what happens in the BOM step next (skipped, drafted, or
+      // of what happens in the BOM/workflow steps next (skipped, drafted, or
       // abandoned via Esc), so don't wait on that to show it.
       onSaved();
-      if (canCreateBom) {
-        setSavedProduct(result.product);
+      setSavedProduct(result.product);
+      if (isEdit) {
+        // Edit mode: let the user independently pick BOM and/or workflow
+        // from a hub rather than forcing a linear cascade — see the "phase"
+        // comment above.
+        if (canCreateBom || canCreateWorkflow) {
+          setPhase("edit-hub");
+        } else {
+          onOpenChange(false);
+        }
+      } else if (canCreateBom) {
         setPhase("bom");
       } else {
         onOpenChange(false);
@@ -377,6 +447,54 @@ export function ProductsWizardView({
       return;
     }
     toast.error(result.message);
+  }
+
+  // Loads the product's latest existing BOM (if any) into the item-entry
+  // rows, then opens the "bom" step — reached from "edit-hub" so an edit
+  // actually shows what's there instead of starting blank. If none exists
+  // yet, starts blank just like the create-mode path always has.
+  async function openBomEditor() {
+    if (!savedProduct) return;
+    setIsLoadingBom(true);
+    const result = await listBomsByProductAction(savedProduct.id);
+    setIsLoadingBom(false);
+
+    if (result.status === "error") {
+      toast.error(result.message);
+      return;
+    }
+    // Backend returns newest first (order: { createdAt: "DESC" }).
+    const latest = result.boms[0] as Bom | undefined;
+    if (latest) {
+      setBomItems(latest.items.length > 0 ? latest.items.map(bomItemDraftFromExisting) : [newBomItemDraft()]);
+      setBomSpecification(latest.specification ?? "");
+    } else {
+      setBomItems([newBomItemDraft()]);
+      setBomSpecification("");
+    }
+    setPhase("bom");
+  }
+
+  // Mirrors openBomEditor above for the production workflow.
+  async function openWorkflowEditor() {
+    if (!savedProduct) return;
+    setIsLoadingWorkflow(true);
+    const result = await listProductWorkflowsByProductAction(savedProduct.id);
+    setIsLoadingWorkflow(false);
+
+    if (result.status === "error") {
+      toast.error(result.message);
+      return;
+    }
+    const latest = result.workflows[0] as ProductWorkflow | undefined;
+    if (latest) {
+      setWorkflowSteps(
+        latest.steps.length > 0 ? latest.steps.map(workflowStepDraftFromExisting) : [newWorkflowStepDraft()]
+      );
+    } else {
+      setWorkflowSteps([newWorkflowStepDraft()]);
+    }
+    setPhase("workflow");
   }
 
   function updateBomItem(key: number, patch: Partial<BomItemDraft>) {
@@ -509,10 +627,31 @@ export function ProductsWizardView({
     });
   }
 
+  // A process step already chosen on another row is excluded from that
+  // row's own dropdown — same "can't add a duplicate in the first place"
+  // treatment as materialOptionsFor above for BOM items. Row count itself
+  // stays unbounded; it's only the same step appearing twice that's
+  // disallowed.
+  function processStepOptionsFor(rowKey: number): ProcessStep[] {
+    const usedByOtherRows = new Set(
+      workflowSteps.filter((i) => i.key !== rowKey && i.processStepId !== "").map((i) => i.processStepId)
+    );
+    return processSteps.filter((p) => !usedByOtherRows.has(p.id));
+  }
+
   function collectValidWorkflowSteps(): CreateProductWorkflowStepPayload[] | null {
     const complete = workflowSteps.filter(isCompleteWorkflowStep);
     if (complete.length === 0) {
       toast.error("กรุณาเพิ่มขั้นตอนอย่างน้อย 1 ขั้นตอน (ระบุชื่อขั้นตอน)");
+      return null;
+    }
+    // Defense in depth — the step <Select> already excludes steps used by
+    // other rows (see processStepOptionsFor above), so this should never
+    // actually trigger, but a submit-time guard costs nothing and catches
+    // any future gap in that exclusion (mirrors collectValidBomItems).
+    const processStepIds = complete.map((item) => item.processStepId);
+    if (new Set(processStepIds).size !== processStepIds.length) {
+      toast.error("มีขั้นตอนซ้ำกันในกระบวนการผลิต — แต่ละขั้นตอนต้องไม่ซ้ำกัน");
       return null;
     }
     return complete.map(toWorkflowStepPayload);
@@ -589,6 +728,78 @@ export function ProductsWizardView({
     });
   }
 
+  if (phase === "edit-hub" && savedProduct) {
+    return (
+      <div className="flex h-full flex-col">
+        <DialogHeader className="pb-0">
+          <DialogTitle>จัดการข้อมูลของ {savedProduct.name}</DialogTitle>
+          <DialogDescription>
+            บันทึกการเปลี่ยนแปลงสินค้า &quot;{savedProduct.code}&quot; เรียบร้อยแล้ว —
+            เลือกแก้ไข BOM หรือกระบวนการผลิตได้อย่างอิสระ (จะเลือกอย่างใดอย่างหนึ่ง ทั้งสองอย่าง หรือไม่เลือกเลยก็ได้)
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex-1 overflow-y-auto border-t border-border px-6 py-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex flex-col gap-3">
+            {canCreateBom && (
+              <button
+                type="button"
+                onClick={openBomEditor}
+                disabled={isLoadingBom || isLoadingWorkflow}
+                className="flex items-center gap-3 rounded-lg border border-border-strong bg-surface p-4 text-left transition-colors hover:border-primary hover:bg-surface-2 disabled:pointer-events-none disabled:opacity-60"
+              >
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary">
+                  <GitBranch className="size-5" aria-hidden="true" />
+                </span>
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <span className="text-sm font-semibold text-fg">แก้ไข BOM (สูตรการประกอบ)</span>
+                  <span className="text-xs text-fg-muted">
+                    เปิดรายการวัตถุดิบของ BOM เวอร์ชันล่าสุดขึ้นมาแก้ไข แล้วบันทึกเป็นเวอร์ชันใหม่
+                  </span>
+                </span>
+                {isLoadingBom ? (
+                  <Loader2 className="size-4 shrink-0 animate-spin text-fg-muted" aria-hidden="true" />
+                ) : (
+                  <ChevronRight className="size-4 shrink-0 text-fg-muted" aria-hidden="true" />
+                )}
+              </button>
+            )}
+
+            {canCreateWorkflow && (
+              <button
+                type="button"
+                onClick={openWorkflowEditor}
+                disabled={isLoadingBom || isLoadingWorkflow}
+                className="flex items-center gap-3 rounded-lg border border-border-strong bg-surface p-4 text-left transition-colors hover:border-primary hover:bg-surface-2 disabled:pointer-events-none disabled:opacity-60"
+              >
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-info-soft text-info">
+                  <WorkflowIcon className="size-5" aria-hidden="true" />
+                </span>
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <span className="text-sm font-semibold text-fg">แก้ไขกระบวนการผลิต</span>
+                  <span className="text-xs text-fg-muted">
+                    เปิดลำดับขั้นตอนการผลิตเวอร์ชันล่าสุดขึ้นมาแก้ไข แล้วบันทึกเป็นเวอร์ชันใหม่
+                  </span>
+                </span>
+                {isLoadingWorkflow ? (
+                  <Loader2 className="size-4 shrink-0 animate-spin text-fg-muted" aria-hidden="true" />
+                ) : (
+                  <ChevronRight className="size-4 shrink-0 text-fg-muted" aria-hidden="true" />
+                )}
+              </button>
+            )}
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button type="button" onClick={() => onOpenChange(false)}>
+            เสร็จสิ้น
+          </Button>
+        </DialogFooter>
+      </div>
+    );
+  }
+
   if (phase === "bom-done" && savedProduct && bomDoneResult) {
     return (
       <div className="flex h-full flex-col">
@@ -620,7 +831,18 @@ export function ProductsWizardView({
           </span>
         </div>
         <DialogFooter>
-          {canCreateWorkflow ? (
+          {isEdit ? (
+            // Edit mode: back to the hub, where workflow (and re-editing the
+            // BOM) stay independently reachable — no forced next step.
+            <>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                ปิด
+              </Button>
+              <Button type="button" onClick={() => setPhase("edit-hub")}>
+                กลับไปหน้าจัดการข้อมูล
+              </Button>
+            </>
+          ) : canCreateWorkflow ? (
             <>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 ปิด
@@ -672,9 +894,20 @@ export function ProductsWizardView({
           </span>
         </div>
         <DialogFooter>
-          <Button type="button" onClick={() => onOpenChange(false)}>
-            ปิด
-          </Button>
+          {isEdit ? (
+            <>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                ปิด
+              </Button>
+              <Button type="button" onClick={() => setPhase("edit-hub")}>
+                กลับไปหน้าจัดการข้อมูล
+              </Button>
+            </>
+          ) : (
+            <Button type="button" onClick={() => onOpenChange(false)}>
+              ปิด
+            </Button>
+          )}
         </DialogFooter>
       </div>
     );
@@ -684,10 +917,14 @@ export function ProductsWizardView({
     return (
       <div className="flex h-full flex-col">
         <DialogHeader className="pb-0">
-          <DialogTitle>กำหนดกระบวนการผลิตสำหรับ {savedProduct.name}</DialogTitle>
+          <DialogTitle>
+            {isEdit ? "แก้ไขกระบวนการผลิตของ" : "กำหนดกระบวนการผลิตสำหรับ"} {savedProduct.name}
+          </DialogTitle>
           <DialogDescription>
             ระบุลำดับขั้นตอนที่สินค้า &quot;{savedProduct.code}&quot; ต้องผ่านตั้งแต่เริ่มผลิตจนปิดงาน
-            (กระบวนการผลิตใหม่จะถูกบันทึกเป็นร่างเสมอจนกว่าจะเปิดใช้งาน)
+            {isEdit
+              ? " — ด้านล่างคือขั้นตอนจากเวอร์ชันล่าสุด แก้ไขแล้วบันทึกจะได้เป็นเวอร์ชันใหม่ (บันทึกเป็นร่างเสมอจนกว่าจะเปิดใช้งาน)"
+              : " (กระบวนการผลิตใหม่จะถูกบันทึกเป็นร่างเสมอจนกว่าจะเปิดใช้งาน)"}
           </DialogDescription>
         </DialogHeader>
 
@@ -754,15 +991,17 @@ export function ProductsWizardView({
                       >
                         <SelectTrigger><SelectValue placeholder="เลือกขั้นตอน" /></SelectTrigger>
                         <SelectContent>
-                          {processSteps.map((processStep) => (
+                          {processStepOptionsFor(item.key).map((processStep) => (
                             <SelectItem key={processStep.id} value={processStep.id}>
                               {processStep.code} · {processStep.nameTh}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
-                      {processSteps.length === 0 && (
+                      {processSteps.length === 0 ? (
                         <p className="text-[11px] text-danger">ไม่มีข้อมูลขั้นตอนกระบวนการผลิตให้เลือก กรุณาติดต่อผู้ดูแลระบบ</p>
+                      ) : (
+                        <p className="text-[11px] text-fg-muted">ขั้นตอนที่เลือกในรายการอื่นแล้วจะไม่แสดงซ้ำที่นี่</p>
                       )}
                     </div>
                     <div className="flex flex-col gap-1.5">
@@ -790,8 +1029,18 @@ export function ProductsWizardView({
         </div>
 
         <DialogFooter className="justify-between sm:justify-between">
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            ข้ามขั้นตอนนี้
+          <Button
+            type="button"
+            variant="outline"
+            onClick={isEdit ? () => setPhase("edit-hub") : () => onOpenChange(false)}
+          >
+            {isEdit ? (
+              <>
+                <ChevronLeft className="h-3.5 w-3.5" /> ย้อนกลับ
+              </>
+            ) : (
+              "ข้ามขั้นตอนนี้"
+            )}
           </Button>
           <div className="flex gap-2">
             <Button type="button" variant="outline" onClick={handleSaveWorkflowDraft} disabled={isSavingWorkflow}>
@@ -810,10 +1059,13 @@ export function ProductsWizardView({
     return (
       <div className="flex h-full flex-col">
         <DialogHeader className="pb-0">
-          <DialogTitle>เพิ่ม BOM สำหรับ {savedProduct.name}</DialogTitle>
+          <DialogTitle>
+            {isEdit ? "แก้ไข BOM ของ" : "เพิ่ม BOM สำหรับ"} {savedProduct.name}
+          </DialogTitle>
           <DialogDescription>
-            {isEdit ? "บันทึกการเปลี่ยนแปลงสินค้า" : "สร้างสินค้า"} &quot;{savedProduct.code}&quot;
-            แล้ว — ระบุรายการวัตถุดิบที่ใช้ประกอบสินค้านี้ (BOM ใหม่จะถูกบันทึกเป็นร่างเสมอจนกว่าจะเปิดใช้งาน)
+            {isEdit
+              ? `ด้านล่างคือรายการวัตถุดิบของ BOM เวอร์ชันล่าสุดของ "${savedProduct.code}" — แก้ไขแล้วบันทึกจะได้เป็นเวอร์ชันใหม่ (บันทึกเป็นร่างเสมอจนกว่าจะเปิดใช้งาน)`
+              : `สร้างสินค้า "${savedProduct.code}" แล้ว — ระบุรายการวัตถุดิบที่ใช้ประกอบสินค้านี้ (BOM ใหม่จะถูกบันทึกเป็นร่างเสมอจนกว่าจะเปิดใช้งาน)`}
           </DialogDescription>
         </DialogHeader>
 
@@ -921,6 +1173,16 @@ export function ProductsWizardView({
                       onChange={(e) => updateBomItem(item.key, { remark: e.target.value })}
                     />
                   </div>
+                  <div className="flex items-center gap-2 sm:col-span-4">
+                    <Checkbox
+                      id={`wizard-bom-scrap-${item.key}`}
+                      checked={item.isScrap}
+                      onCheckedChange={(checked) => updateBomItem(item.key, { isScrap: checked === true })}
+                    />
+                    <Label htmlFor={`wizard-bom-scrap-${item.key}`} className="cursor-pointer">
+                      เป็นเศษวัสดุจากกระบวนการ (scrap)
+                    </Label>
+                  </div>
                 </div>
               </div>
               );
@@ -939,8 +1201,18 @@ export function ProductsWizardView({
         </div>
 
         <DialogFooter className="justify-between sm:justify-between">
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            ข้ามขั้นตอนนี้
+          <Button
+            type="button"
+            variant="outline"
+            onClick={isEdit ? () => setPhase("edit-hub") : () => onOpenChange(false)}
+          >
+            {isEdit ? (
+              <>
+                <ChevronLeft className="h-3.5 w-3.5" /> ย้อนกลับ
+              </>
+            ) : (
+              "ข้ามขั้นตอนนี้"
+            )}
           </Button>
           <div className="flex gap-2">
             <Button type="button" variant="outline" onClick={handleSaveBomDraft} disabled={isSavingBom}>
@@ -1198,7 +1470,7 @@ export function ProductsWizardView({
         title={isEdit ? "ยืนยันการบันทึกการเปลี่ยนแปลง?" : "ยืนยันการสร้างสินค้า?"}
         description={
           isEdit
-            ? `ตรวจสอบข้อมูลด้านบนแล้ว — เมื่อยืนยัน ระบบจะบันทึกการเปลี่ยนแปลงของ "${values.name || values.code || "สินค้านี้"}" และให้คุณจัดการ BOM ต่อในขั้นตอนถัดไป`
+            ? `ตรวจสอบข้อมูลด้านบนแล้ว — เมื่อยืนยัน ระบบจะบันทึกการเปลี่ยนแปลงของ "${values.name || values.code || "สินค้านี้"}" แล้วให้คุณเลือกแก้ไข BOM หรือกระบวนการผลิตต่อได้ตามต้องการ`
             : `ตรวจสอบข้อมูลด้านบนแล้ว — เมื่อยืนยัน ระบบจะสร้างสินค้า "${values.name || values.code || "นี้"}" และให้คุณเพิ่มข้อมูล BOM ต่อในขั้นตอนถัดไป`
         }
         confirmLabel={isEdit ? "ยืนยันและบันทึก" : "ยืนยันและสร้าง"}

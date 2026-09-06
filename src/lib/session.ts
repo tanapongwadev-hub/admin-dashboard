@@ -2,6 +2,7 @@ import { cache } from "react";
 import { cookies } from "next/headers";
 import {
   getMe,
+  logout,
   type AuthenticatedUser,
   type CurrentDepartmentRole,
   type MenuNode,
@@ -35,10 +36,31 @@ export const getCurrentSession = cache(
         permissions: me.data.accessControl.permissions,
       };
     } catch (err) {
-      if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
-        return null;
+      if (!(err instanceof ApiError)) throw err;
+
+      // 401: token is invalid/expired/revoked. The user is effectively
+      // logged out, so clean up the client-side cookies + best-effort
+      // call /auth/logout to invalidate the server-side session. The
+      // dashboard layout's redirect("/login") handles the user-visible
+      // navigation. Without this, the next request would carry the same
+      // stale token, get the same 401, and loop.
+      //
+      // 403: token is valid but the action is denied (usually a
+      // permission gate). Don't touch the cookies — the user is still
+      // authenticated. Returning null still makes the dashboard layout
+      // redirect to /login (pre-existing behavior, unchanged) so the
+      // user re-authenticates cleanly; the cookies stay so a successful
+      // re-auth picks up where the previous session left off.
+      if (err.status === 401) {
+        store.delete("accessToken");
+        store.delete("refreshToken");
+        try {
+          await logout(accessToken);
+        } catch {
+          // Best-effort: cookies are already cleared regardless.
+        }
       }
-      throw err;
+      return null;
     }
   }
 );
