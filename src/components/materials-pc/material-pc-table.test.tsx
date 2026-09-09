@@ -44,6 +44,7 @@ test("table view renders only the table presentation", () => {
       onEdit={() => undefined}
       onToggleStatus={() => undefined}
       onViewDetails={() => undefined}
+      onReceive={() => undefined}
     />
   );
 
@@ -65,6 +66,7 @@ test("table view shows a clickable thumbnail that opens the full image preview",
       onEdit={() => undefined}
       onToggleStatus={() => undefined}
       onViewDetails={() => undefined}
+      onReceive={() => undefined}
     />
   );
 
@@ -91,6 +93,7 @@ test("card view renders only the card presentation (no <table> for the table vie
       onEdit={() => undefined}
       onToggleStatus={() => undefined}
       onViewDetails={() => undefined}
+      onReceive={() => undefined}
     />
   );
 
@@ -120,6 +123,7 @@ test("card view omits the edit button and the status switch when the row has no 
       onEdit={() => undefined}
       onToggleStatus={() => undefined}
       onViewDetails={() => undefined}
+      onReceive={() => undefined}
     />
   );
 
@@ -138,6 +142,7 @@ test("card view's status switch reflects an inactive material and offers to enab
       onEdit={() => undefined}
       onToggleStatus={() => undefined}
       onViewDetails={() => undefined}
+      onReceive={() => undefined}
     />
   );
 
@@ -158,6 +163,7 @@ test("card view presents its material image uncropped in the header thumbnail", 
       onEdit={() => undefined}
       onToggleStatus={() => undefined}
       onViewDetails={() => undefined}
+      onReceive={() => undefined}
     />
   );
 
@@ -178,6 +184,7 @@ test("renders an accessible image fallback when a material has no image", () => 
       onEdit={() => undefined}
       onToggleStatus={() => undefined}
       onViewDetails={() => undefined}
+      onReceive={() => undefined}
     />
   );
 
@@ -205,6 +212,7 @@ test("card view shows the real stock quantity when stockByMaterialId is provided
       onEdit={() => undefined}
       onToggleStatus={() => undefined}
       onViewDetails={() => undefined}
+      onReceive={() => undefined}
     />
   );
 
@@ -223,6 +231,7 @@ test("card view treats a material with no stock-balance row as quantity 0, not a
       onEdit={() => undefined}
       onToggleStatus={() => undefined}
       onViewDetails={() => undefined}
+      onReceive={() => undefined}
     />
   );
 
@@ -241,6 +250,7 @@ test("card view omits the stock row entirely when stockByMaterialId is null (no 
       onEdit={() => undefined}
       onToggleStatus={() => undefined}
       onViewDetails={() => undefined}
+      onReceive={() => undefined}
     />
   );
 
@@ -346,6 +356,7 @@ test("card view marks a fully-stocked row as 'สต็อกเพียงพ�
       onEdit={() => undefined}
       onToggleStatus={() => undefined}
       onViewDetails={() => undefined}
+      onReceive={() => undefined}
     />
   );
 
@@ -375,6 +386,7 @@ test("card view marks a low-stock row (1-9 units) as 'ใกล้หมด' (wa
       onEdit={() => undefined}
       onToggleStatus={() => undefined}
       onViewDetails={() => undefined}
+      onReceive={() => undefined}
     />
   );
 
@@ -403,6 +415,7 @@ test("card view marks a zero-stock row as 'หมดสต็อก' (neutral ba
       onEdit={() => undefined}
       onToggleStatus={() => undefined}
       onViewDetails={() => undefined}
+      onReceive={() => undefined}
     />
   );
 
@@ -422,6 +435,7 @@ test("card view uses a 4:3 image area for the Editorial hero", () => {
       onEdit={() => undefined}
       onToggleStatus={() => undefined}
       onViewDetails={() => undefined}
+      onReceive={() => undefined}
     />
   );
 
@@ -443,6 +457,7 @@ test("card view lays out 4 cards per row at the xl breakpoint (80rem container q
       onEdit={() => undefined}
       onToggleStatus={() => undefined}
       onViewDetails={() => undefined}
+      onReceive={() => undefined}
     />
   );
 
@@ -468,6 +483,7 @@ test("card view's data sheet is a 2-column table (label | value) for all 6 field
       onEdit={() => undefined}
       onToggleStatus={() => undefined}
       onViewDetails={() => undefined}
+      onReceive={() => undefined}
     />
   );
 
@@ -492,6 +508,7 @@ test("card view's data sheet shows all 6 essential fields as full labels (ซั
       onEdit={() => undefined}
       onToggleStatus={() => undefined}
       onViewDetails={() => undefined}
+      onReceive={() => undefined}
     />
   );
 
@@ -527,6 +544,7 @@ test("card view's data sheet uses real <table> markup with proper <th scope> for
       onEdit={() => undefined}
       onToggleStatus={() => undefined}
       onViewDetails={() => undefined}
+      onReceive={() => undefined}
     />
   );
 
@@ -552,6 +570,7 @@ test("list view renders only the list presentation (no table, no card grid)", ()
       onEdit={() => undefined}
       onToggleStatus={() => undefined}
       onViewDetails={() => undefined}
+      onReceive={() => undefined}
     />
   );
 
@@ -577,6 +596,7 @@ test("list view uses the row-actions Meatballs menu instead of visible edit/disa
       onEdit={() => undefined}
       onToggleStatus={() => undefined}
       onViewDetails={() => undefined}
+      onReceive={() => undefined}
     />
   );
 
@@ -599,6 +619,7 @@ test("list view still shows the action trigger (for 'view details') even when ed
       onEdit={() => undefined}
       onToggleStatus={() => undefined}
       onViewDetails={() => undefined}
+      onReceive={() => undefined}
     />
   );
 
@@ -632,6 +653,7 @@ test("list view shows the real stock quantity when stockByMaterialId is provided
       onEdit={() => undefined}
       onToggleStatus={() => undefined}
       onViewDetails={() => undefined}
+      onReceive={() => undefined}
     />
   );
 
@@ -650,6 +672,7 @@ test("list view omits the stock column entirely when stockByMaterialId is null",
       onEdit={() => undefined}
       onToggleStatus={() => undefined}
       onViewDetails={() => undefined}
+      onReceive={() => undefined}
     />
   );
 
@@ -677,6 +700,7 @@ test("list view shows the 'ใกล้หมด' badge for a low-stock row", ()
       onEdit={() => undefined}
       onToggleStatus={() => undefined}
       onViewDetails={() => undefined}
+      onReceive={() => undefined}
     />
   );
 
@@ -694,6 +718,7 @@ test("list view shows a clickable thumbnail that opens the full image preview", 
       onEdit={() => undefined}
       onToggleStatus={() => undefined}
       onViewDetails={() => undefined}
+      onReceive={() => undefined}
     />
   );
 

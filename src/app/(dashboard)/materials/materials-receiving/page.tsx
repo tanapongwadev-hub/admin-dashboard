@@ -13,7 +13,7 @@ const PAGE_SIZE = 20;
 export default async function MaterialsReceivingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; search?: string; status?: string }>;
+  searchParams: Promise<{ page?: string; search?: string; status?: string; materialCode?: string }>;
 }) {
   const session = await getCurrentSession();
   const canView = !!session && (session.user.isSuperAdmin || session.permissions.includes("MATERIALS_RECEIVING_VIEW"));
@@ -37,6 +37,9 @@ export default async function MaterialsReceivingPage({
     params.status === "draft" || params.status === "confirmed" || params.status === "cancelled"
       ? params.status
       : undefined;
+  // Set by /materials/pc's "รับเข้า" row action — pre-selects this material
+  // in the create dialog on first load, see materials-receiving-client.tsx.
+  const initialMaterialCode = params.materialCode?.trim() || undefined;
 
   const store = await cookies();
   const accessToken = store.get("accessToken")!.value;
@@ -77,6 +80,7 @@ export default async function MaterialsReceivingPage({
         canConfirm={canConfirm}
         canCancel={canCancel}
         canDelete={canDelete}
+        initialMaterialCode={initialMaterialCode}
       />
     </div>
   );

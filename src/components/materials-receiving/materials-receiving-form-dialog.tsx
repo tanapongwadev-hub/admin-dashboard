@@ -104,18 +104,25 @@ export function MaterialsReceivingFormDialog({
   onOpenChange,
   lookups,
   onSaved,
+  initialMaterialId,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   lookups: MaterialReceivingLookups;
   onSaved: () => void;
+  // Pre-selects a material — set when arriving from /materials/pc's
+  // "รับเข้า" row action (see materials-receiving-client.tsx). Only read
+  // once, at mount, same as every other field here: the parent remounts
+  // this whole dialog via `key` on every open, so a stale value from a
+  // previous open never leaks into a later one.
+  initialMaterialId?: string;
 }) {
   // No reset-on-open effect here — the parent (materials-receiving-client)
   // remounts this whole component with a fresh `key` every time it opens
   // (see AGENTS.md § Material Receiving), so every state variable's useState
   // initializer already runs fresh. That's the "derive, don't effect"
   // pattern this project's lint config enforces.
-  const [materialId, setMaterialId] = React.useState("");
+  const [materialId, setMaterialId] = React.useState(initialMaterialId ?? "");
   const [receiveQuantity, setReceiveQuantity] = React.useState("");
   const [supplierProductionDate, setSupplierProductionDate] = React.useState(todayIso());
   const [supplierId, setSupplierId] = React.useState("");

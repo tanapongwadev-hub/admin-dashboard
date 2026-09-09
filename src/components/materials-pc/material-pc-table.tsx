@@ -11,6 +11,7 @@ import {
   ChevronRight,
   ImageOff,
   Eye,
+  PackagePlus,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,13 @@ interface MaterialCollectionProps {
   // with every field on the material — every view shows only the essentials
   // inline and defers the full record to this dialog on demand.
   onViewDetails: (material: Material) => void;
+  // Navigates to /materials/materials-receiving with this material's code
+  // pre-selected in the create dialog — lets a viewer jump straight from
+  // "I'm looking at MAT-A" to "receive more of MAT-A" without re-picking the
+  // material from scratch. Not permission-gated here: a viewer without
+  // MATERIALS_RECEIVING_CREATE just lands on a receiving list they can't
+  // create from, same as navigating there directly via the sidebar.
+  onReceive: (material: Material) => void;
 }
 
 // Props for a single-row renderer (Editorial card or List item) — same
@@ -171,6 +179,9 @@ export function getMaterialRowActions(
     // edit/disable behavior don't have to pass a no-op — omitting it just
     // means "ดูรายละเอียด" isn't in the resulting action list.
     onViewDetails?: (material: Material) => void;
+    // Optional for the same reason — omitting it just means "รับเข้า"
+    // isn't in the resulting action list.
+    onReceive?: (material: Material) => void;
   }
 ): RowAction[] {
   const actions: RowAction[] = [];
@@ -179,6 +190,14 @@ export function getMaterialRowActions(
       label: "ดูรายละเอียด",
       icon: Eye,
       onSelect: () => handlers.onViewDetails!(material),
+      variant: "default",
+    });
+  }
+  if (handlers.onReceive) {
+    actions.push({
+      label: "รับเข้า",
+      icon: PackagePlus,
+      onSelect: () => handlers.onReceive!(material),
       variant: "default",
     });
   }
@@ -207,11 +226,12 @@ function MaterialActions({
   onEdit,
   onToggleStatus,
   onViewDetails,
+  onReceive,
 }: Omit<MaterialCollectionProps, "materials" | "view" | "stockByMaterialId"> & { material: Material }) {
   return (
     <RowActionsMenu
       itemLabel={material.name}
-      actions={getMaterialRowActions(material, canEdit, canDelete, { onEdit, onToggleStatus, onViewDetails })}
+      actions={getMaterialRowActions(material, canEdit, canDelete, { onEdit, onToggleStatus, onViewDetails, onReceive })}
     />
   );
 }
@@ -292,6 +312,7 @@ function MaterialEditorialCard({
   onEdit,
   onToggleStatus,
   onViewDetails,
+  onReceive,
   onPreview,
 }: MaterialRowProps) {
   const balance = stockByMaterialId?.[material.id];
@@ -397,13 +418,14 @@ function MaterialEditorialCard({
         </table>
       </div>
 
-      {/* Two buttons now, not three — the on/off action moved to the Switch
-          above, so this row only carries "look" (neutral outline) vs. "act"
-          (solid primary) — a color hierarchy that's readable without
-          memorizing what red/green/blue meant here before. min-w-0 on both
-          Buttons + a truncating label span keeps a long label from
-          overflowing the card on narrow widths (flex-1 alone doesn't allow
-          a flex item to shrink below its content's natural width). */}
+      {/* Up to three buttons — the on/off action moved to the Switch above,
+          so this row only carries "look"/"jump elsewhere" (neutral outline:
+          ดูรายละเอียด, รับเข้า) vs. "act" (solid primary: แก้ไข) — a color
+          hierarchy that's readable without memorizing what red/green/blue
+          meant here before. min-w-0 on every Button + a truncating label
+          span keeps a long label from overflowing the card on narrow widths
+          (flex-1 alone doesn't allow a flex item to shrink below its
+          content's natural width). */}
       <div className="flex gap-2 border-t border-border px-[18px] py-3">
         <Button
           variant="outline"
@@ -413,6 +435,15 @@ function MaterialEditorialCard({
         >
           <Eye className="h-3.5 w-3.5 shrink-0" />
           <span className="min-w-0 truncate">ดูรายละเอียด</span>
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="min-w-0 flex-1 px-2"
+          onClick={() => onReceive(material)}
+        >
+          <PackagePlus className="h-3.5 w-3.5 shrink-0" />
+          <span className="min-w-0 truncate">รับเข้า</span>
         </Button>
         {canEdit && (
           <Button
@@ -480,6 +511,7 @@ function MaterialListItem({
   onEdit,
   onToggleStatus,
   onViewDetails,
+  onReceive,
   onPreview,
 }: MaterialRowProps) {
   const balance = stockByMaterialId?.[material.id];
@@ -543,7 +575,7 @@ function MaterialListItem({
         )}
         <RowActionsMenu
           itemLabel={material.name}
-          actions={getMaterialRowActions(material, canEdit, canDelete, { onEdit, onToggleStatus, onViewDetails })}
+          actions={getMaterialRowActions(material, canEdit, canDelete, { onEdit, onToggleStatus, onViewDetails, onReceive })}
         />
       </div>
     </article>
@@ -563,6 +595,7 @@ export function MaterialPcCollection({
   onEdit,
   onToggleStatus,
   onViewDetails,
+  onReceive,
 }: MaterialCollectionProps) {
   const [previewTarget, setPreviewTarget] = useState<Material | null>(null);
 
@@ -573,6 +606,7 @@ export function MaterialPcCollection({
     onEdit,
     onToggleStatus,
     onViewDetails,
+    onReceive,
     onPreview: setPreviewTarget,
   };
 
@@ -627,6 +661,7 @@ export function MaterialPcCollection({
                       onEdit={onEdit}
                       onToggleStatus={onToggleStatus}
                       onViewDetails={onViewDetails}
+                      onReceive={onReceive}
                     />
                   </TableCell>
                 </TableRow>
@@ -671,6 +706,7 @@ export function MaterialPcTable({
   onEdit,
   onToggleStatus,
   onViewDetails,
+  onReceive,
 }: {
   materials: Material[];
   meta: PaginatedResult<Material>["meta"];
@@ -681,6 +717,7 @@ export function MaterialPcTable({
   onEdit: (material: Material) => void;
   onToggleStatus: (material: Material) => void;
   onViewDetails: (material: Material) => void;
+  onReceive: (material: Material) => void;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -712,6 +749,7 @@ export function MaterialPcTable({
         onEdit={onEdit}
         onToggleStatus={onToggleStatus}
         onViewDetails={onViewDetails}
+        onReceive={onReceive}
       />
 
       <div className="flex flex-col gap-2 text-sm text-fg-muted sm:flex-row sm:items-center sm:justify-between">

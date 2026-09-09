@@ -46,6 +46,14 @@ export function MaterialPcClient({
     router.refresh();
   }
 
+  // Jumps to Material Receiving with this material pre-selected, referenced
+  // by its code (not a raw id) so the URL stays legible — see
+  // materials-receiving-client.tsx, which resolves the code back to the
+  // material's id via its own lookups and pre-fills the create dialog.
+  function handleReceive(material: Material) {
+    router.push(`/materials/materials-receiving?materialCode=${encodeURIComponent(material.code)}`);
+  }
+
   async function handleToggleStatus(material: Material) {
     const result = material.isActive
       ? await deactivateMaterialPcAction(material.id)
@@ -85,6 +93,7 @@ export function MaterialPcClient({
         onEdit={(material) => setFormTarget(material)}
         onToggleStatus={(material) => setStatusTarget(material)}
         onViewDetails={(material) => setDetailsTarget(material)}
+        onReceive={handleReceive}
       />
 
       <MaterialPcDetailsDialog
