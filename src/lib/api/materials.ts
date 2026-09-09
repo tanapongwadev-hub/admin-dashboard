@@ -37,6 +37,7 @@ export interface Material {
   specification: string | null;
   description: string | null;
   packingQuantity: number | null;
+  minimumStock: string;
   isActive: boolean;
   createdBy: string | null;
   updatedBy: string | null;
@@ -99,6 +100,7 @@ export interface MaterialPayload {
   specification?: string | null;
   description?: string | null;
   packingQuantity?: number | null;
+  minimumStock?: number;
   supplierIds?: string[];
   isActive?: boolean;
 }
@@ -119,6 +121,42 @@ export interface StockBalance {
   unitCode: string;
   unitNameTh: string;
   lastMovementAt: string | null;
+  lastReceivedAt?: string | null;
+}
+
+export type MaterialStockStatus = "NORMAL" | "LOW_STOCK" | "OUT_OF_STOCK";
+
+export interface MaterialInventoryItem extends Material {
+  currentStock: string;
+  stockStatus: MaterialStockStatus;
+  lastMovementAt: string | null;
+  lastReceivedAt: string | null;
+}
+
+export interface MaterialInventorySummary {
+  total: number;
+  normal: number;
+  lowStock: number;
+  outOfStock: number;
+}
+
+export interface MaterialInventoryResult extends PaginatedResult<MaterialInventoryItem> {
+  summary: MaterialInventorySummary;
+}
+
+export interface ListMaterialInventoryParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  isActive?: boolean;
+  type?: MaterialType;
+  supplierId?: string;
+  modelId?: string;
+  loadingPointId?: string;
+  processLineName?: string;
+  stockStatus?: MaterialStockStatus;
+  sortBy?: "code" | "name" | "currentStock" | "lastReceivedAt";
+  sortOrder?: "asc" | "desc";
 }
 
 export function listStockBalances(accessToken: string) {
@@ -127,7 +165,16 @@ export function listStockBalances(accessToken: string) {
   });
 }
 
-function buildQuery(params: ListMaterialsParams): string {
+export function listMaterialInventory(
+  accessToken: string,
+  params: ListMaterialInventoryParams = {}
+) {
+  return apiFetch<MaterialInventoryResult>(`/stock-balances/inventory${buildQuery(params)}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+}
+
+function buildQuery<T extends object>(params: T): string {
   const query = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
     if (value === undefined || value === null || value === "") continue;

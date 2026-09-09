@@ -3,14 +3,12 @@
 import * as React from "react";
 import { Command } from "cmdk";
 import { useRouter } from "next/navigation";
-import { LayoutGrid, LineChart, Users, Package, ShoppingCart, Settings, Plus, Moon, Sun, Search } from "lucide-react";
-import { useTheme } from "next-themes";
+import { LayoutGrid, LineChart, Users, Package, ShoppingCart, Settings, Plus, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function CommandPalette() {
   const [open, setOpen] = React.useState(false);
   const router = useRouter();
-  const { setTheme, resolvedTheme } = useTheme();
 
   React.useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -68,15 +66,6 @@ export function CommandPalette() {
           <Command.Group heading="การดำเนินการ" className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-fg-muted">
             <Item icon={Plus} onSelect={() => go("/users?new=1")}>เชิญผู้ใช้งาน</Item>
             <Item icon={Plus} onSelect={() => go("/products?new=1")}>เพิ่มสินค้า</Item>
-            <Item
-              icon={resolvedTheme === "dark" ? Sun : Moon}
-              onSelect={() => {
-                setTheme(resolvedTheme === "dark" ? "light" : "dark");
-                setOpen(false);
-              }}
-            >
-              สลับธีม
-            </Item>
           </Command.Group>
         </Command.List>
       </Command.Dialog>

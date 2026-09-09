@@ -9,13 +9,22 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { stockMovementTrend } from "@/lib/dashboard-data";
+import { stockMovementTrend, type StockMovementPoint } from "@/lib/dashboard-data";
 import { formatWeight } from "@/lib/utils";
 
-export function StockMovementChart() {
+// `data` is optional and defaults to the full 14-day series, so any existing
+// caller that just renders <StockMovementChart /> is unaffected. The dashboard
+// passes a narrowed window when the header's date-range selector changes.
+export function StockMovementChart({
+  data = stockMovementTrend,
+  height = 300,
+}: {
+  data?: StockMovementPoint[];
+  height?: number;
+}) {
   return (
-    <ResponsiveContainer width="100%" height={280}>
-      <AreaChart data={stockMovementTrend} margin={{ top: 10, right: 8, left: -12, bottom: 0 }}>
+    <ResponsiveContainer width="100%" height={height}>
+      <AreaChart data={data} margin={{ top: 10, right: 8, left: -12, bottom: 0 }}>
         <defs>
           <linearGradient id="receivedFill" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="var(--chart-2)" stopOpacity={0.35} />
@@ -33,7 +42,9 @@ export function StockMovementChart() {
           tickLine={false}
           tick={{ fill: "var(--fg-muted)", fontSize: 12 }}
           dy={8}
-          interval={2}
+          // Thin the labels only when the window is long enough to crowd them
+          // — a 7-day window shows every day.
+          interval={data.length > 10 ? 2 : 0}
         />
         <YAxis
           axisLine={false}

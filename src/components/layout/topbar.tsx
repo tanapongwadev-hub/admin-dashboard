@@ -9,7 +9,6 @@ import { Logo } from "@/components/layout/logo";
 import { SidebarNav } from "@/components/layout/sidebar-nav";
 import { CommandPalette } from "@/components/layout/command-palette";
 import { NotificationsMenu } from "@/components/layout/notifications-menu";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { UserMenu } from "@/components/layout/user-menu";
 import { secondaryNav, menuHref, flattenMenus } from "@/lib/nav";
 import type { AuthenticatedUser, CurrentDepartmentRole, MenuNode } from "@/lib/api/auth";
@@ -79,8 +78,11 @@ export function Topbar({
             ui/sheet.tsx), so this no longer wraps a second bordered box
             inside it — same structure as the desktop Sidebar: a h-16 logo
             header, then the shared nav. Behavior is unchanged: the trigger,
-            the open state, and closing on navigate all work as before. */}
-        <SheetContent title="เมนูนำทาง">
+            the open state, and closing on navigate all work as before.
+            "on-navy" matches the mobile menu to the desktop sidebar's fixed
+            dark-navy surface (see globals.css) — same token-scoping trick,
+            no separate dark-mode markup needed. */}
+        <SheetContent title="เมนูนำทาง" className="on-navy">
           <div className="flex h-16 shrink-0 items-center border-b border-border pl-4 pr-14">
             <Logo />
           </div>
@@ -102,7 +104,6 @@ export function Topbar({
           <CommandPaletteMobileIcon />
         </Button>
         <NotificationsMenu />
-        <ThemeToggle />
         <div className="mx-1 h-6 w-px bg-border" />
         <UserMenu user={user} currentDepartmentRole={currentDepartmentRole} />
       </div>

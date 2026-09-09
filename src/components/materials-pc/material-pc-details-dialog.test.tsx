@@ -26,6 +26,7 @@ const material: Material = {
   processLineName: "Press line 1",
   scale: "1:4",
   packingQuantity: 20,
+  minimumStock: "10.0000",
   imagePath: null,
   specification: "ทนความร้อน 80°C\nUV resistant",
   description: "ใช้สำหรับงานภายนอกอาคาร",
@@ -111,12 +112,12 @@ test("renders stock + health badge inline in the hero (no separate stock card)",
   assert.match(html, /คงเหลือ/);
   assert.match(html, />124</);
   assert.match(html, /PCS|Piece/);
-  assert.match(html, /สต็อกเพียงพอ/);
+  assert.match(html, /สต็อกปกติ/);
   // No separate stats card backgrounds anymore.
   assert.doesNotMatch(html, /bg-primary-soft[^"]*rounded-lg border p-4/);
 });
 
-test("marks low-stock rows as 'ใกล้หมด' (warning color) inline in the hero", () => {
+test("marks rows below minimum stock as low stock inline in the hero", () => {
   const html = renderToStaticMarkup(
     <MaterialPcDetailsView
       material={material}
@@ -135,7 +136,7 @@ test("marks low-stock rows as 'ใกล้หมด' (warning color) inline in 
     />
   );
 
-  assert.match(html, /ใกล้หมด/);
+  assert.match(html, /สต็อกต่ำ/);
   // Stock number itself is warning-colored, not a card background.
   // The 5 (low stock) renders in a span that includes both `tabular-nums`
   // and `text-warning` classes (the order doesn't matter).

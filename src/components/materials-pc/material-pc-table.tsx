@@ -12,12 +12,13 @@ import {
   ImageOff,
   Eye,
   PackagePlus,
+  ArrowUpDown,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { RowActionsMenu, type RowAction } from "@/components/ui/row-actions-menu";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MaterialPcImagePreview } from "@/components/materials-pc/material-pc-image-preview";
 import type { ViewMode } from "@/hooks/use-view-mode";
 import type { Material, PaginatedResult, StockBalance } from "@/lib/api/materials";
@@ -69,16 +70,16 @@ function MaterialStatus({ material }: { material: Material }) {
 // threshold, replace this with the real value (don't keep both).
 // Exported so the details dialog can color its stock card identically.
 export type StockTone = "muted" | "warning" | "primary";
-export function getStockTone(quantity: number): StockTone {
+export function getStockTone(quantity: number, minimumStock = 0): StockTone {
   if (quantity <= 0) return "muted";
-  if (quantity < 10) return "warning";
+  if (quantity < minimumStock) return "warning";
   return "primary";
 }
 
 export function getStockHealthLabel(tone: StockTone): { label: string; variant: "success" | "warning" | "neutral" } {
   if (tone === "muted") return { label: "หมดสต็อก", variant: "neutral" };
-  if (tone === "warning") return { label: "ใกล้หมด", variant: "warning" };
-  return { label: "สต็อกเพียงพอ", variant: "success" };
+  if (tone === "warning") return { label: "สต็อกต่ำ", variant: "warning" };
+  return { label: "สต็อกปกติ", variant: "success" };
 }
 
 // Every supplier's name, not just a count — "2 ราย"/"2 ซัพฯ" told you how
@@ -291,19 +292,6 @@ function MaterialEditorialPhoto({ material, onPreview }: { material: Material; o
 // every label + the common value lengths; values longer than one line
 // wrap with `break-words` instead of ellipsizing, so a full supplier
 // name list ("CPS Steel, ABC Corp, XYZ Industries") reads in full.
-function DataSheetRow({ label, value }: { label: string; value: string }) {
-  return (
-    <tr className="border-b border-border last:border-b-0">
-      <th scope="row" className="w-[42%] py-2.5 pl-[18px] pr-3 text-left align-top text-[12.5px] font-normal text-fg-muted">
-        {label}
-      </th>
-      <td className="py-2.5 pr-[18px] text-left align-top text-[13px] font-medium text-fg break-words">
-        {value}
-      </td>
-    </tr>
-  );
-}
-
 function MaterialEditorialCard({
   material,
   stockByMaterialId,
@@ -318,27 +306,31 @@ function MaterialEditorialCard({
   const balance = stockByMaterialId?.[material.id];
   const quantity = balance ? Number(balance.quantity) : 0;
   const unit = material.unit?.nameEn ?? material.unit?.code ?? "";
-  const tone = getStockTone(quantity);
+  const tone = getStockTone(quantity, Number(material.minimumStock));
   const health = getStockHealthLabel(tone);
 
   return (
     <article
-      className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-surface transition-shadow duration-200 hover:shadow-[0_8px_24px_-6px_rgba(0,0,0,0.08)]"
+      className="group flex h-full flex-col overflow-hidden rounded-md border border-border bg-surface shadow-sm transition-colors hover:border-border-strong"
       role="group"
       aria-label={`บัตรแสดงวัสดุ ${material.name}`}
     >
-      <div className="relative aspect-[4/3] overflow-hidden bg-surface-2">
-        <div className="absolute inset-3">
+      <div className="relative aspect-[16/9] overflow-hidden bg-surface-2">
+        <div className="absolute inset-2.5">
           <MaterialEditorialPhoto material={material} onPreview={onPreview} />
         </div>
-        <div className="absolute right-3.5 top-3.5 z-10">
+        <div className="absolute right-3 top-3 z-10 flex items-center gap-1.5">
           <MaterialStatus material={material} />
+          <RowActionsMenu
+            itemLabel={material.name}
+            actions={getMaterialRowActions(material, canEdit, canDelete, { onEdit, onToggleStatus })}
+          />
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col px-[18px] pb-1 pt-[18px]">
-        <p className="mb-2 font-mono text-[11px] leading-none tracking-[0.05em] text-fg-secondary">{material.code}</p>
-        <h2 className="mb-1 truncate text-[17px] font-semibold leading-tight tracking-[-0.01em] text-fg" title={material.name}>
+      <div className="flex flex-1 flex-col px-4 pb-1 pt-4">
+        <p className="mb-1.5 font-mono text-[11px] leading-none tracking-[0.05em] text-primary">{material.code}</p>
+        <h2 className="mb-1 truncate text-base font-semibold leading-tight text-fg" title={material.name}>
           {material.name}
         </h2>
         <p className="truncate text-[12.5px] leading-tight text-fg-secondary">
@@ -346,28 +338,10 @@ function MaterialEditorialCard({
           {material.ratio ? ` · ${material.ratio}` : ""}
         </p>
 
-        {/* Status is a single toggle switch, not a red/green text button —
-            the on/off shape reads unambiguously without relying on a color
-            convention. Shown only when the viewer can actually flip it;
-            otherwise the read-only badge on the photo is the only status
-            indicator. Still confirmed via the existing status dialog
-            (onToggleStatus), never flips immediately on click. */}
-        {canDelete && (
-          <label className="mt-2.5 flex w-fit cursor-pointer items-center gap-2">
-            <Switch
-              checked={material.isActive}
-              onCheckedChange={() => onToggleStatus(material)}
-              aria-label={material.isActive ? `ปิดใช้งาน ${material.name}` : `เปิดใช้งาน ${material.name}`}
-            />
-            <span className="text-xs font-medium text-fg-secondary">
-              {material.isActive ? "ใช้งานอยู่" : "ไม่ได้ใช้งาน"}
-            </span>
-          </label>
-        )}
       </div>
 
       {stockByMaterialId && (
-        <div className="flex items-baseline justify-between gap-3 px-[18px] pb-3.5">
+        <div className="flex items-end justify-between gap-3 px-4 pb-3">
           <div className="min-w-0">
             <span
               className={cn(
@@ -380,7 +354,7 @@ function MaterialEditorialCard({
             <div className="mt-1.5">
               <span
                 className={cn(
-                  "text-[32px] font-bold leading-none tracking-[-0.025em] tabular-nums",
+                "text-2xl font-bold leading-none tracking-tight tabular-nums",
                   tone === "warning" ? "text-warning" : tone === "muted" ? "text-fg-secondary" : "text-fg"
                 )}
               >
@@ -395,27 +369,10 @@ function MaterialEditorialCard({
         </div>
       )}
 
-      {/* Data Sheet: 2-column table (label | value) for all 6 essential
-          fields (replaces the earlier Stat Grid bento, 2026-09-05 — see
-          AGENTS.md § Materials PC). Real <table> markup so screen readers
-          get the row relationship; no truncation — the card has enough
-          width at 2-col grid for full label + value to fit on one line for
-          most fields, and `break-words` lets long values wrap to a second
-          line (e.g. the full supplier name list) rather than ellipsizing.
-          The same `loadingPointLabel`/`processLineLabel`/`supplierNames`
-          helpers used by the table view and the details dialog guarantee
-          the formatting stays in sync. */}
-      <div className="border-t border-border">
-        <table className="w-full text-sm">
-          <tbody>
-            <DataSheetRow label="ซัพพลายเออร์" value={supplierNames(material)} />
-            <DataSheetRow label="รุ่น" value={modelLabel(material)} />
-            <DataSheetRow label="หน่วย" value={unitLabel(material)} />
-            <DataSheetRow label="ประเภทการจัดส่ง" value={deliveryLabel(material)} />
-            <DataSheetRow label="จุดขึ้นสินค้า" value={loadingPointLabel(material)} />
-            <DataSheetRow label="สายการผลิต" value={processLineLabel(material)} />
-          </tbody>
-        </table>
+      <div className="grid grid-cols-3 border-t border-border bg-surface-2/40 text-xs">
+        <CardMeta label="ขั้นต่ำ" value={`${formatNumber(Number(material.minimumStock))} ${unitLabel(material)}`} />
+        <CardMeta label="จุดขึ้นสินค้า" value={loadingPointLabel(material)} />
+        <CardMeta label="สายการผลิต" value={processLineLabel(material)} />
       </div>
 
       {/* Up to three buttons — the on/off action moved to the Switch above,
@@ -426,38 +383,36 @@ function MaterialEditorialCard({
           span keeps a long label from overflowing the card on narrow widths
           (flex-1 alone doesn't allow a flex item to shrink below its
           content's natural width). */}
-      <div className="flex gap-2 border-t border-border px-[18px] py-3">
+      <div className="flex gap-2 border-t border-border px-4 py-3">
         <Button
-          variant="outline"
-          size="sm"
-          className="min-w-0 flex-1 px-2"
-          onClick={() => onViewDetails(material)}
-        >
-          <Eye className="h-3.5 w-3.5 shrink-0" />
-          <span className="min-w-0 truncate">ดูรายละเอียด</span>
-        </Button>
-        <Button
-          variant="outline"
+          variant="primary"
           size="sm"
           className="min-w-0 flex-1 px-2"
           onClick={() => onReceive(material)}
         >
           <PackagePlus className="h-3.5 w-3.5 shrink-0" />
-          <span className="min-w-0 truncate">รับเข้า</span>
+          <span className="min-w-0 truncate">+ รับเข้า</span>
         </Button>
-        {canEdit && (
-          <Button
-            variant="primary"
-            size="sm"
-            className="min-w-0 flex-1 px-2"
-            onClick={() => onEdit(material)}
-          >
-            <Pencil className="h-3.5 w-3.5 shrink-0" />
-            <span className="min-w-0 truncate">แก้ไข</span>
-          </Button>
-        )}
+        <Button
+          variant="secondary"
+          size="sm"
+          className="min-w-0 flex-1 px-2"
+          onClick={() => onViewDetails(material)}
+        >
+          <Eye className="h-3.5 w-3.5 shrink-0" />
+          <span className="min-w-0 truncate">รายละเอียด</span>
+        </Button>
       </div>
     </article>
+  );
+}
+
+function CardMeta({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0 border-r border-border px-3 py-2.5 last:border-r-0">
+      <p className="mb-1 text-[10px] text-fg-muted">{label}</p>
+      <p className="truncate font-medium text-fg-secondary" title={value}>{value}</p>
+    </div>
   );
 }
 
@@ -517,7 +472,7 @@ function MaterialListItem({
   const balance = stockByMaterialId?.[material.id];
   const quantity = balance ? Number(balance.quantity) : 0;
   const unit = material.unit?.nameEn ?? material.unit?.code ?? "";
-  const tone = getStockTone(quantity);
+  const tone = getStockTone(quantity, Number(material.minimumStock));
   const health = getStockHealthLabel(tone);
 
   return (
@@ -613,20 +568,23 @@ export function MaterialPcCollection({
   return (
     <div className="@container">
       {view === "table" ? (
-        <div className="overflow-x-auto rounded-xl border border-border bg-surface">
+        <div className="max-h-[68vh] overflow-auto rounded-md border border-border bg-surface">
           <Table>
-            <TableHeader>
+            <TableHeader className="sticky top-0 z-20 bg-surface shadow-[0_1px_0_0_var(--border)]">
               <TableRow>
                 <TableHead>
                   <span className="sr-only">รูปภาพ</span>
                 </TableHead>
-                <TableHead>รหัส</TableHead>
-                <TableHead>ชื่อ</TableHead>
-                <TableHead>รูปทรง</TableHead>
-                <TableHead>หน่วย</TableHead>
+                <SortableHead label="รหัส" field="code" />
+                <SortableHead label="ชื่อวัสดุ" field="name" />
+                {stockByMaterialId && <SortableHead label="คงเหลือ" field="currentStock" />}
+                {stockByMaterialId && <TableHead>ขั้นต่ำ</TableHead>}
+                {stockByMaterialId && <TableHead>สถานะสต็อก</TableHead>}
                 <TableHead>ซัพพลายเออร์</TableHead>
-                {stockByMaterialId && <TableHead>คงเหลือ</TableHead>}
-                <TableHead>สถานะ</TableHead>
+                <TableHead>จุดขึ้นสินค้า</TableHead>
+                <TableHead>สายการผลิต</TableHead>
+                <TableHead>การใช้งาน</TableHead>
+                {stockByMaterialId && <SortableHead label="รับเข้าล่าสุด" field="lastReceivedAt" />}
                 <TableHead className="text-right">การจัดการ</TableHead>
               </TableRow>
             </TableHeader>
@@ -634,6 +592,7 @@ export function MaterialPcCollection({
               {materials.map((material) => {
                 const balance = stockByMaterialId?.[material.id];
                 const quantity = balance ? Number(balance.quantity) : 0;
+                const stockHealth = getStockHealthLabel(getStockTone(quantity, Number(material.minimumStock)));
                 return (
                 <TableRow key={material.id}>
                   <TableCell>
@@ -641,18 +600,21 @@ export function MaterialPcCollection({
                   </TableCell>
                   <TableCell className="font-medium text-fg">{material.code}</TableCell>
                   <TableCell className="text-fg-secondary">{material.name}</TableCell>
-                  <TableCell className="text-fg-muted">{shapeLabel(material)}</TableCell>
-                  <TableCell className="text-fg-muted">{unitLabel(material)}</TableCell>
-                  <TableCell className="text-fg-muted">{supplierNames(material)}</TableCell>
                   {stockByMaterialId && (
-                    <TableCell className="text-fg-muted tabular-nums">
+                    <TableCell className="font-semibold text-fg tabular-nums">
                       {formatNumber(quantity)}
                       {unitLabel(material) !== "—" && ` ${unitLabel(material)}`}
                     </TableCell>
                   )}
+                  {stockByMaterialId && <TableCell className="text-fg-muted tabular-nums">{formatNumber(Number(material.minimumStock))}</TableCell>}
+                  {stockByMaterialId && <TableCell><Badge variant={stockHealth.variant} dot>{stockHealth.label}</Badge></TableCell>}
+                  <TableCell className="max-w-48 text-fg-muted">{supplierNames(material)}</TableCell>
+                  <TableCell className="text-fg-muted">{loadingPointLabel(material)}</TableCell>
+                  <TableCell className="text-fg-muted">{processLineLabel(material)}</TableCell>
                   <TableCell>
                     <MaterialStatus material={material} />
                   </TableCell>
+                  {stockByMaterialId && <TableCell className="whitespace-nowrap text-fg-muted">{formatDate(balance?.lastReceivedAt)}</TableCell>}
                   <TableCell className="text-right">
                     <MaterialActions
                       material={material}
@@ -680,7 +642,7 @@ export function MaterialPcCollection({
         </ul>
       ) : (
         <ul
-          className="grid grid-cols-1 gap-3 @min-[40rem]:grid-cols-2 @min-[80rem]:grid-cols-4"
+          className="grid grid-cols-1 gap-3 @min-[36rem]:grid-cols-2 @min-[60rem]:grid-cols-3 @min-[82rem]:grid-cols-4 @min-[100rem]:grid-cols-5"
           aria-label="รายการวัสดุ PC แบบการ์ด"
         >
           {materials.map((material) => (
@@ -694,6 +656,36 @@ export function MaterialPcCollection({
       <MaterialPcImagePreview material={previewTarget} onOpenChange={(open) => !open && setPreviewTarget(null)} />
     </div>
   );
+}
+
+function SortableHead({ label, field }: { label: string; field: "code" | "name" | "currentStock" | "lastReceivedAt" }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const active = (searchParams.get("sortBy") ?? "code") === field;
+  const direction = searchParams.get("sortOrder") === "desc" ? "desc" : "asc";
+  return (
+    <TableHead>
+      <button
+        type="button"
+        className="inline-flex items-center gap-1 whitespace-nowrap font-medium hover:text-fg"
+        onClick={() => {
+          const params = new URLSearchParams(searchParams.toString());
+          params.set("sortBy", field);
+          params.set("sortOrder", active && direction === "asc" ? "desc" : "asc");
+          params.delete("page");
+          router.push(`${pathname}?${params.toString()}`);
+        }}
+      >
+        {label}<ArrowUpDown className={cn("size-3.5", active ? "text-primary" : "text-fg-muted")} />
+      </button>
+    </TableHead>
+  );
+}
+
+function formatDate(value?: string | null): string {
+  if (!value) return "—";
+  return new Intl.DateTimeFormat("th-TH", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(value));
 }
 
 export function MaterialPcTable({
@@ -729,6 +721,13 @@ export function MaterialPcTable({
     router.push(`${pathname}?${params.toString()}`);
   }
 
+  function changePageSize(limit: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("limit", limit);
+    params.delete("page");
+    router.push(`${pathname}?${params.toString()}`);
+  }
+
   if (materials.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-border py-16 text-center">
@@ -757,6 +756,15 @@ export function MaterialPcTable({
           หน้า {meta.page} จาก {Math.max(1, meta.totalPages)} · ทั้งหมด {meta.totalItems} รายการ
         </p>
         <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
+          <div className="col-span-2 flex items-center gap-2 sm:col-span-1">
+            <span className="whitespace-nowrap text-xs">แสดงต่อหน้า</span>
+            <Select value={String(meta.limit)} onValueChange={changePageSize}>
+              <SelectTrigger className="h-8 w-20"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {[20, 40, 60].map((size) => <SelectItem key={size} value={String(size)}>{size}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
           <Button
             variant="outline"
             size="sm"

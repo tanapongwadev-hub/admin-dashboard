@@ -143,7 +143,12 @@ export function Sidebar({
   return (
     <aside
       className={cn(
-        "hidden shrink-0 flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-sm transition-[width] duration-200 lg:flex",
+        // "on-navy" makes every token-driven class below (bg-surface,
+        // border-border, text-fg, bg-primary-soft, ...) resolve against the
+        // fixed dark-navy palette instead of the light one used everywhere
+        // else — see globals.css. The sidebar's own color never changes; it
+        // isn't part of any light/dark toggle (there isn't one anymore).
+        "on-navy hidden shrink-0 flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-sm transition-[width] duration-200 lg:flex",
         collapsed ? "w-[72px]" : "w-64"
       )}
     >

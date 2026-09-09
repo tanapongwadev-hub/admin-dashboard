@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, FileSearch } from "lucide-react";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import { DashboardEmptyState } from "@/components/dashboard/chart-card";
 import { recentDocuments } from "@/lib/dashboard-data";
-import type { StockDocStatus } from "@/lib/dashboard-data";
+import type { StockDocStatus, StockDocument } from "@/lib/dashboard-data";
 
 const statusVariant: Record<StockDocStatus, NonNullable<BadgeProps["variant"]>> = {
   Draft: "neutral",
@@ -12,8 +13,40 @@ const statusVariant: Record<StockDocStatus, NonNullable<BadgeProps["variant"]>> 
   Cancelled: "danger",
 };
 
-export function RecentDocuments() {
-  const recent = recentDocuments.slice(0, 6);
+const statusLabel: Record<StockDocStatus, string> = {
+  Draft: "ร่าง",
+  Confirmed: "ยืนยันแล้ว",
+  Cancelled: "ยกเลิก",
+};
+
+// `documents` defaults to the same slice this rendered before, so a bare
+// <RecentDocuments /> is unchanged; the dashboard passes its filtered set.
+export function RecentDocuments({
+  documents = recentDocuments.slice(0, 6),
+  onClearFilters,
+}: {
+  documents?: StockDocument[];
+  onClearFilters?: () => void;
+}) {
+  const recent = documents;
+
+  if (recent.length === 0) {
+    return (
+      <DashboardEmptyState
+        icon={FileSearch}
+        title="ไม่พบเอกสารในช่วงที่เลือก"
+        description="ไม่มีเอกสารรับเข้าหรือเบิกจ่ายที่ตรงกับตัวกรองปัจจุบัน"
+        action={
+          onClearFilters && (
+            <Button variant="outline" size="sm" onClick={onClearFilters}>
+              ล้างตัวกรอง
+            </Button>
+          )
+        }
+      />
+    );
+  }
+
   return (
     <Table>
       <TableHeader>
@@ -41,8 +74,10 @@ export function RecentDocuments() {
             <TableCell className="text-fg-secondary">{doc.material}</TableCell>
             <TableCell className="text-fg-muted">{doc.counterparty}</TableCell>
             <TableCell>
+              {/* Thai label + dot + variant — status is never carried by
+                  color alone (see the accessibility note in AGENTS.md). */}
               <Badge variant={statusVariant[doc.status]} dot>
-                {doc.status}
+                {statusLabel[doc.status]}
               </Badge>
             </TableCell>
             <TableCell className="text-right tabular-nums font-medium text-fg">

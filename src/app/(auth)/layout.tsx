@@ -3,12 +3,15 @@ import { Logo } from "@/components/layout/logo";
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="grid min-h-dvh grid-cols-1 lg:grid-cols-2">
-      <div className="relative hidden flex-col justify-between overflow-hidden bg-[#0B0E14] p-10 text-white lg:flex">
+      {/* Same fixed dark-navy brand surface as the sidebar and the login
+          page's brand pane — bg-navy, not a raw hex, so this stays in sync
+          if the brand navy ever changes (see globals.css). */}
+      <div className="relative hidden flex-col justify-between overflow-hidden bg-navy p-10 text-white lg:flex">
         <div
           className="pointer-events-none absolute inset-0 opacity-40"
           style={{
             backgroundImage:
-              "radial-gradient(circle at 20% 20%, rgba(108,102,255,0.35), transparent 40%), radial-gradient(circle at 80% 80%, rgba(45,212,206,0.25), transparent 45%)",
+              "radial-gradient(circle at 20% 20%, rgba(23,105,209,0.35), transparent 40%), radial-gradient(circle at 80% 80%, rgba(245,158,11,0.2), transparent 45%)",
           }}
         />
         <div className="relative z-10 flex items-center gap-2.5">

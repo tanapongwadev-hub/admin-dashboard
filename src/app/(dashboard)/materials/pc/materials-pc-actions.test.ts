@@ -129,8 +129,8 @@ test("performCreateMaterial POSTs to /materials with type forced to PC and forwa
 // never included supplierIds in the fixture, so a silent drop would have
 // passed.
 test('performCreateMaterial forwards supplierIds in the request body', async (t) => {
-  let requestInit;
-  t.mock.method(globalThis, 'fetch', async (_input, init) => {
+  let requestInit: RequestInit | undefined;
+  t.mock.method(globalThis, 'fetch', async (_input: string | URL | Request, init?: RequestInit) => {
     requestInit = init;
     return jsonResponse(201, makeMaterialFixture());
   });
@@ -139,12 +139,13 @@ test('performCreateMaterial forwards supplierIds in the request body', async (t)
     ...makeCreatePayload(),
     supplierIds: ['supplier-1', 'supplier-2'],
   });
-  const body = JSON.parse(requestInit.body);
+  assert.ok(requestInit?.body);
+  const body = JSON.parse(String(requestInit.body));
   assert.deepEqual(body.supplierIds, ['supplier-1', 'supplier-2']);
 });
 test('performCreateMaterial forwards an empty supplierIds array', async (t) => {
-  let requestInit;
-  t.mock.method(globalThis, 'fetch', async (_input, init) => {
+  let requestInit: RequestInit | undefined;
+  t.mock.method(globalThis, 'fetch', async (_input: string | URL | Request, init?: RequestInit) => {
     requestInit = init;
     return jsonResponse(201, makeMaterialFixture());
   });
@@ -153,12 +154,13 @@ test('performCreateMaterial forwards an empty supplierIds array', async (t) => {
     ...makeCreatePayload(),
     supplierIds: [],
   });
-  const body = JSON.parse(requestInit.body);
+  assert.ok(requestInit?.body);
+  const body = JSON.parse(String(requestInit.body));
   assert.deepEqual(body.supplierIds, []);
 });
 test('performUpdateMaterial forwards supplierIds in the PATCH body', async (t) => {
-  let requestInit;
-  t.mock.method(globalThis, 'fetch', async (_input, init) => {
+  let requestInit: RequestInit | undefined;
+  t.mock.method(globalThis, 'fetch', async (_input: string | URL | Request, init?: RequestInit) => {
     requestInit = init;
     return jsonResponse(200, makeMaterialFixture());
   });
@@ -167,7 +169,8 @@ test('performUpdateMaterial forwards supplierIds in the PATCH body', async (t) =
     ...makeUpdatePayload(),
     supplierIds: ['supplier-3', 'supplier-4', 'supplier-5'],
   });
-  const body = JSON.parse(requestInit.body);
+  assert.ok(requestInit?.body);
+  const body = JSON.parse(String(requestInit.body));
   assert.deepEqual(body.supplierIds, ['supplier-3', 'supplier-4', 'supplier-5']);
   assert.equal(body.updatedAt, '2026-09-04T00:00:00.000Z');
 });

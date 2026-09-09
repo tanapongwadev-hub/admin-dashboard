@@ -1,13 +1,27 @@
+import { Activity } from "lucide-react";
 import { UserAvatar } from "@/components/ui/user-avatar";
-import { floorActivity } from "@/lib/dashboard-data";
+import { floorActivity, type FloorActivityItem } from "@/lib/dashboard-data";
+import { DashboardEmptyState } from "@/components/dashboard/chart-card";
 import { formatDate } from "@/lib/utils";
 
-export function RecentActivity() {
+// `items` defaults to the same 6-item slice as before; the dashboard passes a
+// search-filtered subset so the feed stays consistent with the rest of the page.
+export function RecentActivity({ items = floorActivity.slice(0, 6) }: { items?: FloorActivityItem[] }) {
+  if (items.length === 0) {
+    return (
+      <DashboardEmptyState
+        icon={Activity}
+        title="ไม่มีกิจกรรม"
+        description="ไม่มีความเคลื่อนไหวบนพื้นโรงงานที่ตรงกับคำค้นหาปัจจุบัน"
+      />
+    );
+  }
+
   return (
     <div className="flex flex-col">
-      {floorActivity.slice(0, 6).map((item, i) => (
+      {items.map((item, i) => (
         <div key={item.id} className="relative flex gap-3 pb-5 last:pb-0">
-          {i !== floorActivity.slice(0, 6).length - 1 && (
+          {i !== items.length - 1 && (
             <span className="absolute left-[15px] top-9 h-[calc(100%-20px)] w-px bg-border" />
           )}
           <UserAvatar name={item.actor} color={item.avatarColor} className="h-8 w-8 shrink-0" />

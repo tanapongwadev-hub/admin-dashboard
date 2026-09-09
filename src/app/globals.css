@@ -1,70 +1,80 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@custom-variant dark (&:where(.dark, .dark *));
 
+/* ===================================================================
+ * Navy Enterprise theme — single fixed palette (no light/dark toggle).
+ * Every color in the app is one of these tokens; never reference a raw
+ * hex value in a component (see AGENTS.md § Styling).
+ * =================================================================== */
 :root {
-  --bg: #F7F8FA;
+  --bg: #F5F7FA;
   --surface: #FFFFFF;
-  --surface-2: #F1F2F5;
-  --border: #E4E7EC;
-  --border-strong: #D3D7DE;
-  --fg: #12141A;
-  --fg-secondary: #5B6470;
-  --fg-muted: #8A93A1;
+  --surface-2: #EDF1F6;
+  --border: #E2E8F0;
+  --border-strong: #CBD5E1;
+  --fg: #172033;
+  --fg-secondary: #475569;
+  --fg-muted: #64748B;
 
-  --primary: #4640DE;
-  --primary-hover: #3A34C4;
+  /* Accent Blue — the interactive/brand color: buttons, links, focus,
+     active states. Distinct from --navy, which is the fixed dark surface
+     color used only by the sidebar/header brand panels (see .on-navy). */
+  --primary: #1769D1;
+  --primary-hover: #135DAE;
   --primary-fg: #FFFFFF;
-  --primary-soft: #EEEDFC;
+  --primary-soft: #E7F1FC;
+
+  /* Primary Navy / Primary Dark — the sidebar's own fixed dark surface,
+     independent of --surface (which stays white for cards everywhere
+     else). Also exposed as bg-navy/bg-navy-dark/text-navy utilities for
+     the login/auth brand panels. */
+  --navy: #0F2747;
+  --navy-dark: #091C33;
 
   --success: #16A34A;
-  --success-soft: #E9F8EE;
-  --warning: #D97706;
-  --warning-soft: #FDF3E3;
+  --success-soft: #E7F6EC;
+  --warning: #F59E0B;
+  --warning-soft: #FEF3E0;
   --danger: #DC2626;
-  --danger-soft: #FBEAEA;
-  --info: #0EA5A4;
-  --info-soft: #E4F7F6;
+  --danger-soft: #FDEAEA;
+  --info: #0EA5E9;
+  --info-soft: #E3F4FC;
 
-  --chart-1: #4640DE;
-  --chart-2: #0EA5A4;
-  --chart-3: #D97706;
-  --chart-4: #E11D48;
-  --chart-5: #6B7280;
+  --chart-1: #1769D1;
+  --chart-2: #16A34A;
+  --chart-3: #F59E0B;
+  --chart-4: #0F2747;
+  --chart-5: #64748B;
 
-  --ring: #4640DE;
-  --radius: 0.625rem;
+  --ring: #1769D1;
+  /* Slightly tighter than a typical SaaS default — the brief asks for a
+     practical, compact enterprise look, not soft/bubbly cards. */
+  --radius: 0.5rem;
 }
 
-.dark {
-  --bg: #0B0E14;
-  --surface: #11151D;
-  --surface-2: #161B25;
-  --border: #232935;
-  --border-strong: #2E3644;
-  --fg: #F3F5F7;
-  --fg-secondary: #99A2B0;
-  --fg-muted: #6B7280;
-
-  --primary: #6C66FF;
-  --primary-hover: #7D77FF;
-  --primary-fg: #0B0E14;
-  --primary-soft: #201F3D;
-
-  --success: #34D399;
-  --success-soft: #113127;
-  --warning: #FBBF24;
-  --warning-soft: #3A2C0F;
-  --danger: #F87171;
-  --danger-soft: #3A1616;
-  --info: #2DD4CE;
-  --info-soft: #0F2C2B;
-
-  --chart-1: #7D77FF;
-  --chart-2: #2DD4CE;
-  --chart-3: #FBBF24;
-  --chart-4: #FB7185;
-  --chart-5: #8A93A1;
+/* Scopes a subtree onto the fixed dark-navy surface: the sidebar (desktop
+ * aside + its mobile Sheet twin) is the one part of the UI that never
+ * follows the light page/card colors above. Every existing token-driven
+ * class already used inside SidebarNav (bg-surface-2, text-fg-secondary,
+ * bg-primary-soft, border-border, ...) picks this up automatically because
+ * Tailwind's utilities read through `--color-*` to these custom properties
+ * at the point of use — the same mechanism this app's old .dark class used.
+ * Don't hardcode navy hex values in sidebar components; add the "on-navy"
+ * class to the container instead. */
+.on-navy {
+  --surface: var(--navy);
+  --surface-2: var(--navy-dark);
+  --border: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.18);
+  --fg: #FFFFFF;
+  --fg-secondary: rgba(255, 255, 255, 0.72);
+  --fg-muted: rgba(255, 255, 255, 0.52);
+  /* A brighter accent for legible active-row text/icons/accent-bars against
+     a dark background — the base Accent Blue (#1769D1) is tuned for text on
+     white, not white-on-navy. */
+  --primary: #4C9AEF;
+  --primary-soft: rgba(76, 154, 239, 0.18);
+  color-scheme: dark;
 }
 
 @theme inline {
@@ -81,6 +91,9 @@
   --color-primary-hover: var(--primary-hover);
   --color-primary-fg: var(--primary-fg);
   --color-primary-soft: var(--primary-soft);
+
+  --color-navy: var(--navy);
+  --color-navy-dark: var(--navy-dark);
 
   --color-success: var(--success);
   --color-success-soft: var(--success-soft);
@@ -103,7 +116,7 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
 
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-plex-sans-thai);
   --font-mono: var(--font-geist-mono);
 }
 
@@ -113,9 +126,6 @@
 
 html {
   color-scheme: light;
-}
-html.dark {
-  color-scheme: dark;
 }
 
 body {

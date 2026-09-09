@@ -172,6 +172,7 @@ const schema = z
     ratio: z.coerce.number().int().min(1).optional().or(z.literal("")),
     unitId: z.string().min(1, "กรุณาเลือกหน่วย"),
     packingQuantity: z.coerce.number().int().min(1).optional().or(z.literal("")),
+    minimumStock: z.coerce.number().min(0, "สต็อกขั้นต่ำต้องไม่น้อยกว่า 0"),
     deliveryTypeId: z.string(),
     modelId: z.string(),
     loadingPointId: z.string(),
@@ -201,6 +202,7 @@ function toDefaultValues(material?: Material | null): FormInput {
     ratio: material?.ratio ?? "",
     unitId: material?.unitId ?? "",
     packingQuantity: material?.packingQuantity ?? "",
+    minimumStock: Number(material?.minimumStock ?? 0),
     deliveryTypeId: material?.deliveryTypeId ?? NONE,
     modelId: material?.modelId ?? NONE,
     loadingPointId: material?.loadingPointId ?? NONE,
@@ -298,6 +300,7 @@ export function MaterialPcFormDialog({
       ratio: values.materialType === "PCS" ? null : Number(values.ratio),
       unitId: values.unitId,
       packingQuantity: values.packingQuantity === "" ? null : Number(values.packingQuantity),
+      minimumStock: Number(values.minimumStock),
       deliveryTypeId: values.deliveryTypeId === NONE ? null : values.deliveryTypeId,
       modelId: values.modelId === NONE ? null : values.modelId,
       loadingPointId: values.loadingPointId === NONE ? null : values.loadingPointId,
@@ -465,6 +468,12 @@ export function MaterialPcFormDialog({
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="packingQuantity">จำนวนต่อแพ็ก</Label>
                 <Input id="packingQuantity" type="number" min="1" {...register("packingQuantity")} />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="minimumStock">สต็อกขั้นต่ำ</Label>
+                <Input id="minimumStock" type="number" min="0" step="0.0001" aria-invalid={errors.minimumStock ? true : undefined} {...register("minimumStock")} />
+                {errors.minimumStock && <p className="text-xs text-danger" role="alert">{errors.minimumStock.message}</p>}
               </div>
 
               <div className="flex flex-col gap-1.5">

@@ -1,10 +1,24 @@
-import { lowStockWatchlist } from "@/lib/dashboard-data";
+import { PackageCheck } from "lucide-react";
+import { lowStockWatchlist, type WatchlistItem } from "@/lib/dashboard-data";
+import { DashboardEmptyState } from "@/components/dashboard/chart-card";
 import { cn } from "@/lib/utils";
 
-export function LowStockWatchlist() {
+// `items` defaults to the full watchlist so a bare <LowStockWatchlist /> is
+// unchanged; the dashboard passes its search-filtered subset.
+export function LowStockWatchlist({ items = lowStockWatchlist }: { items?: WatchlistItem[] }) {
+  if (items.length === 0) {
+    return (
+      <DashboardEmptyState
+        icon={PackageCheck}
+        title="ไม่มีรายการเฝ้าระวัง"
+        description="ไม่มีวัสดุที่ต่ำกว่าจุดสั่งซื้อตรงกับคำค้นหาปัจจุบัน"
+      />
+    );
+  }
+
   return (
     <div className="flex flex-col gap-4">
-      {lowStockWatchlist.map((item) => {
+      {items.map((item) => {
         const ratio = item.qty / item.reorderPoint;
         const critical = ratio < 0.5;
         return (

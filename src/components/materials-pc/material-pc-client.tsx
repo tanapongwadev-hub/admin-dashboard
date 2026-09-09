@@ -12,8 +12,9 @@ import { MaterialPcTable } from "@/components/materials-pc/material-pc-table";
 import { MaterialPcFormDialog } from "@/components/materials-pc/material-pc-form-dialog";
 import { MaterialPcStatusDialog } from "@/components/materials-pc/material-pc-status-dialog";
 import { MaterialPcDetailsDialog } from "@/components/materials-pc/material-pc-details-dialog";
+import { MaterialPcInventorySummary } from "@/components/materials-pc/material-pc-inventory-summary";
 import { deactivateMaterialPcAction, restoreMaterialPcAction } from "@/app/(dashboard)/materials/pc/actions";
-import type { Material, MaterialLookups, PaginatedResult, StockBalance } from "@/lib/api/materials";
+import type { Material, MaterialInventorySummary, MaterialLookups, PaginatedResult, StockBalance } from "@/lib/api/materials";
 
 export function MaterialPcClient({
   materials,
@@ -22,6 +23,8 @@ export function MaterialPcClient({
   canEdit,
   canDelete,
   stockByMaterialId,
+  stockSummary,
+  canViewStock,
 }: {
   materials: Material[];
   meta: PaginatedResult<Material>["meta"];
@@ -31,6 +34,8 @@ export function MaterialPcClient({
   // null when the current user lacks MATERIALS_RECEIVING_VIEW — the stock
   // section is omitted entirely in that case, not shown as zero/broken.
   stockByMaterialId: Record<string, StockBalance> | null;
+  stockSummary: MaterialInventorySummary | null;
+  canViewStock: boolean;
 }) {
   const router = useRouter();
   // Default to "card" (Editorial) so first-time visitors see the new image-led
@@ -71,8 +76,9 @@ export function MaterialPcClient({
 
   return (
     <div className="flex flex-col gap-4">
+      {stockSummary && <MaterialPcInventorySummary summary={stockSummary} />}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <MaterialPcFilters />
+        <MaterialPcFilters lookups={lookups} canViewStock={canViewStock} />
         <div className="flex shrink-0 items-center gap-2">
           <ViewToggle value={view} onChange={setView} modes={["table", "card", "list"]} />
           {canEdit && (
