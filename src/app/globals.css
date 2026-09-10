@@ -120,8 +120,23 @@
   --font-mono: var(--font-geist-mono);
 }
 
-* {
-  border-color: var(--border);
+/* Wrapped in @layer base (not left as a plain top-level rule) so it sits at
+ * the same cascade-layer priority as Tailwind's own preflight border reset.
+ * A rule outside any @layer belongs to CSS's implicit "final" layer, which
+ * outranks EVERY named layer — including `utilities`, where every Tailwind
+ * `border-{color}` class lives — regardless of selector specificity. Left
+ * unlayered, this reset silently won over every colored-border utility in
+ * the app (`border-primary`, `border-warning`, `border-l-success`, ...),
+ * which is exactly why an earlier fix (see AGENTS.md's Material Receiving
+ * "STATUS_ACCENT" entry) had to reach for an inline `style` workaround
+ * instead of a class. Layering this correctly means that workaround is no
+ * longer necessary for new code — a plain `border-{token}` utility now
+ * wins over this reset the way Tailwind intends.
+ */
+@layer base {
+  * {
+    border-color: var(--border);
+  }
 }
 
 html {

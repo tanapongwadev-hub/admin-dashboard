@@ -114,8 +114,21 @@ export function ProductBomDiagram({
 
   return (
     <>
-      <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
-        <Waypoints className="h-3.5 w-3.5" /> แผนภาพองค์ประกอบ
+      {/* Accent-tinted chip, not a plain outline button — this trigger sits
+          directly on the BOM version header's bg-surface-2 strip
+          (products-details-dialog.tsx), where a transparent-background
+          outline button has nothing to contrast against and disappears
+          into the strip (same anti-pattern documented in AGENTS.md §
+          Material Receiving's button-contrast fix). The primary-soft tint
+          also reads as "open a visual," distinct from the plain-text item
+          count next to it. */}
+      <Button
+        variant="outline"
+        size="sm"
+        className="border-primary/25 bg-primary-soft text-primary hover:border-primary/40 hover:bg-primary/15 hover:text-primary"
+        onClick={() => setOpen(true)}
+      >
+        <Waypoints className="h-3.5 w-3.5" aria-hidden="true" /> แผนภาพองค์ประกอบ
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>

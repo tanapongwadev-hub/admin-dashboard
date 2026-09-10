@@ -1,7 +1,5 @@
 "use server";
 
-import { cookies } from "next/headers";
-import { revalidatePath } from "next/cache";
 import {
   createSupplier,
   updateSupplier,
@@ -11,131 +9,48 @@ import {
   type SupplierPayload,
   type UpdateSupplierPayload,
 } from "@/lib/api/suppliers";
-import { ApiError } from "@/lib/api/client";
+import { createCrudActions, type CrudActionResult } from "@/lib/create-crud-actions";
 
-// Server Actions for the `/master-data/suppliers` admin page. Same
-// `perform*` helper + thin cookie-reading public-wrapper pattern as
-// `master-data/loading-points/actions.ts`,
-// `master-data/delivery-types/actions.ts`,
-// `master-data/reject-reasons/actions.ts`, and
-// `master-data/material-models/actions.ts` — the helpers take
-// `accessToken` as a parameter so tests can call them directly with a
-// controlled token without mocking `next/headers`. `revalidatePath` is
-// wrapped in its own try-catch (best-effort) so a revalidation failure
-// never downgrades a successful save to an error toast (see
-// `materials/pc/actions.ts` for the same reasoning).
+// Server Actions for the `/master-data/suppliers` admin page. All the
+// real logic (cookie read, 409 mapping, session-expiry sign-out,
+// best-effort revalidatePath) lives in the shared `createCrudActions`
+// factory (see lib/create-crud-actions.ts) — this file only binds it to
+// this resource's own API functions/copy, then re-declares each function
+// as a literal export (required for Next's "use server" transform to
+// recognize it as a Server Action; a bare `export const x = someImport`
+// re-export is not guaranteed to be picked up the same way).
 
-export type SupplierActionResult =
-  | { status: "success"; supplier: Supplier }
-  | { status: "conflict"; message: string }
-  | { status: "error"; message: string };
+export type SupplierActionResult = CrudActionResult<"supplier", Supplier>;
 
-type SupplierActionFailure = Exclude<SupplierActionResult, { status: "success" }>;
+const actions = createCrudActions({
+  api: { create: createSupplier, update: updateSupplier, deactivate: deactivateSupplier, restore: restoreSupplier },
+  resultKey: "supplier",
+  revalidatePath: "/master-data/suppliers",
+  conflictMessage: "ข้อมูลผู้จัดจำหน่ายนี้ถูกอัปเดตจากที่อื่นแล้ว กรุณารีเฟรชแล้วลองอีกครั้ง",
+});
 
-async function requireAccessToken() {
-  const store = await cookies();
-  return store.get("accessToken")?.value ?? null;
+export async function performCreateSupplier(accessToken: string, payload: SupplierPayload) {
+  return actions.performCreate(accessToken, payload);
+}
+export async function performUpdateSupplier(accessToken: string, id: string, payload: UpdateSupplierPayload) {
+  return actions.performUpdate(accessToken, id, payload);
+}
+export async function performDeactivateSupplier(accessToken: string, id: string) {
+  return actions.performDeactivate(accessToken, id);
+}
+export async function performRestoreSupplier(accessToken: string, id: string) {
+  return actions.performRestore(accessToken, id);
 }
 
-function errorResult(err: unknown): SupplierActionFailure {
-  if (err instanceof ApiError) {
-    if (err.status === 409) {
-      return {
-        status: "conflict",
-        message: "ข้อมูลผู้จัดจำหน่ายนี้ถูกอัปเดตจากที่อื่นแล้ว กรุณารีเฟรชแล้วลองอีกครั้ง",
-      };
-    }
-    const body = err.body as { message?: string | string[] } | undefined;
-    const message = Array.isArray(body?.message) ? body.message.join(", ") : body?.message;
-    return { status: "error", message: message ?? "เกิดข้อผิดพลาด กรุณาลองอีกครั้ง" };
-  }
-  return { status: "error", message: "ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้" };
+export async function createSupplierAction(payload: SupplierPayload) {
+  return actions.create(payload);
 }
-
-function revalidateSuppliersPath() {
-  revalidatePath("/master-data/suppliers");
+export async function updateSupplierAction(id: string, payload: UpdateSupplierPayload) {
+  return actions.update(id, payload);
 }
-
-export async function performCreateSupplier(
-  accessToken: string,
-  payload: SupplierPayload
-): Promise<SupplierActionResult> {
-  let supplier: Supplier;
-  try {
-    supplier = await createSupplier(accessToken, payload);
-  } catch (err) {
-    return errorResult(err);
-  }
-  try { revalidateSuppliersPath(); } catch { /* best-effort */ }
-  return { status: "success", supplier };
+export async function deactivateSupplierAction(id: string) {
+  return actions.deactivate(id);
 }
-
-export async function performUpdateSupplier(
-  accessToken: string,
-  id: string,
-  payload: UpdateSupplierPayload
-): Promise<SupplierActionResult> {
-  let supplier: Supplier;
-  try {
-    supplier = await updateSupplier(accessToken, id, payload);
-  } catch (err) {
-    return errorResult(err);
-  }
-  try { revalidateSuppliersPath(); } catch { /* best-effort */ }
-  return { status: "success", supplier };
-}
-
-export async function performDeactivateSupplier(
-  accessToken: string,
-  id: string
-): Promise<SupplierActionResult> {
-  let supplier: Supplier;
-  try {
-    supplier = await deactivateSupplier(accessToken, id);
-  } catch (err) {
-    return errorResult(err);
-  }
-  try { revalidateSuppliersPath(); } catch { /* best-effort */ }
-  return { status: "success", supplier };
-}
-
-export async function performRestoreSupplier(
-  accessToken: string,
-  id: string
-): Promise<SupplierActionResult> {
-  let supplier: Supplier;
-  try {
-    supplier = await restoreSupplier(accessToken, id);
-  } catch (err) {
-    return errorResult(err);
-  }
-  try { revalidateSuppliersPath(); } catch { /* best-effort */ }
-  return { status: "success", supplier };
-}
-
-export async function createSupplierAction(payload: SupplierPayload): Promise<SupplierActionResult> {
-  const accessToken = await requireAccessToken();
-  if (!accessToken) return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
-  return performCreateSupplier(accessToken, payload);
-}
-
-export async function updateSupplierAction(
-  id: string,
-  payload: UpdateSupplierPayload
-): Promise<SupplierActionResult> {
-  const accessToken = await requireAccessToken();
-  if (!accessToken) return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
-  return performUpdateSupplier(accessToken, id, payload);
-}
-
-export async function deactivateSupplierAction(id: string): Promise<SupplierActionResult> {
-  const accessToken = await requireAccessToken();
-  if (!accessToken) return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
-  return performDeactivateSupplier(accessToken, id);
-}
-
-export async function restoreSupplierAction(id: string): Promise<SupplierActionResult> {
-  const accessToken = await requireAccessToken();
-  if (!accessToken) return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
-  return performRestoreSupplier(accessToken, id);
+export async function restoreSupplierAction(id: string) {
+  return actions.restore(id);
 }

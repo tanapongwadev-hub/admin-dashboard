@@ -171,21 +171,27 @@ export function ProductsDetailsView({
     // above the action footer. From `sm` up the dialog has a bounded height
     // and the tab pane becomes its own scroller, keeping the actions in view.
     <div className="flex flex-col sm:h-full">
-      {/* HERO SECTION — image (left) + identity (right), same 320×240 4:3
-          frame as Materials PC's dialog. Read-only display here (edit-mode
+      {/* HERO SECTION — image (left) + identity (right). Image is now a
+          16:9 frame matching ProductEditorialCard's own hero tile
+          (products-table.tsx) — the card and this "full record" dialog used
+          to disagree on aspect ratio/radius/code color, so opening a card's
+          details felt like landing in a different, older design. Radius is
+          `rounded-md` (not `rounded-lg`) for the same reason: every other
+          Products surface (the card, ProductsCatalogSummary's stat tiles,
+          the table) is `rounded-md`. Read-only display here (edit-mode
           image replacement lives in ProductsFormDialog, see
           products-form-dialog.tsx#ProductImagePicker) — no lightbox in this
           particular dialog, unlike the table/card thumbnails which open
           ProductsImagePreview. */}
       <header className="border-b border-border px-4 py-5 sm:shrink-0 sm:px-6 sm:py-6">
         <div className="flex flex-col gap-5 sm:flex-row">
-          <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden rounded-lg border border-border bg-surface-2 sm:h-[240px] sm:w-[320px]">
+          <div className="relative aspect-[16/9] w-full shrink-0 overflow-hidden rounded-md border border-border bg-surface-2 sm:h-[220px] sm:w-[390px]">
             {imagePath ? (
               <Image
                 src={imagePath}
                 alt={`Product image: ${product.name}`}
                 fill
-                sizes="(min-width: 640px) 320px, 100vw"
+                sizes="(min-width: 640px) 390px, 100vw"
                 className="object-contain p-3"
               />
             ) : (
@@ -199,34 +205,47 @@ export function ProductsDetailsView({
             )}
           </div>
           <div className="flex min-w-0 flex-1 flex-col justify-center gap-2.5">
-            <p className="font-mono text-xs tracking-[0.05em] text-fg-muted">{product.code}</p>
+            {/* Code in text-primary, not text-fg-muted — matches the card's
+                own code eyebrow color so the same product reads as the same
+                product across both surfaces. */}
+            <p className="font-mono text-xs tracking-[0.05em] text-primary">{product.code}</p>
             <h2 className="text-[22px] font-semibold leading-tight tracking-[-0.015em] text-fg">{product.name}</h2>
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant={product.isActive ? "success" : "neutral"} dot>
                 {product.isActive ? "ใช้งาน" : "ไม่ใช้งาน"}
               </Badge>
-              <Badge variant="neutral">{productTypeLabel(product)}</Badge>
+              {/* "info" tone, not "neutral" — mirrors ProductsCatalogSummary's
+                  own ประเภทสินค้า tile (bg-info-soft text-info), so product
+                  type carries the same color meaning everywhere it appears. */}
+              <Badge variant="info">{productTypeLabel(product)}</Badge>
             </div>
 
-            {/* Safety/min stock in the hero — same spot Materials PC's stock
-                number sits in, since these are the closest equivalent
-                "headline numbers" Products has (no live stock-on-hand
-                tracking exists for finished products — see AGENTS.md §
-                Products). */}
-            <div className="mt-2 flex flex-wrap items-center gap-5 border-t border-border pt-3">
-              <div className="flex items-baseline gap-2">
-                <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-fg-muted">Safety Stock</span>
-                <span className="text-2xl font-bold leading-none tabular-nums tracking-[-0.02em] text-fg">
-                  {formatNumber(product.safetyStock)}
+            {/* Safety/min stock — same 2-column divide-x stat grid as
+                ProductEditorialCard (not a plain border-t row anymore), so
+                the numbers a user just saw on the card look identical here:
+                Safety Stock in text-primary, Min Stock in text-fg-secondary. */}
+            <div className="mt-2 grid grid-cols-2 divide-x divide-border border-t border-border pt-3">
+              <div className="min-w-0 pr-4">
+                <span className="text-[10px] font-semibold uppercase leading-none tracking-[0.08em] text-primary">
+                  Safety Stock
                 </span>
-                {unit !== "—" && <span className="text-sm font-medium text-fg-muted">{unit}</span>}
+                <div className="mt-1.5">
+                  <span className="text-2xl font-bold leading-none tracking-[-0.02em] tabular-nums text-fg">
+                    {formatNumber(product.safetyStock)}
+                  </span>
+                  {unit !== "—" && <span className="ml-1.5 text-xs font-medium text-fg-secondary">{unit}</span>}
+                </div>
               </div>
-              <div className="flex items-baseline gap-2">
-                <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-fg-muted">Min Stock</span>
-                <span className="text-2xl font-bold leading-none tabular-nums tracking-[-0.02em] text-fg">
-                  {formatNumber(product.minStock)}
+              <div className="min-w-0 pl-4">
+                <span className="text-[10px] font-semibold uppercase leading-none tracking-[0.08em] text-fg-secondary">
+                  Min Stock
                 </span>
-                {unit !== "—" && <span className="text-sm font-medium text-fg-muted">{unit}</span>}
+                <div className="mt-1.5">
+                  <span className="text-2xl font-bold leading-none tracking-[-0.02em] tabular-nums text-fg">
+                    {formatNumber(product.minStock)}
+                  </span>
+                  {unit !== "—" && <span className="ml-1.5 text-xs font-medium text-fg-secondary">{unit}</span>}
+                </div>
               </div>
             </div>
           </div>
@@ -285,7 +304,7 @@ export function ProductsDetailsView({
               specification/description to fill the rest of this tab with. */}
           <div>
             <SectionLabel>ข้อมูลจำเพาะ</SectionLabel>
-            <div className="overflow-hidden rounded-lg border border-border bg-surface">
+            <div className="overflow-hidden rounded-md border border-border bg-surface">
               <table className="w-full text-sm">
                 <tbody>
                   <DataSheetRow label="ประเภทสินค้า" value={productTypeLabel(product)} />
@@ -329,7 +348,7 @@ export function ProductsDetailsView({
                 {boms.map((bom) => {
                   const status = BOM_STATUS_DISPLAY[bom.status];
                   return (
-                    <div key={bom.id} className="overflow-hidden rounded-lg border border-border">
+                    <div key={bom.id} className="overflow-hidden rounded-md border border-border">
                       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-surface-2 px-4 py-2.5">
                         <div className="flex items-center gap-2">
                           <span className="font-mono text-sm font-semibold text-fg">{bom.version}</span>
@@ -424,7 +443,7 @@ export function ProductsDetailsView({
                 {workflows.map((workflow) => {
                   const status = WORKFLOW_STATUS_DISPLAY[workflow.status];
                   return (
-                    <div key={workflow.id} className="overflow-hidden rounded-lg border border-border">
+                    <div key={workflow.id} className="overflow-hidden rounded-md border border-border">
                       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-surface-2 px-4 py-2.5">
                         <div className="flex items-center gap-2">
                           <span className="font-mono text-sm font-semibold text-fg">{workflow.version}</span>

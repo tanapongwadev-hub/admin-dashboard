@@ -44,6 +44,15 @@ export interface CurrentSession {
 // (pre-existing behavior, unchanged) so the user re-authenticates
 // cleanly; the cookies stay so a successful re-auth picks up where the
 // previous session left off.
+//
+// **Only 401/403 mean "no session".** An earlier version returned null for
+// *every* `ApiError`, which meant a backend hiccup (500/502/503, or the
+// cps-api process simply being down) logged the user out and destroyed
+// their perfectly valid cookies — and since /login talks to the same
+// backend, they couldn't even sign back in. Any other status is a server
+// problem, not a session problem: rethrow it so Next.js renders an error
+// boundary ("something went wrong") and the session survives for when the
+// backend recovers.
 export const getCurrentSession = cache(
   async (): Promise<CurrentSession | null> => {
     const store = await cookies();
@@ -59,8 +68,10 @@ export const getCurrentSession = cache(
         permissions: me.data.accessControl.permissions,
       };
     } catch (err) {
-      if (!(err instanceof ApiError)) throw err;
-      return null;
+      if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
+        return null;
+      }
+      throw err;
     }
   }
 );

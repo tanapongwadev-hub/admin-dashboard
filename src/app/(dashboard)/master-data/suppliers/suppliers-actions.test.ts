@@ -217,18 +217,16 @@ test("all public Supplier action wrappers forward to their perform* helpers", as
     restoreSupplierAction,
   } = await import("./actions");
 
-  const createResult = await createSupplierAction(makeCreatePayload());
-  assert.equal(createResult.status, "error");
-  assert.match((createResult as { message: string }).message, /เซสชันของคุณหมดอายุ/);
-
-  const updateResult = await updateSupplierAction("sup-1", makeUpdatePayload());
-  assert.equal(updateResult.status, "error");
-
-  const deactivateResult = await deactivateSupplierAction("sup-1");
-  assert.equal(deactivateResult.status, "error");
-
-  const restoreResult = await restoreSupplierAction("sup-1");
-  assert.equal(restoreResult.status, "error");
+  // With no access token present, every wrapper now signs the user out
+  // (redirect to /api/auth/clear-cookies) instead of returning an error
+  // object — redirect() throws Next.js's NEXT_REDIRECT sentinel, so each
+  // call rejects. What this test actually pins down is unchanged: the
+  // wrapper reads cookies first and never reaches the API without a token
+  // (fetchCount stays 0 below).
+  await assert.rejects(() => createSupplierAction(makeCreatePayload()));
+  await assert.rejects(() => updateSupplierAction("sup-1", makeUpdatePayload()));
+  await assert.rejects(() => deactivateSupplierAction("sup-1"));
+  await assert.rejects(() => restoreSupplierAction("sup-1"));
 
   assert.equal(fetchCount, 0, "fetch must not be called when access token is missing");
 });

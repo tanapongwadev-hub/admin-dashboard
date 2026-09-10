@@ -14,6 +14,7 @@ import {
   type UpdateMaterialPayload,
 } from "@/lib/api/materials";
 import { ApiError } from "@/lib/api/client";
+import { redirectIfSessionExpired, redirectMissingSession } from "@/lib/session-expiry";
 
 export type MaterialActionResult =
   | { status: "success"; material: Material }
@@ -32,6 +33,9 @@ async function requireAccessToken() {
 }
 
 function errorResult(err: unknown): MaterialActionFailure {
+  // Session expired mid-action (401) --> sign the user out immediately
+  // instead of showing a dead-end error toast. See lib/session-expiry.ts.
+  redirectIfSessionExpired(err);
   if (err instanceof ApiError) {
     if (err.status === 409) {
       return {
@@ -149,7 +153,7 @@ export async function performUploadMaterialImage(
 
 export async function createMaterialPcAction(payload: MaterialPayload): Promise<MaterialActionResult> {
   const accessToken = await requireAccessToken();
-  if (!accessToken) return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
+  if (!accessToken) redirectMissingSession();
   return performCreateMaterial(accessToken, payload);
 }
 
@@ -158,19 +162,19 @@ export async function updateMaterialPcAction(
   payload: UpdateMaterialPayload
 ): Promise<MaterialActionResult> {
   const accessToken = await requireAccessToken();
-  if (!accessToken) return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
+  if (!accessToken) redirectMissingSession();
   return performUpdateMaterial(accessToken, id, payload);
 }
 
 export async function deactivateMaterialPcAction(id: string): Promise<MaterialActionResult> {
   const accessToken = await requireAccessToken();
-  if (!accessToken) return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
+  if (!accessToken) redirectMissingSession();
   return performDeactivateMaterial(accessToken, id);
 }
 
 export async function restoreMaterialPcAction(id: string): Promise<MaterialActionResult> {
   const accessToken = await requireAccessToken();
-  if (!accessToken) return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
+  if (!accessToken) redirectMissingSession();
   return performRestoreMaterial(accessToken, id);
 }
 
@@ -178,8 +182,6 @@ export async function uploadMaterialPcImageAction(
   formData: FormData
 ): Promise<MaterialImageUploadActionResult> {
   const accessToken = await requireAccessToken();
-  if (!accessToken) {
-    return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
-  }
+  if (!accessToken) redirectMissingSession();
   return performUploadMaterialImage(accessToken, formData);
 }

@@ -13,6 +13,7 @@ import {
   type UpdateMenuPayload,
 } from "@/lib/api/menus";
 import { ApiError } from "@/lib/api/client";
+import { redirectIfSessionExpired, redirectMissingSession } from "@/lib/session-expiry";
 
 export type SaveMenuOrderResult =
   | { status: "success"; version: string }
@@ -34,6 +35,9 @@ async function requireAccessToken() {
 }
 
 function errorMessage(error: unknown, fallback: string) {
+  // Session expired mid-action (401) --> sign the user out immediately
+  // instead of showing a dead-end error toast. See lib/session-expiry.ts.
+  redirectIfSessionExpired(error);
   if (error instanceof ApiError) {
     const body = error.body as { message?: string | string[] } | undefined;
     const message = body?.message;
@@ -73,6 +77,7 @@ export async function performSaveMenuOrder(
     const result = await reorderMenus(accessToken, { version, items });
     return { status: "success", version: result.version };
   } catch (err) {
+    redirectIfSessionExpired(err);
     if (err instanceof ApiError && err.status === 409) {
       return {
         status: "conflict",
@@ -93,7 +98,8 @@ export async function performRefreshMenuTree(
   try {
     const tree = await getManagementTree(accessToken);
     return { status: "success", version: tree.version, menus: tree.menus };
-  } catch {
+  } catch (err) {
+    redirectIfSessionExpired(err);
     return { status: "error", message: "ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้" };
   }
 }
@@ -140,25 +146,19 @@ export async function saveMenuOrderAction(
   items: ReorderMenuItem[]
 ): Promise<SaveMenuOrderResult> {
   const accessToken = await requireAccessToken();
-  if (!accessToken) {
-    return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
-  }
+  if (!accessToken) redirectMissingSession();
   return performSaveMenuOrder(accessToken, version, items);
 }
 
 export async function refreshMenuTreeAction(): Promise<RefreshMenuTreeResult> {
   const accessToken = await requireAccessToken();
-  if (!accessToken) {
-    return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
-  }
+  if (!accessToken) redirectMissingSession();
   return performRefreshMenuTree(accessToken);
 }
 
 export async function createMenuAction(payload: CreateMenuPayload): Promise<MenuMutationResult> {
   const accessToken = await requireAccessToken();
-  if (!accessToken) {
-    return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
-  }
+  if (!accessToken) redirectMissingSession();
   return performCreateMenu(accessToken, payload);
 }
 
@@ -167,16 +167,12 @@ export async function updateMenuAction(
   payload: UpdateMenuPayload
 ): Promise<MenuMutationResult> {
   const accessToken = await requireAccessToken();
-  if (!accessToken) {
-    return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
-  }
+  if (!accessToken) redirectMissingSession();
   return performUpdateMenu(accessToken, id, payload);
 }
 
 export async function deleteMenuAction(id: string): Promise<MenuMutationResult> {
   const accessToken = await requireAccessToken();
-  if (!accessToken) {
-    return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
-  }
+  if (!accessToken) redirectMissingSession();
   return performDeleteMenu(accessToken, id);
 }

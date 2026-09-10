@@ -23,6 +23,7 @@ import {
   type CreateProductWorkflowPayload,
 } from "@/lib/api/product-workflows";
 import { ApiError } from "@/lib/api/client";
+import { redirectIfSessionExpired, redirectMissingSession } from "@/lib/session-expiry";
 
 export type ProductActionResult =
   | { status: "success"; product: Product }
@@ -57,6 +58,9 @@ async function requireAccessToken() {
 }
 
 function errorResult(err: unknown): ProductActionFailure {
+  // Session expired mid-action (401) --> sign the user out immediately
+  // instead of showing a dead-end error toast. See lib/session-expiry.ts.
+  redirectIfSessionExpired(err);
   if (err instanceof ApiError) {
     if (err.status === 409) {
       return {
@@ -251,15 +255,13 @@ export async function performListProductWorkflowsByProduct(
 
 export async function uploadProductImageAction(formData: FormData): Promise<ProductImageUploadActionResult> {
   const accessToken = await requireAccessToken();
-  if (!accessToken) {
-    return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
-  }
+  if (!accessToken) redirectMissingSession();
   return performUploadProductImage(accessToken, formData);
 }
 
 export async function createProductAction(payload: ProductPayload): Promise<ProductActionResult> {
   const accessToken = await requireAccessToken();
-  if (!accessToken) return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
+  if (!accessToken) redirectMissingSession();
   return performCreateProduct(accessToken, payload);
 }
 
@@ -268,37 +270,37 @@ export async function updateProductAction(
   payload: UpdateProductPayload
 ): Promise<ProductActionResult> {
   const accessToken = await requireAccessToken();
-  if (!accessToken) return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
+  if (!accessToken) redirectMissingSession();
   return performUpdateProduct(accessToken, id, payload);
 }
 
 export async function deactivateProductAction(id: string): Promise<ProductActionResult> {
   const accessToken = await requireAccessToken();
-  if (!accessToken) return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
+  if (!accessToken) redirectMissingSession();
   return performDeactivateProduct(accessToken, id);
 }
 
 export async function restoreProductAction(id: string): Promise<ProductActionResult> {
   const accessToken = await requireAccessToken();
-  if (!accessToken) return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
+  if (!accessToken) redirectMissingSession();
   return performRestoreProduct(accessToken, id);
 }
 
 export async function createBomAction(payload: CreateBomPayload): Promise<BomActionResult> {
   const accessToken = await requireAccessToken();
-  if (!accessToken) return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
+  if (!accessToken) redirectMissingSession();
   return performCreateBom(accessToken, payload);
 }
 
 export async function activateBomAction(id: string): Promise<BomActionResult> {
   const accessToken = await requireAccessToken();
-  if (!accessToken) return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
+  if (!accessToken) redirectMissingSession();
   return performActivateBom(accessToken, id);
 }
 
 export async function listBomsByProductAction(productId: string): Promise<BomListActionResult> {
   const accessToken = await requireAccessToken();
-  if (!accessToken) return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
+  if (!accessToken) redirectMissingSession();
   return performListBomsByProduct(accessToken, productId);
 }
 
@@ -306,13 +308,13 @@ export async function createProductWorkflowAction(
   payload: CreateProductWorkflowPayload
 ): Promise<ProductWorkflowActionResult> {
   const accessToken = await requireAccessToken();
-  if (!accessToken) return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
+  if (!accessToken) redirectMissingSession();
   return performCreateProductWorkflow(accessToken, payload);
 }
 
 export async function activateProductWorkflowAction(id: string): Promise<ProductWorkflowActionResult> {
   const accessToken = await requireAccessToken();
-  if (!accessToken) return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
+  if (!accessToken) redirectMissingSession();
   return performActivateProductWorkflow(accessToken, id);
 }
 
@@ -320,7 +322,7 @@ export async function listProductWorkflowsByProductAction(
   productId: string
 ): Promise<ProductWorkflowListActionResult> {
   const accessToken = await requireAccessToken();
-  if (!accessToken) return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
+  if (!accessToken) redirectMissingSession();
   return performListProductWorkflowsByProduct(accessToken, productId);
 }
 
@@ -349,8 +351,6 @@ export async function uploadProductWorkflowImageAction(
   formData: FormData
 ): Promise<ProductWorkflowImageUploadActionResult> {
   const accessToken = await requireAccessToken();
-  if (!accessToken) {
-    return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
-  }
+  if (!accessToken) redirectMissingSession();
   return performUploadProductWorkflowImage(accessToken, formData);
 }

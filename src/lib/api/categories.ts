@@ -1,4 +1,4 @@
-import { apiFetch } from "./client";
+import { createResourceApi, type BaseListParams, type PaginatedResult } from "./create-resource-api";
 
 // Master data for the "หมวดหมู่" (category) lookup used across the system.
 // Mirrors cps-api's real `/categories` module — see
@@ -15,9 +15,15 @@ import { apiFetch } from "./client";
 //    another active category as its parent). The admin UI does NOT expose
 //    the tree structure today — it's stored but not surfaced — matching the
 //    backend's own `/categories` list which returns a flat paginated list.
-//  - Default sort is `sortOrder` (per API_ENDPOINTS.md § 5.1), not `code`.
+//  - Default sort is `sortOrder` (per API_ENDPOINTS.md § 5.1) — the only
+//    simple master where this is true; every other resource defaults to
+//    `code`.
 //  - Update requires the row's current `updatedAt` (optimistic concurrency,
-//    same shape as Materials PC and Products).
+//    same shape as every other simple master).
+//
+// The actual list/get/create/update/deactivate/restore functions are the
+// shared `createResourceApi` factory (see create-resource-api.ts) — this
+// file's only job is declaring the real domain difference: field shapes.
 
 export interface Category {
   id: string;
@@ -35,19 +41,11 @@ export interface Category {
   updatedAt: string;
 }
 
-export interface ListCategoriesParams {
-  page?: number;
-  limit?: number;
-  search?: string;
-  isActive?: boolean;
+export interface ListCategoriesParams extends BaseListParams {
   sortBy?: "code" | "nameTh" | "sortOrder" | "isActive" | "createdAt" | "updatedAt";
-  sortOrder?: "asc" | "desc";
 }
 
-export interface PaginatedCategories {
-  items: Category[];
-  meta: { page: number; limit: number; totalItems: number; totalPages: number };
-}
+export type PaginatedCategories = PaginatedResult<Category>;
 
 export interface CategoryPayload {
   code: string;
@@ -66,56 +64,11 @@ export interface UpdateCategoryPayload extends Partial<CategoryPayload> {
   updatedAt: string;
 }
 
-function buildQueryString(params: ListCategoriesParams): string {
-  const query = new URLSearchParams();
-  if (params.page) query.set("page", String(params.page));
-  if (params.limit) query.set("limit", String(params.limit));
-  if (params.search) query.set("search", params.search);
-  if (params.isActive !== undefined) query.set("isActive", String(params.isActive));
-  if (params.sortBy) query.set("sortBy", params.sortBy);
-  if (params.sortOrder) query.set("sortOrder", params.sortOrder);
-  return query.toString();
-}
+const api = createResourceApi<Category, CategoryPayload, UpdateCategoryPayload, ListCategoriesParams>("/categories");
 
-export function listCategories(accessToken: string, params: ListCategoriesParams = {}) {
-  const qs = buildQueryString(params);
-  return apiFetch<PaginatedCategories>(`/categories${qs ? `?${qs}` : ""}`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-}
-
-export function getCategory(accessToken: string, id: string) {
-  return apiFetch<Category>(`/categories/${id}`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-}
-
-export function createCategory(accessToken: string, payload: CategoryPayload) {
-  return apiFetch<Category>("/categories", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${accessToken}` },
-    body: JSON.stringify(payload),
-  });
-}
-
-export function updateCategory(accessToken: string, id: string, payload: UpdateCategoryPayload) {
-  return apiFetch<Category>(`/categories/${id}`, {
-    method: "PATCH",
-    headers: { Authorization: `Bearer ${accessToken}` },
-    body: JSON.stringify(payload),
-  });
-}
-
-export function deactivateCategory(accessToken: string, id: string) {
-  return apiFetch<Category>(`/categories/${id}`, {
-    method: "DELETE",
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-}
-
-export function restoreCategory(accessToken: string, id: string) {
-  return apiFetch<Category>(`/categories/${id}/restore`, {
-    method: "PATCH",
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-}
+export const listCategories = api.list;
+export const getCategory = api.get;
+export const createCategory = api.create;
+export const updateCategory = api.update;
+export const deactivateCategory = api.deactivate;
+export const restoreCategory = api.restore;

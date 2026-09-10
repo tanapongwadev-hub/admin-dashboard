@@ -218,18 +218,16 @@ test("all public MaterialModel action wrappers forward to their perform* helpers
     restoreMaterialModelAction,
   } = await import("./actions");
 
-  const createResult = await createMaterialModelAction(makeCreatePayload());
-  assert.equal(createResult.status, "error");
-  assert.match((createResult as { message: string }).message, /เซสชันของคุณหมดอายุ/);
-
-  const updateResult = await updateMaterialModelAction("mm-1", makeUpdatePayload());
-  assert.equal(updateResult.status, "error");
-
-  const deactivateResult = await deactivateMaterialModelAction("mm-1");
-  assert.equal(deactivateResult.status, "error");
-
-  const restoreResult = await restoreMaterialModelAction("mm-1");
-  assert.equal(restoreResult.status, "error");
+  // With no access token present, every wrapper now signs the user out
+  // (redirect to /api/auth/clear-cookies) instead of returning an error
+  // object — redirect() throws Next.js's NEXT_REDIRECT sentinel, so each
+  // call rejects. What this test actually pins down is unchanged: the
+  // wrapper reads cookies first and never reaches the API without a token
+  // (fetchCount stays 0 below).
+  await assert.rejects(() => createMaterialModelAction(makeCreatePayload()));
+  await assert.rejects(() => updateMaterialModelAction("mm-1", makeUpdatePayload()));
+  await assert.rejects(() => deactivateMaterialModelAction("mm-1"));
+  await assert.rejects(() => restoreMaterialModelAction("mm-1"));
 
   assert.equal(fetchCount, 0, "fetch must not be called when access token is missing");
 });

@@ -1,4 +1,4 @@
-import { apiFetch } from "./client";
+import { createResourceApi, type BaseListParams, type PaginatedResult } from "./create-resource-api";
 
 // Master data for the "ผู้จัดจำหน่าย" (supplier) lookup. Mirrors
 // cps-api's real `/suppliers` module — see cps-api/API_ENDPOINTS.md
@@ -8,8 +8,13 @@ import { apiFetch } from "./client";
 // Backend fields: `code` and `nameTh` (required), `nameEn`, `taxId`,
 // `contactName`, `telephone`, `email`, `address`, `isActive` (all optional).
 // Service normalizes `code` to upper-case on write but returns the stored
-// value as-is. Default sort is `code` (per ListSuppliersQueryDto).
-// Update requires the row's current `updatedAt` (optimistic concurrency).
+// value as-is. Default sort is `code`. Update requires the row's current
+// `updatedAt` (optimistic concurrency).
+//
+// Wider field set than the other simple masters (9 fields vs 4), but the
+// same list/get/create/update/deactivate/restore shape — still the shared
+// `createResourceApi` factory (see create-resource-api.ts); this file's
+// only job is declaring the real domain difference: field shapes.
 
 export interface Supplier {
   id: string;
@@ -28,19 +33,11 @@ export interface Supplier {
   updatedAt: string;
 }
 
-export interface ListSuppliersParams {
-  page?: number;
-  limit?: number;
-  search?: string;
-  isActive?: boolean;
+export interface ListSuppliersParams extends BaseListParams {
   sortBy?: "code" | "nameTh" | "isActive" | "createdAt" | "updatedAt";
-  sortOrder?: "asc" | "desc";
 }
 
-export interface PaginatedSuppliers {
-  items: Supplier[];
-  meta: { page: number; limit: number; totalItems: number; totalPages: number };
-}
+export type PaginatedSuppliers = PaginatedResult<Supplier>;
 
 export interface SupplierPayload {
   code: string;
@@ -60,56 +57,11 @@ export interface UpdateSupplierPayload extends Partial<SupplierPayload> {
   updatedAt: string;
 }
 
-function buildQueryString(params: ListSuppliersParams): string {
-  const query = new URLSearchParams();
-  if (params.page) query.set("page", String(params.page));
-  if (params.limit) query.set("limit", String(params.limit));
-  if (params.search) query.set("search", params.search);
-  if (params.isActive !== undefined) query.set("isActive", String(params.isActive));
-  if (params.sortBy) query.set("sortBy", params.sortBy);
-  if (params.sortOrder) query.set("sortOrder", params.sortOrder);
-  return query.toString();
-}
+const api = createResourceApi<Supplier, SupplierPayload, UpdateSupplierPayload, ListSuppliersParams>("/suppliers");
 
-export function listSuppliers(accessToken: string, params: ListSuppliersParams = {}) {
-  const qs = buildQueryString(params);
-  return apiFetch<PaginatedSuppliers>(`/suppliers${qs ? `?${qs}` : ""}`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-}
-
-export function getSupplier(accessToken: string, id: string) {
-  return apiFetch<Supplier>(`/suppliers/${id}`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-}
-
-export function createSupplier(accessToken: string, payload: SupplierPayload) {
-  return apiFetch<Supplier>("/suppliers", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${accessToken}` },
-    body: JSON.stringify(payload),
-  });
-}
-
-export function updateSupplier(accessToken: string, id: string, payload: UpdateSupplierPayload) {
-  return apiFetch<Supplier>(`/suppliers/${id}`, {
-    method: "PATCH",
-    headers: { Authorization: `Bearer ${accessToken}` },
-    body: JSON.stringify(payload),
-  });
-}
-
-export function deactivateSupplier(accessToken: string, id: string) {
-  return apiFetch<Supplier>(`/suppliers/${id}`, {
-    method: "DELETE",
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-}
-
-export function restoreSupplier(accessToken: string, id: string) {
-  return apiFetch<Supplier>(`/suppliers/${id}/restore`, {
-    method: "PATCH",
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-}
+export const listSuppliers = api.list;
+export const getSupplier = api.get;
+export const createSupplier = api.create;
+export const updateSupplier = api.update;
+export const deactivateSupplier = api.deactivate;
+export const restoreSupplier = api.restore;

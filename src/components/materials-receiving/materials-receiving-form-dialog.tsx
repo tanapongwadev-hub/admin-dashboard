@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { toast } from "sonner";
-import { PackageCheck, Boxes } from "lucide-react";
+import { PackageCheck, Boxes, CheckCircle2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -11,6 +11,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -329,17 +330,27 @@ export function MaterialsReceivingFormDialog({
             <LotTicket internalLotPreview={internalLotPreview} supplierLotPreview={supplierLotPreview} />
 
             {packagePreview.length > 0 ? (
-              <div className="flex flex-col gap-2">
-                <div className="flex items-baseline justify-between">
-                  <Label className="mb-0">กล่อง/แพ็กที่จะได้</Label>
-                  <span className="text-xs font-medium text-fg-secondary">{packagePreview.length} กล่อง</span>
+              // Card, not a bare bordered box — same header/body/footer shape
+              // as every other data card in the app (see AGENTS.md § Theme):
+              // a labeled header with a count badge, a scrollable tile grid
+              // body, and a footer strip that states the reconciliation
+              // (total tiles == receive qty) as its own clear line instead of
+              // a trailing "= X ✓" fragment easy to miss.
+              <div className="flex flex-1 flex-col overflow-hidden rounded-xl border border-border bg-surface">
+                <div className="flex items-center justify-between border-b border-border px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <Boxes className="size-4 text-primary" aria-hidden="true" />
+                    <span className="text-sm font-semibold text-fg">กล่อง/แพ็กที่จะได้</span>
+                  </div>
+                  <Badge variant="primary">{packagePreview.length} กล่อง</Badge>
                 </div>
-                <div className="flex max-h-64 flex-wrap gap-2 overflow-y-auto rounded-lg border border-border bg-surface p-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+
+                <div className="grid max-h-64 grid-cols-3 gap-2 overflow-y-auto p-3 sm:grid-cols-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                   {packagePreview.map((row) => (
                     <div
                       key={row.packageNo}
                       className={cn(
-                        "flex w-[4.5rem] flex-col items-center gap-0.5 rounded-lg border px-2 py-2",
+                        "flex flex-col items-center gap-1 rounded-lg border px-2 py-2.5",
                         row.isRemainder
                           ? "border-dashed border-warning/50 bg-warning-soft"
                           : "border-border-strong bg-primary-soft"
@@ -349,20 +360,34 @@ export function MaterialsReceivingFormDialog({
                       <span className={cn("font-mono text-[10px] font-semibold", row.isRemainder ? "text-warning" : "text-primary")}>
                         #{String(row.packageNo).padStart(3, "0")}
                       </span>
-                      <span className="text-sm font-bold tabular-nums text-fg">{formatNumber(row.quantity)}</span>
-                      <span className="text-[9px] font-medium uppercase tracking-wide text-fg-muted">
-                        {row.isRemainder ? "เศษ" : "เต็ม"}
+                      <span className="text-base font-bold leading-none tabular-nums text-fg">
+                        {formatNumber(row.quantity)}
                       </span>
+                      <Badge
+                        variant={row.isRemainder ? "warning" : "primary"}
+                        style={{ fontSize: "9px", padding: "0 5px", lineHeight: "14px" }}
+                      >
+                        {row.isRemainder ? "เศษ" : "เต็ม"}
+                      </Badge>
                     </div>
                   ))}
                 </div>
-                <p className="text-[11px] text-fg-muted">
-                  รวม {formatNumber(packagePreviewTotal)} = จำนวนรับเข้า {formatNumber(receiveQty)}
-                  {packagePreviewTotal === receiveQty && receiveQty > 0 ? " ✓" : ""}
-                </p>
+
+                <div className="flex items-center justify-between gap-2 border-t border-border bg-surface-2/60 px-4 py-2.5">
+                  <span className="text-[11px] text-fg-muted">
+                    รวม {formatNumber(packagePreviewTotal)} จาก {formatNumber(receiveQty)}
+                  </span>
+                  {packagePreviewTotal === receiveQty && receiveQty > 0 ? (
+                    <span className="flex items-center gap-1 text-[11px] font-semibold text-success">
+                      <CheckCircle2 className="size-3.5" aria-hidden="true" /> ครบตามจำนวนรับเข้า
+                    </span>
+                  ) : (
+                    <span className="text-[11px] font-medium text-fg-muted">กำลังคำนวณ…</span>
+                  )}
+                </div>
               </div>
             ) : (
-              <div className="flex flex-1 flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border py-10 text-center">
+              <div className="flex flex-1 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border py-10 text-center">
                 <Boxes className="size-6 text-fg-muted" aria-hidden="true" />
                 <p className="text-xs text-fg-muted">
                   เลือกวัสดุและกรอกจำนวนรับเข้า

@@ -1,7 +1,5 @@
 "use server";
 
-import { cookies } from "next/headers";
-import { revalidatePath } from "next/cache";
 import {
   createCategory,
   updateCategory,
@@ -11,128 +9,48 @@ import {
   type CategoryPayload,
   type UpdateCategoryPayload,
 } from "@/lib/api/categories";
-import { ApiError } from "@/lib/api/client";
+import { createCrudActions, type CrudActionResult } from "@/lib/create-crud-actions";
 
-// Server Actions for the `/master-data/categories` admin page. Same
-// `perform*` helper + thin cookie-reading public-wrapper pattern as
-// `materials/pc/actions.ts` and `products/actions.ts` — the helpers take
-// `accessToken` as a parameter so tests can call them directly with a
-// controlled token without mocking `next/headers`. `revalidatePath` is
-// wrapped in its own try-catch (best-effort) so a revalidation failure
-// never downgrades a successful save to an error toast (see
-// `materials/pc/actions.ts` for the same reasoning).
+// Server Actions for the `/master-data/categories` admin page. All the
+// real logic (cookie read, 409 mapping, session-expiry sign-out,
+// best-effort revalidatePath) lives in the shared `createCrudActions`
+// factory (see lib/create-crud-actions.ts) — this file only binds it to
+// this resource's own API functions/copy, then re-declares each function
+// as a literal export (required for Next's "use server" transform to
+// recognize it as a Server Action; a bare `export const x = someImport`
+// re-export is not guaranteed to be picked up the same way).
 
-export type CategoryActionResult =
-  | { status: "success"; category: Category }
-  | { status: "conflict"; message: string }
-  | { status: "error"; message: string };
+export type CategoryActionResult = CrudActionResult<"category", Category>;
 
-type CategoryActionFailure = Exclude<CategoryActionResult, { status: "success" }>;
+const actions = createCrudActions({
+  api: { create: createCategory, update: updateCategory, deactivate: deactivateCategory, restore: restoreCategory },
+  resultKey: "category",
+  revalidatePath: "/master-data/categories",
+  conflictMessage: "ข้อมูลหมวดหมู่นี้ถูกอัปเดตจากที่อื่นแล้ว กรุณารีเฟรชแล้วลองอีกครั้ง",
+});
 
-async function requireAccessToken() {
-  const store = await cookies();
-  return store.get("accessToken")?.value ?? null;
+export async function performCreateCategory(accessToken: string, payload: CategoryPayload) {
+  return actions.performCreate(accessToken, payload);
+}
+export async function performUpdateCategory(accessToken: string, id: string, payload: UpdateCategoryPayload) {
+  return actions.performUpdate(accessToken, id, payload);
+}
+export async function performDeactivateCategory(accessToken: string, id: string) {
+  return actions.performDeactivate(accessToken, id);
+}
+export async function performRestoreCategory(accessToken: string, id: string) {
+  return actions.performRestore(accessToken, id);
 }
 
-function errorResult(err: unknown): CategoryActionFailure {
-  if (err instanceof ApiError) {
-    if (err.status === 409) {
-      return {
-        status: "conflict",
-        message: "ข้อมูลหมวดหมู่นี้ถูกอัปเดตจากที่อื่นแล้ว กรุณารีเฟรชแล้วลองอีกครั้ง",
-      };
-    }
-    const body = err.body as { message?: string | string[] } | undefined;
-    const message = Array.isArray(body?.message) ? body.message.join(", ") : body?.message;
-    return { status: "error", message: message ?? "เกิดข้อผิดพลาด กรุณาลองอีกครั้ง" };
-  }
-  return { status: "error", message: "ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้" };
+export async function createCategoryAction(payload: CategoryPayload) {
+  return actions.create(payload);
 }
-
-function revalidateCategoriesPath() {
-  revalidatePath("/master-data/categories");
+export async function updateCategoryAction(id: string, payload: UpdateCategoryPayload) {
+  return actions.update(id, payload);
 }
-
-export async function performCreateCategory(
-  accessToken: string,
-  payload: CategoryPayload
-): Promise<CategoryActionResult> {
-  let category: Category;
-  try {
-    category = await createCategory(accessToken, payload);
-  } catch (err) {
-    return errorResult(err);
-  }
-  try { revalidateCategoriesPath(); } catch { /* best-effort */ }
-  return { status: "success", category };
+export async function deactivateCategoryAction(id: string) {
+  return actions.deactivate(id);
 }
-
-export async function performUpdateCategory(
-  accessToken: string,
-  id: string,
-  payload: UpdateCategoryPayload
-): Promise<CategoryActionResult> {
-  let category: Category;
-  try {
-    category = await updateCategory(accessToken, id, payload);
-  } catch (err) {
-    return errorResult(err);
-  }
-  try { revalidateCategoriesPath(); } catch { /* best-effort */ }
-  return { status: "success", category };
-}
-
-export async function performDeactivateCategory(
-  accessToken: string,
-  id: string
-): Promise<CategoryActionResult> {
-  let category: Category;
-  try {
-    category = await deactivateCategory(accessToken, id);
-  } catch (err) {
-    return errorResult(err);
-  }
-  try { revalidateCategoriesPath(); } catch { /* best-effort */ }
-  return { status: "success", category };
-}
-
-export async function performRestoreCategory(
-  accessToken: string,
-  id: string
-): Promise<CategoryActionResult> {
-  let category: Category;
-  try {
-    category = await restoreCategory(accessToken, id);
-  } catch (err) {
-    return errorResult(err);
-  }
-  try { revalidateCategoriesPath(); } catch { /* best-effort */ }
-  return { status: "success", category };
-}
-
-export async function createCategoryAction(payload: CategoryPayload): Promise<CategoryActionResult> {
-  const accessToken = await requireAccessToken();
-  if (!accessToken) return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
-  return performCreateCategory(accessToken, payload);
-}
-
-export async function updateCategoryAction(
-  id: string,
-  payload: UpdateCategoryPayload
-): Promise<CategoryActionResult> {
-  const accessToken = await requireAccessToken();
-  if (!accessToken) return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
-  return performUpdateCategory(accessToken, id, payload);
-}
-
-export async function deactivateCategoryAction(id: string): Promise<CategoryActionResult> {
-  const accessToken = await requireAccessToken();
-  if (!accessToken) return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
-  return performDeactivateCategory(accessToken, id);
-}
-
-export async function restoreCategoryAction(id: string): Promise<CategoryActionResult> {
-  const accessToken = await requireAccessToken();
-  if (!accessToken) return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
-  return performRestoreCategory(accessToken, id);
+export async function restoreCategoryAction(id: string) {
+  return actions.restore(id);
 }

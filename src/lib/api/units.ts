@@ -1,4 +1,4 @@
-import { apiFetch } from "./client";
+import { createResourceApi, type BaseListParams, type PaginatedResult } from "./create-resource-api";
 
 // Master data for the "หน่วยนับ" (unit of measure) lookup. Mirrors
 // cps-api's real `/units` module — see cps-api/API_ENDPOINTS.md
@@ -8,12 +8,15 @@ import { apiFetch } from "./client";
 // Backend fields: `code` and `nameTh` (required), `nameEn`, `symbol`,
 // `description`, `isActive` (all optional). Service normalizes `code`
 // to upper-case on write but returns the stored value as-is. Default sort
-// is `code` (per ListUnitsQueryDto). Update requires the row's current
-// `updatedAt` (optimistic concurrency). Compared to the parallel
-// `material-models` resource: this module has an extra `symbol` field
-// (e.g. "ชิ้น", "กิโลกรัม", "ลิตร") which appears in the form and
-// details dialog but is intentionally omitted from the table columns
-// to keep the table readable.
+// is `code`. Update requires the row's current `updatedAt` (optimistic
+// concurrency). Compared to the parallel `material-models` resource:
+// this module has an extra `symbol` field (e.g. "ชิ้น", "กิโลกรัม",
+// "ลิตร") which appears in the form and details dialog but is
+// intentionally omitted from the table columns to keep the table readable.
+//
+// The actual list/get/create/update/deactivate/restore functions are the
+// shared `createResourceApi` factory (see create-resource-api.ts) — this
+// file's only job is declaring the real domain difference: field shapes.
 
 export interface Unit {
   id: string;
@@ -29,19 +32,11 @@ export interface Unit {
   updatedAt: string;
 }
 
-export interface ListUnitsParams {
-  page?: number;
-  limit?: number;
-  search?: string;
-  isActive?: boolean;
+export interface ListUnitsParams extends BaseListParams {
   sortBy?: "code" | "nameTh" | "isActive" | "createdAt" | "updatedAt";
-  sortOrder?: "asc" | "desc";
 }
 
-export interface PaginatedUnits {
-  items: Unit[];
-  meta: { page: number; limit: number; totalItems: number; totalPages: number };
-}
+export type PaginatedUnits = PaginatedResult<Unit>;
 
 export interface UnitPayload {
   code: string;
@@ -58,56 +53,11 @@ export interface UpdateUnitPayload extends Partial<UnitPayload> {
   updatedAt: string;
 }
 
-function buildQueryString(params: ListUnitsParams): string {
-  const query = new URLSearchParams();
-  if (params.page) query.set("page", String(params.page));
-  if (params.limit) query.set("limit", String(params.limit));
-  if (params.search) query.set("search", params.search);
-  if (params.isActive !== undefined) query.set("isActive", String(params.isActive));
-  if (params.sortBy) query.set("sortBy", params.sortBy);
-  if (params.sortOrder) query.set("sortOrder", params.sortOrder);
-  return query.toString();
-}
+const api = createResourceApi<Unit, UnitPayload, UpdateUnitPayload, ListUnitsParams>("/units");
 
-export function listUnits(accessToken: string, params: ListUnitsParams = {}) {
-  const qs = buildQueryString(params);
-  return apiFetch<PaginatedUnits>(`/units${qs ? `?${qs}` : ""}`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-}
-
-export function getUnit(accessToken: string, id: string) {
-  return apiFetch<Unit>(`/units/${id}`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-}
-
-export function createUnit(accessToken: string, payload: UnitPayload) {
-  return apiFetch<Unit>("/units", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${accessToken}` },
-    body: JSON.stringify(payload),
-  });
-}
-
-export function updateUnit(accessToken: string, id: string, payload: UpdateUnitPayload) {
-  return apiFetch<Unit>(`/units/${id}`, {
-    method: "PATCH",
-    headers: { Authorization: `Bearer ${accessToken}` },
-    body: JSON.stringify(payload),
-  });
-}
-
-export function deactivateUnit(accessToken: string, id: string) {
-  return apiFetch<Unit>(`/units/${id}`, {
-    method: "DELETE",
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-}
-
-export function restoreUnit(accessToken: string, id: string) {
-  return apiFetch<Unit>(`/units/${id}/restore`, {
-    method: "PATCH",
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-}
+export const listUnits = api.list;
+export const getUnit = api.get;
+export const createUnit = api.create;
+export const updateUnit = api.update;
+export const deactivateUnit = api.deactivate;
+export const restoreUnit = api.restore;

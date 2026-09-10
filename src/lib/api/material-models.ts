@@ -1,4 +1,4 @@
-import { apiFetch } from "./client";
+import { createResourceApi, type BaseListParams, type PaginatedResult } from "./create-resource-api";
 
 // Master data for the "รุ่นวัสดุ" (material model) lookup. Mirrors
 // cps-api's real `/material-models` module — see cps-api/API_ENDPOINTS.md
@@ -7,14 +7,17 @@ import { apiFetch } from "./client";
 //
 // Backend fields: `code` and `nameTh` (required), `nameEn`, `description`,
 // `isActive` (all optional). Service normalizes `code` to upper-case on
-// write but returns the stored value as-is. Default sort is `code` (per
-// ListMaterialModelsQueryDto in the backend DTO). Update requires the row's
-// current `updatedAt` (optimistic concurrency, same shape as all other simple
-// master resources).
+// write but returns the stored value as-is. Default sort is `code`. Update
+// requires the row's current `updatedAt` (optimistic concurrency, same
+// shape as every other simple master).
 //
 // Compared to the parallel `categories.ts` resource: this module has
 // **no** `parentId`, `sortOrder`, or `iconColor` fields, so the API
 // surface and the form dialog both stay simpler (4 fields vs 7).
+//
+// The actual list/get/create/update/deactivate/restore functions are the
+// shared `createResourceApi` factory (see create-resource-api.ts) — this
+// file's only job is declaring the real domain difference: field shapes.
 
 export interface MaterialModel {
   id: string;
@@ -29,19 +32,11 @@ export interface MaterialModel {
   updatedAt: string;
 }
 
-export interface ListMaterialModelsParams {
-  page?: number;
-  limit?: number;
-  search?: string;
-  isActive?: boolean;
+export interface ListMaterialModelsParams extends BaseListParams {
   sortBy?: "code" | "nameTh" | "isActive" | "createdAt" | "updatedAt";
-  sortOrder?: "asc" | "desc";
 }
 
-export interface PaginatedMaterialModels {
-  items: MaterialModel[];
-  meta: { page: number; limit: number; totalItems: number; totalPages: number };
-}
+export type PaginatedMaterialModels = PaginatedResult<MaterialModel>;
 
 export interface MaterialModelPayload {
   code: string;
@@ -57,56 +52,13 @@ export interface UpdateMaterialModelPayload extends Partial<MaterialModelPayload
   updatedAt: string;
 }
 
-function buildQueryString(params: ListMaterialModelsParams): string {
-  const query = new URLSearchParams();
-  if (params.page) query.set("page", String(params.page));
-  if (params.limit) query.set("limit", String(params.limit));
-  if (params.search) query.set("search", params.search);
-  if (params.isActive !== undefined) query.set("isActive", String(params.isActive));
-  if (params.sortBy) query.set("sortBy", params.sortBy);
-  if (params.sortOrder) query.set("sortOrder", params.sortOrder);
-  return query.toString();
-}
+const api = createResourceApi<MaterialModel, MaterialModelPayload, UpdateMaterialModelPayload, ListMaterialModelsParams>(
+  "/material-models"
+);
 
-export function listMaterialModels(accessToken: string, params: ListMaterialModelsParams = {}) {
-  const qs = buildQueryString(params);
-  return apiFetch<PaginatedMaterialModels>(`/material-models${qs ? `?${qs}` : ""}`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-}
-
-export function getMaterialModel(accessToken: string, id: string) {
-  return apiFetch<MaterialModel>(`/material-models/${id}`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-}
-
-export function createMaterialModel(accessToken: string, payload: MaterialModelPayload) {
-  return apiFetch<MaterialModel>("/material-models", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${accessToken}` },
-    body: JSON.stringify(payload),
-  });
-}
-
-export function updateMaterialModel(accessToken: string, id: string, payload: UpdateMaterialModelPayload) {
-  return apiFetch<MaterialModel>(`/material-models/${id}`, {
-    method: "PATCH",
-    headers: { Authorization: `Bearer ${accessToken}` },
-    body: JSON.stringify(payload),
-  });
-}
-
-export function deactivateMaterialModel(accessToken: string, id: string) {
-  return apiFetch<MaterialModel>(`/material-models/${id}`, {
-    method: "DELETE",
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-}
-
-export function restoreMaterialModel(accessToken: string, id: string) {
-  return apiFetch<MaterialModel>(`/material-models/${id}/restore`, {
-    method: "PATCH",
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-}
+export const listMaterialModels = api.list;
+export const getMaterialModel = api.get;
+export const createMaterialModel = api.create;
+export const updateMaterialModel = api.update;
+export const deactivateMaterialModel = api.deactivate;
+export const restoreMaterialModel = api.restore;

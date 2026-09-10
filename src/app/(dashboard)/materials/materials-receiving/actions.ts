@@ -13,6 +13,7 @@ import {
   type CreateMaterialsReceivingPayload,
 } from "@/lib/api/materials-receiving";
 import { ApiError } from "@/lib/api/client";
+import { redirectIfSessionExpired, redirectMissingSession } from "@/lib/session-expiry";
 
 export type MaterialsReceivingActionResult =
   | { status: "success"; receiving: MaterialReceiving }
@@ -32,6 +33,9 @@ async function requireAccessToken() {
 }
 
 function errorResult(err: unknown): { status: "error"; message: string } {
+  // Session expired mid-action (401) --> sign the user out immediately
+  // instead of showing a dead-end error toast. See lib/session-expiry.ts.
+  redirectIfSessionExpired(err);
   if (err instanceof ApiError) {
     const body = err.body as { message?: string | string[] } | undefined;
     const message = Array.isArray(body?.message) ? body.message.join(", ") : body?.message;
@@ -121,13 +125,13 @@ export async function createMaterialsReceivingAction(
   payload: CreateMaterialsReceivingPayload
 ): Promise<MaterialsReceivingActionResult> {
   const accessToken = await requireAccessToken();
-  if (!accessToken) return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
+  if (!accessToken) redirectMissingSession();
   return performCreateMaterialsReceiving(accessToken, payload);
 }
 
 export async function confirmMaterialsReceivingAction(id: string): Promise<MaterialsReceivingActionResult> {
   const accessToken = await requireAccessToken();
-  if (!accessToken) return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
+  if (!accessToken) redirectMissingSession();
   return performConfirmMaterialsReceiving(accessToken, id);
 }
 
@@ -136,13 +140,13 @@ export async function cancelMaterialsReceivingAction(
   cancelReason: string
 ): Promise<MaterialsReceivingActionResult> {
   const accessToken = await requireAccessToken();
-  if (!accessToken) return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
+  if (!accessToken) redirectMissingSession();
   return performCancelMaterialsReceiving(accessToken, id, cancelReason);
 }
 
 export async function deleteMaterialsReceivingAction(id: string): Promise<MaterialsReceivingVoidActionResult> {
   const accessToken = await requireAccessToken();
-  if (!accessToken) return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
+  if (!accessToken) redirectMissingSession();
   return performDeleteMaterialsReceiving(accessToken, id);
 }
 
@@ -150,6 +154,6 @@ export async function getSuppliersByMaterialAction(
   materialId: string
 ): Promise<SuppliersByMaterialActionResult> {
   const accessToken = await requireAccessToken();
-  if (!accessToken) return { status: "error", message: "เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง" };
+  if (!accessToken) redirectMissingSession();
   return performGetSuppliersByMaterial(accessToken, materialId);
 }
