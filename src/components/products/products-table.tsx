@@ -5,7 +5,6 @@ import Image from "next/image";
 import { Pencil, Ban, RotateCcw, Package, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { RowActionsMenu, type RowAction } from "@/components/ui/row-actions-menu";
 import { ProductsImagePreview } from "@/components/products/products-image-preview";
@@ -13,9 +12,9 @@ import type { ViewMode } from "@/hooks/use-view-mode";
 import type { Product } from "@/lib/api/products";
 import { cn, formatNumber } from "@/lib/utils";
 
-// Aligned with Materials PC's design (Table / Editorial card with a Data
-// Sheet / Compact Row, essentials inline + a details dialog for the rest) —
-// see AGENTS.md § Products for the field-split rationale.
+// Aligned with Materials PC's current design (bounded sticky table /
+// compact Editorial card with a three-field meta strip / Compact Row,
+// with the full record in a details dialog) — see AGENTS.md § Products.
 
 interface ProductsCollectionProps {
   products: Product[];
@@ -184,7 +183,7 @@ function ProductThumbnail({ product, onPreview }: { product: Product; onPreview:
 }
 
 // =====================================================================
-// EDITORIAL CARD with DATA SHEET (view === "card")
+// COMPACT EDITORIAL CARD (view === "card")
 // =====================================================================
 
 function ProductEditorialPhoto({ product, onPreview }: { product: Product; onPreview: (product: Product) => void }) {
@@ -223,17 +222,14 @@ function ProductEditorialPhoto({ product, onPreview }: { product: Product; onPre
   );
 }
 
-// Data Sheet cell — identical shape to Materials PC's DataSheetRow (real
-// <table> markup, no truncation, break-words for long values) so the two
-// resources' cards read as one family.
-function DataSheetRow({ label, value }: { label: string; value: string }) {
+// Three-column summary strip — same compact shape as Materials PC's current
+// Editorial card. Detailed fields remain available in the details dialog.
+function CardMeta({ label, value }: { label: string; value: string }) {
   return (
-    <tr className="border-b border-border last:border-b-0">
-      <th scope="row" className="w-[42%] py-2.5 pl-[18px] pr-3 text-left align-top text-[12.5px] font-normal text-fg-muted">
-        {label}
-      </th>
-      <td className="py-2.5 pr-[18px] text-left align-top text-[13px] font-medium text-fg break-words">{value}</td>
-    </tr>
+    <div className="min-w-0 border-r border-border px-3 py-2.5 last:border-r-0">
+      <p className="mb-1 text-[10px] text-fg-muted">{label}</p>
+      <p className="truncate font-medium text-fg-secondary" title={value}>{value}</p>
+    </div>
   );
 }
 
@@ -250,47 +246,32 @@ function ProductEditorialCard({
 
   return (
     <article
-      className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-surface transition-shadow duration-200 hover:shadow-[0_8px_24px_-6px_rgba(0,0,0,0.08)]"
+      className="group flex h-full flex-col overflow-hidden rounded-md border border-border bg-surface shadow-sm transition-colors hover:border-border-strong"
       role="group"
       aria-label={`บัตรแสดงสินค้า ${product.name}`}
     >
-      <div className="relative aspect-[4/3] overflow-hidden bg-surface-2">
-        <div className="absolute inset-3">
+      <div className="relative aspect-[16/9] overflow-hidden bg-surface-2">
+        <div className="absolute inset-2.5">
           <ProductEditorialPhoto product={product} onPreview={onPreview} />
         </div>
-        <div className="absolute right-3.5 top-3.5 z-10">
+        <div className="absolute right-3 top-3 z-10 flex items-center gap-1.5">
           <ProductStatus product={product} />
+          <RowActionsMenu
+            itemLabel={product.name}
+            actions={getProductRowActions(product, canEdit, canDelete, { onEdit, onToggleStatus })}
+          />
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col px-[18px] pb-1 pt-[18px]">
-        <p className="mb-2 font-mono text-[11px] leading-none tracking-[0.05em] text-fg-secondary">{product.code}</p>
-        <h2 className="mb-1 truncate text-[17px] font-semibold leading-tight tracking-[-0.01em] text-fg" title={product.name}>
+      <div className="flex flex-1 flex-col px-4 pb-1 pt-4">
+        <p className="mb-1.5 font-mono text-[11px] leading-none tracking-[0.05em] text-primary">{product.code}</p>
+        <h2 className="mb-1 truncate text-base font-semibold leading-tight text-fg" title={product.name}>
           {product.name}
         </h2>
         <p className="truncate text-[12.5px] leading-tight text-fg-secondary">{productTypeLabel(product)}</p>
-
-        {/* Status is a toggle Switch, not a red/green text button — same
-            reasoning and confirm-before-toggle flow as Materials PC. */}
-        {canDelete && (
-          <label className="mt-2.5 flex w-fit cursor-pointer items-center gap-2">
-            <Switch
-              checked={product.isActive}
-              onCheckedChange={() => onToggleStatus(product)}
-              aria-label={product.isActive ? `ปิดใช้งาน ${product.name}` : `เปิดใช้งาน ${product.name}`}
-            />
-            <span className="text-xs font-medium text-fg-secondary">
-              {product.isActive ? "ใช้งานอยู่" : "ไม่ได้ใช้งาน"}
-            </span>
-          </label>
-        )}
       </div>
 
-      {/* Safety/Min Stock — the closest Products equivalent to Materials
-          PC's stock hero (no live stock-on-hand tracking exists for
-          finished products, see AGENTS.md § Products), shown as two
-          production-planning numbers side by side instead of one. */}
-      <div className="grid grid-cols-2 divide-x divide-border px-[18px] pb-3.5">
+      <div className="grid grid-cols-2 divide-x divide-border px-4 pb-3">
         <div className="min-w-0 pr-3">
           <span className="text-[10px] font-semibold uppercase leading-none tracking-[0.08em] text-primary">Safety Stock</span>
           <div className="mt-1.5">
@@ -311,30 +292,23 @@ function ProductEditorialCard({
         </div>
       </div>
 
-      <div className="border-t border-border">
-        <table className="w-full text-sm">
-          <tbody>
-            <DataSheetRow label="ประเภทสินค้า" value={productTypeLabel(product)} />
-            <DataSheetRow label="สถานที่" value={locationLabel(product)} />
-            <DataSheetRow label="ลูกค้า" value={customerLabel(product)} />
-            <DataSheetRow label="รุ่น" value={modelLabel(product)} />
-            <DataSheetRow label="หน่วย" value={unitLabel(product)} />
-            <DataSheetRow label="ประเภทการจัดส่ง" value={deliveryLabel(product)} />
-          </tbody>
-        </table>
+      <div className="grid grid-cols-3 border-t border-border bg-surface-2/40 text-xs">
+        <CardMeta label="ลูกค้า" value={customerLabel(product)} />
+        <CardMeta label="รุ่น" value={modelLabel(product)} />
+        <CardMeta label="สายการผลิต" value={processLineLabel(product)} />
       </div>
 
-      <div className="flex gap-2 border-t border-border px-[18px] py-3">
-        <Button variant="outline" size="sm" className="min-w-0 flex-1 px-2" onClick={() => onViewDetails(product)}>
-          <Eye className="h-3.5 w-3.5 shrink-0" />
-          <span className="min-w-0 truncate">ดูรายละเอียด</span>
-        </Button>
+      <div className="flex gap-2 border-t border-border px-4 py-3">
         {canEdit && (
           <Button variant="primary" size="sm" className="min-w-0 flex-1 px-2" onClick={() => onEdit(product)}>
             <Pencil className="h-3.5 w-3.5 shrink-0" />
             <span className="min-w-0 truncate">แก้ไข</span>
           </Button>
         )}
+        <Button variant="secondary" size="sm" className="min-w-0 flex-1 px-2" onClick={() => onViewDetails(product)}>
+          <Eye className="h-3.5 w-3.5 shrink-0" />
+          <span className="min-w-0 truncate">รายละเอียด</span>
+        </Button>
       </div>
     </article>
   );
@@ -465,9 +439,9 @@ export function ProductsCollection({
   return (
     <div className="@container">
       {view === "table" ? (
-        <div className="overflow-x-auto rounded-xl border border-border bg-surface">
+        <div className="max-h-[68vh] overflow-auto rounded-md border border-border bg-surface">
           <Table>
-            <TableHeader>
+            <TableHeader className="sticky top-0 z-20 bg-surface shadow-[0_1px_0_0_var(--border)]">
               <TableRow>
                 <TableHead>
                   <span className="sr-only">รูปภาพ</span>
@@ -524,7 +498,7 @@ export function ProductsCollection({
         </ul>
       ) : (
         <ul
-          className="grid grid-cols-1 gap-3 @min-[40rem]:grid-cols-2 @min-[80rem]:grid-cols-4"
+          className="grid grid-cols-1 gap-3 @min-[36rem]:grid-cols-2 @min-[60rem]:grid-cols-3 @min-[82rem]:grid-cols-4 @min-[100rem]:grid-cols-5"
           aria-label="รายการสินค้าแบบการ์ด"
         >
           {products.map((product) => (
@@ -563,7 +537,7 @@ export function ProductsTable({
     return (
       <div className="flex flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-border py-16 text-center">
         <p className="text-sm font-medium text-fg">ไม่พบสินค้า</p>
-        <p className="text-sm text-fg-muted">ลองค้นหาหรือเปลี่ยนตัวกรองสถานะ</p>
+        <p className="text-sm text-fg-muted">ลองเปลี่ยนคำค้นหาหรือตัวกรองสินค้า</p>
       </div>
     );
   }

@@ -134,6 +134,20 @@ body {
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
+/* Self-contained data regions on /materials. The intrinsic size prevents a
+   layout jump before an off-screen panel is rendered; older browsers retain
+   the same containment boundary without needing a polyfill. */
+.materials-dashboard-panel {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 320px;
+}
+
+@supports not (content-visibility: auto) {
+  .materials-dashboard-panel {
+    contain: layout style paint;
+  }
+}
+
 .tabular-nums {
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";

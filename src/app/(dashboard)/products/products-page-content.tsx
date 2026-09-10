@@ -11,7 +11,16 @@ export async function ProductsPageContent({
   title,
   description,
 }: {
-  searchParams: Promise<{ search?: string; status?: string; new?: string }>;
+  searchParams: Promise<{
+    search?: string;
+    status?: string;
+    new?: string;
+    modelId?: string;
+    customerId?: string;
+    productTypeId?: string;
+    locationId?: string;
+    processLineId?: string;
+  }>;
   title: string;
   description: string;
 }) {
@@ -63,7 +72,17 @@ export async function ProductsPageContent({
   // API_ENDPOINTS.md § 16), so a viewer with PRODUCT_WORKFLOWS_CREATE but not
   // PROCESS_STEP_VIEW would otherwise 403 this whole page's data fetch.
   const [list, lookups, materialsList, processStepsList] = await Promise.all([
-    listProducts(accessToken, { search, isActive, sortBy: "code", sortOrder: "asc" }),
+    listProducts(accessToken, {
+      search,
+      isActive,
+      modelId: params.modelId,
+      customerId: params.customerId,
+      productTypeId: params.productTypeId,
+      locationId: params.locationId,
+      processLineId: params.processLineId,
+      sortBy: "code",
+      sortOrder: "asc",
+    }),
     getProductLookups(accessToken),
     listMaterials(accessToken, { limit: 100, isActive: true, sortBy: "name", sortOrder: "asc" }),
     canCreateWorkflow
@@ -74,9 +93,9 @@ export async function ProductsPageContent({
   ]);
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
       <div>
-        <h1 className="text-xl font-semibold text-fg">{title}</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-fg">{title}</h1>
         <p className="mt-1 text-sm text-fg-muted">{description}</p>
       </div>
 

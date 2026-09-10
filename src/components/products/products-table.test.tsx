@@ -74,10 +74,7 @@ test("table view still shows the action trigger (for 'view details') even when e
   assert.match(html, /aria-label="ตัวเลือกสำหรับ Rear Seat Frame"/);
 });
 
-test("card view renders one card per product with code, name, status, and safety/min stock as the primary numbers", () => {
-  // The card view's own Data Sheet is a real <table> (same pattern as
-  // Materials PC) — what must be absent is the table-view's distinctive
-  // bordered wrapper chrome, not literally any <table> tag.
+test("card view renders one compact editorial card with the same visual hierarchy as Materials PC", () => {
   const html = renderToStaticMarkup(
     <ProductsTable
       products={[product]}
@@ -91,20 +88,19 @@ test("card view renders one card per product with code, name, status, and safety
     />
   );
 
-  assert.doesNotMatch(html, /<div class="overflow-x-auto rounded-xl border border-border bg-surface">/);
-  assert.match(html, /<table class="w-full text-sm">/);
+  assert.doesNotMatch(html, /<table/);
   assert.match(html, /<ul[^>]+aria-label="รายการสินค้าแบบการ์ด"/);
   assert.equal(html.match(/PRD-001/g)?.length, 1);
-  // "Rear Seat Frame" legitimately appears more than once by design: the
-  // <h2> text, its title="" attribute (truncation tooltip), and the
-  // Switch's aria-label — assert the heading itself, not a raw substring count.
   assert.match(html, /<h2[^>]*>Rear Seat Frame<\/h2>/);
   assert.match(html, /bg-success-soft[^>]*><span class="h-1\.5[^>]*><\/span>ใช้งาน<\/span>/);
   assert.match(html, /Safety Stock/);
   assert.match(html, /Min Stock/);
+  assert.match(html, />ลูกค้า</);
+  assert.match(html, />รุ่น</);
+  assert.match(html, />สายการผลิต</);
 });
 
-test("card view shows edit as a visible button; active/inactive is a Switch, not a text button", () => {
+test("card view shows primary edit, secondary details, and moves status actions into the overlay menu", () => {
   const html = renderToStaticMarkup(
     <ProductsTable
       products={[product]}
@@ -119,12 +115,13 @@ test("card view shows edit as a visible button; active/inactive is a Switch, not
   );
 
   assert.match(html, />\s*แก้ไข\s*</);
-  assert.match(html, /role="switch"/);
-  assert.match(html, />ใช้งานอยู่</);
+  assert.match(html, />\s*รายละเอียด\s*</);
+  assert.match(html, /aria-label="ตัวเลือกสำหรับ Rear Seat Frame"/);
+  assert.doesNotMatch(html, /role="switch"/);
   assert.doesNotMatch(html, />\s*ปิดใช้งาน\s*</);
 });
 
-test("card view omits the edit button and the status switch when the row has no permitted actions", () => {
+test("card view keeps details visible but omits edit and the overlay menu without mutation permissions", () => {
   const html = renderToStaticMarkup(
     <ProductsTable
       products={[product]}
@@ -139,10 +136,11 @@ test("card view omits the edit button and the status switch when the row has no 
   );
 
   assert.doesNotMatch(html, /แก้ไข/);
-  assert.doesNotMatch(html, /role="switch"/);
+  assert.match(html, />\s*รายละเอียด\s*</);
+  assert.doesNotMatch(html, /aria-label="ตัวเลือกสำหรับ Rear Seat Frame"/);
 });
 
-test("card view's status switch reflects an inactive product and offers to enable it", () => {
+test("card view renders inactive state as the same neutral status badge used by Materials PC", () => {
   const html = renderToStaticMarkup(
     <ProductsTable
       products={[{ ...product, isActive: false }]}
@@ -156,10 +154,9 @@ test("card view's status switch reflects an inactive product and offers to enabl
     />
   );
 
-  assert.match(html, /role="switch"/);
-  assert.doesNotMatch(html, /data-state="checked"/);
-  assert.match(html, />ไม่ได้ใช้งาน</);
-  assert.match(html, /aria-label="เปิดใช้งาน Rear Seat Frame"/);
+  assert.match(html, /bg-surface-2[^>]*><span class="h-1\.5[^>]*><\/span>ไม่ใช้งาน<\/span>/);
+  assert.match(html, /aria-label="ตัวเลือกสำหรับ Rear Seat Frame"/);
+  assert.doesNotMatch(html, /role="switch"/);
 });
 
 test("card view shows an accessible image fallback when a product has no image", () => {

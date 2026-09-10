@@ -2,9 +2,10 @@
 
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, EyeOff, CircleSlash, type LucideIcon } from "lucide-react";
+import { GripVertical, EyeOff, CircleSlash, Pencil, Trash2, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { RowActionsMenu } from "@/components/ui/row-actions-menu";
 import type { FlatMenuNode } from "@/lib/menu-tree";
 
 export const INDENT_WIDTH = 28;
@@ -19,10 +20,16 @@ export function MenuTreeRow({
   item,
   Icon,
   isOver,
+  actionsEnabled,
+  onEdit,
+  onDelete,
 }: {
   item: FlatMenuNode;
   Icon: LucideIcon;
   isOver: boolean;
+  actionsEnabled: boolean;
+  onEdit: () => void;
+  onDelete: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.id,
@@ -63,26 +70,40 @@ export function MenuTreeRow({
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <p className="truncate text-sm font-medium text-fg">{item.nameEn}</p>
-            <span className="truncate text-xs text-fg-muted">{item.nameTh}</span>
+            <p className="truncate text-sm font-medium text-fg">{item.nameTh}</p>
+            <span className="hidden truncate text-xs text-fg-muted sm:inline">{item.nameEn}</span>
           </div>
-          <p className="truncate font-mono text-[11px] text-fg-muted">{item.code}</p>
+          <p className="truncate text-[11px] text-fg-muted">
+            <span className="font-mono">{item.code}</span>
+            {item.path && <span className="hidden sm:inline"> · {item.path}</span>}
+          </p>
         </div>
 
         <div className="flex shrink-0 items-center gap-1.5">
           {!item.isActive && (
             <span title="ไม่ใช้งาน" className="text-danger">
               <CircleSlash className="h-3.5 w-3.5" />
+              <span className="sr-only">ไม่ใช้งาน</span>
             </span>
           )}
           {!item.isVisible && (
             <span title="ซ่อนจากแถบเมนู" className="text-fg-muted">
               <EyeOff className="h-3.5 w-3.5" />
+              <span className="sr-only">ซ่อนจากแถบเมนู</span>
             </span>
           )}
           <Badge variant={typeBadgeVariant[item.menuType]} className="text-[10px]">
             {item.menuType}
           </Badge>
+          {actionsEnabled && (
+            <RowActionsMenu
+              itemLabel={item.nameTh}
+              actions={[
+                { label: "แก้ไขเมนู", icon: Pencil, onSelect: onEdit },
+                { label: "ลบเมนู", icon: Trash2, onSelect: onDelete, variant: "danger" },
+              ]}
+            />
+          )}
         </div>
       </div>
     </div>

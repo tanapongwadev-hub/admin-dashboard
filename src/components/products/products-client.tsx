@@ -12,6 +12,7 @@ import { ProductsTable } from "@/components/products/products-table";
 import { ProductsWizardDialog } from "@/components/products/products-wizard-dialog";
 import { ProductsStatusDialog } from "@/components/products/products-status-dialog";
 import { ProductsDetailsDialog } from "@/components/products/products-details-dialog";
+import { ProductsCatalogSummary } from "@/components/products/products-catalog-summary";
 import { deactivateProductAction, restoreProductAction } from "@/app/(dashboard)/products/actions";
 import type { Product, ProductLookups } from "@/lib/api/products";
 import type { Material } from "@/lib/api/materials";
@@ -56,7 +57,9 @@ export function ProductsClient({
   openNew?: boolean;
 }) {
   const router = useRouter();
-  const [view, setView] = useViewMode("products", "table");
+  // Match Materials PC: the image-led editorial card is the first view for
+  // new users; the persisted preference still wins for returning users.
+  const [view, setView] = useViewMode("products", "card");
   // Single entry point for both add and edit now (see AGENTS.md § Products)
   // — undefined = closed, null = create mode, a Product = edit mode. Mirrors
   // the same "undefined vs null vs value" shape the old formTarget used.
@@ -85,8 +88,9 @@ export function ProductsClient({
 
   return (
     <div className="flex flex-col gap-4">
+      <ProductsCatalogSummary totalItems={totalItems} lookups={lookups} />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <ProductsFilters />
+        <ProductsFilters lookups={lookups} />
         <div className="flex shrink-0 items-center gap-2">
           <ViewToggle value={view} onChange={setView} modes={["table", "card", "list"]} />
           {canEdit && (

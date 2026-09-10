@@ -133,6 +133,84 @@ test("performRefreshMenuTree returns the generic Thai connection-failed message 
 });
 
 // ---------------------------------------------------------------------------
+// CRUD mutations
+// ---------------------------------------------------------------------------
+
+test("performCreateMenu POSTs a menu then returns the refreshed management tree", async (t) => {
+  const requests: Array<{ url: string; method: string; body?: unknown }> = [];
+  t.mock.method(globalThis, "fetch", async (input: string | URL | Request, init?: RequestInit) => {
+    requests.push({
+      url: String(input),
+      method: init?.method ?? "GET",
+      body: init?.body ? JSON.parse(init.body as string) : undefined,
+    });
+    if (init?.method === "POST") return jsonResponse(201, { id: "menu-3" });
+    return jsonResponse(200, { version: "v4", menus: [] });
+  });
+
+  const { performCreateMenu } = await import("./actions");
+  const result = await performCreateMenu("test-token", {
+    code: "REPORTS",
+    nameTh: "รายงาน",
+    nameEn: "Reports",
+    menuType: "MAIN",
+    path: "/reports",
+    sortOrder: 2,
+  });
+
+  assert.equal(result.status, "success");
+  assert.deepEqual(requests.map((request) => request.method), ["POST", "GET"]);
+  assert.equal(requests[0].url, "http://api.example.test/api/v1/menus");
+  assert.deepEqual(requests[0].body, {
+    code: "REPORTS",
+    nameTh: "รายงาน",
+    nameEn: "Reports",
+    menuType: "MAIN",
+    path: "/reports",
+    sortOrder: 2,
+  });
+});
+
+test("performUpdateMenu PATCHes editable fields then returns the refreshed tree", async (t) => {
+  const methods: string[] = [];
+  t.mock.method(globalThis, "fetch", async (_input: string | URL | Request, init?: RequestInit) => {
+    methods.push(init?.method ?? "GET");
+    if (init?.method === "PATCH") return jsonResponse(200, { id: "menu-1" });
+    return jsonResponse(200, { version: "v5", menus: [] });
+  });
+
+  const { performUpdateMenu } = await import("./actions");
+  const result = await performUpdateMenu("test-token", "menu-1", {
+    nameTh: "แดชบอร์ดใหม่",
+    isVisible: false,
+  });
+
+  assert.equal(result.status, "success");
+  assert.deepEqual(methods, ["PATCH", "GET"]);
+});
+
+test("performDeleteMenu surfaces the backend guard for menus with permissions", async (t) => {
+  let requestUrl = "";
+  let requestMethod = "";
+  t.mock.method(globalThis, "fetch", async (input: string | URL | Request, init?: RequestInit) => {
+    requestUrl = String(input);
+    requestMethod = init?.method ?? "GET";
+    return jsonResponse(400, { message: "Cannot delete menu that still has permissions" });
+  });
+
+  const { performDeleteMenu } = await import("./actions");
+  const result = await performDeleteMenu("test-token", "menu-1");
+
+  assert.equal(result.status, "error");
+  assert.equal(requestUrl, "http://api.example.test/api/v1/menus/menu-1");
+  assert.equal(requestMethod, "DELETE");
+  assert.equal(
+    (result as { message: string }).message,
+    "ยังลบเมนูที่มี permission ผูกอยู่ไม่ได้ กรุณาถอด permission ก่อน"
+  );
+});
+
+// ---------------------------------------------------------------------------
 // Cross-cutting
 // ---------------------------------------------------------------------------
 
@@ -143,6 +221,9 @@ test("the public wrappers all forward to the matching perform* helper", async ()
   const expectedPairs: Array<[string, string]> = [
     ["saveMenuOrderAction", "performSaveMenuOrder"],
     ["refreshMenuTreeAction", "performRefreshMenuTree"],
+    ["createMenuAction", "performCreateMenu"],
+    ["updateMenuAction", "performUpdateMenu"],
+    ["deleteMenuAction", "performDeleteMenu"],
   ];
   for (const [publicName, helperName] of expectedPairs) {
     assert.equal(

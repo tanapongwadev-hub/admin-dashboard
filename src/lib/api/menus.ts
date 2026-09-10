@@ -47,6 +47,27 @@ export interface ReorderMenusResult {
   updatedCount: number;
 }
 
+export interface CreateMenuPayload {
+  code: string;
+  nameTh: string;
+  nameEn: string;
+  menuType: MenuNodeType;
+  path?: string;
+  icon?: string;
+  sortOrder?: number;
+  parentId?: string;
+}
+
+export type UpdateMenuPayload = Partial<
+  Pick<
+    CreateMenuPayload,
+    "code" | "nameTh" | "nameEn" | "menuType" | "path" | "icon"
+  >
+> & {
+  isVisible?: boolean;
+  isActive?: boolean;
+};
+
 // SUPER_ADMIN only (JwtAuthGuard + RolesGuard on the whole controller).
 export function getManagementTree(accessToken: string) {
   return apiFetch<ManagementTreeResponse>("/menus/management-tree", {
@@ -62,5 +83,32 @@ export function reorderMenus(accessToken: string, payload: ReorderMenusPayload) 
     method: "PATCH",
     headers: { Authorization: `Bearer ${accessToken}` },
     body: JSON.stringify(payload),
+  });
+}
+
+export function createMenu(accessToken: string, payload: CreateMenuPayload) {
+  return apiFetch<ManagementMenuNode>("/menus", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${accessToken}` },
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateMenu(
+  accessToken: string,
+  id: string,
+  payload: UpdateMenuPayload
+) {
+  return apiFetch<ManagementMenuNode>(`/menus/${id}`, {
+    method: "PATCH",
+    headers: { Authorization: `Bearer ${accessToken}` },
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteMenu(accessToken: string, id: string) {
+  return apiFetch<{ message: string }>(`/menus/${id}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${accessToken}` },
   });
 }

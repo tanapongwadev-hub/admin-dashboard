@@ -16,7 +16,7 @@ import {
   type DragEndEvent,
 } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
-import { RotateCcw, Save, Loader2 } from "lucide-react";
+import { RotateCcw, Save, Loader2, Plus, FolderTree } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { menuIcon } from "@/lib/menu-icons";
 import {
@@ -29,7 +29,13 @@ import {
   type FlatMenuNode,
 } from "@/lib/menu-tree";
 import { MenuTreeRow, MenuTreeDragPreview, INDENT_WIDTH } from "@/components/menus/menu-tree-row";
-import { saveMenuOrderAction, refreshMenuTreeAction } from "@/app/(dashboard)/menus/actions";
+import { MenuFormDialog } from "@/components/menus/menu-form-dialog";
+import { MenuDeleteDialog } from "@/components/menus/menu-delete-dialog";
+import {
+  saveMenuOrderAction,
+  refreshMenuTreeAction,
+  type MenuMutationResult,
+} from "@/app/(dashboard)/menus/actions";
 import type { ManagementMenuNode } from "@/lib/api/menus";
 
 export function MenuTreeEditor({
@@ -46,6 +52,9 @@ export function MenuTreeEditor({
   const [overId, setOverId] = React.useState<string | null>(null);
   const [offsetX, setOffsetX] = React.useState(0);
   const [saving, setSaving] = React.useState(false);
+  const [formOpen, setFormOpen] = React.useState(false);
+  const [editingMenu, setEditingMenu] = React.useState<FlatMenuNode | null>(null);
+  const [deletingMenu, setDeletingMenu] = React.useState<FlatMenuNode | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -115,6 +124,23 @@ export function MenuTreeEditor({
     setItems(savedItems);
   }
 
+  function applyFreshTree(result: Extract<MenuMutationResult, { status: "success" }>) {
+    const freshItems = flattenMenuTree(result.menus);
+    setItems(freshItems);
+    setSavedItems(freshItems);
+    setVersion(result.version);
+  }
+
+  function requestDelete(item: FlatMenuNode) {
+    if (items.some((candidate) => candidate.parentId === item.id)) {
+      toast.error("ยังลบเมนูนี้ไม่ได้", {
+        description: "ย้ายหรือลบเมนูย่อยทั้งหมดก่อน แล้วจึงลองอีกครั้ง",
+      });
+      return;
+    }
+    setDeletingMenu(item);
+  }
+
   async function handleSave() {
     setSaving(true);
     const result = await saveMenuOrderAction(version, toReorderItems(items));
@@ -143,12 +169,49 @@ export function MenuTreeEditor({
   }
 
   const activeIcon = activeItem ? menuIcon(activeItem.icon) : null;
+  const visibleCount = items.filter((item) => item.isVisible && item.isActive).length;
+  const rootCount = items.filter((item) => item.parentId === null).length;
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface-2 px-3 py-2">
+    <div className="flex flex-col gap-4">
+      <section className="overflow-hidden rounded-xl border border-border bg-surface">
+        <div className="flex flex-col gap-4 border-b border-border bg-primary-soft/50 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary text-white shadow-sm">
+              <FolderTree className="size-5" />
+            </span>
+            <div>
+              <h2 className="text-base font-semibold text-fg">โครงสร้างการนำทาง</h2>
+              <p className="mt-0.5 text-xs text-fg-muted">
+                {items.length} เมนู · {rootCount} เมนูหลัก · {visibleCount} รายการที่ผู้ใช้มองเห็น
+              </p>
+            </div>
+          </div>
+          <Button
+            size="sm"
+            onClick={() => {
+              setEditingMenu(null);
+              setFormOpen(true);
+            }}
+            disabled={dirty || saving}
+            title={dirty ? "บันทึกหรือรีเซ็ตลำดับก่อนเพิ่มเมนู" : undefined}
+          >
+            <Plus className="h-4 w-4" /> เพิ่มเมนู
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-1 divide-y divide-border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+          <div className="px-4 py-3"><p className="text-[11px] font-medium uppercase tracking-wide text-fg-muted">โครงสร้าง</p><p className="mt-0.5 text-sm font-semibold text-fg">สูงสุด 4 ระดับ</p></div>
+          <div className="px-4 py-3"><p className="text-[11px] font-medium uppercase tracking-wide text-fg-muted">การมองเห็น</p><p className="mt-0.5 text-sm font-semibold text-fg">{visibleCount} / {items.length} เปิดแสดงผล</p></div>
+          <div className="px-4 py-3"><p className="text-[11px] font-medium uppercase tracking-wide text-fg-muted">การแก้ไข</p><p className="mt-0.5 text-sm font-semibold text-fg">ลากเพื่อย้าย · เมนูจุดสามจุดเพื่อแก้ไข</p></div>
+        </div>
+      </section>
+
+      <div className="flex flex-col gap-3 rounded-lg border border-border bg-surface-2 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-xs text-fg-muted">
-          {dirty ? "คุณมีการเปลี่ยนแปลงที่ยังไม่ได้บันทึก" : "ไม่มีการเปลี่ยนแปลงที่ยังไม่ได้บันทึก"}
+          {dirty
+            ? "มีลำดับที่ยังไม่ได้บันทึก — บันทึกหรือรีเซ็ตก่อนแก้ข้อมูลเมนู"
+            : "ไม่มีการเปลี่ยนแปลงที่ยังไม่ได้บันทึก"}
           {projection && activeItem && (
             <span className="ml-2 text-fg-secondary">
               {projection.parentId
@@ -157,7 +220,7 @@ export function MenuTreeEditor({
             </span>
           )}
         </p>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center justify-end gap-2">
           <Button variant="outline" size="sm" onClick={handleReset} disabled={!dirty || saving}>
             <RotateCcw className="h-3.5 w-3.5" /> รีเซ็ต
           </Button>
@@ -184,8 +247,25 @@ export function MenuTreeEditor({
       >
         <SortableContext items={visibleItems.map((item) => item.id)} strategy={verticalListSortingStrategy}>
           <div className="flex flex-col gap-0.5 rounded-xl border border-border bg-surface p-2">
-            {resolvedVisible.map(({ item, Icon }) => (
-              <MenuTreeRow key={item.id} item={item} Icon={Icon} isOver={item.id === overId && item.id !== activeId} />
+            {resolvedVisible.length === 0 ? (
+              <div className="flex flex-col items-center gap-3 px-4 py-14 text-center">
+                <FolderTree className="size-8 text-fg-muted" />
+                <div><p className="text-sm font-medium text-fg">ยังไม่มีเมนู</p><p className="mt-1 text-xs text-fg-muted">เพิ่มเมนูแรกเพื่อเริ่มสร้างโครงสร้างการนำทาง</p></div>
+                <Button size="sm" onClick={() => setFormOpen(true)}><Plus className="size-4" /> เพิ่มเมนูแรก</Button>
+              </div>
+            ) : resolvedVisible.map(({ item, Icon }) => (
+              <MenuTreeRow
+                key={item.id}
+                item={item}
+                Icon={Icon}
+                isOver={item.id === overId && item.id !== activeId}
+                actionsEnabled={!dirty && !saving}
+                onEdit={() => {
+                  setEditingMenu(item);
+                  setFormOpen(true);
+                }}
+                onDelete={() => requestDelete(item)}
+              />
             ))}
           </div>
         </SortableContext>
@@ -194,6 +274,22 @@ export function MenuTreeEditor({
           {activeItem && activeIcon ? <MenuTreeDragPreview name={activeItem.nameEn} Icon={activeIcon} /> : null}
         </DragOverlay>
       </DndContext>
+
+      <MenuFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        menu={editingMenu}
+        items={items}
+        onSaved={applyFreshTree}
+      />
+      <MenuDeleteDialog
+        menu={deletingMenu}
+        open={Boolean(deletingMenu)}
+        onOpenChange={(open) => {
+          if (!open) setDeletingMenu(null);
+        }}
+        onDeleted={applyFreshTree}
+      />
     </div>
   );
 }
