@@ -1,8 +1,8 @@
 import { apiFetch } from "./client";
 
-// The one real seam behind all 7 "simple master" resources (categories,
+// The one real seam behind the "simple master" resources (categories,
 // loading-points, delivery-types, reject-reasons, material-models,
-// suppliers, units) — see AGENTS.md § the master-data CRUD recipe. Every
+// suppliers, units, status items) — see AGENTS.md § the master-data CRUD recipe. Every
 // one of those resources' `lib/api/*.ts` files had the exact same 6
 // functions (list/get/create/update/deactivate/restore) differing only in
 // field shapes and the URL base path; diffing two of them after renaming

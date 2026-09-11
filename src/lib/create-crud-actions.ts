@@ -3,9 +3,9 @@ import { revalidatePath } from "next/cache";
 import { ApiError } from "@/lib/api/client";
 import { redirectIfSessionExpired, redirectMissingSession } from "@/lib/session-expiry";
 
-// The one real seam behind all 7 "simple master" resources' Server Actions
+// The one real seam behind the "simple master" resources' Server Actions
 // (categories, loading-points, delivery-types, reject-reasons,
-// material-models, suppliers, units — see AGENTS.md § the master-data CRUD
+// material-models, suppliers, units, status items — see AGENTS.md § the master-data CRUD
 // recipe, and create-resource-api.ts for this factory's counterpart in the
 // API-client layer). Every one of those resources' `actions.ts` files had
 // the same cookie-read, 409→"conflict" mapping, session-expiry redirect,

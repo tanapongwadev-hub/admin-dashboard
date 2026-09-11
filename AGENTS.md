@@ -97,34 +97,42 @@ src/
    ├─ master-data/
    │     ├─ page.tsx             # URL /master-data — hub/landing dashboard, see Conventions § Master data dashboard hub
    │     ├─ loading.tsx          # route-level skeleton for the hub
+   │     │  # 2026-09-11: all simple-master resources' page.tsx below are thin wrappers around the
+   │     │  # shared `MasterDataResourcePage` (components/master-data/generic-page.tsx) — see
+   │     │  # Conventions § Master-data generic CRUD page. actions.ts + the *-actions.test.ts
+   │     │  # files are unchanged (still per-resource, still createCrudActions-based).
    │     ├─ categories/         # URL /master-data/categories — real CRUD against cps-api, see Conventions § Categories master data
-   │     │  ├─ page.tsx                 # server; CATEGORY_VIEW gate + list fetch, reads page/search/status from searchParams, defaults to sortBy=sortOrder
+   │     │  ├─ page.tsx                 # server; 3-line wrapper — <MasterDataResourcePage resource={categoryResource} .../>
    │     │  ├─ actions.ts               # "use server"; create/update/deactivate/restore, each revalidatePath("/master-data/categories")
    │     │  └─ categories-actions.test.ts # perform* helper coverage (CRUD + 409/empty/network + public-wrapper guard)
    │     ├─ loading-points/      # URL /master-data/loading-points — real CRUD against cps-api, see Conventions § Loading Points master data
-   │     │  ├─ page.tsx                 # server; LOADING_POINT_VIEW gate + list fetch, reads page/search/status from searchParams, defaults to sortBy=code
+   │     │  ├─ page.tsx                 # server; 3-line wrapper — <MasterDataResourcePage resource={loadingPointResource} .../>
    │     │  ├─ actions.ts               # "use server"; create/update/deactivate/restore, each revalidatePath("/master-data/loading-points")
    │     │  └─ loading-points-actions.test.ts # perform* helper coverage (CRUD + 409/empty/network + public-wrapper guard)
    │     ├─ delivery-types/      # URL /master-data/delivery-types — real CRUD against cps-api, see Conventions § Delivery Types master data
-   │     │  ├─ page.tsx                 # server; DELIVERY_TYPE_VIEW gate + list fetch, reads page/search/status from searchParams, defaults to sortBy=code
+   │     │  ├─ page.tsx                 # server; 3-line wrapper — <MasterDataResourcePage resource={deliveryTypeResource} .../>
    │     │  ├─ actions.ts               # "use server"; create/update/deactivate/restore, each revalidatePath("/master-data/delivery-types")
    │     │  └─ delivery-types-actions.test.ts # perform* helper coverage (CRUD + 409/empty/network + public-wrapper guard)
    │     ├─ reject-reasons/     # URL /master-data/reject-reasons — real CRUD against cps-api, see Conventions § Reject Reasons master data
-   │     │  ├─ page.tsx                 # server; REJECT_REASON_VIEW gate + list fetch, reads page/search/status from searchParams, defaults to sortBy=code
+   │     │  ├─ page.tsx                 # server; 3-line wrapper — <MasterDataResourcePage resource={rejectReasonResource} .../>
    │     │  ├─ actions.ts               # "use server"; create/update/deactivate/restore, each revalidatePath("/master-data/reject-reasons")
    │     │  └─ reject-reasons-actions.test.ts # perform* helper coverage (CRUD + 409/empty/network + public-wrapper guard)
    │     ├─ material-models/     # URL /master-data/material-models — real CRUD against cps-api, see Conventions § Material Models master data
-   │     │  ├─ page.tsx                 # server; MATERIAL_MODEL_VIEW gate + list fetch, reads page/search/status from searchParams, defaults to sortBy=code
+   │     │  ├─ page.tsx                 # server; 3-line wrapper — <MasterDataResourcePage resource={materialModelResource} .../>
    │     │  ├─ actions.ts               # "use server"; create/update/deactivate/restore, each revalidatePath("/master-data/material-models")
    │     │  └─ material-models-actions.test.ts # perform* helper coverage (CRUD + 409/empty/network + public-wrapper guard)
    │     ├─ suppliers/          # URL /master-data/suppliers — real CRUD against cps-api, see Conventions § Suppliers master data
-   │     │  ├─ page.tsx                # server; SUPPLIER_VIEW gate + list fetch, reads page/search/status from searchParams, defaults to sortBy=code
+   │     │  ├─ page.tsx                # server; 3-line wrapper — <MasterDataResourcePage resource={supplierResource} .../>
    │     │  ├─ actions.ts              # "use server"; create/update/deactivate/restore, each revalidatePath("/master-data/suppliers")
    │     │  └─ suppliers-actions.test.ts  # perform* helper coverage (CRUD + 409/empty/network + public-wrapper guard)
-   │     └─ units/              # URL /master-data/units — real CRUD against cps-api, see Conventions § Units master data
-   │        ├─ page.tsx                # server; UNIT_VIEW gate + list fetch, reads page/search/status from searchParams, defaults to sortBy=code
-   │        ├─ actions.ts              # "use server"; create/update/deactivate/restore, each revalidatePath("/master-data/units")
-   │        └─ units-actions.test.ts   # perform* helper coverage (CRUD + 409/empty/network + public-wrapper guard)
+   │     ├─ units/              # URL /master-data/units — real CRUD against cps-api, see Conventions § Units master data
+   │     │  ├─ page.tsx                # server; thin wrapper — <MasterDataResourcePage resource={unitResource} .../>
+   │     │  ├─ actions.ts              # "use server"; create/update/deactivate/restore, each revalidatePath("/master-data/units")
+   │     │  └─ units-actions.test.ts   # perform* helper coverage (CRUD + 409/empty/network + public-wrapper guard)
+   │     └─ statuses/           # URL /master-data/statuses — CRUD over cps-api /status-items, permission prefix STATUS_ITEM
+   │        ├─ page.tsx                # server; thin wrapper — <MasterDataResourcePage resource={statusResource} .../>
+   │        ├─ actions.ts              # "use server"; create/update/deactivate/restore, revalidates /master-data/statuses
+   │        └─ statuses-actions.test.ts # action contract + conflict + session-wrapper coverage
 ```
 
 ```
@@ -176,55 +184,21 @@ src/
 │  │  ├─ products-details-dialog.tsx # read-only "view full record" dialog (ProductsDetailsDialog/ProductsDetailsView) — mirrors material-pc-details-dialog.tsx, hero + ข้อมูล/BOM tabs (BOM tab client-fetched, gated on canViewBom)
 │  │  ├─ products-bom-diagram.tsx    # ProductBomDiagram — radial node-and-line diagram of a BOM's material components, opened from the BOM tab
 │  │  └─ products-image-preview.tsx  # full-image lightbox + Download button — mirrors material-pc-image-preview.tsx
-│  ├─ categories/                 # /master-data/categories CRUD — see Conventions § Categories master data
-│  │  ├─ categories-client.tsx    # orchestrates filters/table/dialogs, calls Server Actions, router.refresh()
-│  │  ├─ categories-filters.tsx   # search (debounced) + active/inactive/all pills, drive URL searchParams
-│  │  ├─ categories-table.tsx     # table-only view (no card/list variants — flat master data, see § Categories master data) + pagination + RowActionsMenu
-│  │  ├─ categories-form-dialog.tsx     # create/edit — responsive Dialog, RHF + zod, live iconColor swatch
-│  │  ├─ categories-status-dialog.tsx   # disable/enable confirmation, wraps ui/confirm-dialog
-│  │  └─ categories-details-dialog.tsx  # read-only "view full record" dialog (CategoriesDetailsDialog/CategoriesDetailsView) — hero + Data Sheet + created/updated line
-│  ├─ loading-points/             # /master-data/loading-points CRUD — see Conventions § Loading Points master data
-│  │  ├─ loading-points-client.tsx # orchestrates filters/table/dialogs, calls Server Actions, router.refresh()
-│  │  ├─ loading-points-filters.tsx # search (debounced) + active/inactive/all pills, drive URL searchParams
-│  │  ├─ loading-points-table.tsx   # table-only view (no card/list variants — flat master data) + pagination + RowActionsMenu
-│  │  ├─ loading-points-form-dialog.tsx    # create/edit — responsive Dialog, RHF + zod
-│  │  ├─ loading-points-status-dialog.tsx  # disable/enable confirmation, wraps ui/confirm-dialog
-│  │  └─ loading-points-details-dialog.tsx # read-only "view full record" dialog (LoadingPointsDetailsDialog/LoadingPointsDetailsView) — hero + Data Sheet + created/updated line
-│  ├─ delivery-types/             # /master-data/delivery-types CRUD — see Conventions § Delivery Types master data
-│  │  ├─ delivery-types-client.tsx # orchestrates filters/table/dialogs, calls Server Actions, router.refresh()
-│  │  ├─ delivery-types-filters.tsx # search (debounced) + active/inactive/all pills, drive URL searchParams
-│  │  ├─ delivery-types-table.tsx   # table-only view (no card/list variants — flat master data) + pagination + RowActionsMenu
-│  │  ├─ delivery-types-form-dialog.tsx    # create/edit — responsive Dialog, RHF + zod
-│  │  ├─ delivery-types-status-dialog.tsx  # disable/enable confirmation, wraps ui/confirm-dialog
-│  │  └─ delivery-types-details-dialog.tsx # read-only "view full record" dialog (DeliveryTypesDetailsDialog/DeliveryTypesDetailsView) — hero + Data Sheet + created/updated line
-│  ├─ reject-reasons/             # /master-data/reject-reasons CRUD — see Conventions § Reject Reasons master data
-│  │  ├─ reject-reasons-client.tsx # orchestrates filters/table/dialogs, calls Server Actions, router.refresh()
-│  │  ├─ reject-reasons-filters.tsx # search (debounced) + active/inactive/all pills, drive URL searchParams
-│  │  ├─ reject-reasons-table.tsx   # table-only view (no card/list variants — flat master data) + pagination + RowActionsMenu
-│  │  ├─ reject-reasons-form-dialog.tsx    # create/edit — responsive Dialog, RHF + zod
-│  │  ├─ reject-reasons-status-dialog.tsx  # disable/enable confirmation, wraps ui/confirm-dialog
-│  │  └─ reject-reasons-details-dialog.tsx # read-only "view full record" dialog (RejectReasonsDetailsDialog/RejectReasonsDetailsView) — hero + Data Sheet + created/updated line
-│  └─ material-models/             # /master-data/material-models CRUD — see Conventions § Material Models master data
-│     ├─ material-models-client.tsx # orchestrates filters/table/dialogs, calls Server Actions, router.refresh()
-│     ├─ material-models-filters.tsx # search (debounced) + active/inactive/all pills, drive URL searchParams
-│     ├─ material-models-table.tsx   # table-only view (no card/list variants — flat master data) + pagination + RowActionsMenu
-│     ├─ material-models-form-dialog.tsx    # create/edit — responsive Dialog, RHF + zod
-│     ├─ material-models-status-dialog.tsx  # disable/enable confirmation, wraps ui/confirm-dialog
-│     └─ material-models-details-dialog.tsx # read-only "view full record" dialog (MaterialModelsDetailsDialog/MaterialModelsDetailsView) — hero + Data Sheet + created/updated line
-│  └─ suppliers/                  # /master-data/suppliers CRUD — see Conventions § Suppliers master data
-│     ├─ suppliers-client.tsx     # orchestrates filters/table/dialogs, calls Server Actions, router.refresh()
-│     ├─ suppliers-filters.tsx     # search (debounced) + active/inactive/all pills, drive URL searchParams
-│     ├─ suppliers-table.tsx        # table-only view (no card/list variants — flat master data) + pagination + RowActionsMenu
-│     ├─ suppliers-form-dialog.tsx   # create/edit — responsive Dialog (size=xl, 9 fields), RHF + zod
-│     ├─ suppliers-status-dialog.tsx # disable/enable confirmation, wraps ui/confirm-dialog
-│     └─ suppliers-details-dialog.tsx  # read-only "view full record" dialog (SuppliersDetailsDialog/SuppliersDetailsView) — hero + Data Sheet + created/updated line
-│  └─ units/                     # /master-data/units CRUD — see Conventions § Units master data
-│     ├─ units-client.tsx       # orchestrates filters/table/dialogs, calls Server Actions, router.refresh()
-│     ├─ units-filters.tsx       # search (debounced) + active/inactive/all pills, drive URL searchParams
-│     ├─ units-table.tsx          # table-only view (no card/list variants — flat master data) + pagination + RowActionsMenu; shows symbol column
-│     ├─ units-form-dialog.tsx    # create/edit — responsive Dialog (size=lg, 6 fields including symbol), RHF + zod
-│     ├─ units-status-dialog.tsx  # disable/enable confirmation, wraps ui/confirm-dialog
-│     └─ units-details-dialog.tsx   # read-only "view full record" dialog (UnitsDetailsDialog/UnitsDetailsView) — hero + Data Sheet + created/updated line
+│  ├─ master-data/                # generic UI for all 8 simple-master resources — see Conventions § Master-data generic CRUD page (2026-09-11)
+│  │  ├─ generic-page.tsx          # server; MasterDataResourcePage — permission gate + list fetch, shared by every resource's page.tsx
+│  │  ├─ generic-client.tsx        # "use client"; orchestrates filters/table/dialogs — takes `resourceKey` (not the descriptor itself, see below)
+│  │  ├─ generic-filters.tsx       # search (debounced) + active/inactive/all pills, drive URL searchParams
+│  │  ├─ generic-table.tsx         # table-only view (every simple master is flat — no card/list variant) + pagination + RowActionsMenu
+│  │  ├─ generic-form-dialog.tsx   # create/edit — builds its zod schema + form fields from `resource.fields` at render time
+│  │  ├─ generic-status-dialog.tsx # disable/enable confirmation, wraps ui/confirm-dialog
+│  │  └─ generic-details-dialog.tsx # read-only "view full record" dialog — hero + Data Sheet + created/updated line, driven by `resource.fields`
+│  │  # These replace the 7×6 = 42 hand-written categories-*/loading-points-*/delivery-types-*/
+│  │  # reject-reasons-*/material-models-*/suppliers-*/units-* component files (moved to a %TEMP%
+│  │  # backup, not deleted — see the 2026-09-11 Recent Changes entry). Each resource's own
+│  │  # `page.tsx` now just does `<MasterDataResourcePage resource={xResource} .../>`, and
+│  │  # `GenericMasterDataClient` resolves the full resource back from a `resourceKey` string via
+│  │  # the registry in `lib/master-data/resources/index.ts` — NOT via a `resource` prop from the
+│  │  # server, since the descriptor's functions can't cross the RSC server→client boundary.
 │  └─ orders/  users/  settings/  # still src/lib/data.ts mock content, not wired to real API
 ├─ hooks/
 │  └─ use-view-mode.ts            # generic localStorage-persisted table/card view state — see Conventions § Materials PC
@@ -234,10 +208,23 @@ src/
    ├─ menu-tree.ts               # pure tree algorithms for the D&D editor — flatten/project/apply-move, framework-agnostic
    ├─ session.ts                 # getCurrentSession() — server-only, React.cache-wrapped GET /auth/me, returns menus + permissions; only 401/403 mean "no session" (other statuses rethrow), see Conventions § Session expiry
    ├─ session-expiry.ts           # redirectIfSessionExpired()/redirectMissingSession() — shared Server Action guard, signs the user out immediately on a 401 or a missing cookie instead of returning a dead-end error, see Conventions § Session expiry
-   ├─ create-crud-actions.ts       # createCrudActions() — shared Server Actions factory for the 7 simple-master resources, see Conventions § Master-data CRUD factories
+   ├─ create-crud-actions.ts       # createCrudActions() — shared Server Actions factory for simple-master resources, see Conventions § Master-data CRUD factories
+   ├─ master-data/                 # generic CRUD page descriptor layer — see Conventions § Master-data generic CRUD page (2026-09-11)
+   │  ├─ types.ts                   # BaseMasterEntity, MasterDataFieldDef, MasterDataResourceConfig, GenericActionResult
+   │  ├─ utils.ts                   # getEntityFromResult() — reads the entity back out of a createCrudActions result by its resource-specific key
+   │  └─ resources/                 # one descriptor file per simple-master resource + a registry
+   │     ├─ index.ts                 # masterDataResources — key → descriptor map, resolved client-side by resourceKey (see components/master-data)
+   │     ├─ category.tsx             # categoryResource — Shape C (sortOrder, iconColor swatch/badge)
+   │     ├─ loading-point.ts         # loadingPointResource — Shape A (no extra fields)
+   │     ├─ delivery-type.ts         # deliveryTypeResource — Shape A
+   │     ├─ reject-reason.ts         # rejectReasonResource — Shape A
+   │     ├─ material-model.ts        # materialModelResource — Shape A
+   │     ├─ unit.ts                  # unitResource — Shape B+ (symbol)
+   │     ├─ supplier.ts              # supplierResource — Shape D (9 fields, size="xl", hasDescription: false)
+   │     └─ status.tsx               # statusResource — module, semantic color select, default switch, sortOrder
    └─ api/                       # REST client — server-only, see Conventions § API
       ├─ client.ts               # apiFetch<T>() + ApiError, reads API_BASE_URL/API_AUTH_TOKEN
-      ├─ create-resource-api.ts   # createResourceApi() — shared list/get/create/update/deactivate/restore factory for the 7 simple-master resources, see Conventions § Master-data CRUD factories
+      ├─ create-resource-api.ts   # createResourceApi() — shared list/get/create/update/deactivate/restore factory for simple-master resources, see Conventions § Master-data CRUD factories
       ├─ auth.ts                 # login()/selectDepartment()/getMe()/logout() — mirrors cps-api /auth contract; MenuNode type
       ├─ menus.ts                # getManagementTree()/reorderMenus() — mirrors cps-api's undocumented /menus management contract
       ├─ materials.ts            # listMaterials()/getMaterialLookups()/create/update/deactivate/restore — real cps-api /materials
@@ -252,6 +239,7 @@ src/
       ├─ material-models.ts      # listMaterialModels()/getMaterialModel()/create/update/deactivate/restore — real cps-api /material-models, see Conventions § Material Models master data
       ├─ suppliers.ts           # listSuppliers()/getSupplier()/create/update/deactivate/restore — real cps-api /suppliers, see Conventions § Suppliers master data
       ├─ units.ts              # listUnits()/getUnit()/create/update/deactivate/restore — real cps-api /units, see Conventions § Units master data
+      ├─ status-items.ts       # status-item types + list/get/create/update/deactivate/restore bound to cps-api /status-items
       ├─ users.ts  products.ts  orders.ts   # typed resource fetchers
       └─ index.ts                # barrel export
 ```
@@ -488,7 +476,27 @@ src/
 - **Net effect**: `lib/api/*` + `actions.ts` for these 7 resources went from ~1,816 lines to ~858 (466 in the 7 slimmed resource files + 392 in the 7 slimmed actions files) + 270 in the two factories = ~1,128 total, a ~38% reduction — but the more important number is *where the logic lives*: the query-string serializer, the 409/401 handling, and the revalidate-then-succeed shape each now exist in exactly **one place** instead of **seven**. The session-expiry fix earlier this same day (Recent Changes, same date) had to touch 11 action files by hand; the same class of future fix now touches 1.
 - **UI components are unaffected on purpose** — each resource's client/filters/table/form-dialog/status-dialog/details-dialog stay hand-written per the project's existing "don't extract one generic component for fields that genuinely differ" rule (see § Materials PC). The architecture review's own diff evidence was specifically about the *data* layer (API calls, Server Actions) where zero real variation existed — the *UI* layer's per-resource differences (Categories' iconColor swatch, Suppliers' 9-field wider form) are real and were correctly left alone.
 - Verified: all 7 resources' existing exported names (types, functions) confirmed identical before/after via a grep diff of every `export` line in all 14 rewritten files — no test file or component import needed to change. Per R0, no lint/typecheck/test/build was run — **strongly recommend `npx tsc --noEmit -p tsconfig.json` and `pnpm test` before merging**, given this touches the data layer of all 7 master-data CRUD pages at once. If a next step is wanted: a `defineMasterDataResource()` descriptor + generic CRUD page (the review's item #3) would additionally collapse the 6 UI component files per resource, but that's a larger, riskier change than this pass and wasn't asked for yet.
-- **Rule for future simple-master resources**: use `createResourceApi`/`createCrudActions` for the data layer from the start — don't copy an existing resource's `lib/api/*.ts`/`actions.ts` file and rename. Only the 6 UI component files still get hand-written per resource.
+- **Rule for future simple-master resources**: use `createResourceApi`/`createCrudActions` for the data layer from the start — don't copy an existing resource's `lib/api/*.ts`/`actions.ts` file and rename. Only the 6 UI component files still get hand-written per resource. **Superseded 2026-09-11 — see § Master-data generic CRUD page below**: the 6 UI component files are no longer hand-written per resource either; a new resource now needs only a descriptor file.
+
+### Master-data generic CRUD page — `lib/master-data/*` + `components/master-data/generic-*.tsx` — 2026-09-11
+- Item #3 of the 2026-09-10 architecture review (see § Master-data CRUD factories above) — "a `defineMasterDataResource()` descriptor + generic CRUD page ... would additionally collapse the 6 UI component files per resource" — was explicitly deferred as "a larger, riskier change than this pass." User asked to go ahead with it. This pass collapses the UI layer the factories pass deliberately left alone: **7 resources × 6 hand-written component files (client/filters/table/form-dialog/status-dialog/details-dialog) → 1 shared generic UI + 7 small per-resource descriptors.**
+- **Proved the fields were interchangeable before building anything**: diffing all 7 resources' component files (already done for the factories pass) showed every one of them was one of exactly 4 shapes — Shape A (code/nameTh/nameEn/description only: loading-points, delivery-types, reject-reasons, material-models), Shape B+ (Shape A + a required `symbol`: units), Shape C (Shape A + `sortOrder` + a free-form hex `iconColor`: categories), Shape D (9 fields incl. `taxId`/`contactName`/`telephone`/`email`/`address`, no `description` field at all, wider `xl` dialog: suppliers). Every dialog/table/status-confirmation used the identical layout skeleton and copy pattern (`เพิ่ม${entityLabel}`, `ปิดใช้งาน${entityLabel}นี้หรือไม่?`, etc.) — confirmed byte-for-byte across all 7 `*-status-dialog.tsx` files before writing the generic version.
+- **`src/lib/master-data/types.ts`** — `BaseMasterEntity` (the 8 fields every resource shares; `description` is optional since Suppliers has none), `MasterDataFieldDef<TEntity>` (a field's `name`/`label`/`type` — `"text" | "textarea" | "number" | "color" | "email"` — plus `required`/`maxLength`/`min`/`max`/`hint`/`fullWidth`/`showInTable`/`tableRender`/`heroBadge`/`detailValue`), and `MasterDataResourceConfig<TEntity>` (the full per-resource descriptor: entity label, dialog size, placeholders, `fields[]`, `actions` (wrapping the resource's real Server Actions), `list`, permission prefix, page copy, sort default).
+- **`src/components/master-data/generic-*.tsx`** (6 files) replace the 42 hand-written ones. `generic-form-dialog.tsx` builds its zod schema and default values from `resource.fields` at render time — a `"number"` field becomes `z.coerce.number().int().min/max(...)`, `"color"` gets the same hex-regex `.refine()` + swatch UI Categories' iconColor field always had, `"email"` gets the same basic regex Suppliers' email field always had, `"text"/"textarea"` get `.min(1)`/`.max()` exactly as before. `generic-table.tsx`/`generic-details-dialog.tsx` render `resource.fields` as extra columns/Data-Sheet-rows, falling back to a plain trimmed-string-or-"—" renderer unless the field supplies its own `tableRender`/`detailValue` (Categories' `iconColor` is the only field that needs one, for the color swatch).
+- **Real RSC bug hit and fixed while verifying this live**: the first version had `MasterDataResourcePage` (a Server Component) pass the **resource descriptor object itself** as a prop into `GenericMasterDataClient` (`"use client"`) — React immediately threw `Functions cannot be passed directly to Client Components unless you explicitly expose it by marking it with "use server"`, because the descriptor's `actions`/`list`/`tableRender`/`heroBadge`/`detailValue` are plain functions, and only `"use server"` functions (Server Actions) are allowed to cross that specific boundary. **Fixed by adding `src/lib/master-data/resources/index.ts`** (a `key → descriptor` registry) and changing `GenericMasterDataClient`'s prop from `resource` to a plain string `resourceKey`; the client component resolves the real descriptor via `masterDataResources[resourceKey]` — an ordinary client-side module import, not a value crossing the RSC boundary, so it's unaffected by the restriction. Every dialog/table/filter `GenericMasterDataClient` renders below it still takes the full `resource` object as a prop, since client-to-client prop passing has no such restriction — only the one server→client hand-off needed the registry indirection. **Rule for any future generic/shared descriptor object that mixes data and behavior**: if a Server Component ever needs to hand a descriptor like this to a Client Component, pass an id/key and let the client resolve it via its own import, never pass the object with its functions directly as a prop.
+- **`hasDescription: false` for Suppliers** — the one resource with no `description` field on the backend at all (its free-text field is `address` instead, handled as an ordinary `"textarea"` entry in `fields`). `BaseMasterEntity.description` is optional specifically so `Supplier` (which lacks the property) still satisfies the `TEntity extends BaseMasterEntity` constraint; the form dialog, its zod schema, and the payload builder all skip the `description` field entirely when `resource.hasDescription === false`, rather than sending a stray `description: null` the backend doesn't expect.
+- **Every generated copy string derives mechanically from `resource.entityLabel`** (`เพิ่ม${entityLabel}`, `แก้ไข${entityLabel}`, `สร้าง${entityLabel}แล้ว`, `ปิดใช้งาน${entityLabel}นี้หรือไม่?`, `"${nameTh}" (${code}) จะไม่ปรากฏในรายการ${entityLabel}ที่ใช้งานอยู่อีกต่อไป...`) — confirmed against all 7 resources' original hand-written strings before generalizing; every one matched exactly (see the "Rule for the next simple-master page" recipe below, which already predicted this).
+- **Categories' bespoke UI (sortOrder + iconColor) is handled entirely through `fields[]`, no special-casing in the generic components**: `categoryResource.fields` declares `sortOrder` (`type: "number"`, with a `heroBadge` rendering `<Badge>ลำดับ N</Badge>` in the details dialog) and `iconColor` (`type: "color"`, `tableRender` for the table swatch, `heroBadge` for the details-dialog chip, `detailValue` for the Data-Sheet swatch+hex-text row) — the generic form/table/details components never import `Palette` or know Categories exists; they just call whatever renderer the field supplies.
+- **Old per-resource component folders moved to a `%TEMP%` backup, not deleted** (`Move-Item` to `admin-dashboard-old-mastdata-components-<timestamp>` under `%TEMP%`, per this file's own Windows-editing convention — `Remove-Item` stays blocked by the safety gate). Confirmed via a repo-wide grep that nothing outside those 7 folders referenced them before moving.
+- **Minor, deliberate cosmetic differences from the old hand-written pages** (not asked for, but a natural consequence of one shared table): Units' table now also shows a "ชื่อ (อังกฤษ)" column (the old hand-written table dropped it to make room for `symbol`) — more information shown, not less, and no call site depended on the 5-column layout. Categories' form no longer pairs `code` with `sortOrder` in one row (the generic layout always gives `code` its own full-width row) — `sortOrder` now renders alone in the next row instead, same as Units' `symbol` always has.
+- **Verified live end-to-end** using a disposable temp SUPER_ADMIN account (`tmpgeneric1`, created via `create-super-admin.ts`, deleted afterward): Categories (create dialog with the color swatch + ลำดับ field, table with the swatch column), Suppliers (table with contactName/email columns, the 8-field `xl` edit dialog with no description field, correctly pre-filled), Units (table with the symbol column), and Loading Points (a full disable→confirm→Server-Action→refresh→re-render round trip, then re-enable — confirmed via `read_network_requests` that the POST actually fired and the row's status genuinely flipped both ways) all rendered and worked correctly with zero console errors after the RSC-boundary fix above. Delivery Types / Reject Reasons / Material Models were not independently re-verified live this pass since they're byte-identical Shape A descriptors to the already-verified Loading Points.
+- `tsc --noEmit` clean, `pnpm lint` back to the same 9 pre-existing warnings (0 new), `pnpm test` 259/259 (0 regressions — no test file referenced the deleted per-resource UI components, only their `lib/api/*.test.ts` and `*-actions.test.ts` files, which are unchanged).
+- **Rule for the next simple-master resource**: write one descriptor file in `src/lib/master-data/resources/` (copy the closest existing shape — Shape A for a plain 4-field resource, Shape D for a wide one), add it to the `masterDataResources` registry in `resources/index.ts`, and write a 3-line `page.tsx`. No UI component file is written by hand anymore. If a resource ever needs a genuinely bespoke widget beyond what `type`/`tableRender`/`heroBadge`/`detailValue` can express, that's a sign it no longer fits this generic shape — build it by hand instead of stretching the descriptor API, the same call already made for Materials PC/Products/Material Receiving in the factories pass above.
+
+### Status Items (CRUD) — `/master-data/statuses` backed by `/status-items` — 2026-09-11
+- The user-facing route is `/master-data/statuses`; the verified cps-api contract is `GET/POST /status-items`, `PATCH/DELETE /status-items/:id`, and `PATCH /status-items/:id/restore`, guarded by `STATUS_ITEM_VIEW/CREATE/UPDATE/DELETE`. The entity has the shared core fields plus required `module`, constrained semantic `color` (`info | success | warning | danger | muted`), `isDefault`, and `sortOrder`; updates require `updatedAt` for optimistic concurrency.
+- This remains a simple-master descriptor, not a parallel bespoke page. `MasterDataFieldDef` now supports `select` (descriptor-provided allowed options/default) and `boolean` (accessible Radix `Switch`) so the generic form can represent the backend contract exactly. Table/detail renderers show semantic badges for color and default status. The `/master-data` hub includes a permission-aware Status card and count fetch.
+- API and Server Action tests cover query serialization (including `module` and explicit `isActive=false`), all REST mutation paths, payload forwarding, 409 conflict mapping, soft deactivate/restore, and missing-session short-circuiting.
 
 ### Loading Points (CRUD) — `/master-data/loading-points`, fourth real CRUD page — second under the `master-data/` URL group
 - `/master-data/loading-points` is a distinct cps-api module (`cps-api/src/modules/loading-points/{loading-points.controller,loading-points.service,dto/*}.ts`, `API_ENDPOINTS.md` § 5.1) — not a filtered view over a shared resource, but a true simple-master CRUD (code/nameTh/nameEn/description/isActive). Confirmed by reading the controller/service/DTOs directly, same approach used for the Categories audit. **Same shape as `/units`, `/suppliers`, `/delivery-types`, `/material-models`** in `API_ENDPOINTS.md` § 5.1 — a flat, single-table, no-parent, no-sortOrder, no-iconColor simple master. The backend seed (`cps-api/src/database/seeds/seed.ts`) already lists this URL under the menu code `LOADING_POINT_MANAGEMENT` with the `map-pin` icon (already mapped in `lib/menu-icons.ts` since the menus round on 2026-09-02), so the page lights up the moment it ships.
@@ -653,9 +661,40 @@ A change without a corresponding AGENTS.md update is considered **incomplete**.
 
 The `<!-- BEGIN:nextjs-agent-rules -->` ... `<!-- END:nextjs-agent-rules -->` block at the top of this file is auto-managed by `next dev`. **Preserve it verbatim** and add new content **after** the closing tag.
 
+### R4 — New work reuses the project's existing structure; never invent a parallel pattern
+
+> **เวลามีการขอให้สร้างของใหม่ ต้องใช้โครงสร้าง/รูปแบบเดียวกับที่มีอยู่แล้วในโปรเจกต์ ห้ามสร้างรูปแบบคู่ขนานใหม่โดยไม่มีเหตุผล**
+
+Before writing any new route, component, data-layer file, or Server Action, check whether this codebase already has an established shape for that kind of thing — this file's own Conventions/Project Structure sections are the source of truth, not memory or a generic "best practice." Match it exactly unless the request is explicitly asking for something structurally different.
+
+- **New simple-master CRUD resource** (a flat table: code/nameTh/nameEn/+a few fields/isActive, soft-delete/restore) → **do not** write `page.tsx` + `actions.ts` + 6 hand-written UI component files. Write one descriptor in `src/lib/master-data/resources/` (copy the closest existing shape — see § Master-data generic CRUD page), register it in `resources/index.ts`, and write a 3-line `page.tsx` around `MasterDataResourcePage`. The data layer is always `createResourceApi`/`createCrudActions` (§ Master-data CRUD factories) — never a hand-copied `lib/api/*.ts`/`actions.ts` pair.
+- **New non-simple-master CRUD page** (has real per-resource behavior: image upload, sub-resources, wizards — like Materials PC / Products / Material Receiving) → follow the ADR-006 pattern: Server Component fetches via `src/lib/api/*`, filters live in the URL, mutations are Server Actions calling `revalidatePath`, client holds only UI state. Don't add React Query/SWR or any other client-side cache — this app is Server Components + Server Actions throughout by deliberate decision (see ADR-006).
+- **New per-row action menu** (edit/disable/delete/etc. on a table row or card) → use the shared `RowActionsMenu` (`ui/row-actions-menu.tsx`) via a pure `get<Resource>RowActions()` function, never a hand-rolled `DropdownMenu`. Danger actions after a separator, "enable"/"restore" is `variant: "default"` not `"danger"`.
+- **New confirm-before-destructive-action dialog** → wrap `ui/confirm-dialog.tsx`, don't build a new confirmation primitive.
+- **New dialog with enough fields to need full-screen on mobile** → `DialogContent fullScreenOnMobile size="lg" | "xl"`, not a bespoke responsive wrapper.
+- **New form** → `react-hook-form` + `zod` + `@hookform/resolvers/zod`, `mode: "onChange"`, toast via `sonner` — this is universal in the app, not resource-specific.
+- **New page under `(dashboard)/`** → its folder path equals its final URL (see ADR-005); don't nest under a `dashboard/` subfolder.
+- **New color, spacing, or radius value** → reference an existing token in `globals.css`/the Design System cheat sheet above; never hardcode hex or introduce a parallel token.
+- If a request genuinely doesn't fit any existing pattern (a real UI/behavior need the generic shapes can't express), that's a signal to build it by hand deliberately — but say so explicitly and explain why the existing pattern doesn't fit, the same judgment call already made for Materials PC/Products/Material Receiving being excluded from the master-data factories and generic UI. Don't silently drift into a new pattern out of convenience.
+- **Before finishing**, re-read the relevant Conventions section one more time and confirm the new code actually matches it — this is the same "re-read before acting" discipline R1 already requires, applied specifically to structural consistency.
+
 ---
 
 ## Recent Changes
+
+### 2026-09-11 — Added Status Items CRUD at `/master-data/statuses`
+- Added the permission-aware Status master-data route, hub card, `/status-items` API binding, factory-backed Server Actions, generic descriptor, semantic color select/badges, default-status switch, optimistic concurrency, soft deactivate/restore, and focused API/action tests. Extended the generic descriptor form with reusable `select` and `boolean` field types instead of creating status-specific UI components.
+- Verified with `tsc --noEmit`, the full `pnpm test` suite (265/265), `pnpm lint` (0 errors; the same 9 React Compiler compatibility warnings), and `pnpm build`; the production route manifest includes `/master-data/statuses`.
+
+### 2026-09-11 — Added R4: new work must reuse the project's existing structure, not invent a parallel pattern
+- User asked for AGENTS.md to explicitly require that any newly-requested feature follow the same structure/pattern already established in this codebase, rather than a fresh agent turn inventing its own shape. Added **R4** under Mandatory Rules — a checklist of "if the request looks like X, use pattern Y" mappings (simple-master CRUD → the generic descriptor system, complex CRUD → the ADR-006 Server-Component-+-Server-Action pattern, row actions → `RowActionsMenu`, confirm dialogs → `ConfirmDialog`, forms → RHF+zod+`mode:"onChange"`, colors → existing tokens) plus an explicit escape hatch: a genuinely novel need should be built by hand deliberately, with the reason stated, not silently drifted into.
+- This directly follows the 2026-09-11 generic-CRUD-page work, which is the reference example R4 points to — a future "add a new simple-master resource" request should now produce a single descriptor file, never a repeat of the old 6-hand-written-components pattern.
+
+### 2026-09-11 — Generic CRUD page: collapsed the 7 master-data resources' 42 hand-written UI component files into 1 shared generic UI
+- Follow-up to the 2026-09-10 architecture review's deferred item #3. User asked to go ahead with the `defineMasterDataResource()` descriptor + generic CRUD page. Added `src/lib/master-data/{types,utils}.ts` + `resources/{index,category,loading-point,delivery-type,reject-reason,material-model,unit,supplier}.{ts,tsx}` (one small descriptor per resource) and `src/components/master-data/generic-{page,client,filters,table,form-dialog,status-dialog,details-dialog}.tsx` (the shared UI, driven by each resource's descriptor). Every resource's `page.tsx` is now a 3-line wrapper around `MasterDataResourcePage`. See the new "Master-data generic CRUD page" section under Conventions above for the full writeup.
+- **Hit and fixed a real RSC bug during live verification**: the Server Component page tried to pass the resource descriptor (which contains plain functions — `actions`, `list`, field renderers) as a prop into the `"use client"` orchestrator, which React rejects outright ("Functions cannot be passed directly to Client Components..."). Fixed with a `resourceKey` string prop + a client-side registry lookup (`lib/master-data/resources/index.ts`) instead of passing the descriptor object itself across that boundary.
+- Old per-resource component folders (categories/loading-points/delivery-types/reject-reasons/material-models/suppliers/units under `src/components/`) moved to a `%TEMP%` backup, not deleted. `actions.ts`/`lib/api/*.ts` files and their tests are completely unchanged — this pass only touched the UI layer the 2026-09-10 factories deliberately left alone.
+- Verified live end-to-end with a disposable temp SUPER_ADMIN account (deleted afterward): Categories' color-swatch field, Suppliers' wide no-description form, Units' symbol column, and a full Loading Points disable→enable round trip (confirmed via network requests that the Server Action fired and the status genuinely flipped). `tsc --noEmit` clean, `pnpm lint` 0 new warnings, `pnpm test` 259/259.
 
 ### 2026-09-10 — Architecture review: extracted `createResourceApi`/`createCrudActions` factories for the 7 master-data resources
 - User asked for an architecture review (via the `codebase-design` skill), then to act on the top 2 findings. Diffing two "twin" master-data resources (loading-points vs delivery-types) after renaming the resource away showed their component files, `actions.ts`, and `lib/api/*.ts` differed by only 7–31 lines — and every differing line was Thai copy or a comment, never logic. This was a textbook shallow-module case: 7 resources implementing the identical 10-function CRUD shape, ~1,816 lines total in the data layer alone, where the "deletion test" showed deleting 6 of the 7 would make zero complexity reappear at any call site.

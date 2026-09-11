@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
-import { Box, FolderTree, MapPin, Route, Ruler, ShieldAlert, Truck, XCircle } from "lucide-react";
+import { Box, FolderTree, ListChecks, MapPin, Route, Ruler, ShieldAlert, Truck, XCircle } from "lucide-react";
 import { getCurrentSession } from "@/lib/session";
 import { listCategories } from "@/lib/api/categories";
 import { listDeliveryTypes } from "@/lib/api/delivery-types";
@@ -9,6 +9,7 @@ import { listMaterialModels } from "@/lib/api/material-models";
 import { listRejectReasons } from "@/lib/api/reject-reasons";
 import { listSuppliers } from "@/lib/api/suppliers";
 import { listUnits } from "@/lib/api/units";
+import { listStatusItems } from "@/lib/api/status-items";
 import { MasterDataDashboardView, type MasterDataResourceCard } from "@/components/master-data/master-data-dashboard-view";
 
 export const metadata: Metadata = { title: "ข้อมูลหลัก · Master Data" };
@@ -92,6 +93,15 @@ export default async function MasterDataDashboardPage() {
       icon: Box,
       permission: "MATERIAL_MODEL_VIEW",
       list: listMaterialModels,
+    },
+    {
+      key: "statuses",
+      name: "สถานะ",
+      description: "สถานะมาตรฐานและค่าเริ่มต้นที่แต่ละโมดูลใช้ร่วมกัน",
+      href: "/master-data/statuses",
+      icon: ListChecks,
+      permission: "STATUS_ITEM_VIEW",
+      list: listStatusItems,
     },
     {
       key: "reject-reasons",
