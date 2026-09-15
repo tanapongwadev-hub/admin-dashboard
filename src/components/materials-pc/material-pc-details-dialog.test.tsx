@@ -21,6 +21,7 @@ const material: Material = {
   ratio: 4,
   unitId: "unit-1",
   deliveryTypeId: null,
+  materialTypeId: null,
   modelId: "model-1",
   loadingPointId: "lp-1",
   processLineName: "Press line 1",
@@ -38,6 +39,7 @@ const material: Material = {
   unit: { id: "unit-1", code: "PCS", nameEn: "Piece" },
   model: { id: "model-1", code: "BRKT-A", nameEn: "Bracket A" },
   deliveryType: null,
+  materialTypeMaster: null,
   loadingPoint: { id: "lp-1", code: "LP-BPI", nameEn: "Bang Pa-In" },
   suppliers: [
     { id: "supplier-1", code: "SUP-001", nameEn: "CPS Steel" },

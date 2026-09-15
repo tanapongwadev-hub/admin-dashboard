@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
-import { Box, FolderTree, ListChecks, MapPin, Route, Ruler, ShieldAlert, Truck, XCircle } from "lucide-react";
+import { Box, FolderTree, ListChecks, MapPin, Route, Ruler, ShieldAlert, Tag, Truck, XCircle } from "lucide-react";
 import { getCurrentSession } from "@/lib/session";
 import { listCategories } from "@/lib/api/categories";
 import { listDeliveryTypes } from "@/lib/api/delivery-types";
 import { listLoadingPoints } from "@/lib/api/loading-points";
 import { listMaterialModels } from "@/lib/api/material-models";
 import { listRejectReasons } from "@/lib/api/reject-reasons";
+import { listMaterialTypes } from "@/lib/api/material-types";
 import { listSuppliers } from "@/lib/api/suppliers";
 import { listUnits } from "@/lib/api/units";
 import { listStatusItems } from "@/lib/api/status-items";
@@ -111,6 +112,15 @@ export default async function MasterDataDashboardPage() {
       icon: XCircle,
       permission: "REJECT_REASON_VIEW",
       list: listRejectReasons,
+    },
+    {
+      key: "material-types",
+      name: "ประเภทวัสดุ",
+      description: "ประเภทวัสดุ (PC / OF / OF-MAT) ที่ใช้จำแนกวัสดุในระบบ",
+      href: "/master-data/material-types",
+      icon: Tag,
+      permission: "MATERIAL_TYPE_VIEW",
+      list: listMaterialTypes,
     },
   ] as const;
 

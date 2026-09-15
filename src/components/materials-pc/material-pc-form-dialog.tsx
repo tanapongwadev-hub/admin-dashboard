@@ -174,6 +174,7 @@ const schema = z
     packingQuantity: z.coerce.number().int().min(1).optional().or(z.literal("")),
     minimumStock: z.coerce.number().min(0, "สต็อกขั้นต่ำต้องไม่น้อยกว่า 0"),
     deliveryTypeId: z.string(),
+    materialTypeId: z.string(),
     modelId: z.string(),
     loadingPointId: z.string(),
     processLineName: z.string().max(255).optional(),
@@ -204,6 +205,7 @@ function toDefaultValues(material?: Material | null): FormInput {
     packingQuantity: material?.packingQuantity ?? "",
     minimumStock: Number(material?.minimumStock ?? 0),
     deliveryTypeId: material?.deliveryTypeId ?? NONE,
+    materialTypeId: material?.materialTypeId ?? NONE,
     modelId: material?.modelId ?? NONE,
     loadingPointId: material?.loadingPointId ?? NONE,
     processLineName: material?.processLineName ?? "",
@@ -302,6 +304,7 @@ export function MaterialPcFormDialog({
       packingQuantity: values.packingQuantity === "" ? null : Number(values.packingQuantity),
       minimumStock: Number(values.minimumStock),
       deliveryTypeId: values.deliveryTypeId === NONE ? null : values.deliveryTypeId,
+      materialTypeId: values.materialTypeId === NONE ? null : values.materialTypeId,
       modelId: values.modelId === NONE ? null : values.modelId,
       loadingPointId: values.loadingPointId === NONE ? null : values.loadingPointId,
       processLineName: values.processLineName || null,
@@ -416,6 +419,18 @@ export function MaterialPcFormDialog({
                 )}
               </div>
 
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="materialTypeId">ประเภทวัสดุ</Label>
+                <Select value={watch("materialTypeId")} onValueChange={(v) => setValue("materialTypeId", v, { shouldValidate: true })}>
+                  <SelectTrigger id="materialTypeId"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NONE}>ไม่ระบุ</SelectItem>
+                    {lookups.materialTypes.map((item) => (
+                      <SelectItem key={item.id} value={item.id}>{item.nameTh || item.code}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="materialType">รูปทรง</Label>
                 <Select value={materialType} onValueChange={(v) => setValue("materialType", v as MaterialShape, { shouldValidate: true })}>

@@ -113,6 +113,9 @@ export function modelLabel(material: Material): string {
 export function deliveryLabel(material: Material): string {
   return material.deliveryType?.nameEn ?? material.deliveryType?.code ?? "—";
 }
+export function materialTypeLabel(material: Material): string {
+  return material.materialTypeMaster?.nameTh || material.materialTypeMaster?.code || "—";
+}
 export function loadingPointLabel(material: Material): string {
   return material.loadingPoint?.nameEn ?? material.loadingPoint?.code ?? "—";
 }

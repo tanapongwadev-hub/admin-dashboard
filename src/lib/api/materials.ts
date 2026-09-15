@@ -29,6 +29,9 @@ export interface Material {
   ratio: number | null;
   unitId: string;
   deliveryTypeId: string | null;
+  // FK into /material-types (PC / OF / OF-MAT master data, 2026-09-16).
+  // Independent of the legacy `type` string that scopes the PC page.
+  materialTypeId: string | null;
   modelId: string | null;
   loadingPointId: string | null;
   processLineName: string | null;
@@ -46,6 +49,7 @@ export interface Material {
   unit: MaterialLookup | null;
   model: MaterialLookup | null;
   deliveryType: MaterialLookup | null;
+  materialTypeMaster: MaterialLookup | null;
   loadingPoint: MaterialLookup | null;
   suppliers: MaterialLookup[];
 }
@@ -55,6 +59,7 @@ export interface MaterialLookups {
   suppliers: MaterialLookup[];
   models: MaterialLookup[];
   deliveryTypes: MaterialLookup[];
+  materialTypes: MaterialLookup[];
   loadingPoints: MaterialLookup[];
 }
 
@@ -78,6 +83,7 @@ export interface ListMaterialsParams {
   unitId?: string;
   modelId?: string;
   deliveryTypeId?: string;
+  materialTypeId?: string;
   loadingPointId?: string;
   supplierId?: string;
   sortBy?: "code" | "name" | "isActive" | "createdAt" | "updatedAt";
@@ -92,6 +98,7 @@ export interface MaterialPayload {
   ratio?: number | null;
   unitId: string;
   deliveryTypeId?: string | null;
+  materialTypeId?: string | null;
   modelId?: string | null;
   loadingPointId?: string | null;
   processLineName?: string | null;

@@ -13,6 +13,7 @@ const material: Material = {
   ratio: 4,
   unitId: "unit-1",
   deliveryTypeId: null,
+  materialTypeId: null,
   modelId: "model-1",
   loadingPointId: "point-1",
   processLineName: "Press line 1",
@@ -30,6 +31,7 @@ const material: Material = {
   unit: { id: "unit-1", code: "PCS", nameEn: "Piece" },
   model: { id: "model-1", code: "BRKT-A", nameEn: "Bracket A" },
   deliveryType: null,
+  materialTypeMaster: null,
   loadingPoint: { id: "point-1", code: "LP-1", nameEn: "Dock A" },
   suppliers: [{ id: "supplier-1", code: "SUP-001", nameEn: "CPS Steel" }],
 };

@@ -12,6 +12,7 @@ import {
   unitLabel,
   modelLabel,
   deliveryLabel,
+  materialTypeLabel,
   loadingPointLabel,
   processLineLabel,
   specificationLabel,
@@ -180,6 +181,7 @@ export function MaterialPcDetailsView({
           <DataSheetRow label="รุ่น" value={modelLabel(material)} />
           <DataSheetRow label="หน่วย" value={unitLabel(material)} />
           <DataSheetRow label="สต็อกขั้นต่ำ" value={`${formatNumber(Number(material.minimumStock))} ${unitLabel(material)}`} />
+          <DataSheetRow label="ประเภทวัสดุ" value={materialTypeLabel(material)} />
           <DataSheetRow label="ประเภทการจัดส่ง" value={deliveryLabel(material)} />
           <DataSheetRow label="จุดขึ้นสินค้า" value={loadingPointLabel(material)} fullWidth />
           <DataSheetRow label="สายการผลิต" value={processLineLabel(material)} fullWidth />
