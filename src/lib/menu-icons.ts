@@ -75,6 +75,12 @@ export function menuIcon(name: string | null): LucideIcon {
   return MENU_ICONS[name] ?? Circle;
 }
 
+// Every icon name this app knows how to render, for UI that lets a user pick
+// one (see components/menus/menu-icon-picker.tsx) rather than type it blind.
+export const MENU_ICON_ENTRIES: { name: string; Icon: LucideIcon }[] = Object.entries(
+  MENU_ICONS
+).map(([name, Icon]) => ({ name, Icon }));
+
 // A MenuNode with its icon string pre-resolved to an actual component.
 // Resolve once per menu tree (e.g. via useMemo) and pass the result down as
 // props — picking an icon via menuIcon() directly inside a component that

@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { MenuIconPicker } from "@/components/menus/menu-icon-picker";
 import {
   createMenuAction,
   updateMenuAction,
@@ -254,10 +255,22 @@ export function MenuFormDialog({
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="menu-icon">ชื่อไอคอน</Label>
-                <Input id="menu-icon" placeholder="folder-tree" autoComplete="off" aria-invalid={errors.icon ? true : undefined} aria-describedby={errors.icon ? "menu-icon-error" : "menu-icon-hint"} {...register("icon")} />
+                <Label htmlFor="menu-icon">ไอคอน</Label>
+                <Controller
+                  name="icon"
+                  control={control}
+                  render={({ field }) => (
+                    <MenuIconPicker
+                      id="menu-icon"
+                      value={field.value}
+                      onChange={field.onChange}
+                      ariaInvalid={Boolean(errors.icon)}
+                      ariaDescribedBy={errors.icon ? "menu-icon-error" : "menu-icon-hint"}
+                    />
+                  )}
+                />
                 <FieldError id="menu-icon-error" message={errors.icon?.message} />
-                {!errors.icon && <p id="menu-icon-hint" className="text-xs text-fg-muted">ใช้ชื่อ Lucide แบบ kebab-case</p>}
+                {!errors.icon && <p id="menu-icon-hint" className="text-xs text-fg-muted">เลือกไอคอนที่จะแสดงในแถบเมนู</p>}
               </div>
 
               {isEdit && (
