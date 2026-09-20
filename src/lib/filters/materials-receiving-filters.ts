@@ -46,12 +46,32 @@ export const MATERIALS_RECEIVING_ALL_FILTER_KEYS: (keyof MaterialsReceivingFilte
   "receiveDateTo",
 ];
 
-export function readMaterialsReceivingFilters(searchParams: URLSearchParams): MaterialsReceivingFilterState {
+// `lookups` is optional and used only to resolve a `?materialCode=` URL
+// param (set by /materials/pc's "รายการรับเข้า"/"รับเข้า" row actions, see
+// materials/materials-receiving/page.tsx) into this state's `materialId`
+// field when `?materialId=` itself isn't present — so the material chip
+// and the advanced-filter drawer's own Material select reflect the same
+// filter that page.tsx already resolved and applied server-side, instead
+// of only working "invisibly" (results filtered, but no chip/pre-selection
+// to show it). `materialId` in the URL still wins if both are present.
+export function readMaterialsReceivingFilters(
+  searchParams: URLSearchParams,
+  lookups?: MaterialReceivingLookups
+): MaterialsReceivingFilterState {
+  const materialId =
+    searchParams.get("materialId") ??
+    (() => {
+      const code = searchParams.get("materialCode");
+      if (!code) return null;
+      const match = lookups?.materials.find((m) => m.code.toLowerCase() === code.toLowerCase());
+      return match?.id ?? null;
+    })() ??
+    "";
   return {
     search: searchParams.get("search") ?? "",
     status: asStatus(searchParams.get("status")),
     supplierId: searchParams.get("supplierId") ?? "",
-    materialId: searchParams.get("materialId") ?? "",
+    materialId,
     receiveDateFrom: searchParams.get("receiveDateFrom") ?? "",
     receiveDateTo: searchParams.get("receiveDateTo") ?? "",
   };

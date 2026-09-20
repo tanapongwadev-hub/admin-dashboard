@@ -89,17 +89,19 @@ export function ProductsClient({
   return (
     <div className="flex flex-col gap-4">
       <ProductsCatalogSummary totalItems={totalItems} lookups={lookups} />
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <ProductsFilters lookups={lookups} />
-        <div className="flex shrink-0 items-center gap-2">
-          <ViewToggle value={view} onChange={setView} modes={["table", "card", "list"]} />
-          {canEdit && (
-            <Button onClick={() => setWizardTarget(null)} className="shrink-0">
-              <Plus className="h-4 w-4" /> เพิ่มสินค้า
-            </Button>
-          )}
-        </div>
+      {/* ViewToggle + add-product button get their own right-aligned row
+          (see AGENTS.md § Materials PC advanced filter redesign's "Toolbar
+          layout changed" note) — the filter bar below needs its own
+          full-width row to fit the quick dropdowns + chips underneath. */}
+      <div className="flex items-center justify-end gap-2">
+        <ViewToggle value={view} onChange={setView} modes={["table", "card", "list"]} />
+        {canEdit && (
+          <Button onClick={() => setWizardTarget(null)} className="shrink-0">
+            <Plus className="h-4 w-4" /> เพิ่มสินค้า
+          </Button>
+        )}
       </div>
+      <ProductsFilters lookups={lookups} totalItems={totalItems} />
 
       <ProductsTable
         products={products}

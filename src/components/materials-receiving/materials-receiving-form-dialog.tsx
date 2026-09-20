@@ -17,11 +17,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import {
-  createMaterialsReceivingAction,
-  confirmMaterialsReceivingAction,
+  receiveMaterialsReceivingAction,
   getSuppliersByMaterialAction,
 } from "@/app/(dashboard)/materials/materials-receiving/actions";
 import type { MaterialReceivingLookups, MaterialReceivingLookup } from "@/lib/api/materials-receiving";
+import { calculateReceivingPreview } from "@/lib/materials-receiving-calculation";
 import { formatNumber, cn } from "@/lib/utils";
 
 // Custom month-letter mapping — MUST mirror cps-api's lot-code.util.ts
@@ -45,25 +45,6 @@ function todayIso(): string {
 
 const RATIO_REQUIRED_TYPES = new Set(["PIPE", "SHEET", "COIL"]);
 
-interface PackagePreviewRow {
-  packageNo: number;
-  quantity: number;
-  isRemainder: boolean;
-}
-
-function buildPackagePreview(receiveQuantity: number, packingQuantity: number): PackagePreviewRow[] {
-  if (receiveQuantity <= 0 || packingQuantity <= 0) return [];
-  const packageCount = Math.ceil(receiveQuantity / packingQuantity);
-  const rows: PackagePreviewRow[] = [];
-  let remaining = receiveQuantity;
-  for (let i = 1; i <= packageCount; i += 1) {
-    const qty = i === packageCount ? remaining : Math.min(packingQuantity, remaining);
-    rows.push({ packageNo: i, quantity: qty, isRemainder: i === packageCount && qty < packingQuantity });
-    remaining -= qty;
-  }
-  return rows;
-}
-
 // The "receiving ticket" — styled after the physical lot label this data
 // becomes once printed and stuck on a box. Punch-hole circles use bg-surface
 // (the dialog's own background, see ui/dialog.tsx) sitting on a bg-surface-2
@@ -80,7 +61,7 @@ function LotTicket({
       <span className="absolute -left-2 top-6 size-4 rounded-full bg-surface" aria-hidden="true" />
       <span className="absolute -left-2 bottom-6 size-4 rounded-full bg-surface" aria-hidden="true" />
       <div className="flex items-center justify-between gap-2 px-5 pb-1 pt-4">
-        <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-fg-muted">ป้ายรับเข้า</span>
+        <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-fg-muted">MAIN QR · ป้ายรับเข้า</span>
         <Boxes className="size-3.5 text-fg-muted" aria-hidden="true" />
       </div>
       <div className="px-5 pb-2">
@@ -123,7 +104,11 @@ export function MaterialsReceivingFormDialog({
   // (see AGENTS.md § Material Receiving), so every state variable's useState
   // initializer already runs fresh. That's the "derive, don't effect"
   // pattern this project's lint config enforces.
+  const initialMaterial = lookups.materials.find((material) => material.id === initialMaterialId);
   const [materialId, setMaterialId] = React.useState(initialMaterialId ?? "");
+  const [ratioInput, setRatioInput] = React.useState(() =>
+    initialMaterial?.ratio ? String(initialMaterial.ratio) : ""
+  );
   const [receiveQuantity, setReceiveQuantity] = React.useState("");
   const [supplierProductionDate, setSupplierProductionDate] = React.useState(todayIso());
   const [supplierId, setSupplierId] = React.useState("");
@@ -138,6 +123,12 @@ export function MaterialsReceivingFormDialog({
   const [suppliersResult, setSuppliersResult] = React.useState<
     { materialId: string; suppliers: MaterialReceivingLookup[] } | null
   >(null);
+
+  function handleMaterialChange(nextMaterialId: string) {
+    const nextMaterial = lookups.materials.find((material) => material.id === nextMaterialId);
+    setMaterialId(nextMaterialId);
+    setRatioInput(nextMaterial?.ratio ? String(nextMaterial.ratio) : "");
+  }
 
   React.useEffect(() => {
     if (!materialId) return;
@@ -168,8 +159,15 @@ export function MaterialsReceivingFormDialog({
   const selectedMaterial = lookups.materials.find((m) => m.id === materialId);
   const packingQuantity = selectedMaterial?.packingQuantity ?? null;
   const receiveQty = Number(receiveQuantity) || 0;
-  const packagePreview =
-    packingQuantity && packingQuantity > 0 ? buildPackagePreview(receiveQty, packingQuantity) : [];
+  const ratioValue = ratioInput.trim() === "" ? null : Number(ratioInput);
+  const hasValidRatio = ratioValue !== null && Number.isInteger(ratioValue) && ratioValue > 0;
+  const preview = calculateReceivingPreview({
+    receivedQuantity: receiveQty,
+    materialShape: selectedMaterial?.materialType,
+    ratio: hasValidRatio ? ratioValue : null,
+    packQuantity: packingQuantity,
+  });
+  const packagePreview = preview.packages;
   const packagePreviewTotal = packagePreview.reduce((sum, r) => sum + r.quantity, 0);
   const receiveDate = todayIso();
   // Internal Lot uses a fixed "CCI" prefix, not the material's own code —
@@ -180,7 +178,7 @@ export function MaterialsReceivingFormDialog({
   const internalLotPreview = `CCI-${buildLotDatePart(receiveDate)}-XXX`;
   const supplierLotPreview = supplierProductionDate ? buildLotDatePart(supplierProductionDate) : "";
   const needsRatio = selectedMaterial?.materialType ? RATIO_REQUIRED_TYPES.has(selectedMaterial.materialType) : false;
-  const missingRatio = needsRatio && !selectedMaterial?.ratio;
+  const missingRatio = needsRatio && !hasValidRatio;
   const isFutureProductionDate = supplierProductionDate > receiveDate;
 
   const canSubmit =
@@ -198,37 +196,24 @@ export function MaterialsReceivingFormDialog({
     if (!selectedMaterial || !canSubmit) return;
     setIsSubmitting(true);
 
-    const createResult = await createMaterialsReceivingAction({
+    const result = await receiveMaterialsReceivingAction({
       materialId: selectedMaterial.id,
       supplierId: effectiveSupplierId || undefined,
       receiveQuantity: String(receiveQty),
+      ratioOverride: needsRatio && ratioValue !== null ? ratioValue : undefined,
       supplierProductionDate,
       receiveDate,
     });
 
-    if (createResult.status === "error") {
-      setIsSubmitting(false);
-      toast.error(createResult.message);
-      return;
-    }
-
-    const confirmResult = await confirmMaterialsReceivingAction(createResult.receiving.id);
     setIsSubmitting(false);
 
-    if (confirmResult.status === "success") {
-      toast.success("รับเข้าวัตถุดิบสำเร็จ", {
-        description: `${confirmResult.receiving.internalLotNo} · ${confirmResult.receiving.packageCount} กล่อง`,
-      });
-      onSaved();
-      onOpenChange(false);
+    if (result.status === "error") {
+      toast.error(result.message);
       return;
     }
-    // Draft was created (real backend write) but confirm failed — same
-    // "truthful partial success" treatment used elsewhere in this app
-    // (see AGENTS.md § Products' BOM/workflow phases): don't imply the
-    // stock update succeeded when it didn't.
-    toast.error(`บันทึกร่างสำเร็จ (${createResult.receiving.internalLotNo}) แต่ยืนยันไม่สำเร็จ: ${confirmResult.message}`, {
-      description: "รายการนี้ยังอยู่ในสถานะร่าง สามารถกดยืนยันได้อีกครั้งจากรายการ",
+
+    toast.success("รับเข้าวัตถุดิบสำเร็จ", {
+      description: `${result.receiving.internalLotNo} · ${result.receiving.packageCount} กล่อง`,
     });
     onSaved();
     onOpenChange(false);
@@ -249,7 +234,7 @@ export function MaterialsReceivingFormDialog({
           <div className="flex flex-col gap-4 px-6 py-5 md:overflow-y-auto md:[scrollbar-width:none] md:[&::-webkit-scrollbar]:hidden">
             <div className="flex flex-col gap-1.5">
               <Label>วัสดุ</Label>
-              <Select value={materialId} onValueChange={setMaterialId}>
+              <Select value={materialId} onValueChange={handleMaterialChange}>
                 <SelectTrigger><SelectValue placeholder="เลือกวัสดุ" /></SelectTrigger>
                 <SelectContent>
                   {lookups.materials.map((material) => (
@@ -267,11 +252,6 @@ export function MaterialsReceivingFormDialog({
               {selectedMaterial && !packingQuantity && (
                 <p className="text-xs text-danger">
                   วัสดุนี้ยังไม่ได้ตั้งค่าจำนวนต่อแพ็ก (Packing Quantity) กรุณาตั้งค่าใน Material Master ก่อนรับเข้า
-                </p>
-              )}
-              {missingRatio && (
-                <p className="text-xs text-danger">
-                  วัสดุประเภท {selectedMaterial?.materialType} ต้องตั้งค่า ratio ใน Material Master ก่อนรับเข้า
                 </p>
               )}
             </div>
@@ -309,6 +289,24 @@ export function MaterialsReceivingFormDialog({
                   placeholder="1200"
                 />
               </div>
+              {needsRatio ? (
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="mr-ratio">Ratio (อัตราส่วน)</Label>
+                  <Input
+                    id="mr-ratio"
+                    name="ratioOverride"
+                    type="number"
+                    inputMode="numeric"
+                    min="1"
+                    step="1"
+                    required
+                    value={ratioInput}
+                    onChange={(event) => setRatioInput(event.target.value)}
+                    aria-invalid={missingRatio || undefined}
+                    placeholder="เช่น 20"
+                  />
+                </div>
+              ) : null}
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="mr-supplier-production-date">วันที่ Supplier ผลิต</Label>
                 <Input
@@ -329,6 +327,61 @@ export function MaterialsReceivingFormDialog({
           <div className="flex flex-col gap-4 border-t border-border bg-surface-2/40 px-6 py-5 md:overflow-y-auto md:border-l md:border-t-0 md:[scrollbar-width:none] md:[&::-webkit-scrollbar]:hidden">
             <LotTicket internalLotPreview={internalLotPreview} supplierLotPreview={supplierLotPreview} />
 
+            {selectedMaterial && receiveQty > 0 && packingQuantity && !missingRatio ? (
+              <div
+                className="rounded-xl border border-border bg-surface p-4"
+                aria-live="polite"
+              >
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold text-fg">ตัวอย่างก่อนยืนยันรับเข้า</p>
+                    <p className="text-[11px] text-fg-muted">
+                      {selectedMaterial.code} · {selectedMaterial.materialType ?? "ทั่วไป"}
+                    </p>
+                  </div>
+                  <Badge variant="neutral">QR รวม {preview.packageCount + 1}</Badge>
+                </div>
+                <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                  <div>
+                    <dt className="text-fg-muted">จำนวนรับเข้าจริง</dt>
+                    <dd className="font-semibold tabular-nums text-fg">
+                      {formatNumber(receiveQty)} {selectedMaterial.unit}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-fg-muted">รูปทรง</dt>
+                    <dd className="font-semibold text-fg">{selectedMaterial.materialType ?? "—"}</dd>
+                  </div>
+                  {preview.requiresConversion ? (
+                    <div>
+                      <dt className="text-fg-muted">อัตราส่วน</dt>
+                      <dd className="font-semibold tabular-nums text-fg">
+                        {formatNumber(ratioValue ?? 0)}
+                      </dd>
+                    </div>
+                  ) : null}
+                  <div>
+                    <dt className="text-fg-muted">จำนวนเข้าสต็อก</dt>
+                    <dd className="font-semibold tabular-nums text-primary">
+                      {formatNumber(preview.convertedQuantity)}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-fg-muted">จำนวนต่อแพ็ก</dt>
+                    <dd className="font-semibold tabular-nums text-fg">
+                      {formatNumber(packingQuantity)}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-fg-muted">QR ที่จะสร้าง</dt>
+                    <dd className="font-semibold text-fg">
+                      MAIN 1 · SUB {preview.packageCount}
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+            ) : null}
+
             {packagePreview.length > 0 ? (
               // Card, not a bare bordered box — same header/body/footer shape
               // as every other data card in the app (see AGENTS.md § Theme):
@@ -340,7 +393,7 @@ export function MaterialsReceivingFormDialog({
                 <div className="flex items-center justify-between border-b border-border px-4 py-3">
                   <div className="flex items-center gap-2">
                     <Boxes className="size-4 text-primary" aria-hidden="true" />
-                    <span className="text-sm font-semibold text-fg">กล่อง/แพ็กที่จะได้</span>
+                    <span className="text-sm font-semibold text-fg">SUB QR · กล่อง/แพ็กที่จะได้</span>
                   </div>
                   <Badge variant="primary">{packagePreview.length} กล่อง</Badge>
                 </div>
@@ -375,11 +428,11 @@ export function MaterialsReceivingFormDialog({
 
                 <div className="flex items-center justify-between gap-2 border-t border-border bg-surface-2/60 px-4 py-2.5">
                   <span className="text-[11px] text-fg-muted">
-                    รวม {formatNumber(packagePreviewTotal)} จาก {formatNumber(receiveQty)}
+                    รวม {formatNumber(packagePreviewTotal)} จาก {formatNumber(preview.convertedQuantity)}
                   </span>
-                  {packagePreviewTotal === receiveQty && receiveQty > 0 ? (
+                  {packagePreviewTotal === preview.convertedQuantity && preview.convertedQuantity > 0 ? (
                     <span className="flex items-center gap-1 text-[11px] font-semibold text-success">
-                      <CheckCircle2 className="size-3.5" aria-hidden="true" /> ครบตามจำนวนรับเข้า
+                      <CheckCircle2 className="size-3.5" aria-hidden="true" /> ครบตามจำนวนเข้าสต็อก
                     </span>
                   ) : (
                     <span className="text-[11px] font-medium text-fg-muted">กำลังคำนวณ…</span>

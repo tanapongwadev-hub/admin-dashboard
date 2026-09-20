@@ -13,6 +13,9 @@ import {
   Eye,
   PackagePlus,
   ArrowUpDown,
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  Network,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -46,6 +49,15 @@ interface MaterialCollectionProps {
   // MATERIALS_RECEIVING_CREATE just lands on a receiving list they can't
   // create from, same as navigating there directly via the sidebar.
   onReceive: (material: Material) => void;
+  // Navigates to /materials/materials-receiving with this material's code
+  // as a persistent list filter (?materialCode=, no ?open=create) — "view
+  // history", distinct from onReceive's "go create a new receiving" intent.
+  onViewReceivingHistory: (material: Material) => void;
+  // Navigates to /materials/materials-disbursement with this material's
+  // code as a persistent list filter — same shape as onViewReceivingHistory.
+  onViewDisbursementHistory: (material: Material) => void;
+  // Opens MaterialBomUsageDialog — which BOM/Product uses this material.
+  onViewBomUsage: (material: Material) => void;
 }
 
 // Props for a single-row renderer (Editorial card or List item) — same
@@ -206,6 +218,12 @@ export function getMaterialRowActions(
     // Optional for the same reason — omitting it just means "รับเข้า"
     // isn't in the resulting action list.
     onReceive?: (material: Material) => void;
+    // Optional — omitting any of these three just means that action isn't
+    // in the resulting list (same "optional handler, no-op call sites don't
+    // need a stub" convention as onViewDetails/onReceive above).
+    onViewReceivingHistory?: (material: Material) => void;
+    onViewDisbursementHistory?: (material: Material) => void;
+    onViewBomUsage?: (material: Material) => void;
   }
 ): RowAction[] {
   const actions: RowAction[] = [];
@@ -222,6 +240,30 @@ export function getMaterialRowActions(
       label: "รับเข้า",
       icon: PackagePlus,
       onSelect: () => handlers.onReceive!(material),
+      variant: "default",
+    });
+  }
+  if (handlers.onViewReceivingHistory) {
+    actions.push({
+      label: "รายการรับเข้า",
+      icon: ArrowDownToLine,
+      onSelect: () => handlers.onViewReceivingHistory!(material),
+      variant: "default",
+    });
+  }
+  if (handlers.onViewDisbursementHistory) {
+    actions.push({
+      label: "รายการจ่ายออก",
+      icon: ArrowUpFromLine,
+      onSelect: () => handlers.onViewDisbursementHistory!(material),
+      variant: "default",
+    });
+  }
+  if (handlers.onViewBomUsage) {
+    actions.push({
+      label: "BOM / Products",
+      icon: Network,
+      onSelect: () => handlers.onViewBomUsage!(material),
       variant: "default",
     });
   }
@@ -251,11 +293,22 @@ function MaterialActions({
   onToggleStatus,
   onViewDetails,
   onReceive,
+  onViewReceivingHistory,
+  onViewDisbursementHistory,
+  onViewBomUsage,
 }: Omit<MaterialCollectionProps, "materials" | "view" | "stockByMaterialId"> & { material: Material }) {
   return (
     <RowActionsMenu
       itemLabel={material.name}
-      actions={getMaterialRowActions(material, canEdit, canDelete, { onEdit, onToggleStatus, onViewDetails, onReceive })}
+      actions={getMaterialRowActions(material, canEdit, canDelete, {
+        onEdit,
+        onToggleStatus,
+        onViewDetails,
+        onReceive,
+        onViewReceivingHistory,
+        onViewDisbursementHistory,
+        onViewBomUsage,
+      })}
     />
   );
 }
@@ -324,6 +377,9 @@ function MaterialEditorialCard({
   onToggleStatus,
   onViewDetails,
   onReceive,
+  onViewReceivingHistory,
+  onViewDisbursementHistory,
+  onViewBomUsage,
   onPreview,
 }: MaterialRowProps) {
   const balance = stockByMaterialId?.[material.id];
@@ -347,7 +403,13 @@ function MaterialEditorialCard({
           <MaterialStatus material={material} />
           <RowActionsMenu
             itemLabel={material.name}
-            actions={getMaterialRowActions(material, canEdit, canDelete, { onEdit, onToggleStatus })}
+            actions={getMaterialRowActions(material, canEdit, canDelete, {
+              onEdit,
+              onToggleStatus,
+              onViewReceivingHistory,
+              onViewDisbursementHistory,
+              onViewBomUsage,
+            })}
           />
         </div>
       </div>
@@ -491,6 +553,9 @@ function MaterialListItem({
   onToggleStatus,
   onViewDetails,
   onReceive,
+  onViewReceivingHistory,
+  onViewDisbursementHistory,
+  onViewBomUsage,
   onPreview,
 }: MaterialRowProps) {
   const balance = stockByMaterialId?.[material.id];
@@ -555,7 +620,15 @@ function MaterialListItem({
         )}
         <RowActionsMenu
           itemLabel={material.name}
-          actions={getMaterialRowActions(material, canEdit, canDelete, { onEdit, onToggleStatus, onViewDetails, onReceive })}
+          actions={getMaterialRowActions(material, canEdit, canDelete, {
+            onEdit,
+            onToggleStatus,
+            onViewDetails,
+            onReceive,
+            onViewReceivingHistory,
+            onViewDisbursementHistory,
+            onViewBomUsage,
+          })}
         />
       </div>
     </article>
@@ -580,6 +653,9 @@ function MaterialPcSelectableTable({
   onToggleStatus,
   onViewDetails,
   onReceive,
+  onViewReceivingHistory,
+  onViewDisbursementHistory,
+  onViewBomUsage,
   onPreview,
 }: Omit<MaterialCollectionProps, "view"> & { onPreview: (material: Material) => void }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -681,6 +757,9 @@ function MaterialPcSelectableTable({
                       onToggleStatus={onToggleStatus}
                       onViewDetails={onViewDetails}
                       onReceive={onReceive}
+                      onViewReceivingHistory={onViewReceivingHistory}
+                      onViewDisbursementHistory={onViewDisbursementHistory}
+                      onViewBomUsage={onViewBomUsage}
                     />
                   </TableCell>
                 </TableRow>
@@ -707,6 +786,9 @@ export function MaterialPcCollection({
   onToggleStatus,
   onViewDetails,
   onReceive,
+  onViewReceivingHistory,
+  onViewDisbursementHistory,
+  onViewBomUsage,
 }: MaterialCollectionProps) {
   const [previewTarget, setPreviewTarget] = useState<Material | null>(null);
 
@@ -718,6 +800,9 @@ export function MaterialPcCollection({
     onToggleStatus,
     onViewDetails,
     onReceive,
+    onViewReceivingHistory,
+    onViewDisbursementHistory,
+    onViewBomUsage,
     onPreview: setPreviewTarget,
   };
 
@@ -739,6 +824,9 @@ export function MaterialPcCollection({
           onToggleStatus={onToggleStatus}
           onViewDetails={onViewDetails}
           onReceive={onReceive}
+          onViewReceivingHistory={onViewReceivingHistory}
+          onViewDisbursementHistory={onViewDisbursementHistory}
+          onViewBomUsage={onViewBomUsage}
           onPreview={setPreviewTarget}
         />
       ) : view === "list" ? (
@@ -808,6 +896,9 @@ export function MaterialPcTable({
   onToggleStatus,
   onViewDetails,
   onReceive,
+  onViewReceivingHistory,
+  onViewDisbursementHistory,
+  onViewBomUsage,
 }: {
   materials: Material[];
   meta: PaginatedResult<Material>["meta"];
@@ -819,6 +910,9 @@ export function MaterialPcTable({
   onToggleStatus: (material: Material) => void;
   onViewDetails: (material: Material) => void;
   onReceive: (material: Material) => void;
+  onViewReceivingHistory: (material: Material) => void;
+  onViewDisbursementHistory: (material: Material) => void;
+  onViewBomUsage: (material: Material) => void;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -858,6 +952,9 @@ export function MaterialPcTable({
         onToggleStatus={onToggleStatus}
         onViewDetails={onViewDetails}
         onReceive={onReceive}
+        onViewReceivingHistory={onViewReceivingHistory}
+        onViewDisbursementHistory={onViewDisbursementHistory}
+        onViewBomUsage={onViewBomUsage}
       />
 
       <div className="flex flex-col gap-2 text-sm text-fg-muted sm:flex-row sm:items-center sm:justify-between">

@@ -51,6 +51,7 @@ export function MaterialsReceivingClient({
   const initialMaterial = initialMaterialCode
     ? lookups.materials.find((m) => m.code.toLowerCase() === initialMaterialCode.toLowerCase())
     : undefined;
+  const canReceive = canCreate && canConfirm;
   // Defaults to "card" (not "table") — every field on the card is explicitly
   // labeled in Thai, which reads faster for a first-time/warehouse-floor
   // user than a dense table mixing English column headers ("Internal Lot",
@@ -61,7 +62,7 @@ export function MaterialsReceivingClient({
   // when arriving with a real ?materialCode= match — these initializers only
   // run once, at mount, so a later manual "+" click below always starts
   // clean regardless of what the URL had on first load.
-  const [formOpen, setFormOpen] = React.useState(() => !!initialMaterial);
+  const [formOpen, setFormOpen] = React.useState(() => canReceive && !!initialMaterial);
   const [pendingInitialMaterialId, setPendingInitialMaterialId] = React.useState<string | undefined>(
     () => initialMaterial?.id
   );
@@ -127,7 +128,7 @@ export function MaterialsReceivingClient({
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-end gap-2">
         <ViewToggle value={view} onChange={setView} modes={["table", "card", "list"]} />
-        {canCreate && (
+        {canReceive && (
           <Button
             onClick={() => {
               setPendingInitialMaterialId(undefined);
@@ -176,7 +177,7 @@ export function MaterialsReceivingClient({
         />
       )}
 
-      {canCreate && (
+      {canReceive && (
         <MaterialsReceivingFormDialog
           key={formSessionId}
           open={formOpen}

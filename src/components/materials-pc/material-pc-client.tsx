@@ -12,6 +12,7 @@ import { MaterialPcTable } from "@/components/materials-pc/material-pc-table";
 import { MaterialPcFormDialog } from "@/components/materials-pc/material-pc-form-dialog";
 import { MaterialPcStatusDialog } from "@/components/materials-pc/material-pc-status-dialog";
 import { MaterialPcDetailsDialog } from "@/components/materials-pc/material-pc-details-dialog";
+import { MaterialBomUsageDialog } from "@/components/materials-pc/material-bom-usage-dialog";
 import { MaterialPcInventorySummary } from "@/components/materials-pc/material-pc-inventory-summary";
 import { deactivateMaterialPcAction, restoreMaterialPcAction } from "@/app/(dashboard)/materials/pc/actions";
 import type { Material, MaterialInventorySummary, MaterialLookups, PaginatedResult, StockBalance } from "@/lib/api/materials";
@@ -46,17 +47,36 @@ export function MaterialPcClient({
   const [formTarget, setFormTarget] = React.useState<Material | null | undefined>(undefined);
   const [statusTarget, setStatusTarget] = React.useState<Material | null>(null);
   const [detailsTarget, setDetailsTarget] = React.useState<Material | null>(null);
+  const [bomUsageTarget, setBomUsageTarget] = React.useState<Material | null>(null);
 
   function handleSaved() {
     router.refresh();
   }
 
-  // Jumps to Material Receiving with this material pre-selected, referenced
-  // by its code (not a raw id) so the URL stays legible — see
-  // materials-receiving-client.tsx, which resolves the code back to the
-  // material's id via its own lookups and pre-fills the create dialog.
+  // Jumps to Material Receiving with this material pre-selected AND the
+  // create dialog auto-opened (?open=create) — "go create a new receiving
+  // for this material", referenced by code (not a raw id) so the URL stays
+  // legible. See materials-receiving-client.tsx, which resolves the code
+  // back to the material's id via its own lookups and pre-fills the create
+  // dialog. `open=create` is what distinguishes this from
+  // handleViewReceivingHistory below — without it, ?materialCode= alone
+  // only filters the list (a persistent, bookmarkable filter), it doesn't
+  // pop the create dialog.
   function handleReceive(material: Material) {
+    router.push(
+      `/materials/materials-receiving?materialCode=${encodeURIComponent(material.code)}&open=create`
+    );
+  }
+
+  // "View history" — navigates with material.code as a persistent list
+  // filter only (no ?open=create), so refreshing/bookmarking/sharing the
+  // URL keeps showing this material's receiving/disbursement documents.
+  function handleViewReceivingHistory(material: Material) {
     router.push(`/materials/materials-receiving?materialCode=${encodeURIComponent(material.code)}`);
+  }
+
+  function handleViewDisbursementHistory(material: Material) {
+    router.push(`/materials/materials-disbursement?materialCode=${encodeURIComponent(material.code)}`);
   }
 
   async function handleToggleStatus(material: Material) {
@@ -100,6 +120,9 @@ export function MaterialPcClient({
         onToggleStatus={(material) => setStatusTarget(material)}
         onViewDetails={(material) => setDetailsTarget(material)}
         onReceive={handleReceive}
+        onViewReceivingHistory={handleViewReceivingHistory}
+        onViewDisbursementHistory={handleViewDisbursementHistory}
+        onViewBomUsage={(material) => setBomUsageTarget(material)}
       />
 
       <MaterialPcDetailsDialog
@@ -108,6 +131,11 @@ export function MaterialPcClient({
         canEdit={canEdit}
         onEdit={(material) => setFormTarget(material)}
         onOpenChange={(open) => !open && setDetailsTarget(null)}
+      />
+
+      <MaterialBomUsageDialog
+        material={bomUsageTarget}
+        onOpenChange={(open) => !open && setBomUsageTarget(null)}
       />
 
       {canEdit && (

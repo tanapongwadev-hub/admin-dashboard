@@ -31,10 +31,15 @@ export type MaterialReceivingPackageStatus =
 
 export interface MaterialReceivingPackage {
   id: string;
+  parentQrId?: string;
+  mainQrId?: string;
+  qrLevel?: "SUB";
   packageNo: number;
   lotDetailNo: string | null;
   quantity: string;
+  initialQuantity?: string;
   remainingQuantity: string;
+  currentQuantity?: string;
   qrCode: string | null;
   status: MaterialReceivingPackageStatus;
 }
@@ -56,6 +61,8 @@ export interface MaterialReceiving {
   materialId: string;
   unitId: string;
   receiveQuantity: string;
+  convertedQuantity?: string;
+  qrLevel?: "MAIN";
   packingQuantity: number;
   packageCount: number;
   supplierLotNo: string | null;
@@ -79,6 +86,7 @@ export interface MaterialReceiving {
   createdAt: string;
   updatedAt: string;
   supplier: MaterialReceivingLookup | null;
+  unit?: MaterialReceivingLookup | null;
   material: { id: string; code: string; name: string; imagePath: string | null } | null;
   packages: MaterialReceivingPackage[] | null;
 }
@@ -122,6 +130,7 @@ export interface CreateMaterialsReceivingPayload {
   materialId: string;
   supplierId?: string;
   receiveQuantity: string;
+  ratioOverride?: number;
   supplierProductionDate: string;
   receiveDate: string;
 }
@@ -180,6 +189,14 @@ export function getMaterialReceiving(accessToken: string, id: string) {
 
 export function createMaterialsReceiving(accessToken: string, payload: CreateMaterialsReceivingPayload) {
   return apiFetch<MaterialReceiving>("/materials-receiving", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${accessToken}` },
+    body: JSON.stringify(payload),
+  });
+}
+
+export function receiveMaterialsReceiving(accessToken: string, payload: CreateMaterialsReceivingPayload) {
+  return apiFetch<MaterialReceiving>("/materials-receiving/receive", {
     method: "POST",
     headers: { Authorization: `Bearer ${accessToken}` },
     body: JSON.stringify(payload),

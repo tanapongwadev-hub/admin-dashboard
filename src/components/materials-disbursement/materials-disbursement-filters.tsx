@@ -7,36 +7,37 @@ import { Button } from "@/components/ui/button";
 import { SearchInput } from "@/components/ui/search-input";
 import { FilterDropdown } from "@/components/ui/filter-dropdown";
 import { FilterChip } from "@/components/ui/filter-chip";
-import { MaterialsReceivingAdvancedFilters } from "@/components/materials-receiving/materials-receiving-advanced-filters";
-import type { MaterialReceivingLookups } from "@/lib/api/materials-receiving";
+import { MaterialsDisbursementAdvancedFilters } from "@/components/materials-disbursement/materials-disbursement-advanced-filters";
+import type { MaterialsDisbursementLookups } from "@/lib/api/materials-disbursement";
 import {
-  MATERIALS_RECEIVING_ADVANCED_ONLY_KEYS,
-  MATERIALS_RECEIVING_ALL_FILTER_KEYS,
-  buildMaterialsReceivingChips,
-  readMaterialsReceivingFilters,
-  type MaterialsReceivingFilterState,
-} from "@/lib/filters/materials-receiving-filters";
+  MATERIALS_DISBURSEMENT_ADVANCED_ONLY_KEYS,
+  MATERIALS_DISBURSEMENT_FILTER_KEYS,
+  buildMaterialsDisbursementChips,
+  readMaterialsDisbursementFilters,
+  type MaterialsDisbursementFilterState,
+} from "@/lib/filters/materials-disbursement-filters";
 
-// Same filter architecture as /materials/pc (see AGENTS.md § Materials PC
-// advanced filter redesign): one canonical state read (readMaterialsReceivingFilters),
-// a quick bar whose dropdowns push to the URL immediately, a staged Advanced
+// Same filter architecture as /materials/materials-receiving (see AGENTS.md
+// § Material Disbursement filter redesign / § Materials PC advanced filter
+// redesign): one canonical state read (readMaterialsDisbursementFilters), a
+// quick bar whose dropdowns push to the URL immediately, a staged Advanced
 // Filters drawer that commits everything in one navigation on "ใช้ตัวกรอง",
 // and a removable-chip row + "ล้างตัวกรองทั้งหมด" derived from that same
 // canonical state — nothing here re-derives its own slice of `searchParams`.
-export function MaterialsReceivingFilters({
+export function MaterialsDisbursementFilters({
   lookups,
   totalItems,
 }: {
-  lookups: MaterialReceivingLookups;
+  lookups: MaterialsDisbursementLookups;
   totalItems: number;
 }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const filters = readMaterialsReceivingFilters(searchParams, lookups);
+  const filters = readMaterialsDisbursementFilters(searchParams, lookups);
   const [search, setSearch] = React.useState(filters.search);
 
-  function updateParams(next: Partial<Record<keyof MaterialsReceivingFilterState, string | null>>) {
+  function updateParams(next: Partial<Record<keyof MaterialsDisbursementFilterState, string | null>>) {
     const params = new URLSearchParams(searchParams.toString());
     for (const [key, value] of Object.entries(next)) {
       if (!value) params.delete(key);
@@ -54,9 +55,9 @@ export function MaterialsReceivingFilters({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
 
-  function applyAdvanced(next: MaterialsReceivingFilterState) {
-    const patch: Partial<Record<keyof MaterialsReceivingFilterState, string | null>> = {};
-    for (const key of MATERIALS_RECEIVING_ALL_FILTER_KEYS) {
+  function applyAdvanced(next: MaterialsDisbursementFilterState) {
+    const patch: Partial<Record<keyof MaterialsDisbursementFilterState, string | null>> = {};
+    for (const key of MATERIALS_DISBURSEMENT_FILTER_KEYS) {
       const value = next[key];
       patch[key] = value === "all" || !value ? null : value;
     }
@@ -66,23 +67,34 @@ export function MaterialsReceivingFilters({
   function clearAll() {
     setSearch("");
     const params = new URLSearchParams(searchParams.toString());
-    [...MATERIALS_RECEIVING_ALL_FILTER_KEYS, "page"].forEach((key) => params.delete(key));
+    [...MATERIALS_DISBURSEMENT_FILTER_KEYS, "materialCode", "page"].forEach((key) => params.delete(key));
     router.push(`${pathname}?${params.toString()}`);
   }
 
-  // Removing the combined date-range chip clears both ends at once (see
-  // lib/filters/materials-receiving-filters.ts#buildMaterialsReceivingChips)
-  // — a single-key clear would leave a dangling one-sided range.
-  function removeChip(key: keyof MaterialsReceivingFilterState) {
-    if (key === "receiveDateFrom") {
-      updateParams({ receiveDateFrom: null, receiveDateTo: null });
+  function removeChip(key: keyof MaterialsDisbursementFilterState) {
+    // Removing the material chip must also drop ?materialCode= (the URL
+    // param that resolved it) or the filter would silently reappear on the
+    // next navigation — see lib/filters/materials-disbursement-filters.ts.
+    if (key === "materialId") {
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete("materialId");
+      params.delete("materialCode");
+      params.delete("page");
+      router.push(`${pathname}?${params.toString()}`);
+      return;
+    }
+    // Removing the combined date-range chip clears both ends at once (same
+    // as Materials Receiving's own receiveDateFrom chip) — a single-key
+    // clear would leave a dangling one-sided range.
+    if (key === "disbursementDateFrom") {
+      updateParams({ disbursementDateFrom: null, disbursementDateTo: null });
       return;
     }
     updateParams({ [key]: null });
   }
 
-  const chips = buildMaterialsReceivingChips(filters, lookups);
-  const advancedActiveCount = MATERIALS_RECEIVING_ADVANCED_ONLY_KEYS.filter((key) => !!filters[key]).length;
+  const chips = buildMaterialsDisbursementChips(filters, lookups);
+  const advancedActiveCount = MATERIALS_DISBURSEMENT_ADVANCED_ONLY_KEYS.filter((key) => !!filters[key]).length;
   const hasAnyFilter = chips.length > 0 || !!filters.search;
 
   return (
@@ -90,11 +102,11 @@ export function MaterialsReceivingFilters({
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <SearchInput
-            id="materials-receiving-search"
+            id="materials-disbursement-search"
             value={search}
             onChange={setSearch}
-            placeholder="ค้นหา Lot หรือรหัสวัสดุ..."
-            srLabel="ค้นหาด้วย Internal Lot, Supplier Lot หรือรหัสวัสดุ"
+            placeholder="ค้นหาเลขที่ใบจ่ายออก..."
+            srLabel="ค้นหาด้วยเลขที่ใบจ่ายออก"
             className="w-full sm:max-w-sm"
           />
           <span className="hidden shrink-0 whitespace-nowrap text-xs text-fg-muted sm:inline">
@@ -105,7 +117,8 @@ export function MaterialsReceivingFilters({
         <div className="flex flex-wrap items-center gap-2">
           {/* Quick filters — hidden below md (mobile: search + Advanced
               Filters button only). Every field here is also reachable from
-              the drawer, so nothing is viewport-exclusive. */}
+              the drawer, so nothing is viewport-exclusive. Same responsive
+              shape as material-pc-filters.tsx/materials-receiving-filters.tsx. */}
           <div className="hidden items-center gap-2 md:flex">
             <FilterDropdown
               label="สถานะ"
@@ -122,18 +135,21 @@ export function MaterialsReceivingFilters({
             />
             <div className="hidden items-center gap-2 lg:flex">
               <FilterDropdown
-                label="ซัพพลายเออร์"
+                label="ประเภท"
                 labelVariant="sr-only"
-                value={filters.supplierId}
-                onChange={(value) => updateParams({ supplierId: value || null })}
-                options={lookups.suppliers.map((item) => ({ value: item.id, label: item.nameEn ?? item.nameTh ?? item.code }))}
-                placeholder="ซัพพลายเออร์"
+                value={filters.disbursementType === "all" ? "" : filters.disbursementType}
+                onChange={(value) => updateParams({ disbursementType: value || null })}
+                options={[
+                  { value: "stock_cut", label: "ตัดสต็อก" },
+                  { value: "production", label: "เบิกเพื่อผลิต" },
+                ]}
+                placeholder="ประเภท"
                 className="w-40"
               />
             </div>
           </div>
 
-          <MaterialsReceivingAdvancedFilters
+          <MaterialsDisbursementAdvancedFilters
             filters={filters}
             lookups={lookups}
             advancedActiveCount={advancedActiveCount}

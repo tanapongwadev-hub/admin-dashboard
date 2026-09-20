@@ -13,6 +13,7 @@ import {
   type StagedMaterialImage,
   type UpdateMaterialPayload,
 } from "@/lib/api/materials";
+import { listBomUsageByMaterial, type BomUsageRow } from "@/lib/api/boms";
 import { ApiError } from "@/lib/api/client";
 import { redirectIfSessionExpired, redirectMissingSession } from "@/lib/session-expiry";
 
@@ -25,6 +26,10 @@ type MaterialActionFailure = Exclude<MaterialActionResult, { status: "success" }
 
 export type MaterialImageUploadActionResult =
   | { status: "success"; image: StagedMaterialImage }
+  | { status: "error"; message: string };
+
+export type BomUsageListActionResult =
+  | { status: "success"; usage: BomUsageRow[] }
   | { status: "error"; message: string };
 
 async function requireAccessToken() {
@@ -151,6 +156,18 @@ export async function performUploadMaterialImage(
   }
 }
 
+export async function performListBomUsageByMaterial(
+  accessToken: string,
+  materialId: string
+): Promise<BomUsageListActionResult> {
+  try {
+    const usage = await listBomUsageByMaterial(accessToken, materialId);
+    return { status: "success", usage };
+  } catch (err) {
+    return { status: "error", message: errorResult(err).message };
+  }
+}
+
 export async function createMaterialPcAction(payload: MaterialPayload): Promise<MaterialActionResult> {
   const accessToken = await requireAccessToken();
   if (!accessToken) redirectMissingSession();
@@ -184,4 +201,10 @@ export async function uploadMaterialPcImageAction(
   const accessToken = await requireAccessToken();
   if (!accessToken) redirectMissingSession();
   return performUploadMaterialImage(accessToken, formData);
+}
+
+export async function listBomUsageByMaterialAction(materialId: string): Promise<BomUsageListActionResult> {
+  const accessToken = await requireAccessToken();
+  if (!accessToken) redirectMissingSession();
+  return performListBomUsageByMaterial(accessToken, materialId);
 }

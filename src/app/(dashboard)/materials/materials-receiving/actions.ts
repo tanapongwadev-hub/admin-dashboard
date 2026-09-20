@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import {
   createMaterialsReceiving,
+  receiveMaterialsReceiving,
   confirmMaterialsReceiving,
   cancelMaterialsReceiving,
   deleteMaterialsReceiving,
@@ -69,6 +70,19 @@ export async function performCreateMaterialsReceiving(
   }
 }
 
+export async function performReceiveMaterialsReceiving(
+  accessToken: string,
+  payload: CreateMaterialsReceivingPayload
+): Promise<MaterialsReceivingActionResult> {
+  try {
+    const receiving = await receiveMaterialsReceiving(accessToken, payload);
+    revalidateReceivingPath();
+    return { status: "success", receiving };
+  } catch (err) {
+    return errorResult(err);
+  }
+}
+
 export async function performConfirmMaterialsReceiving(
   accessToken: string,
   id: string
@@ -127,6 +141,14 @@ export async function createMaterialsReceivingAction(
   const accessToken = await requireAccessToken();
   if (!accessToken) redirectMissingSession();
   return performCreateMaterialsReceiving(accessToken, payload);
+}
+
+export async function receiveMaterialsReceivingAction(
+  payload: CreateMaterialsReceivingPayload
+): Promise<MaterialsReceivingActionResult> {
+  const accessToken = await requireAccessToken();
+  if (!accessToken) redirectMissingSession();
+  return performReceiveMaterialsReceiving(accessToken, payload);
 }
 
 export async function confirmMaterialsReceivingAction(id: string): Promise<MaterialsReceivingActionResult> {

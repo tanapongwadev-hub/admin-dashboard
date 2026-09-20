@@ -82,3 +82,32 @@ export function listBomsByProduct(accessToken: string, productId: string) {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
 }
+
+// "Which BOM/product uses this material?" — the reverse lookup from
+// listBomsByProduct above. One row per BOM item referencing the material,
+// newest BOM first (see cps-api/src/modules/boms/boms.service.ts#findByMaterial
+// — a single joined query, no N+1). Used by Materials PC's
+// "BOM / Products" action (material-bom-usage-dialog.tsx).
+export interface BomUsageRow {
+  bomItemId: string;
+  bomId: string;
+  bomVersion: string;
+  bomStatus: BomStatus;
+  productId: string;
+  productCode: string;
+  productName: string;
+  materialId: string;
+  materialCode: string;
+  materialName: string;
+  quantity: number;
+  unitId: string;
+  unitNameTh: string;
+  isScrap: boolean;
+  wastagePercent: number | null;
+}
+
+export function listBomUsageByMaterial(accessToken: string, materialId: string) {
+  return apiFetch<BomUsageRow[]>(`/boms/material/${materialId}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+}

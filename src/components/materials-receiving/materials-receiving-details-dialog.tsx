@@ -130,8 +130,23 @@ export function MaterialsReceivingDetailsDialog({
                   <dd className="font-mono font-semibold text-fg">{receiving.supplierLotNo ?? "—"}</dd>
                 </div>
                 <div>
-                  <dt className="text-[11px] text-fg-muted">จำนวนรับเข้า</dt>
-                  <dd className="font-semibold text-fg">{formatNumber(Number(receiving.receiveQuantity))}</dd>
+                  <dt className="text-[11px] text-fg-muted">จำนวนรับเข้าจริง</dt>
+                  <dd className="font-semibold text-fg">
+                    {formatNumber(Number(receiving.receiveQuantity))} {receiving.unit?.symbol ?? ""}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-[11px] text-fg-muted">รูปทรง / อัตราส่วน</dt>
+                  <dd className="font-semibold text-fg">
+                    {receiving.materialType ?? "ทั่วไป"}
+                    {receiving.ratio ? ` · ${formatNumber(receiving.ratio)}` : ""}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-[11px] text-fg-muted">จำนวนเข้าสต็อก</dt>
+                  <dd className="font-semibold text-primary">
+                    {formatNumber(Number(receiving.convertedQuantity ?? receiving.piecesQuantity ?? receiving.receiveQuantity))}
+                  </dd>
                 </div>
                 <div>
                   <dt className="text-[11px] text-fg-muted">จำนวนกล่อง</dt>

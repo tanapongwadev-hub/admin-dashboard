@@ -54,6 +54,9 @@ const handlers = {
   onToggleStatus: () => undefined,
   onViewDetails: () => undefined,
   onReceive: () => undefined,
+  onViewReceivingHistory: () => undefined,
+  onViewDisbursementHistory: () => undefined,
+  onViewBomUsage: () => undefined,
 };
 
 function render(view: "card" | "list", quantity = "12") {
@@ -120,7 +123,15 @@ test("stock presentation is omitted when the user lacks stock permission", () =>
 
 test("row actions preserve view/receive/edit/status permission ordering", () => {
   const actions = getMaterialRowActions(material, true, true, handlers);
-  assert.deepEqual(actions.map((action) => action.label), ["ดูรายละเอียด", "รับเข้า", "แก้ไข", "ปิดใช้งาน"]);
+  assert.deepEqual(actions.map((action) => action.label), [
+    "ดูรายละเอียด",
+    "รับเข้า",
+    "รายการรับเข้า",
+    "รายการจ่ายออก",
+    "BOM / Products",
+    "แก้ไข",
+    "ปิดใช้งาน",
+  ]);
   assert.equal(actions.at(-1)?.variant, "danger");
   assert.deepEqual(
     getMaterialRowActions(material, false, false, {
