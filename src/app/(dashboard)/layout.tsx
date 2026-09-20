@@ -1,6 +1,9 @@
 import { redirect } from "next/navigation";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { getCurrentSession } from "@/lib/session";
+import { cookies } from "next/headers";
+import { tokenExpiresAt } from "@/lib/auth-tokens";
+import { AuthHeartbeat } from "@/components/layout/auth-heartbeat";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getCurrentSession();
@@ -23,6 +26,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       currentDepartmentRole={session.currentDepartmentRole}
       menus={session.menus}
     >
+      <AuthHeartbeat expiresAt={tokenExpiresAt((await cookies()).get("accessToken")?.value)} />
       {children}
     </DashboardShell>
   );

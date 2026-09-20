@@ -1,4 +1,4 @@
-import { listUnits, type Unit, type UnitPayload, type UpdateUnitPayload, type ListUnitsParams } from "@/lib/api/units";
+import type { Unit, UnitPayload, UpdateUnitPayload } from "@/lib/api/units";
 import {
   createUnitAction,
   updateUnitAction,
@@ -44,5 +44,4 @@ export const unitResource: MasterDataResourceConfig<Unit> = {
   permissionPrefix: "UNIT",
   permissionLabelEnglish: "Unit View",
   sortBy: "code",
-  list: (accessToken, params) => listUnits(accessToken, params as unknown as ListUnitsParams),
 };

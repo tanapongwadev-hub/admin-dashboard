@@ -132,6 +132,13 @@ export function logout(accessToken: string) {
   });
 }
 
+export function logoutWithRefreshToken(refreshToken: string) {
+  return apiFetch<{ success: boolean }>("/auth/logout-refresh", {
+    method: "POST",
+    body: JSON.stringify({ refreshToken }),
+  });
+}
+
 export function isDepartmentSelectionRequired(
   response: LoginResponse
 ): response is DepartmentSelectionRequired {

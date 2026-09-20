@@ -1,4 +1,4 @@
-import { listMaterialTypes, type MaterialType, type MaterialTypePayload, type UpdateMaterialTypePayload, type ListMaterialTypesParams } from "@/lib/api/material-types";
+import type { MaterialType, MaterialTypePayload, UpdateMaterialTypePayload } from "@/lib/api/material-types";
 import {
   createMaterialTypeAction,
   updateMaterialTypeAction,
@@ -32,5 +32,4 @@ export const materialTypeResource: MasterDataResourceConfig<MaterialType> = {
   permissionPrefix: "MATERIAL_TYPE",
   permissionLabelEnglish: "Material Type View",
   sortBy: "code",
-  list: (accessToken, params) => listMaterialTypes(accessToken, params as unknown as ListMaterialTypesParams),
 };

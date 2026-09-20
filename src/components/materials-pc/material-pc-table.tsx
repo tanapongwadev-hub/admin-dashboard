@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { RowActionsMenu, type RowAction } from "@/components/ui/row-actions-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -60,6 +61,25 @@ function MaterialStatus({ material }: { material: Material }) {
   return (
     <Badge variant={material.isActive ? "success" : "neutral"} dot>
       {material.isActive ? "ใช้งาน" : "ไม่ใช้งาน"}
+    </Badge>
+  );
+}
+
+// The page no longer scopes to a single `type` (see AGENTS.md § Materials
+// PC), so every view needs a quick visual cue for which of PC/OF/OF_MAT a
+// row is — the type filter narrows the list, this badge tells them apart
+// once several types are shown together.
+const TYPE_BADGE_VARIANT: Record<string, "primary" | "info" | "warning"> = {
+  PC: "primary",
+  OF: "info",
+  OF_MAT: "warning",
+};
+function MaterialTypeTag({ material }: { material: Material }) {
+  if (!material.type) return null;
+  const label = material.type === "OF_MAT" ? "OF-MAT" : material.type;
+  return (
+    <Badge variant={TYPE_BADGE_VARIANT[material.type] ?? "neutral"} className="shrink-0">
+      {label}
     </Badge>
   );
 }
@@ -323,6 +343,7 @@ function MaterialEditorialCard({
           <MaterialEditorialPhoto material={material} onPreview={onPreview} />
         </div>
         <div className="absolute right-3 top-3 z-10 flex items-center gap-1.5">
+          <MaterialTypeTag material={material} />
           <MaterialStatus material={material} />
           <RowActionsMenu
             itemLabel={material.name}
@@ -495,6 +516,7 @@ function MaterialListItem({
       <div className="min-w-0">
         <div className="mb-1 flex flex-wrap items-center gap-2">
           <span className="font-mono text-[11px] leading-none text-fg-muted">{material.code}</span>
+          <MaterialTypeTag material={material} />
           <MaterialStatus material={material} />
           {stockByMaterialId && quantity >= 0 && (
             <Badge variant={health.variant} style={{ fontSize: "10.5px", padding: "1px 6px" }}>
@@ -541,6 +563,137 @@ function MaterialListItem({
 }
 
 // =====================================================================
+// TABLE VIEW with row selection (view === "table")
+// Checkbox column + a "N รายการถูกเลือก" bar that appears once anything is
+// checked, with its own clear-selection action — a real, working piece of
+// feedback for the checkbox column rather than a decorative dead control.
+// No bulk actions exist in cps-api for materials (batch disable/restore
+// isn't a real endpoint), so this intentionally stops at "select + clear",
+// not a fabricated bulk-action toolbar.
+// =====================================================================
+function MaterialPcSelectableTable({
+  materials,
+  stockByMaterialId,
+  canEdit,
+  canDelete,
+  onEdit,
+  onToggleStatus,
+  onViewDetails,
+  onReceive,
+  onPreview,
+}: Omit<MaterialCollectionProps, "view"> & { onPreview: (material: Material) => void }) {
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const allSelected = materials.length > 0 && selected.size === materials.length;
+  const someSelected = selected.size > 0 && !allSelected;
+
+  function toggleAll(checked: boolean) {
+    setSelected(checked ? new Set(materials.map((m) => m.id)) : new Set());
+  }
+  function toggleOne(id: string, checked: boolean) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      {selected.size > 0 && (
+        <div className="flex items-center justify-between rounded-md border border-primary/30 bg-primary-soft px-3 py-2 text-sm text-primary">
+          <span>เลือกแล้ว {selected.size} รายการ</span>
+          <Button type="button" variant="ghost" size="sm" onClick={() => setSelected(new Set())} className="h-7 px-2 text-primary hover:text-primary">
+            ล้างการเลือก
+          </Button>
+        </div>
+      )}
+      <div className="max-h-[68vh] overflow-auto rounded-md border border-border bg-surface">
+        <Table>
+          <TableHeader className="sticky top-0 z-20 bg-surface shadow-[0_1px_0_0_var(--border)]">
+            <TableRow>
+              <TableHead>
+                <Checkbox
+                  checked={allSelected ? true : someSelected ? "indeterminate" : false}
+                  onCheckedChange={(checked) => toggleAll(checked === true)}
+                  aria-label="เลือกวัสดุทั้งหมดในหน้านี้"
+                />
+              </TableHead>
+              <TableHead>
+                <span className="sr-only">รูปภาพ</span>
+              </TableHead>
+              <SortableHead label="รหัส" field="code" />
+              <TableHead>ประเภท</TableHead>
+              <SortableHead label="ชื่อวัสดุ" field="name" />
+              {stockByMaterialId && <SortableHead label="คงเหลือ" field="currentStock" />}
+              {stockByMaterialId && <TableHead>ขั้นต่ำ</TableHead>}
+              {stockByMaterialId && <TableHead>สถานะสต็อก</TableHead>}
+              <TableHead>ซัพพลายเออร์</TableHead>
+              <TableHead>จุดขึ้นสินค้า</TableHead>
+              <TableHead>สายการผลิต</TableHead>
+              <TableHead>การใช้งาน</TableHead>
+              {stockByMaterialId && <SortableHead label="รับเข้าล่าสุด" field="lastReceivedAt" />}
+              <TableHead className="text-right">การจัดการ</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {materials.map((material) => {
+              const balance = stockByMaterialId?.[material.id];
+              const quantity = balance ? Number(balance.quantity) : 0;
+              const stockHealth = getStockHealthLabel(getStockTone(quantity, Number(material.minimumStock)));
+              const isSelected = selected.has(material.id);
+              return (
+                <TableRow key={material.id} data-state={isSelected ? "selected" : undefined}>
+                  <TableCell>
+                    <Checkbox
+                      checked={isSelected}
+                      onCheckedChange={(checked) => toggleOne(material.id, checked === true)}
+                      aria-label={`เลือกวัสดุ ${material.name}`}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <MaterialThumbnail material={material} onPreview={onPreview} />
+                  </TableCell>
+                  <TableCell className="font-medium text-fg">{material.code}</TableCell>
+                  <TableCell><MaterialTypeTag material={material} /></TableCell>
+                  <TableCell className="text-fg-secondary">{material.name}</TableCell>
+                  {stockByMaterialId && (
+                    <TableCell className="font-semibold text-fg tabular-nums">
+                      {formatNumber(quantity)}
+                      {unitLabel(material) !== "—" && ` ${unitLabel(material)}`}
+                    </TableCell>
+                  )}
+                  {stockByMaterialId && <TableCell className="text-fg-muted tabular-nums">{formatNumber(Number(material.minimumStock))}</TableCell>}
+                  {stockByMaterialId && <TableCell><Badge variant={stockHealth.variant} dot>{stockHealth.label}</Badge></TableCell>}
+                  <TableCell className="max-w-48 text-fg-muted">{supplierNames(material)}</TableCell>
+                  <TableCell className="text-fg-muted">{loadingPointLabel(material)}</TableCell>
+                  <TableCell className="text-fg-muted">{processLineLabel(material)}</TableCell>
+                  <TableCell>
+                    <MaterialStatus material={material} />
+                  </TableCell>
+                  {stockByMaterialId && <TableCell className="whitespace-nowrap text-fg-muted">{formatDate(balance?.lastReceivedAt)}</TableCell>}
+                  <TableCell className="text-right">
+                    <MaterialActions
+                      material={material}
+                      canEdit={canEdit}
+                      canDelete={canDelete}
+                      onEdit={onEdit}
+                      onToggleStatus={onToggleStatus}
+                      onViewDetails={onViewDetails}
+                      onReceive={onReceive}
+                    />
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+}
+
+// =====================================================================
 // COLLECTION — switches between table / card / list. See AGENTS.md
 // § Materials PC for the design rationale (Editorial + Compact combo).
 // =====================================================================
@@ -571,72 +724,25 @@ export function MaterialPcCollection({
   return (
     <div className="@container">
       {view === "table" ? (
-        <div className="max-h-[68vh] overflow-auto rounded-md border border-border bg-surface">
-          <Table>
-            <TableHeader className="sticky top-0 z-20 bg-surface shadow-[0_1px_0_0_var(--border)]">
-              <TableRow>
-                <TableHead>
-                  <span className="sr-only">รูปภาพ</span>
-                </TableHead>
-                <SortableHead label="รหัส" field="code" />
-                <SortableHead label="ชื่อวัสดุ" field="name" />
-                {stockByMaterialId && <SortableHead label="คงเหลือ" field="currentStock" />}
-                {stockByMaterialId && <TableHead>ขั้นต่ำ</TableHead>}
-                {stockByMaterialId && <TableHead>สถานะสต็อก</TableHead>}
-                <TableHead>ซัพพลายเออร์</TableHead>
-                <TableHead>จุดขึ้นสินค้า</TableHead>
-                <TableHead>สายการผลิต</TableHead>
-                <TableHead>การใช้งาน</TableHead>
-                {stockByMaterialId && <SortableHead label="รับเข้าล่าสุด" field="lastReceivedAt" />}
-                <TableHead className="text-right">การจัดการ</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {materials.map((material) => {
-                const balance = stockByMaterialId?.[material.id];
-                const quantity = balance ? Number(balance.quantity) : 0;
-                const stockHealth = getStockHealthLabel(getStockTone(quantity, Number(material.minimumStock)));
-                return (
-                <TableRow key={material.id}>
-                  <TableCell>
-                    <MaterialThumbnail material={material} onPreview={setPreviewTarget} />
-                  </TableCell>
-                  <TableCell className="font-medium text-fg">{material.code}</TableCell>
-                  <TableCell className="text-fg-secondary">{material.name}</TableCell>
-                  {stockByMaterialId && (
-                    <TableCell className="font-semibold text-fg tabular-nums">
-                      {formatNumber(quantity)}
-                      {unitLabel(material) !== "—" && ` ${unitLabel(material)}`}
-                    </TableCell>
-                  )}
-                  {stockByMaterialId && <TableCell className="text-fg-muted tabular-nums">{formatNumber(Number(material.minimumStock))}</TableCell>}
-                  {stockByMaterialId && <TableCell><Badge variant={stockHealth.variant} dot>{stockHealth.label}</Badge></TableCell>}
-                  <TableCell className="max-w-48 text-fg-muted">{supplierNames(material)}</TableCell>
-                  <TableCell className="text-fg-muted">{loadingPointLabel(material)}</TableCell>
-                  <TableCell className="text-fg-muted">{processLineLabel(material)}</TableCell>
-                  <TableCell>
-                    <MaterialStatus material={material} />
-                  </TableCell>
-                  {stockByMaterialId && <TableCell className="whitespace-nowrap text-fg-muted">{formatDate(balance?.lastReceivedAt)}</TableCell>}
-                  <TableCell className="text-right">
-                    <MaterialActions
-                      material={material}
-                      canEdit={canEdit}
-                      canDelete={canDelete}
-                      onEdit={onEdit}
-                      onToggleStatus={onToggleStatus}
-                      onViewDetails={onViewDetails}
-                      onReceive={onReceive}
-                    />
-                  </TableCell>
-                </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
+        // Keyed by this page's own material ids so navigating to a
+        // different page/filter/sort remounts the table fresh — the
+        // simplest way to reset row selection without a synchronous
+        // setState-in-effect (blocked by this project's lint config, see
+        // AGENTS.md's "derive, don't effect" rule).
+        <MaterialPcSelectableTable
+          key={materials.map((m) => m.id).join("|")}
+          materials={materials}
+          stockByMaterialId={stockByMaterialId}
+          canEdit={canEdit}
+          canDelete={canDelete}
+          onEdit={onEdit}
+          onToggleStatus={onToggleStatus}
+          onViewDetails={onViewDetails}
+          onReceive={onReceive}
+          onPreview={setPreviewTarget}
+        />
       ) : view === "list" ? (
-        <ul className="flex flex-col gap-2" aria-label="รายการวัสดุ PC แบบแถว">
+        <ul className="flex flex-col gap-2" aria-label="รายการวัสดุแบบแถว">
           {materials.map((material) => (
             <li key={material.id}>
               <MaterialListItem material={material} {...commonProps} />
@@ -646,7 +752,7 @@ export function MaterialPcCollection({
       ) : (
         <ul
           className="grid grid-cols-1 gap-3 @min-[36rem]:grid-cols-2 @min-[60rem]:grid-cols-3 @min-[82rem]:grid-cols-4 @min-[100rem]:grid-cols-5"
-          aria-label="รายการวัสดุ PC แบบการ์ด"
+          aria-label="รายการวัสดุแบบการ์ด"
         >
           {materials.map((material) => (
             <li key={material.id} className="min-w-0">
@@ -734,7 +840,7 @@ export function MaterialPcTable({
   if (materials.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-border py-16 text-center">
-        <p className="text-sm font-medium text-fg">ไม่พบวัสดุ PC</p>
+        <p className="text-sm font-medium text-fg">ไม่พบวัสดุ</p>
         <p className="text-sm text-fg-muted">ลองเปลี่ยนคำค้นหาหรือตัวกรองสถานะ</p>
       </div>
     );

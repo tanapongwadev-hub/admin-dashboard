@@ -2,6 +2,7 @@
 
 import { cookies } from "next/headers";
 import { ApiError } from "@/lib/api/client";
+import { sessionCookieEntries } from "@/lib/auth-tokens";
 import {
   login,
   selectDepartment,
@@ -94,10 +95,7 @@ function setCookie(
 async function setSessionCookies(result: LoginSuccess) {
   const { accessToken, refreshToken } = result.data.authentication;
   const store = await cookies();
-  setCookie(store, "accessToken", accessToken, { maxAge: 60 * 60 * 8 });
-  setCookie(store, "refreshToken", refreshToken, {
-    maxAge: 60 * 60 * 24 * 7,
-  });
+  for (const cookie of sessionCookieEntries({ accessToken, refreshToken })) store.set(cookie);
 }
 
 function authErrorMessage(err: unknown): string {

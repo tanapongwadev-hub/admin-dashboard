@@ -1,4 +1,4 @@
-import { listDeliveryTypes, type DeliveryType, type DeliveryTypePayload, type UpdateDeliveryTypePayload, type ListDeliveryTypesParams } from "@/lib/api/delivery-types";
+import type { DeliveryType, DeliveryTypePayload, UpdateDeliveryTypePayload } from "@/lib/api/delivery-types";
 import {
   createDeliveryTypeAction,
   updateDeliveryTypeAction,
@@ -32,5 +32,4 @@ export const deliveryTypeResource: MasterDataResourceConfig<DeliveryType> = {
   permissionPrefix: "DELIVERY_TYPE",
   permissionLabelEnglish: "Delivery Type View",
   sortBy: "code",
-  list: (accessToken, params) => listDeliveryTypes(accessToken, params as unknown as ListDeliveryTypesParams),
 };

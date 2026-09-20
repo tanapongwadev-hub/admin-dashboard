@@ -6,7 +6,7 @@ import {
   type CurrentDepartmentRole,
   type MenuNode,
 } from "./api/auth";
-import { ApiError } from "./api/client";
+import { isTerminalAuthError } from "./auth-refresh";
 
 export interface CurrentSession {
   user: AuthenticatedUser;
@@ -17,42 +17,9 @@ export interface CurrentSession {
   permissions: string[];
 }
 
-// Wrapped in React.cache so every Server Component in a single request
-// (layout + page, etc.) shares one /auth/me call instead of each firing
-// its own — see cps-api/API_ENDPOINTS.md § 3.
-//
-// **Cookie mutation moved to a Route Handler**: an earlier version of
-// this function called `store.delete("accessToken")` / `store.delete("refreshToken")`
-// when `/auth/me` returned 401, then redirected to /login. That broke in
-// Next.js 15+ because `cookies()` is read-only in Server Components
-// (where this function is called from) — only writable inside a Server
-// Action or Route Handler. Trying to mutate here raises
-// `Cookies can only be modified in a Server Action or Route Handler` and
-// the response becomes a 500 (instead of a clean 401 → /login redirect).
-//
-// The new flow: this function only *detects* the 401 and returns null. The
-// dashboard layout sees null and `redirect("/login")` — that redirect
-// is a plain server-side redirect, no cookie work. The actual cookie
-// cleanup happens in a separate Route Handler (currently
-// `app/(dashboard)/api/auth/clear-cookies/route.ts`, which the /login
-// page can fetch on mount or which we can call from a Server Action
-// during login) — keeping cookie writes in the one place Next.js allows.
-//
-// 403: token is valid but the action is denied (usually a permission
-// gate). Don't touch the cookies — the user is still authenticated.
-// Returning null still makes the dashboard layout redirect to /login
-// (pre-existing behavior, unchanged) so the user re-authenticates
-// cleanly; the cookies stay so a successful re-auth picks up where the
-// previous session left off.
-//
-// **Only 401/403 mean "no session".** An earlier version returned null for
-// *every* `ApiError`, which meant a backend hiccup (500/502/503, or the
-// cps-api process simply being down) logged the user out and destroyed
-// their perfectly valid cookies — and since /login talks to the same
-// backend, they couldn't even sign back in. Any other status is a server
-// problem, not a session problem: rethrow it so Next.js renders an error
-// boundary ("something went wrong") and the session survives for when the
-// backend recovers.
+// One /auth/me call per server render. Proxy handles missing/near-expiry
+// access cookies; apiFetch handles reactive expiry and retries once. Only
+// explicit terminal auth failures become no-session; 403/5xx propagate.
 export const getCurrentSession = cache(
   async (): Promise<CurrentSession | null> => {
     const store = await cookies();
@@ -68,7 +35,7 @@ export const getCurrentSession = cache(
         permissions: me.data.accessControl.permissions,
       };
     } catch (err) {
-      if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
+      if (isTerminalAuthError(err)) {
         return null;
       }
       throw err;

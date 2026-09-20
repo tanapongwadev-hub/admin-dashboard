@@ -2,9 +2,20 @@
 
 import * as React from "react";
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
-import { ChevronDown, Circle, Search } from "lucide-react";
+import { ChevronDown, Circle, Search, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MENU_ICON_ENTRIES, menuIcon } from "@/lib/menu-icons";
+
+// Renders a resolved icon component passed in as a prop — the "resolve as
+// data, pass as a prop" pattern this app uses everywhere an icon is picked
+// dynamically (see AGENTS.md § Sidebar permissions). A capitalized local
+// variable rendered as JSX directly in the same component that computed it
+// still trips the React Compiler's "components created during render" rule
+// even when memoized; passing it through a small child component's props
+// sidesteps that.
+function IconGlyph({ Icon, className }: { Icon: LucideIcon; className?: string }) {
+  return <Icon className={className} />;
+}
 
 export function MenuIconPicker({
   id,
@@ -24,18 +35,27 @@ export function MenuIconPicker({
   const [open, setOpen] = React.useState(false);
   const [search, setSearch] = React.useState("");
 
-  React.useEffect(() => {
-    if (!open) setSearch("");
-  }, [open]);
+  // Clear the search box the moment the picker closes — done directly in the
+  // open-change handler, not a reset-on-close `useEffect`, since a
+  // synchronous setState inside an effect is flagged by this project's lint
+  // config (see AGENTS.md § Material Receiving's "derive, don't effect" rule).
+  function handleOpenChange(next: boolean) {
+    setOpen(next);
+    if (!next) setSearch("");
+  }
 
   const query = search.trim().toLowerCase();
   const filtered = query
     ? MENU_ICON_ENTRIES.filter(({ name }) => name.includes(query))
     : MENU_ICON_ENTRIES;
-  const SelectedIcon = menuIcon(value || null);
+  // Resolved via useMemo, not called inline where <SelectedIcon /> renders —
+  // the latter trips the React Compiler's "components created during render"
+  // rule (react-hooks/static-components), same as the sidebar/menu-tree's
+  // own icon resolution (see AGENTS.md § Sidebar permissions).
+  const SelectedIcon = React.useMemo(() => menuIcon(value || null), [value]);
 
   return (
-    <DropdownMenuPrimitive.Root open={open} onOpenChange={setOpen}>
+    <DropdownMenuPrimitive.Root open={open} onOpenChange={handleOpenChange}>
       <DropdownMenuPrimitive.Trigger asChild disabled={disabled}>
         <button
           id={id}
@@ -49,7 +69,7 @@ export function MenuIconPicker({
           )}
         >
           <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-surface-2">
-            <SelectedIcon className="size-4 text-fg-secondary" />
+            <IconGlyph Icon={SelectedIcon} className="size-4 text-fg-secondary" />
           </span>
           <span className={cn("flex-1 truncate text-left", !value && "text-fg-muted")}>
             {value || "เลือกไอคอน"}

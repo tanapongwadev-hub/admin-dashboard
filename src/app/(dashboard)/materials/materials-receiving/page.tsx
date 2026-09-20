@@ -13,7 +13,16 @@ const PAGE_SIZE = 20;
 export default async function MaterialsReceivingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; search?: string; status?: string; materialCode?: string }>;
+  searchParams: Promise<{
+    page?: string;
+    search?: string;
+    status?: string;
+    materialCode?: string;
+    receiveDateFrom?: string;
+    receiveDateTo?: string;
+    supplierId?: string;
+    materialId?: string;
+  }>;
 }) {
   const session = await getCurrentSession();
   const canView = !!session && (session.user.isSuperAdmin || session.permissions.includes("MATERIALS_RECEIVING_VIEW"));
@@ -40,6 +49,20 @@ export default async function MaterialsReceivingPage({
   // Set by /materials/pc's "รับเข้า" row action — pre-selects this material
   // in the create dialog on first load, see materials-receiving-client.tsx.
   const initialMaterialCode = params.materialCode?.trim() || undefined;
+  // Receiving-date range filter (materials-receiving-filters.tsx's native
+  // <input type="date"> pair) — cps-api's own receiveDateFrom/receiveDateTo
+  // params, see lib/api/materials-receiving.ts#ListMaterialsReceivingParams.
+  // A basic ISO-date shape check guards against a hand-edited URL sending
+  // garbage through to the API.
+  const isoDate = /^\d{4}-\d{2}-\d{2}$/;
+  const receiveDateFrom = params.receiveDateFrom && isoDate.test(params.receiveDateFrom) ? params.receiveDateFrom : undefined;
+  const receiveDateTo = params.receiveDateTo && isoDate.test(params.receiveDateTo) ? params.receiveDateTo : undefined;
+  // Advanced-filter drawer fields (see materials-receiving-filters.tsx and
+  // materials-receiving-advanced-filters.tsx) — both are already real
+  // ListMaterialsReceivingParams on the backend, just never exposed in the
+  // UI before this pass.
+  const supplierId = params.supplierId?.trim() || undefined;
+  const materialId = params.materialId?.trim() || undefined;
 
   const store = await cookies();
   const accessToken = store.get("accessToken")!.value;
@@ -50,6 +73,10 @@ export default async function MaterialsReceivingPage({
       limit: PAGE_SIZE,
       search,
       status,
+      receiveDateFrom,
+      receiveDateTo,
+      supplierId,
+      materialId,
       sortBy: "receiveDate",
       sortOrder: "desc",
     }),

@@ -1,15 +1,24 @@
 import type { Metadata } from "next";
 import { MasterDataResourcePage } from "@/components/master-data/generic-page";
 import { supplierResource } from "@/lib/master-data/resources/supplier";
+import { listSuppliers, type ListSuppliersParams } from "@/lib/api/suppliers";
 
 export const metadata: Metadata = { title: "ผู้จัดจำหน่าย · ข้อมูลหลัก" };
 
 // Thin per-route wrapper around the generic `/master-data/*` CRUD page —
-// see AGENTS.md § Master-data generic CRUD page (2026-09-11).
+// see AGENTS.md § Master-data generic CRUD page (2026-09-11). `list` is
+// passed here, not on the resource descriptor — see `MasterDataListFn` in
+// lib/master-data/types.ts (2026-09-19 client-bundle-leak fix).
 export default function MasterDataSuppliersPage({
   searchParams,
 }: {
   searchParams: Promise<{ page?: string; search?: string; status?: string }>;
 }) {
-  return <MasterDataResourcePage resource={supplierResource} searchParams={searchParams} />;
+  return (
+    <MasterDataResourcePage
+      resource={supplierResource}
+      list={(accessToken, params) => listSuppliers(accessToken, params as unknown as ListSuppliersParams)}
+      searchParams={searchParams}
+    />
+  );
 }

@@ -1,11 +1,9 @@
 import { Badge, type BadgeProps } from "@/components/ui/badge";
-import {
-  listStatusItems,
-  type ListStatusItemsParams,
-  type StatusItem,
-  type StatusItemColor,
-  type StatusItemPayload,
-  type UpdateStatusItemPayload,
+import type {
+  StatusItem,
+  StatusItemColor,
+  StatusItemPayload,
+  UpdateStatusItemPayload,
 } from "@/lib/api/status-items";
 import {
   createStatusItemAction,
@@ -98,5 +96,4 @@ export const statusResource: MasterDataResourceConfig<StatusItem> = {
   permissionPrefix: "STATUS_ITEM",
   permissionLabelEnglish: "Status Item View",
   sortBy: "sortOrder",
-  list: (accessToken, params) => listStatusItems(accessToken, params as unknown as ListStatusItemsParams),
 };

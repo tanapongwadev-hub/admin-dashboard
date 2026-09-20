@@ -1,4 +1,4 @@
-import { listRejectReasons, type RejectReason, type RejectReasonPayload, type UpdateRejectReasonPayload, type ListRejectReasonsParams } from "@/lib/api/reject-reasons";
+import type { RejectReason, RejectReasonPayload, UpdateRejectReasonPayload } from "@/lib/api/reject-reasons";
 import {
   createRejectReasonAction,
   updateRejectReasonAction,
@@ -32,5 +32,4 @@ export const rejectReasonResource: MasterDataResourceConfig<RejectReason> = {
   permissionPrefix: "REJECT_REASON",
   permissionLabelEnglish: "Reject Reason View",
   sortBy: "code",
-  list: (accessToken, params) => listRejectReasons(accessToken, params as unknown as ListRejectReasonsParams),
 };

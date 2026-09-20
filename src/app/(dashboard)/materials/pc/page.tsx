@@ -6,6 +6,7 @@ import {
   getMaterialLookups,
   listMaterialInventory,
   type MaterialStockStatus,
+  type MaterialType,
   type StockBalance,
 } from "@/lib/api/materials";
 import { MaterialPcClient } from "@/components/materials-pc/material-pc-client";
@@ -21,6 +22,7 @@ export default async function MaterialsPcPage({
     search?: string;
     status?: string;
     stockStatus?: string;
+    type?: string;
     supplierId?: string;
     modelId?: string;
     loadingPointId?: string;
@@ -50,6 +52,11 @@ export default async function MaterialsPcPage({
   const limit = PAGE_SIZES.has(requestedLimit) ? requestedLimit : 20;
   const search = params.search?.trim() || undefined;
   const isActive = params.status === "active" ? true : params.status === "inactive" ? false : undefined;
+  // No longer hardcoded to "PC" — this page now shows every material type
+  // (PC/OF/OF_MAT) by default, and the type filter narrows it. See
+  // AGENTS.md § Materials PC — "แสดงทุก active แต่แยกที่ตัวกรอง".
+  const materialTypes = new Set<MaterialType>(["PC", "OF", "OF_MAT"]);
+  const type = materialTypes.has(params.type as MaterialType) ? (params.type as MaterialType) : undefined;
 
   const store = await cookies();
   const accessToken = store.get("accessToken")!.value;
@@ -76,7 +83,7 @@ export default async function MaterialsPcPage({
           limit,
           search,
           isActive,
-          type: "PC",
+          type,
           stockStatus,
           supplierId: params.supplierId,
           modelId: params.modelId,
@@ -92,7 +99,7 @@ export default async function MaterialsPcPage({
           limit,
           search,
           isActive,
-          type: "PC",
+          type,
           supplierId: params.supplierId,
           modelId: params.modelId,
           loadingPointId: params.loadingPointId,
@@ -125,8 +132,8 @@ export default async function MaterialsPcPage({
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-fg">Material / PC Management</h1>
-        <p className="mt-1 text-sm text-fg-muted">ควบคุมข้อมูลวัสดุ ยอดคงเหลือ และการรับเข้าชิ้นส่วนสำหรับคลังและสายการผลิต</p>
+        <h1 className="text-2xl font-semibold tracking-tight text-fg">จัดการวัสดุ</h1>
+        <p className="mt-1 text-sm text-fg-muted">ควบคุมข้อมูลวัสดุทุกประเภท (PC/OF/OF-MAT) ยอดคงเหลือ และการรับเข้าชิ้นส่วนสำหรับคลังและสายการผลิต</p>
       </div>
 
       <MaterialPcClient

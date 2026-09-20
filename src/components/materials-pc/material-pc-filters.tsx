@@ -2,119 +2,201 @@
 
 import * as React from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Filter, RotateCcw, Search } from "lucide-react";
+import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sheet, SheetClose, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { SearchInput } from "@/components/ui/search-input";
+import { FilterDropdown } from "@/components/ui/filter-dropdown";
+import { FilterChip } from "@/components/ui/filter-chip";
+import { MaterialPcAdvancedFilters } from "@/components/materials-pc/material-pc-advanced-filters";
 import type { MaterialLookups } from "@/lib/api/materials";
-import { cn } from "@/lib/utils";
+import {
+  MATERIAL_PC_ADVANCED_ONLY_KEYS,
+  MATERIAL_PC_ALL_FILTER_KEYS,
+  buildMaterialPcChips,
+  readMaterialPcFilters,
+  type MaterialPcFilterState,
+} from "@/lib/filters/material-pc-filters";
 
-const ALL = "__all__";
-const statusOptions = [
-  { value: "all", label: "ทั้งหมด" },
-  { value: "active", label: "ใช้งาน" },
-  { value: "inactive", label: "ไม่ใช้งาน" },
-] as const;
-
-export function MaterialPcFilters({ lookups, canViewStock }: { lookups: MaterialLookups; canViewStock: boolean }) {
+// Redesigned filter bar for /materials/pc — see AGENTS.md § Materials PC
+// advanced filter redesign for the full writeup. Architecture:
+//   1. `readMaterialPcFilters(searchParams)` is the ONE place the current
+//      URL is parsed into a typed, canonical MaterialPcFilterState — every
+//      piece below (quick dropdowns, chips, the drawer) reads from that same
+//      object, never from `searchParams` directly, so there's no risk of two
+//      controls disagreeing about what "the current filters" are.
+//   2. Quick filters (Type/Location/Stock Status/Active Status) push to the
+//      URL immediately on change, same as before this redesign.
+//   3. The Advanced Filters drawer stages its own copy and only commits via
+//      "Apply Filters" (one navigation for every field at once) — see
+//      material-pc-advanced-filters.tsx.
+//   4. Active filter chips + "Clear all" derive from the same canonical
+//      state/lookups, so a chip's remove button is always "clear that one
+//      key" (updateParams({ [key]: null })), nothing bespoke per chip.
+export function MaterialPcFilters({
+  lookups,
+  canViewStock,
+  totalItems,
+}: {
+  lookups: MaterialLookups;
+  canViewStock: boolean;
+  totalItems: number;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [search, setSearch] = React.useState(searchParams.get("search") ?? "");
-  const status = searchParams.get("status") ?? "all";
-  const advancedKeys = ["stockStatus", "supplierId", "modelId", "loadingPointId", "processLineName"];
-  const activeFilterCount = advancedKeys.filter((key) => searchParams.has(key)).length;
+  const filters = readMaterialPcFilters(searchParams);
+  const [search, setSearch] = React.useState(filters.search);
 
-  function updateParams(next: Record<string, string | null>) {
+  function updateParams(next: Partial<Record<keyof MaterialPcFilterState, string | null>>) {
     const params = new URLSearchParams(searchParams.toString());
     for (const [key, value] of Object.entries(next)) {
-      if (!value || value === ALL) params.delete(key);
+      if (!value) params.delete(key);
       else params.set(key, value);
     }
     params.delete("page");
     router.push(`${pathname}?${params.toString()}`);
   }
 
+  // Debounced search — same 300ms pattern this page already used, kept
+  // as-is, only moved behind the canonical-state read above.
   React.useEffect(() => {
     const timeout = setTimeout(() => {
-      if (search !== (searchParams.get("search") ?? "")) updateParams({ search: search || null });
+      if (search !== filters.search) updateParams({ search: search || null });
     }, 300);
     return () => clearTimeout(timeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
 
-  function clearFilters() {
+  function applyAdvanced(next: MaterialPcFilterState) {
+    const patch: Partial<Record<keyof MaterialPcFilterState, string | null>> = {};
+    for (const key of MATERIAL_PC_ALL_FILTER_KEYS) {
+      const value = next[key];
+      patch[key] = value === "all" || !value ? null : value;
+    }
+    updateParams(patch);
+  }
+
+  function clearAll() {
     setSearch("");
     const params = new URLSearchParams(searchParams.toString());
-    ["search", "status", ...advancedKeys, "page"].forEach((key) => params.delete(key));
+    [...MATERIAL_PC_ALL_FILTER_KEYS, "page"].forEach((key) => params.delete(key));
     router.push(`${pathname}?${params.toString()}`);
   }
 
-  const lookupLabel = (item: MaterialLookups["suppliers"][number]) => item.nameEn ?? item.nameTh ?? item.code;
+  const chips = buildMaterialPcChips(filters, lookups);
+  const advancedActiveCount = MATERIAL_PC_ADVANCED_ONLY_KEYS.filter((key) => !!filters[key]).length;
+  const hasAnyFilter = chips.length > 0 || !!filters.search;
+
+  const lookupOptions = (items: MaterialLookups["suppliers"]) =>
+    items.map((item) => ({ value: item.id, label: item.nameEn ?? item.nameTh ?? item.code }));
 
   return (
-    <div className="flex min-w-0 flex-1 flex-col gap-3 lg:flex-row lg:items-center">
-      <div className="relative w-full lg:max-w-sm">
-        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-fg-muted" />
-        <label htmlFor="material-search" className="sr-only">ค้นหาวัสดุด้วยรหัสหรือชื่อ</label>
-        <Input id="material-search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="ค้นหารหัสหรือชื่อวัสดุ..." className="pl-9" />
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <SearchInput
+            id="material-search"
+            value={search}
+            onChange={setSearch}
+            placeholder="ค้นหารหัสหรือชื่อวัสดุ..."
+            srLabel="ค้นหาวัสดุด้วยรหัสหรือชื่อ"
+            className="w-full sm:max-w-sm"
+          />
+          <span className="hidden shrink-0 whitespace-nowrap text-xs text-fg-muted sm:inline">
+            พบ {totalItems.toLocaleString("th-TH")} รายการ
+          </span>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Quick filters — hidden below md (mobile shows search + the
+              Advanced Filters button only), and Location/Stock Status drop
+              further at md (tablet keeps just Type + Active Status quick,
+              the rest live in the drawer). Every field here is reachable
+              from the drawer too, regardless of viewport. */}
+          <div className="hidden items-center gap-2 md:flex">
+            <FilterDropdown
+              label="ประเภทวัสดุ"
+              labelVariant="sr-only"
+              value={filters.type === "all" ? "" : filters.type}
+              onChange={(value) => updateParams({ type: value || null })}
+              options={[
+                { value: "PC", label: "PC" },
+                { value: "OF", label: "OF" },
+                { value: "OF_MAT", label: "OF-MAT" },
+              ]}
+              allLabel="ทุกประเภท"
+              placeholder="ประเภทวัสดุ"
+              className="w-32"
+            />
+            <FilterDropdown
+              label="สถานะการใช้งาน"
+              labelVariant="sr-only"
+              value={filters.status === "all" ? "" : filters.status}
+              onChange={(value) => updateParams({ status: value || null })}
+              options={[
+                { value: "active", label: "ใช้งาน" },
+                { value: "inactive", label: "ไม่ใช้งาน" },
+              ]}
+              placeholder="สถานะการใช้งาน"
+              className="w-36"
+            />
+            <div className="hidden items-center gap-2 lg:flex">
+              <FilterDropdown
+                label="ตำแหน่ง"
+                labelVariant="sr-only"
+                value={filters.loadingPointId}
+                onChange={(value) => updateParams({ loadingPointId: value || null })}
+                options={lookupOptions(lookups.loadingPoints)}
+                placeholder="ตำแหน่ง"
+                className="w-36"
+              />
+              {canViewStock && (
+                <FilterDropdown
+                  label="สถานะสต็อก"
+                  labelVariant="sr-only"
+                  value={filters.stockStatus === "all" ? "" : filters.stockStatus}
+                  onChange={(value) => updateParams({ stockStatus: value || null })}
+                  options={[
+                    { value: "NORMAL", label: "สต็อกปกติ" },
+                    { value: "LOW_STOCK", label: "สต็อกต่ำ" },
+                    { value: "OUT_OF_STOCK", label: "หมดสต็อก" },
+                  ]}
+                  placeholder="สถานะสต็อก"
+                  className="w-36"
+                />
+              )}
+            </div>
+          </div>
+
+          <MaterialPcAdvancedFilters
+            filters={filters}
+            lookups={lookups}
+            canViewStock={canViewStock}
+            advancedActiveCount={advancedActiveCount}
+            onApply={applyAdvanced}
+          />
+        </div>
       </div>
 
-      <div role="group" aria-label="กรองสถานะการใช้งาน" className="flex w-fit items-center gap-1 rounded-md border border-border bg-surface p-1">
-        {statusOptions.map((option) => (
-          <Button key={option.value} type="button" size="sm" variant="ghost" aria-pressed={status === option.value} onClick={() => updateParams({ status: option.value === "all" ? null : option.value })} className={cn("px-3", status === option.value && "bg-primary-soft text-primary hover:bg-primary-soft")}>
-            {option.label}
+      {hasAnyFilter && (
+        <div className="flex flex-wrap items-center gap-2">
+          {filters.search && (
+            <FilterChip
+              label={`ค้นหา: "${filters.search}"`}
+              onRemove={() => {
+                setSearch("");
+                updateParams({ search: null });
+              }}
+            />
+          )}
+          {chips.map((chip) => (
+            <FilterChip key={chip.key} label={chip.label} onRemove={() => updateParams({ [chip.key]: null })} />
+          ))}
+          <Button type="button" variant="ghost" size="sm" onClick={clearAll} className="h-7 gap-1 px-2 text-xs text-fg-muted">
+            <X className="size-3.5" /> ล้างตัวกรองทั้งหมด
           </Button>
-        ))}
-      </div>
-
-      <Sheet>
-        <SheetTrigger asChild>
-          <Button type="button" variant="outline" className="w-fit">
-            <Filter className="size-4" /> ตัวกรอง
-            {activeFilterCount > 0 && <span className="flex size-5 items-center justify-center rounded-full bg-primary text-[11px] text-primary-fg">{activeFilterCount}</span>}
-          </Button>
-        </SheetTrigger>
-        <SheetContent title="ตัวกรองวัสดุ PC" className="left-auto right-2 w-[22rem] data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:left-auto sm:right-3">
-          <div className="border-b border-border px-5 py-4 pr-12">
-            <h2 className="font-semibold text-fg">ตัวกรองวัสดุ</h2>
-            <p className="mt-1 text-xs text-fg-muted">จำกัดรายการด้วยข้อมูลคลังและการผลิต</p>
-          </div>
-          <div className="flex-1 space-y-5 overflow-y-auto p-5">
-            {canViewStock && <FilterSelect label="สถานะสต็อก" value={searchParams.get("stockStatus") ?? ALL} onChange={(value) => updateParams({ stockStatus: value })} options={[{ value: "NORMAL", label: "สต็อกปกติ" }, { value: "LOW_STOCK", label: "สต็อกต่ำ" }, { value: "OUT_OF_STOCK", label: "หมดสต็อก" }]} />}
-            <FilterSelect label="ซัพพลายเออร์" value={searchParams.get("supplierId") ?? ALL} onChange={(value) => updateParams({ supplierId: value })} options={lookups.suppliers.map((item) => ({ value: item.id, label: lookupLabel(item) }))} />
-            <FilterSelect label="รุ่น" value={searchParams.get("modelId") ?? ALL} onChange={(value) => updateParams({ modelId: value })} options={lookups.models.map((item) => ({ value: item.id, label: lookupLabel(item) }))} />
-            <FilterSelect label="จุดขึ้นสินค้า" value={searchParams.get("loadingPointId") ?? ALL} onChange={(value) => updateParams({ loadingPointId: value })} options={lookups.loadingPoints.map((item) => ({ value: item.id, label: lookupLabel(item) }))} />
-            {canViewStock && (
-              <div className="space-y-1.5">
-                <Label htmlFor="process-line-filter">สายการผลิต</Label>
-                <Input id="process-line-filter" defaultValue={searchParams.get("processLineName") ?? ""} placeholder="เช่น Cutting Line 1" onBlur={(event) => updateParams({ processLineName: event.currentTarget.value.trim() || null })} onKeyDown={(event) => { if (event.key === "Enter") updateParams({ processLineName: event.currentTarget.value.trim() || null }); }} />
-              </div>
-            )}
-          </div>
-          <div className="flex gap-2 border-t border-border p-5">
-            <Button type="button" variant="outline" className="flex-1" onClick={clearFilters}><RotateCcw className="size-4" /> ล้างตัวกรอง</Button>
-            <SheetClose asChild><Button type="button" className="flex-1">เสร็จสิ้น</Button></SheetClose>
-          </div>
-        </SheetContent>
-      </Sheet>
-    </div>
-  );
-}
-
-function FilterSelect({ label, value, onChange, options }: { label: string; value: string; onChange: (value: string) => void; options: Array<{ value: string; label: string }> }) {
-  return (
-    <div className="space-y-1.5">
-      <Label>{label}</Label>
-      <Select value={value} onValueChange={onChange}>
-        <SelectTrigger><SelectValue /></SelectTrigger>
-        <SelectContent>
-          <SelectItem value={ALL}>ทั้งหมด</SelectItem>
-          {options.map((option) => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}
-        </SelectContent>
-      </Select>
+        </div>
+      )}
     </div>
   );
 }

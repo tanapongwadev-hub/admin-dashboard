@@ -157,6 +157,24 @@ body {
   contain-intrinsic-size: auto 320px;
 }
 
+/* Printing a specific piece of content (e.g. Material Receiving's QR
+   labels, see materials-receiving-qr-print-sheet.tsx) hides the normal app
+   chrome and shows only the `.print-sheet`-marked content. Deliberately
+   NOT a `window.open()`-based print (an earlier attempt at the QR-print
+   feature used that and got stuck behind popup-blocker/focus-stealing
+   issues in real browsers — see AGENTS.md § Material Receiving) — printing
+   the current document via `window.print()` with a print-only stylesheet
+   is the standard, popup-free pattern and works everywhere. `#dashboard-shell`
+   is the one root element every authenticated page renders inside (see
+   layout/dashboard-shell.tsx), so hiding just that one id is enough to hide
+   the whole app without needing per-page print CSS.
+*/
+@media print {
+  #dashboard-shell {
+    display: none !important;
+  }
+}
+
 @supports not (content-visibility: auto) {
   .materials-dashboard-panel {
     contain: layout style paint;

@@ -21,7 +21,7 @@ export function DashboardShell({
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="flex h-dvh gap-2 overflow-hidden bg-bg p-2 sm:gap-3 sm:p-3 lg:gap-4 lg:p-4">
+      <div id="dashboard-shell" className="flex h-dvh gap-2 overflow-hidden bg-bg p-2 sm:gap-3 sm:p-3 lg:gap-4 lg:p-4">
         <Sidebar
           collapsed={collapsed}
           user={user}

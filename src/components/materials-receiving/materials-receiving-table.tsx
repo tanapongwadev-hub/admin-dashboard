@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { ChevronLeft, ChevronRight, Eye, CheckCircle2, Ban, Trash2, ImageOff } from "lucide-react";
+import { ChevronLeft, ChevronRight, Eye, CheckCircle2, Ban, Trash2, ImageOff, Printer } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
@@ -95,11 +95,27 @@ export function getMaterialsReceivingRowActions(
     onConfirm: (receiving: MaterialReceiving) => void;
     onCancel: (receiving: MaterialReceiving) => void;
     onDelete: (receiving: MaterialReceiving) => void;
+    onPrint: (receiving: MaterialReceiving) => void;
   }
 ): RowAction[] {
   const actions: RowAction[] = [
     { label: "ดูรายละเอียด", icon: Eye, onSelect: () => handlers.onViewDetails(receiving) },
   ];
+  // Every package already carries its own generated QR (a data: URI, part
+  // of the same list response) regardless of the receiving's draft/
+  // confirmed/cancelled status, so this is offered whenever there's at
+  // least one box to print, not gated behind any particular permission
+  // beyond already being able to see this list. `handlers.onPrint` sets
+  // state on the client component, which renders the print sheet — see
+  // materials-receiving-qr-print-sheet.tsx for why this isn't a direct
+  // `window.open()` call.
+  if ((receiving.packages?.length ?? 0) > 0) {
+    actions.push({
+      label: "พิมพ์ QR Code",
+      icon: Printer,
+      onSelect: () => handlers.onPrint(receiving),
+    });
+  }
   if (receiving.status === "draft" && canConfirm) {
     actions.push({ label: "ยืนยันการรับเข้า", icon: CheckCircle2, onSelect: () => handlers.onConfirm(receiving) });
   }
@@ -121,6 +137,7 @@ interface MaterialsReceivingRowProps {
   onConfirm: (receiving: MaterialReceiving) => void;
   onCancel: (receiving: MaterialReceiving) => void;
   onDelete: (receiving: MaterialReceiving) => void;
+  onPrint: (receiving: MaterialReceiving) => void;
 }
 
 function DataSheetRow({ label, value }: { label: string; value: string }) {
@@ -153,6 +170,7 @@ function MaterialsReceivingCard({
   onConfirm,
   onCancel,
   onDelete,
+  onPrint,
 }: MaterialsReceivingRowProps) {
   const statusDisplay = STATUS_DISPLAY[receiving.status];
   const accent = STATUS_ACCENT[receiving.status];
@@ -161,6 +179,7 @@ function MaterialsReceivingCard({
     onConfirm,
     onCancel,
     onDelete,
+    onPrint,
   });
 
   return (
@@ -268,6 +287,7 @@ function MaterialsReceivingListItem({
   onConfirm,
   onCancel,
   onDelete,
+  onPrint,
 }: MaterialsReceivingRowProps) {
   const statusDisplay = STATUS_DISPLAY[receiving.status];
   const accent = STATUS_ACCENT[receiving.status];
@@ -276,6 +296,7 @@ function MaterialsReceivingListItem({
     onConfirm,
     onCancel,
     onDelete,
+    onPrint,
   });
 
   return (
@@ -344,6 +365,7 @@ export function MaterialsReceivingCollection({
   onConfirm,
   onCancel,
   onDelete,
+  onPrint,
 }: {
   receivings: MaterialReceiving[];
   view: ViewMode;
@@ -354,8 +376,9 @@ export function MaterialsReceivingCollection({
   onConfirm: (receiving: MaterialReceiving) => void;
   onCancel: (receiving: MaterialReceiving) => void;
   onDelete: (receiving: MaterialReceiving) => void;
+  onPrint: (receiving: MaterialReceiving) => void;
 }) {
-  const commonProps = { canConfirm, canCancel, canDelete, onViewDetails, onConfirm, onCancel, onDelete };
+  const commonProps = { canConfirm, canCancel, canDelete, onViewDetails, onConfirm, onCancel, onDelete, onPrint };
 
   if (view === "table") {
     return (
@@ -380,6 +403,7 @@ export function MaterialsReceivingCollection({
                 onConfirm,
                 onCancel,
                 onDelete,
+                onPrint,
               });
               return (
                 <TableRow
@@ -480,6 +504,7 @@ export function MaterialsReceivingTable({
   onConfirm,
   onCancel,
   onDelete,
+  onPrint,
 }: {
   receivings: MaterialReceiving[];
   totalItems: number;
@@ -493,6 +518,7 @@ export function MaterialsReceivingTable({
   onConfirm: (receiving: MaterialReceiving) => void;
   onCancel: (receiving: MaterialReceiving) => void;
   onDelete: (receiving: MaterialReceiving) => void;
+  onPrint: (receiving: MaterialReceiving) => void;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -525,6 +551,7 @@ export function MaterialsReceivingTable({
         onConfirm={onConfirm}
         onCancel={onCancel}
         onDelete={onDelete}
+        onPrint={onPrint}
       />
 
       <div className="flex flex-col gap-2 text-sm text-fg-muted sm:flex-row sm:items-center sm:justify-between">

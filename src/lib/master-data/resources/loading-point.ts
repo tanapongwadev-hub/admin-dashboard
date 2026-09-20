@@ -1,4 +1,4 @@
-import { listLoadingPoints, type LoadingPoint, type LoadingPointPayload, type UpdateLoadingPointPayload, type ListLoadingPointsParams } from "@/lib/api/loading-points";
+import type { LoadingPoint, LoadingPointPayload, UpdateLoadingPointPayload } from "@/lib/api/loading-points";
 import {
   createLoadingPointAction,
   updateLoadingPointAction,
@@ -32,5 +32,4 @@ export const loadingPointResource: MasterDataResourceConfig<LoadingPoint> = {
   permissionPrefix: "LOADING_POINT",
   permissionLabelEnglish: "Loading Point View",
   sortBy: "code",
-  list: (accessToken, params) => listLoadingPoints(accessToken, params as unknown as ListLoadingPointsParams),
 };

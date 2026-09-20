@@ -11,7 +11,7 @@
 // `/dashboard` first) without re-routing from a hard-coded path.
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { logout as apiLogout } from "@/lib/api/auth";
+import { logout as apiLogout, logoutWithRefreshToken } from "@/lib/api/auth";
 
 // `?next=` is attacker-controllable (anyone can hand a user a link to this
 // route), so it must never be able to send the browser off-site — a
@@ -20,11 +20,19 @@ import { logout as apiLogout } from "@/lib/api/auth";
 // protocol-relative URL that `redirect()` would happily follow, so a
 // leading `/` alone is not enough: reject a second slash too.
 function safeNextPath(raw: string | null): string {
-  if (!raw || !/^\/(?!\/)/.test(raw)) return "/login";
-  return raw;
+  if (!raw || !/^\/(?!\/)/.test(raw) || /[\\\u0000-\u0020]/.test(raw)) return "/login";
+  const parsed = new URL(raw, "https://local.invalid");
+  if (parsed.origin !== "https://local.invalid" || parsed.pathname.startsWith("/api/auth/")) return "/login";
+  return parsed.pathname + parsed.search;
 }
 
 export async function GET(request: Request) {
+  const origin = request.headers.get("origin");
+  const site = request.headers.get("sec-fetch-site");
+  if ((site && site !== "same-origin" && site !== "none") ||
+      (origin && origin !== new URL(request.url).origin)) {
+    return new Response("Forbidden", { status: 403 });
+  }
   const store = await cookies();
 
   // 1. Read the token *before* clearing anything — this used to run after
@@ -33,6 +41,7 @@ export async function GET(request: Request) {
   // stayed alive until it expired on its own, even though the user had
   // been bounced to /login.
   const accessToken = store.get("accessToken")?.value;
+  const refreshToken = store.get("refreshToken")?.value;
 
   // 2. Drop the client-side cookies so the next request has no token and
   // `getCurrentSession` short-circuits to "no session" on the very first
@@ -48,9 +57,10 @@ export async function GET(request: Request) {
   // revoked/expired the API call will 401/404 — the try/catch keeps the
   // redirect going either way, since the client-side cookies are already
   // gone and the user's next request is a fresh re-auth.
-  if (accessToken) {
+  if (refreshToken || accessToken) {
     try {
-      await apiLogout(accessToken);
+      if (refreshToken) await logoutWithRefreshToken(refreshToken);
+      else if (accessToken) await apiLogout(accessToken);
     } catch {
       // ignore — the local cookies are already cleared
     }

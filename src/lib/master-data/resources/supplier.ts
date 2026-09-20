@@ -1,4 +1,4 @@
-import { listSuppliers, type Supplier, type SupplierPayload, type UpdateSupplierPayload, type ListSuppliersParams } from "@/lib/api/suppliers";
+import type { Supplier, SupplierPayload, UpdateSupplierPayload } from "@/lib/api/suppliers";
 import {
   createSupplierAction,
   updateSupplierAction,
@@ -43,5 +43,4 @@ export const supplierResource: MasterDataResourceConfig<Supplier> = {
   permissionPrefix: "SUPPLIER",
   permissionLabelEnglish: "Supplier View",
   sortBy: "code",
-  list: (accessToken, params) => listSuppliers(accessToken, params as unknown as ListSuppliersParams),
 };

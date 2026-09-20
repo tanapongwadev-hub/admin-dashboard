@@ -77,17 +77,17 @@ export function MaterialPcClient({
   return (
     <div className="flex flex-col gap-4">
       {stockSummary && <MaterialPcInventorySummary summary={stockSummary} />}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <MaterialPcFilters lookups={lookups} canViewStock={canViewStock} />
-        <div className="flex shrink-0 items-center gap-2">
-          <ViewToggle value={view} onChange={setView} modes={["table", "card", "list"]} />
-          {canEdit && (
-            <Button onClick={() => setFormTarget(null)} className="shrink-0">
-              <Plus className="h-4 w-4" /> เพิ่มวัสดุ
-            </Button>
-          )}
-        </div>
+
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <ViewToggle value={view} onChange={setView} modes={["table", "card", "list"]} />
+        {canEdit && (
+          <Button onClick={() => setFormTarget(null)} className="shrink-0">
+            <Plus className="h-4 w-4" /> เพิ่มวัสดุ
+          </Button>
+        )}
       </div>
+
+      <MaterialPcFilters lookups={lookups} canViewStock={canViewStock} totalItems={meta.totalItems} />
 
       <MaterialPcTable
         materials={materials}

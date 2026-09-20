@@ -1,6 +1,24 @@
 import type * as React from "react";
 import type { PaginatedResult } from "@/lib/api/create-resource-api";
 
+// `list` deliberately does NOT live on `MasterDataResourceConfig` below —
+// see AGENTS.md § Master-data generic CRUD page ("client bundle leak" fix,
+// 2026-09-19). `masterDataResources` (resources/index.ts) is imported by
+// `generic-client.tsx` ("use client"), so anything reachable from a
+// resource's exported config object ends up in the browser bundle. `list`
+// is a plain (non-"use server") function that calls `apiFetch`, which now
+// pulls in `next/headers` via the auth-refresh recovery path — reachable
+// from client code, that's a hard Next.js build error, not just a lint
+// warning. `create/update/deactivate/restore` are fine to keep on the
+// config because those are real Server Actions (`"use server"` functions),
+// which Next allows to cross the client boundary as RPC stubs; `list` has
+// no such transform, so it's passed as a separate prop instead, threaded
+// only through the server-only path (`page.tsx` → `MasterDataResourcePage`).
+export type MasterDataListFn<TEntity extends BaseMasterEntity = BaseMasterEntity> = (
+  accessToken: string,
+  params: MasterDataListParams
+) => Promise<PaginatedResult<TEntity>>;
+
 // Shared descriptor types for the "generic CRUD page" — item #3 of the
 // 2026-09-10 architecture review (see AGENTS.md § Master-data CRUD
 // factories). The data layer (createResourceApi/createCrudActions) already
@@ -120,5 +138,4 @@ export interface MasterDataResourceConfig<TEntity extends BaseMasterEntity = Bas
   /** English permission name shown in the access-denied message, e.g. "Category View" */
   permissionLabelEnglish: string;
   sortBy: string;
-  list: (accessToken: string, params: MasterDataListParams) => Promise<PaginatedResult<TEntity>>;
 }

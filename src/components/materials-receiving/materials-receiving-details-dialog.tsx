@@ -1,6 +1,6 @@
 "use client";
 
-import { ImageOff } from "lucide-react";
+import { ImageOff, Printer } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -68,9 +68,11 @@ function remainingTone(
 export function MaterialsReceivingDetailsDialog({
   receiving,
   onOpenChange,
+  onPrint,
 }: {
   receiving: MaterialReceiving | null;
   onOpenChange: (open: boolean) => void;
+  onPrint: (receiving: MaterialReceiving) => void;
 }) {
   const packages = receiving?.packages ?? [];
   const totalInitial = packages.reduce((sum, pkg) => sum + Number(pkg.quantity), 0);
@@ -198,6 +200,11 @@ export function MaterialsReceivingDetailsDialog({
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 ปิด
               </Button>
+              {packages.length > 0 && (
+                <Button type="button" onClick={() => onPrint(receiving)}>
+                  <Printer className="h-4 w-4" /> พิมพ์ QR Code
+                </Button>
+              )}
             </DialogFooter>
           </>
         )}

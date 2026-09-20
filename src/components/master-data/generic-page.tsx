@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { ShieldAlert } from "lucide-react";
 import { getCurrentSession } from "@/lib/session";
 import { GenericMasterDataClient } from "@/components/master-data/generic-client";
-import type { MasterDataResourceConfig, BaseMasterEntity } from "@/lib/master-data/types";
+import type { MasterDataResourceConfig, MasterDataListFn, BaseMasterEntity } from "@/lib/master-data/types";
 
 const PAGE_SIZE = 20;
 
@@ -17,9 +17,14 @@ const PAGE_SIZE = 20;
 // return <MasterDataResourcePage resource={xResource} searchParams={searchParams} />; }`
 export async function MasterDataResourcePage<TEntity extends BaseMasterEntity>({
   resource,
+  list,
   searchParams,
 }: {
   resource: MasterDataResourceConfig<TEntity>;
+  // Kept off `resource` itself — see the comment on `MasterDataListFn` in
+  // lib/master-data/types.ts for why. Every page.tsx passes its own
+  // resource's real `listXxx` API function here directly.
+  list: MasterDataListFn<TEntity>;
   searchParams: Promise<{ page?: string; search?: string; status?: string }>;
 }) {
   const session = await getCurrentSession();
@@ -46,7 +51,7 @@ export async function MasterDataResourcePage<TEntity extends BaseMasterEntity>({
   const store = await cookies();
   const accessToken = store.get("accessToken")!.value;
 
-  const list = await resource.list(accessToken, {
+  const result = await list(accessToken, {
     page,
     limit: PAGE_SIZE,
     search,
@@ -72,7 +77,7 @@ export async function MasterDataResourcePage<TEntity extends BaseMasterEntity>({
         <p className="mt-1 text-sm text-fg-muted">{resource.pageDescription}</p>
       </div>
 
-      <GenericMasterDataClient resourceKey={resource.key} items={list.items} meta={list.meta} canEdit={canEdit} canDelete={canDelete} />
+      <GenericMasterDataClient resourceKey={resource.key} items={result.items} meta={result.meta} canEdit={canEdit} canDelete={canDelete} />
     </div>
   );
 }

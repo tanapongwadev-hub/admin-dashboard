@@ -12,6 +12,7 @@ import { MaterialsReceivingTable } from "@/components/materials-receiving/materi
 import { MaterialsReceivingFormDialog } from "@/components/materials-receiving/materials-receiving-form-dialog";
 import { MaterialsReceivingDetailsDialog } from "@/components/materials-receiving/materials-receiving-details-dialog";
 import { MaterialsReceivingCancelDialog } from "@/components/materials-receiving/materials-receiving-cancel-dialog";
+import { MaterialsReceivingQrPrintSheet } from "@/components/materials-receiving/materials-receiving-qr-print-sheet";
 import {
   confirmMaterialsReceivingAction,
   cancelMaterialsReceivingAction,
@@ -71,6 +72,11 @@ export function MaterialsReceivingClient({
   const [formSessionId, setFormSessionId] = React.useState(0);
   const [detailsTarget, setDetailsTarget] = React.useState<MaterialReceiving | null>(null);
   const [cancelTarget, setCancelTarget] = React.useState<MaterialReceiving | null>(null);
+  // Drives materials-receiving-qr-print-sheet.tsx — a print-only overlay
+  // rendered into document.body, not a window.open() popup (see that
+  // component's own comment for why the popup-based approach got the
+  // RowActionsMenu stuck open / appeared to hang the page).
+  const [printTarget, setPrintTarget] = React.useState<MaterialReceiving | null>(null);
 
   // Once the initial material has served its purpose (dialog opened), drop
   // ?materialCode= from the URL so a later refresh/revalidate doesn't carry
@@ -119,24 +125,23 @@ export function MaterialsReceivingClient({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <MaterialsReceivingFilters />
-        <div className="flex shrink-0 items-center gap-2">
-          <ViewToggle value={view} onChange={setView} modes={["table", "card", "list"]} />
-          {canCreate && (
-            <Button
-              onClick={() => {
-                setPendingInitialMaterialId(undefined);
-                setFormSessionId((id) => id + 1);
-                setFormOpen(true);
-              }}
-              className="shrink-0"
-            >
-              <Plus className="h-4 w-4" /> รับเข้าวัตถุดิบ
-            </Button>
-          )}
-        </div>
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <ViewToggle value={view} onChange={setView} modes={["table", "card", "list"]} />
+        {canCreate && (
+          <Button
+            onClick={() => {
+              setPendingInitialMaterialId(undefined);
+              setFormSessionId((id) => id + 1);
+              setFormOpen(true);
+            }}
+            className="shrink-0"
+          >
+            <Plus className="h-4 w-4" /> รับเข้าวัตถุดิบ
+          </Button>
+        )}
       </div>
+
+      <MaterialsReceivingFilters lookups={lookups} totalItems={totalItems} />
 
       <MaterialsReceivingTable
         receivings={receivings}
@@ -151,12 +156,16 @@ export function MaterialsReceivingClient({
         onConfirm={handleConfirm}
         onCancel={(receiving) => setCancelTarget(receiving)}
         onDelete={handleDelete}
+        onPrint={(receiving) => setPrintTarget(receiving)}
       />
 
       <MaterialsReceivingDetailsDialog
         receiving={detailsTarget}
         onOpenChange={(open) => !open && setDetailsTarget(null)}
+        onPrint={(receiving) => setPrintTarget(receiving)}
       />
+
+      <MaterialsReceivingQrPrintSheet receiving={printTarget} onDone={() => setPrintTarget(null)} />
 
       {canCancel && (
         <MaterialsReceivingCancelDialog

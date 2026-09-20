@@ -1,6 +1,6 @@
 import { Palette } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { listCategories, type Category, type CategoryPayload, type UpdateCategoryPayload, type ListCategoriesParams } from "@/lib/api/categories";
+import type { Category, CategoryPayload, UpdateCategoryPayload } from "@/lib/api/categories";
 import {
   createCategoryAction,
   updateCategoryAction,
@@ -114,5 +114,4 @@ export const categoryResource: MasterDataResourceConfig<Category> = {
   permissionPrefix: "CATEGORY",
   permissionLabelEnglish: "Category View",
   sortBy: "sortOrder",
-  list: (accessToken, params) => listCategories(accessToken, params as unknown as ListCategoriesParams),
 };

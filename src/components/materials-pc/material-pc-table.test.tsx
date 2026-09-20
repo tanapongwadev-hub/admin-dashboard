@@ -105,7 +105,7 @@ test("card uses the real low-stock label and keeps edit/status in Meatballs", ()
 
 test("list view remains dense and uses the shared Meatballs action", () => {
   const html = render("list", "0");
-  assert.match(html, /รายการวัสดุ PC แบบแถว/);
+  assert.match(html, /รายการวัสดุแบบแถว/);
   assert.match(html, /หมดสต็อก/);
   assert.match(html, /ตัวเลือกสำหรับ Laser-cut bracket/);
 });
