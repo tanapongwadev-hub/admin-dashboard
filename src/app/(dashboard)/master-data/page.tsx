@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
-import { Box, Car, FolderTree, ListChecks, MapPin, Route, Ruler, ShieldAlert, Tag, Truck, UserCircle, XCircle } from "lucide-react";
+import { Box, Car, FolderTree, GitBranch, ListChecks, MapPin, Route, Ruler, ShieldAlert, Tag, Truck, UserCircle, XCircle } from "lucide-react";
 import { getCurrentSession } from "@/lib/session";
 import { listCategories } from "@/lib/api/categories";
 import { listCustomers } from "@/lib/api/customers";
 import { listDeliveryTypes } from "@/lib/api/delivery-types";
 import { listLoadingPoints } from "@/lib/api/loading-points";
+import { listLocations } from "@/lib/api/locations";
 import { listMaterialModels } from "@/lib/api/material-models";
+import { listProcessLines } from "@/lib/api/process-lines";
 import { listProductModels } from "@/lib/api/product-models";
 import { listProductTypes } from "@/lib/api/product-types";
 import { listRejectReasons } from "@/lib/api/reject-reasons";
@@ -151,6 +153,24 @@ export default async function MasterDataDashboardPage() {
       icon: UserCircle,
       permission: "CUSTOMER_VIEW",
       list: listCustomers,
+    },
+    {
+      key: "locations",
+      name: "สถานที่",
+      description: "ข้อมูลสถานที่ (โซน/คลัง) ที่ใช้อ้างอิงในสินค้า",
+      href: "/master-data/locations",
+      icon: MapPin,
+      permission: "LOCATION_VIEW",
+      list: listLocations,
+    },
+    {
+      key: "process-lines",
+      name: "สายการผลิต",
+      description: "ข้อมูลสายการผลิตที่ใช้อ้างอิงในสินค้า",
+      href: "/master-data/process-lines",
+      icon: GitBranch,
+      permission: "PROCESS_LINE_VIEW",
+      list: listProcessLines,
     },
   ] as const;
 
