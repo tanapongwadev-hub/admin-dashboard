@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
-import { Box, FolderTree, ListChecks, MapPin, Route, Ruler, ShieldAlert, Tag, Truck, XCircle } from "lucide-react";
+import { Box, Car, FolderTree, ListChecks, MapPin, Route, Ruler, ShieldAlert, Tag, Truck, UserCircle, XCircle } from "lucide-react";
 import { getCurrentSession } from "@/lib/session";
 import { listCategories } from "@/lib/api/categories";
+import { listCustomers } from "@/lib/api/customers";
 import { listDeliveryTypes } from "@/lib/api/delivery-types";
 import { listLoadingPoints } from "@/lib/api/loading-points";
 import { listMaterialModels } from "@/lib/api/material-models";
+import { listProductModels } from "@/lib/api/product-models";
+import { listProductTypes } from "@/lib/api/product-types";
 import { listRejectReasons } from "@/lib/api/reject-reasons";
 import { listMaterialTypes } from "@/lib/api/material-types";
 import { listSuppliers } from "@/lib/api/suppliers";
@@ -121,6 +124,33 @@ export default async function MasterDataDashboardPage() {
       icon: Tag,
       permission: "MATERIAL_TYPE_VIEW",
       list: listMaterialTypes,
+    },
+    {
+      key: "product-types",
+      name: "ประเภทสินค้า",
+      description: "ประเภทสินค้า (FG / SFG / RM) ที่ใช้จำแนกสินค้าในระบบ",
+      href: "/master-data/product-types",
+      icon: Tag,
+      permission: "PRODUCT_TYPE_VIEW",
+      list: listProductTypes,
+    },
+    {
+      key: "product-models",
+      name: "รุ่นสินค้า",
+      description: "รุ่น/สเปกของสินค้าที่ใช้จำแนกสินค้า เช่น Camry, Civic, Corolla",
+      href: "/master-data/product-models",
+      icon: Car,
+      permission: "PRODUCT_MODEL_VIEW",
+      list: listProductModels,
+    },
+    {
+      key: "customers",
+      name: "ลูกค้า",
+      description: "ข้อมูลลูกค้าที่ใช้อ้างอิงในสินค้า",
+      href: "/master-data/customers",
+      icon: UserCircle,
+      permission: "CUSTOMER_VIEW",
+      list: listCustomers,
     },
   ] as const;
 
