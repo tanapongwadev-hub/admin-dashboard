@@ -28,6 +28,7 @@ import {
   Hammer,
   Bookmark,
   FileText,
+  ClipboardList,
   Circle,
   type LucideIcon,
 } from "lucide-react";
@@ -68,6 +69,7 @@ const MENU_ICONS: Record<string, LucideIcon> = {
   hammer: Hammer,
   bookmark: Bookmark,
   "file-text": FileText,
+  "clipboard-list": ClipboardList,
 };
 
 export function menuIcon(name: string | null): LucideIcon {
@@ -77,9 +79,8 @@ export function menuIcon(name: string | null): LucideIcon {
 
 // Every icon name this app knows how to render, for UI that lets a user pick
 // one (see components/menus/menu-icon-picker.tsx) rather than type it blind.
-export const MENU_ICON_ENTRIES: { name: string; Icon: LucideIcon }[] = Object.entries(
-  MENU_ICONS
-).map(([name, Icon]) => ({ name, Icon }));
+export const MENU_ICON_ENTRIES: { name: string; Icon: LucideIcon }[] =
+  Object.entries(MENU_ICONS).map(([name, Icon]) => ({ name, Icon }));
 
 // A MenuNode with its icon string pre-resolved to an actual component.
 // Resolve once per menu tree (e.g. via useMemo) and pass the result down as

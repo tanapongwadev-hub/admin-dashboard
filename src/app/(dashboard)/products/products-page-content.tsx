@@ -4,6 +4,7 @@ import { getCurrentSession } from "@/lib/session";
 import { listProducts, getProductLookups } from "@/lib/api/products";
 import { listMaterials } from "@/lib/api/materials";
 import { listProcessSteps } from "@/lib/api/process-steps";
+import { loadProductMaterialCatalog } from "@/lib/product-materials";
 import { ProductsClient } from "@/components/products/products-client";
 
 export async function ProductsPageContent({
@@ -58,12 +59,11 @@ export async function ProductsPageContent({
   const canCreateWorkflow = session.user.isSuperAdmin || session.permissions.includes("PRODUCT_WORKFLOWS_CREATE");
   const canViewWorkflow = session.user.isSuperAdmin || session.permissions.includes("PRODUCT_WORKFLOWS_VIEW");
 
-  // Materials list is fetched here too (not just Products' own lookups) so
-  // the wizard's post-create "insert BOM" step (see AGENTS.md § Products)
-  // has a component picker — a BOM item references any Material regardless
-  // of type (PC/OF/OF_MAT), so this intentionally has no `type` filter,
-  // unlike /materials/pc's own list. `isActive: true` since a BOM shouldn't
-  // be built from a disabled material; `limit: 100` is the backend's max.
+  // The complete Materials catalog is fetched here (not just the first 100
+  // rows) because the BOM diagram cross-references each item to its image.
+  // Historical BOMs may also reference an inactive material. The loader
+  // therefore retains every row for diagrams and separately returns only
+  // active rows for the create/edit picker.
   //
   // Process steps (master data for the workflow step dropdown, see AGENTS.md
   // § Product Workflow) are only fetched when the viewer could actually reach
@@ -71,7 +71,7 @@ export async function ProductsPageContent({
   // non-SUPER_ADMIN role yet (same standing gap as PRODUCT_WORKFLOWS_* — see
   // API_ENDPOINTS.md § 16), so a viewer with PRODUCT_WORKFLOWS_CREATE but not
   // PROCESS_STEP_VIEW would otherwise 403 this whole page's data fetch.
-  const [list, lookups, materialsList, processStepsList] = await Promise.all([
+  const [list, lookups, materialCatalog, processStepsList] = await Promise.all([
     listProducts(accessToken, {
       search,
       isActive,
@@ -84,7 +84,9 @@ export async function ProductsPageContent({
       sortOrder: "asc",
     }),
     getProductLookups(accessToken),
-    listMaterials(accessToken, { limit: 100, isActive: true, sortBy: "name", sortOrder: "asc" }),
+    loadProductMaterialCatalog((page) =>
+      listMaterials(accessToken, { page, limit: 100, sortBy: "name", sortOrder: "asc" })
+    ),
     canCreateWorkflow
       ? listProcessSteps(accessToken, { limit: 100, isActive: true, sortBy: "code", sortOrder: "asc" }).catch(
           () => ({ items: [], meta: { page: 1, limit: 100, totalItems: 0, totalPages: 0 } })
@@ -103,7 +105,8 @@ export async function ProductsPageContent({
         products={list.items}
         totalItems={list.meta.totalItems}
         lookups={lookups}
-        materials={materialsList.items}
+        materials={materialCatalog.activeMaterials}
+        diagramMaterials={materialCatalog.diagramMaterials}
         processSteps={processStepsList.items}
         canEdit={canEdit}
         canDelete={canDelete}

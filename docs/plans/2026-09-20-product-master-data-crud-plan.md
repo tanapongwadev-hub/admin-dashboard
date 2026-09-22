@@ -1,4 +1,4 @@
-# Plan: CRUD Master Data — ประเภทสินค้า (Product Type), รุ่น (Product Model), ลูกค้า (Customer)
+wwwwwwwwwwwwww# Plan: CRUD Master Data — ประเภทสินค้า (Product Type), รุ่น (Product Model), ลูกค้า (Customer)
 
 Status: **Draft — not yet implemented**
 Repos affected: `cps-api` (backend) + `admin-dashboard` (frontend)

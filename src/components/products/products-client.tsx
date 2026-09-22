@@ -23,6 +23,7 @@ export function ProductsClient({
   totalItems,
   lookups,
   materials,
+  diagramMaterials,
   processSteps,
   canEdit,
   canDelete,
@@ -39,6 +40,9 @@ export function ProductsClient({
   // AGENTS.md § Products. Not gated behind canEdit since a BOM references
   // Materials, not Products, permissions.
   materials: Material[];
+  // Complete catalog, including inactive and paginated rows, so historical
+  // BOM versions can always resolve their material photos.
+  diagramMaterials: Material[];
   // Workflow step dropdown options in the wizard's post-BOM workflow step —
   // master data, not gated behind canEdit for the same reason as materials.
   processSteps: ProcessStep[];
@@ -119,7 +123,7 @@ export function ProductsClient({
         canEdit={canEdit}
         canViewBom={canViewBom}
         canViewWorkflow={canViewWorkflow}
-        materials={materials}
+        materials={diagramMaterials}
         onEdit={(product) => setWizardTarget(product)}
         onOpenChange={(open) => !open && setDetailsTarget(null)}
       />

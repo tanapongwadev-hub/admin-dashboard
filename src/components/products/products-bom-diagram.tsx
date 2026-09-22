@@ -59,6 +59,9 @@ function DiagramNode({
   y: number;
   center?: boolean;
 }) {
+  const [failedPath, setFailedPath] = React.useState<string | null>(null);
+  const canShowImage = imagePath !== null && failedPath !== imagePath;
+
   return (
     <div
       className="absolute flex flex-col items-center gap-1.5"
@@ -71,8 +74,15 @@ function DiagramNode({
         )}
         style={{ width: size, height: size }}
       >
-        {imagePath ? (
-          <Image src={imagePath} alt={alt} fill sizes={`${size}px`} className="object-cover" />
+        {canShowImage ? (
+          <Image
+            src={imagePath}
+            alt={alt}
+            fill
+            sizes={`${size}px`}
+            className="object-cover"
+            onError={() => setFailedPath(imagePath)}
+          />
         ) : center ? (
           <Package className="size-7 text-primary" aria-hidden="true" />
         ) : (
