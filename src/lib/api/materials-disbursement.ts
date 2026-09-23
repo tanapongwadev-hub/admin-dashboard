@@ -42,6 +42,13 @@ export interface MaterialsDisbursement {
   cancelledBy: string | null;
   cancelledAt: string | null;
   cancelReason: string | null;
+  productionPlanId: string | null;
+  /**
+   * Set only when this document was issued from a Material Job Order's
+   * "จ่ายออก" action — cps-api rejects cancelling it from this page
+   * (409), see materials-disbursement-table.tsx's cancel-action gate.
+   */
+  materialJobOrderId: string | null;
   createdBy: string | null;
   createdAt: string;
   updatedAt: string;

@@ -1,7 +1,9 @@
 "use client";
 
 import { Boxes, CalendarDays, ClipboardList, PackageCheck } from "lucide-react";
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -11,7 +13,10 @@ import {
 } from "@/components/ui/dialog";
 import type { ProductionPlan } from "@/lib/api/production-plans";
 import { formatNumber } from "@/lib/utils";
-import { PRODUCTION_PLAN_STATUS_DISPLAY } from "./production-plan-table";
+import {
+  JOB_ORDER_STATUS,
+  PRODUCTION_PLAN_STATUS_DISPLAY,
+} from "./production-plan-table";
 
 const date = (value: string) =>
   new Intl.DateTimeFormat("th-TH", { dateStyle: "medium" }).format(
@@ -97,7 +102,12 @@ export function ProductionPlanDetailsDialog({
                     label="กันสต็อก"
                   />
                   <span className="h-px flex-1 bg-border-strong" />
-                  <Stage active={plan.status === "ISSUED"} label="ออกใบเบิก" />
+                  <Stage
+                    active={["APPROVED", "ISSUED"].includes(plan.status)}
+                    label="ใบจัดงาน"
+                  />
+                  <span className="h-px flex-1 bg-border-strong" />
+                  <Stage active={plan.status === "ISSUED"} label="จ่ายออกแล้ว" />
                 </div>
                 {(plan.status === "CANCELLED" || plan.status === "EXPIRED") && (
                   <p className="mt-3 rounded-md bg-danger-soft px-3 py-2 text-sm text-danger">
@@ -105,6 +115,26 @@ export function ProductionPlanDetailsDialog({
                       ? "แผนหมดอายุและปล่อยสต็อกแล้ว"
                       : `ยกเลิก: ${plan.cancelReason || "ไม่ระบุเหตุผล"}`}
                   </p>
+                )}
+                {plan.jobOrder && (
+                  <div className="mt-3 flex items-center justify-between gap-3 rounded-md border border-border bg-surface px-3 py-2">
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="font-mono text-fg-muted">
+                        {plan.jobOrder.code}
+                      </span>
+                      <Badge
+                        variant={JOB_ORDER_STATUS[plan.jobOrder.status].variant}
+                        dot
+                      >
+                        {JOB_ORDER_STATUS[plan.jobOrder.status].label}
+                      </Badge>
+                    </div>
+                    <Button asChild type="button" variant="outline" size="sm">
+                      <Link href={`/materials/job-orders/${plan.jobOrder.id}`}>
+                        ดูใบจัดงาน
+                      </Link>
+                    </Button>
+                  </div>
                 )}
               </div>
               <section>

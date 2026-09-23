@@ -16,6 +16,7 @@ import {
 } from "@/lib/api/material-traceability";
 import { ApiError } from "@/lib/api/client";
 import { redirectIfSessionExpired, redirectMissingSession } from "@/lib/session-expiry";
+import { apiErrorMessage, CONNECTION_ERROR_MESSAGE } from "@/lib/user-error";
 
 type Result<T> = { status: "success"; data: T } | { status: "error"; message: string };
 
@@ -29,12 +30,12 @@ function errorResult(err: unknown): { status: "error"; message: string } {
   // instead of a dead-end error toast. See lib/session-expiry.ts.
   redirectIfSessionExpired(err);
   if (err instanceof ApiError) {
-    const body = err.body as { message?: string | string[] } | undefined;
-    const message = Array.isArray(body?.message) ? body.message.join(", ") : body?.message;
-    if (err.status === 404) return { status: "error", message: message ?? "ไม่พบข้อมูลที่ค้นหา" };
-    return { status: "error", message: message ?? "เกิดข้อผิดพลาด กรุณาลองอีกครั้ง" };
+    if (err.status === 404) {
+      return { status: "error", message: apiErrorMessage(err, "ไม่พบข้อมูลที่ค้นหา") };
+    }
+    return { status: "error", message: apiErrorMessage(err) };
   }
-  return { status: "error", message: "ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้" };
+  return { status: "error", message: CONNECTION_ERROR_MESSAGE };
 }
 
 // perform* helpers take the accessToken as a parameter (testable without

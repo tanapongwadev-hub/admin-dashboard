@@ -10,7 +10,10 @@ import {
   readProductionPlansFilters,
 } from "@/lib/filters/production-plans-filters";
 
-function plan(status: ProductionPlanStatus): ProductionPlan {
+function plan(
+  status: ProductionPlanStatus,
+  jobOrder: ProductionPlan["jobOrder"] = null,
+): ProductionPlan {
   return {
     id: "1",
     code: "PP-202609-0001",
@@ -24,6 +27,7 @@ function plan(status: ProductionPlanStatus): ProductionPlan {
     createdAt: "2026-09-22T00:00:00.000Z",
     updatedAt: "2026-09-22T00:00:00.000Z",
     lines: [],
+    jobOrder,
   };
 }
 
@@ -31,16 +35,18 @@ const handlers = {
   view: () => undefined,
   edit: () => undefined,
   approve: () => undefined,
-  issue: () => undefined,
   cancel: () => undefined,
   delete: () => undefined,
+  viewJobOrder: () => undefined,
+  printJobOrder: () => undefined,
 };
 const all = {
   update: true,
   approve: true,
-  issue: true,
   cancel: true,
   delete: true,
+  viewJobOrder: true,
+  printJobOrder: true,
 };
 
 test("row actions enforce the confirmed production-plan lifecycle", () => {
@@ -50,11 +56,16 @@ test("row actions enforce the confirmed production-plan lifecycle", () => {
     ),
     ["ดูรายละเอียด", "แก้ไข", "อนุมัติและกันสต็อก", "ยกเลิกแผน", "ลบร่าง"],
   );
+  const approvedWithJobOrder = plan("APPROVED", {
+    id: "jo-1",
+    code: "JO-20260922-0001",
+    status: "WAITING_PICKING",
+  });
   assert.deepEqual(
-    getProductionPlanRowActions(plan("APPROVED"), all, handlers).map(
+    getProductionPlanRowActions(approvedWithJobOrder, all, handlers).map(
       (item) => item.label,
     ),
-    ["ดูรายละเอียด", "ออกใบเบิก", "ยกเลิกแผน"],
+    ["ดูรายละเอียด", "ดูใบจัดงาน", "พิมพ์ใบจัดงาน", "ยกเลิกแผน"],
   );
   assert.deepEqual(
     getProductionPlanRowActions(plan("ISSUED"), all, handlers).map(
@@ -74,9 +85,10 @@ test("row actions never reveal protected mutations without permissions", () => {
   const none = {
     update: false,
     approve: false,
-    issue: false,
     cancel: false,
     delete: false,
+    viewJobOrder: false,
+    printJobOrder: false,
   };
   assert.deepEqual(
     getProductionPlanRowActions(plan("DRAFT"), none, handlers).map(

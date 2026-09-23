@@ -51,6 +51,19 @@ export interface ProductionPlanLine {
   reservations?: ProductionPlanReservation[];
 }
 
+export type MaterialJobOrderStatus =
+  | "WAITING_PICKING"
+  | "READY_TO_ISSUE"
+  | "PARTIALLY_ISSUED"
+  | "ISSUED"
+  | "CANCELLED";
+
+export interface ProductionPlanJobOrderSummary {
+  id: string;
+  code: string;
+  status: MaterialJobOrderStatus;
+}
+
 export interface ProductionPlan {
   id: string;
   code: string;
@@ -64,6 +77,12 @@ export interface ProductionPlan {
   createdAt: string;
   updatedAt: string;
   lines: ProductionPlanLine[];
+  /**
+   * The warehouse pick document created automatically the moment this plan
+   * is approved — null only for a plan that has never been approved
+   * (DRAFT). See lib/api/material-job-orders.ts for the full record.
+   */
+  jobOrder: ProductionPlanJobOrderSummary | null;
 }
 
 export interface ProductionPlanLookups {
@@ -189,12 +208,10 @@ export function approveProductionPlan(accessToken: string, id: string) {
   });
 }
 
-export function issueProductionPlan(accessToken: string, id: string) {
-  return apiFetch<ProductionPlan>(`/production-plans/${id}/issue`, {
-    method: "POST",
-    headers: auth(accessToken),
-  });
-}
+// `POST /production-plans/:id/issue` is superseded — the stock cut now
+// happens on the linked Material Job Order (lib/api/material-job-orders.ts
+// `issueMaterialJobOrder`), reachable from Material Management > ใบจัดงาน.
+// No frontend caller of the old endpoint remains; see AGENTS.md § Job Orders.
 
 export function cancelProductionPlan(
   accessToken: string,

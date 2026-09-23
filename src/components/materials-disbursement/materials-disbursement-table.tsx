@@ -136,7 +136,15 @@ export function getMaterialsDisbursementRowActions(
   if (disbursement.status === "draft" && canConfirm) {
     actions.push({ label: "ยืนยันการจ่ายออก", icon: CheckCircle2, onSelect: () => handlers.onConfirm(disbursement) });
   }
-  if (disbursement.status !== "cancelled" && canCancel) {
+  // A disbursement issued from a Material Job Order's "จ่ายออก" action is
+  // owned by that Job Order's own reservation/issued-quantity bookkeeping —
+  // cancelling it here would desync that ledger, so cps-api rejects it
+  // (409) and this page doesn't even offer the action.
+  if (
+    disbursement.status !== "cancelled" &&
+    canCancel &&
+    !disbursement.materialJobOrderId
+  ) {
     actions.push({ label: "ยกเลิก", icon: Ban, onSelect: () => handlers.onCancel(disbursement), variant: "danger" });
   }
   if (disbursement.status === "draft" && canDelete) {

@@ -102,7 +102,7 @@ test("performCreateLocation returns the joined API error message on non-2xx", as
   const result = await performCreateLocation("test-token", makeCreatePayload());
 
   assert.equal(result.status, "error");
-  assert.match((result as { message: string }).message, /DB error, Timeout/);
+  assert.match((result as { message: string }).message, /ระบบขัดข้องชั่วคราว/);
 });
 
 test("performCreateLocation returns a Thai connection-failed message on network error", async (t) => {

@@ -79,7 +79,7 @@ test("performSaveMenuOrder returns the API error message on other non-2xx", asyn
   const result = await performSaveMenuOrder("test-token", "v1", []);
 
   assert.equal(result.status, "error");
-  assert.equal((result as { message: string }).message, "Invalid menu item id");
+  assert.equal((result as { message: string }).message, "รหัสรายการเมนูไม่ถูกต้อง");
 });
 
 test("performSaveMenuOrder returns the generic Thai connection-failed message on network error", async (t) => {
@@ -206,7 +206,7 @@ test("performDeleteMenu surfaces the backend guard for menus with permissions", 
   assert.equal(requestMethod, "DELETE");
   assert.equal(
     (result as { message: string }).message,
-    "ยังลบเมนูที่มี permission ผูกอยู่ไม่ได้ กรุณาถอด permission ก่อน"
+    "ยังลบเมนูที่มีสิทธิ์ผูกอยู่ไม่ได้ กรุณาถอดสิทธิ์ก่อน"
   );
 });
 

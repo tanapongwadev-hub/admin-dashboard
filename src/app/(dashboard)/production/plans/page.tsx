@@ -66,7 +66,7 @@ export default async function ProductionPlansPage({
       <div>
         <h1 className="text-xl font-semibold text-fg">แผนการผลิต</h1>
         <p className="mt-1 text-sm text-fg-muted">
-          วางแผน กันวัตถุดิบตาม FIFO และออกใบเบิกเพื่อผลิตจากแหล่งข้อมูลเดียว
+          วางแผน กันวัตถุดิบตาม FIFO และสร้างใบจัดงานให้ฝ่ายคลังจ่ายออก
         </p>
       </div>
       <ProductionPlanClient
@@ -77,8 +77,9 @@ export default async function ProductionPlansPage({
         canUpdate={can("PRODUCTION_PLAN_UPDATE")}
         canDelete={can("PRODUCTION_PLAN_DELETE")}
         canApprove={can("PRODUCTION_PLAN_APPROVE")}
-        canIssue={can("PRODUCTION_PLAN_ISSUE")}
         canCancel={can("PRODUCTION_PLAN_CANCEL")}
+        canViewJobOrder={can("MATERIAL_JOB_ORDER_VIEW")}
+        canPrintJobOrder={can("MATERIAL_JOB_ORDER_PRINT")}
       />
     </div>
   );

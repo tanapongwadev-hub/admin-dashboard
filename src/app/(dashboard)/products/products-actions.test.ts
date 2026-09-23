@@ -151,7 +151,7 @@ test("performCreateProduct returns the API error message on non-2xx (non-409)", 
   const result = await performCreateProduct("test-token", makeCreatePayload());
 
   assert.equal(result.status, "error");
-  assert.match((result as { message: string }).message, /DB error, Timeout/);
+  assert.match((result as { message: string }).message, /ระบบขัดข้องชั่วคราว/);
 });
 
 // ---------------------------------------------------------------------------

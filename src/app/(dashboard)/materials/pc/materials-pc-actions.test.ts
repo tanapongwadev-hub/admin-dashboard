@@ -202,7 +202,7 @@ test("performCreateMaterial returns the API error message on non-2xx (non-409)",
 
   assert.equal(result.status, "error");
   // Multi-part message gets joined with ", " so the user sees both.
-  assert.match((result as { message: string }).message, /Internal error, DB down/);
+  assert.match((result as { message: string }).message, /ระบบขัดข้องชั่วคราว/);
 });
 
 test("performCreateMaterial returns a single string message (not joined) when the API sends a plain string", async (t) => {
@@ -214,7 +214,7 @@ test("performCreateMaterial returns a single string message (not joined) when th
   const result = await performCreateMaterial("test-token", makeCreatePayload());
 
   assert.equal(result.status, "error");
-  assert.equal((result as { message: string }).message, "Code already exists");
+  assert.equal((result as { message: string }).message, "รหัสนี้มีอยู่ในระบบแล้ว");
 });
 
 test("performCreateMaterial returns the generic Thai connection-failed message on network error", async (t) => {
@@ -403,5 +403,5 @@ test("performUploadMaterialImage returns the API error message when the upload i
   const result = await performUploadMaterialImage("test-token", formData);
 
   assert.equal(result.status, "error");
-  assert.equal((result as { message: string }).message, "Unsupported image format");
+  assert.equal((result as { message: string }).message, "รูปแบบไฟล์รูปภาพไม่รองรับ");
 });

@@ -3,9 +3,10 @@
 import {
   Ban,
   CheckCircle2,
+  ClipboardCheck,
   Eye,
-  FileOutput,
   Pencil,
+  Printer,
   Trash2,
 } from "lucide-react";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
@@ -23,6 +24,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type {
+  MaterialJobOrderStatus,
   ProductionPlan,
   ProductionPlanStatus,
 } from "@/lib/api/production-plans";
@@ -38,22 +40,35 @@ const STATUS: Record<
   EXPIRED: { label: "หมดอายุ", variant: "danger" },
 };
 
+export const JOB_ORDER_STATUS: Record<
+  MaterialJobOrderStatus,
+  { label: string; variant: BadgeProps["variant"] }
+> = {
+  WAITING_PICKING: { label: "รอหยิบสินค้า", variant: "warning" },
+  READY_TO_ISSUE: { label: "พร้อมจ่ายออก", variant: "info" },
+  PARTIALLY_ISSUED: { label: "จ่ายออกบางส่วน", variant: "info" },
+  ISSUED: { label: "จ่ายออกครบแล้ว", variant: "success" },
+  CANCELLED: { label: "ยกเลิก", variant: "neutral" },
+};
+
 export function getProductionPlanRowActions(
   plan: ProductionPlan,
   permissions: {
     update: boolean;
     approve: boolean;
-    issue: boolean;
     cancel: boolean;
     delete: boolean;
+    viewJobOrder: boolean;
+    printJobOrder: boolean;
   },
   handlers: {
     view: () => void;
     edit: () => void;
     approve: () => void;
-    issue: () => void;
     cancel: () => void;
     delete: () => void;
+    viewJobOrder: () => void;
+    printJobOrder: () => void;
   },
 ): RowAction[] {
   const actions: RowAction[] = [
@@ -67,11 +82,21 @@ export function getProductionPlanRowActions(
       icon: CheckCircle2,
       onSelect: handlers.approve,
     });
-  if (plan.status === "APPROVED" && permissions.issue)
+  if (plan.jobOrder && permissions.viewJobOrder)
     actions.push({
-      label: "ออกใบเบิก",
-      icon: FileOutput,
-      onSelect: handlers.issue,
+      label: "ดูใบจัดงาน",
+      icon: ClipboardCheck,
+      onSelect: handlers.viewJobOrder,
+    });
+  if (
+    plan.jobOrder &&
+    plan.jobOrder.status !== "CANCELLED" &&
+    permissions.printJobOrder
+  )
+    actions.push({
+      label: "พิมพ์ใบจัดงาน",
+      icon: Printer,
+      onSelect: handlers.printJobOrder,
     });
   if (
     (plan.status === "DRAFT" || plan.status === "APPROVED") &&
@@ -115,24 +140,27 @@ export function ProductionPlanTable({
   onView,
   onEdit,
   onApprove,
-  onIssue,
   onCancel,
   onDelete,
+  onViewJobOrder,
+  onPrintJobOrder,
 }: {
   plans: ProductionPlan[];
   permissions: {
     update: boolean;
     approve: boolean;
-    issue: boolean;
     cancel: boolean;
     delete: boolean;
+    viewJobOrder: boolean;
+    printJobOrder: boolean;
   };
   onView: (plan: ProductionPlan) => void;
   onEdit: (plan: ProductionPlan) => void;
   onApprove: (plan: ProductionPlan) => void;
-  onIssue: (plan: ProductionPlan) => void;
   onCancel: (plan: ProductionPlan) => void;
   onDelete: (plan: ProductionPlan) => void;
+  onViewJobOrder: (plan: ProductionPlan) => void;
+  onPrintJobOrder: (plan: ProductionPlan) => void;
 }) {
   if (!plans.length)
     return (
@@ -151,6 +179,7 @@ export function ProductionPlanTable({
             <TableHead>เลขแผน</TableHead>
             <TableHead>ชื่อแผน</TableHead>
             <TableHead>สถานะ</TableHead>
+            <TableHead>ใบจัดงาน</TableHead>
             <TableHead>รายการสินค้า</TableHead>
             <TableHead>จำนวนรวม</TableHead>
             <TableHead>วันที่ต้องการใช้</TableHead>
@@ -165,9 +194,10 @@ export function ProductionPlanTable({
               view: () => onView(plan),
               edit: () => onEdit(plan),
               approve: () => onApprove(plan),
-              issue: () => onIssue(plan),
               cancel: () => onCancel(plan),
               delete: () => onDelete(plan),
+              viewJobOrder: () => onViewJobOrder(plan),
+              printJobOrder: () => onPrintJobOrder(plan),
             });
             return (
               <TableRow key={plan.id}>
@@ -188,6 +218,24 @@ export function ProductionPlanTable({
                   <Badge variant={STATUS[plan.status].variant} dot>
                     {STATUS[plan.status].label}
                   </Badge>
+                </TableCell>
+                <TableCell>
+                  {plan.jobOrder ? (
+                    <button
+                      type="button"
+                      onClick={() => onViewJobOrder(plan)}
+                      className="inline-flex items-center gap-1.5 hover:underline"
+                    >
+                      <Badge
+                        variant={JOB_ORDER_STATUS[plan.jobOrder.status].variant}
+                        dot
+                      >
+                        {JOB_ORDER_STATUS[plan.jobOrder.status].label}
+                      </Badge>
+                    </button>
+                  ) : (
+                    <span className="text-fg-muted">—</span>
+                  )}
                 </TableCell>
                 <TableCell>
                   {plan.lines.length.toLocaleString("th-TH")}

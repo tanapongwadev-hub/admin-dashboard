@@ -10,6 +10,7 @@ import {
   type DepartmentOption,
   type LoginSuccess,
 } from "@/lib/api/auth";
+import { apiErrorMessage, CONNECTION_ERROR_MESSAGE } from "@/lib/user-error";
 
 export type LoginActionResult =
   | { status: "success" }
@@ -101,15 +102,12 @@ async function setSessionCookies(result: LoginSuccess) {
 function authErrorMessage(err: unknown): string {
   if (err instanceof ApiError) {
     if (err.status === 401) {
-      const body = err.body as { message?: string } | undefined;
-      return body?.message ?? "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง";
+      return apiErrorMessage(err, "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
     }
     if (err.status === 403) {
-      const body = err.body as { message?: string } | undefined;
-      return body?.message ?? "บัญชีนี้ไม่สามารถเข้าสู่ระบบได้ในขณะนี้";
+      return apiErrorMessage(err, "บัญชีนี้ไม่สามารถเข้าสู่ระบบได้ในขณะนี้");
     }
-    const body = err.body as { message?: string } | undefined;
-    return body?.message ?? "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง";
+    return apiErrorMessage(err);
   }
-  return "ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง";
+  return CONNECTION_ERROR_MESSAGE;
 }

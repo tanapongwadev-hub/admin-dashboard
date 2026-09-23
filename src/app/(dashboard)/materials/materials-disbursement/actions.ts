@@ -14,6 +14,7 @@ import {
 } from "@/lib/api/materials-disbursement";
 import { ApiError } from "@/lib/api/client";
 import { redirectIfSessionExpired, redirectMissingSession } from "@/lib/session-expiry";
+import { apiErrorMessage, CONNECTION_ERROR_MESSAGE } from "@/lib/user-error";
 
 // Same perform*/public-wrapper shape as materials-receiving/actions.ts (see
 // AGENTS.md § Material Receiving) — perform* takes the accessToken as a
@@ -38,11 +39,9 @@ function errorResult(err: unknown): { status: "error"; message: string } {
   // instead of showing a dead-end error toast. See lib/session-expiry.ts.
   redirectIfSessionExpired(err);
   if (err instanceof ApiError) {
-    const body = err.body as { message?: string | string[] } | undefined;
-    const message = Array.isArray(body?.message) ? body.message.join(", ") : body?.message;
-    return { status: "error", message: message ?? "เกิดข้อผิดพลาด กรุณาลองอีกครั้ง" };
+    return { status: "error", message: apiErrorMessage(err) };
   }
-  return { status: "error", message: "ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้" };
+  return { status: "error", message: CONNECTION_ERROR_MESSAGE };
 }
 
 function revalidateDisbursementPath() {

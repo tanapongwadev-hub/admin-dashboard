@@ -14,6 +14,7 @@ import {
 } from "@/lib/api/menus";
 import { ApiError } from "@/lib/api/client";
 import { redirectIfSessionExpired, redirectMissingSession } from "@/lib/session-expiry";
+import { apiErrorMessage, CONNECTION_ERROR_MESSAGE } from "@/lib/user-error";
 
 export type SaveMenuOrderResult =
   | { status: "success"; version: string }
@@ -39,18 +40,9 @@ function errorMessage(error: unknown, fallback: string) {
   // instead of showing a dead-end error toast. See lib/session-expiry.ts.
   redirectIfSessionExpired(error);
   if (error instanceof ApiError) {
-    const body = error.body as { message?: string | string[] } | undefined;
-    const message = body?.message;
-    if (Array.isArray(message)) return message.join(" · ");
-    const translations: Record<string, string> = {
-      "Cannot delete menu with child menus": "ยังลบเมนูที่มีเมนูย่อยไม่ได้ กรุณาย้ายหรือลบเมนูย่อยก่อน",
-      "Cannot delete menu that still has permissions": "ยังลบเมนูที่มี permission ผูกอยู่ไม่ได้ กรุณาถอด permission ก่อน",
-      "Menu not found": "ไม่พบเมนูนี้ อาจถูกลบไปแล้ว กรุณารีเฟรชหน้า",
-      "Parent menu not found": "ไม่พบเมนูแม่ที่เลือก กรุณารีเฟรชแล้วลองอีกครั้ง",
-    };
-    return typeof message === "string" ? (translations[message] ?? message) : fallback;
+    return apiErrorMessage(error, fallback);
   }
-  return "ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้";
+  return CONNECTION_ERROR_MESSAGE;
 }
 
 async function refreshedSuccess(accessToken: string): Promise<MenuMutationResult> {
@@ -85,10 +77,9 @@ export async function performSaveMenuOrder(
       };
     }
     if (err instanceof ApiError) {
-      const body = err.body as { message?: string } | undefined;
-      return { status: "error", message: body?.message ?? "ไม่สามารถบันทึกลำดับเมนูใหม่ได้" };
+      return { status: "error", message: apiErrorMessage(err, "ไม่สามารถบันทึกลำดับเมนูใหม่ได้") };
     }
-    return { status: "error", message: "ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้" };
+    return { status: "error", message: CONNECTION_ERROR_MESSAGE };
   }
 }
 

@@ -10,7 +10,6 @@ import {
   deleteProductionPlan,
   getProductionPlan,
   importProductionPlan,
-  issueProductionPlan,
   updateProductionPlan,
   type ProductionPlan,
   type ProductionPlanPayload,
@@ -20,6 +19,7 @@ import {
   redirectIfSessionExpired,
   redirectMissingSession,
 } from "@/lib/session-expiry";
+import { apiErrorMessage, CONNECTION_ERROR_MESSAGE } from "@/lib/user-error";
 
 export type ProductionPlanActionResult =
   | { status: "success"; plan: ProductionPlan }
@@ -43,16 +43,13 @@ function failure(
     const body = error.body as
       | { message?: string | string[]; shortfalls?: ProductionPlanShortfall[] }
       | undefined;
-    const message = Array.isArray(body?.message)
-      ? body.message.join(", ")
-      : body?.message;
     return {
       status: "error",
-      message: message ?? "เกิดข้อผิดพลาด กรุณาลองอีกครั้ง",
+      message: apiErrorMessage(error),
       shortfalls: body?.shortfalls,
     };
   }
-  return { status: "error", message: "ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้" };
+  return { status: "error", message: CONNECTION_ERROR_MESSAGE };
 }
 
 function refreshed() {
@@ -132,9 +129,8 @@ async function transition(
 export async function approveProductionPlanAction(id: string) {
   return transition(id, approveProductionPlan);
 }
-export async function issueProductionPlanAction(id: string) {
-  return transition(id, issueProductionPlan);
-}
+// Issuing now happens from the linked Material Job Order — see
+// app/(dashboard)/materials/job-orders/actions.ts#issueMaterialJobOrderAction.
 
 export async function cancelProductionPlanAction(
   id: string,

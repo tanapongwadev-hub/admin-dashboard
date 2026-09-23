@@ -9,7 +9,6 @@ import {
   cancelProductionPlanAction,
   deleteProductionPlanAction,
   getProductionPlanAction,
-  issueProductionPlanAction,
 } from "@/app/(dashboard)/production/plans/actions";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -35,8 +34,9 @@ export function ProductionPlanClient({
   canUpdate,
   canDelete,
   canApprove,
-  canIssue,
   canCancel,
+  canViewJobOrder,
+  canPrintJobOrder,
 }: {
   plans: ProductionPlan[];
   meta: PaginatedProductionPlans["meta"];
@@ -45,8 +45,9 @@ export function ProductionPlanClient({
   canUpdate: boolean;
   canDelete: boolean;
   canApprove: boolean;
-  canIssue: boolean;
   canCancel: boolean;
+  canViewJobOrder: boolean;
+  canPrintJobOrder: boolean;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -62,9 +63,6 @@ export function ProductionPlanClient({
     [],
   );
   const [cancelTarget, setCancelTarget] = React.useState<ProductionPlan | null>(
-    null,
-  );
-  const [issueTarget, setIssueTarget] = React.useState<ProductionPlan | null>(
     null,
   );
   const [deleteTarget, setDeleteTarget] = React.useState<ProductionPlan | null>(
@@ -106,14 +104,6 @@ export function ProductionPlanClient({
     setCancelTarget(null);
     refresh();
   }
-  async function issue() {
-    if (!issueTarget) return;
-    const result = await issueProductionPlanAction(issueTarget.id);
-    if (result.status === "error") return toast.error(result.message);
-    toast.success("ออกใบเบิกเพื่อผลิตแล้ว", { description: result.plan.code });
-    setIssueTarget(null);
-    refresh();
-  }
   async function remove() {
     if (!deleteTarget) return;
     const result = await deleteProductionPlanAction(deleteTarget.id);
@@ -130,9 +120,10 @@ export function ProductionPlanClient({
   const permissions = {
     update: canUpdate,
     approve: canApprove,
-    issue: canIssue,
     cancel: canCancel,
     delete: canDelete,
+    viewJobOrder: canViewJobOrder,
+    printJobOrder: canPrintJobOrder,
   };
   return (
     <div className="flex flex-col gap-4">
@@ -173,9 +164,15 @@ export function ProductionPlanClient({
           setShortfalls([]);
           setApproveTarget(plan);
         }}
-        onIssue={setIssueTarget}
         onCancel={setCancelTarget}
         onDelete={setDeleteTarget}
+        onViewJobOrder={(plan) => {
+          if (plan.jobOrder) router.push(`/materials/job-orders/${plan.jobOrder.id}`);
+        }}
+        onPrintJobOrder={(plan) => {
+          if (plan.jobOrder)
+            router.push(`/materials/job-orders/${plan.jobOrder.id}?print=1`);
+        }}
       />
       {plans.length > 0 && (
         <div className="flex flex-col gap-2 text-sm text-fg-muted sm:flex-row sm:items-center sm:justify-between">
@@ -250,15 +247,6 @@ export function ProductionPlanClient({
             setDetailLoading(false);
           }
         }}
-      />
-      <ConfirmDialog
-        open={!!issueTarget}
-        onOpenChange={(open) => !open && setIssueTarget(null)}
-        title={`ออกใบเบิก ${issueTarget?.code ?? ""}`}
-        description="ระบบจะตัดสต็อกจาก package ที่กันไว้เท่านั้น และสร้างใบจ่ายออกที่ยืนยันแล้ว"
-        confirmLabel="ออกใบเบิก"
-        variant="default"
-        onConfirm={() => void issue()}
       />
       <ConfirmDialog
         open={!!deleteTarget}

@@ -29,6 +29,7 @@ import {
   Bookmark,
   FileText,
   ClipboardList,
+  ClipboardCheck,
   Circle,
   type LucideIcon,
 } from "lucide-react";
@@ -70,6 +71,7 @@ const MENU_ICONS: Record<string, LucideIcon> = {
   bookmark: Bookmark,
   "file-text": FileText,
   "clipboard-list": ClipboardList,
+  "clipboard-check": ClipboardCheck,
 };
 
 export function menuIcon(name: string | null): LucideIcon {
