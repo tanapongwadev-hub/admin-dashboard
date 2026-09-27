@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { MasterDataEmptyLink } from "@/components/ui/master-data-empty-link";
 import {
   receiveMaterialsReceivingAction,
   getSuppliersByMaterialAction,
@@ -234,16 +235,20 @@ export function MaterialsReceivingFormDialog({
           <div className="flex flex-col gap-4 px-6 py-5 md:overflow-y-auto md:[scrollbar-width:none] md:[&::-webkit-scrollbar]:hidden">
             <div className="flex flex-col gap-1.5">
               <Label>วัสดุ</Label>
-              <Select value={materialId} onValueChange={handleMaterialChange}>
-                <SelectTrigger><SelectValue placeholder="เลือกวัสดุ" /></SelectTrigger>
-                <SelectContent>
-                  {lookups.materials.map((material) => (
-                    <SelectItem key={material.id} value={material.id}>
-                      {material.code} · {material.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {lookups.materials.length === 0 ? (
+                <MasterDataEmptyLink href="/materials/pc" resourceLabel="วัสดุ" />
+              ) : (
+                <Select value={materialId} onValueChange={handleMaterialChange}>
+                  <SelectTrigger><SelectValue placeholder="เลือกวัสดุ" /></SelectTrigger>
+                  <SelectContent>
+                    {lookups.materials.map((material) => (
+                      <SelectItem key={material.id} value={material.id}>
+                        {material.code} · {material.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
               {selectedMaterial && (
                 <p className="text-xs text-fg-muted">
                   Packing: {packingQuantity ? `${formatNumber(packingQuantity)} / กล่อง` : "ยังไม่ได้ตั้งค่าจำนวนต่อแพ็ก"}
@@ -273,7 +278,10 @@ export function MaterialsReceivingFormDialog({
               </div>
             )}
             {materialId && !isLoadingSuppliers && suppliers.length === 0 && (
-              <p className="text-xs text-danger">วัสดุนี้ยังไม่ได้เชื่อมกับซัพพลายเออร์ กรุณาตั้งค่าใน Material Master ก่อน</p>
+              <MasterDataEmptyLink
+                href="/materials/pc"
+                resourceLabel="ซัพพลายเออร์ของวัสดุนี้"
+              />
             )}
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

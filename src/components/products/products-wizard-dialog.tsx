@@ -37,6 +37,8 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import { MasterDataEmptyLink } from "@/components/ui/master-data-empty-link";
+import { MasterDataSelect } from "@/components/ui/master-data-select";
 import {
   createProductAction,
   updateProductAction,
@@ -985,22 +987,24 @@ export function ProductsWizardView({
                   <div className="grid grid-cols-1 gap-3 p-3 sm:grid-cols-2">
                     <div className="flex flex-col gap-1.5">
                       <Label>ขั้นตอน</Label>
-                      <Select
-                        value={item.processStepId}
-                        onValueChange={(v) => updateWorkflowStep(item.key, { processStepId: v })}
-                      >
-                        <SelectTrigger><SelectValue placeholder="เลือกขั้นตอน" /></SelectTrigger>
-                        <SelectContent>
-                          {processStepOptionsFor(item.key).map((processStep) => (
-                            <SelectItem key={processStep.id} value={processStep.id}>
-                              {processStep.code} · {processStep.nameTh}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
                       {processSteps.length === 0 ? (
-                        <p className="text-[11px] text-danger">ไม่มีข้อมูลขั้นตอนกระบวนการผลิตให้เลือก กรุณาติดต่อผู้ดูแลระบบ</p>
+                        <MasterDataEmptyLink href="/master-data" resourceLabel="ขั้นตอนกระบวนการผลิต" />
                       ) : (
+                        <Select
+                          value={item.processStepId}
+                          onValueChange={(v) => updateWorkflowStep(item.key, { processStepId: v })}
+                        >
+                          <SelectTrigger><SelectValue placeholder="เลือกขั้นตอน" /></SelectTrigger>
+                          <SelectContent>
+                            {processStepOptionsFor(item.key).map((processStep) => (
+                              <SelectItem key={processStep.id} value={processStep.id}>
+                                {processStep.code} · {processStep.nameTh}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                      {processSteps.length > 0 && (
                         <p className="text-[11px] text-fg-muted">ขั้นตอนที่เลือกในรายการอื่นแล้วจะไม่แสดงซ้ำที่นี่</p>
                       )}
                     </div>
@@ -1122,16 +1126,20 @@ export function ProductsWizardView({
                 <div className="grid grid-cols-1 gap-3 p-3 sm:grid-cols-4">
                   <div className="flex flex-col gap-1.5 sm:col-span-2">
                     <Label>วัตถุดิบ</Label>
-                    <Select value={item.materialId} onValueChange={(v) => handleBomMaterialChange(item.key, v)}>
-                      <SelectTrigger><SelectValue placeholder="เลือกวัตถุดิบ" /></SelectTrigger>
-                      <SelectContent>
-                        {materialOptionsFor(item.key).map((material) => (
-                          <SelectItem key={material.id} value={material.id}>
-                            {material.code} · {material.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    {materials.length === 0 ? (
+                      <MasterDataEmptyLink href="/materials/pc" resourceLabel="วัตถุดิบ" />
+                    ) : (
+                      <Select value={item.materialId} onValueChange={(v) => handleBomMaterialChange(item.key, v)}>
+                        <SelectTrigger><SelectValue placeholder="เลือกวัตถุดิบ" /></SelectTrigger>
+                        <SelectContent>
+                          {materialOptionsFor(item.key).map((material) => (
+                            <SelectItem key={material.id} value={material.id}>
+                              {material.code} · {material.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
                     <p className="text-[11px] text-fg-muted">วัตถุดิบที่เลือกในรายการอื่นแล้วจะไม่แสดงซ้ำที่นี่</p>
                   </div>
                   <div className="flex flex-col gap-1.5">
@@ -1146,14 +1154,14 @@ export function ProductsWizardView({
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <Label>หน่วย</Label>
-                    <Select value={item.unitId} onValueChange={(v) => updateBomItem(item.key, { unitId: v })}>
-                      <SelectTrigger><SelectValue placeholder="เลือกหน่วย" /></SelectTrigger>
-                      <SelectContent>
-                        {lookups.units.map((unit) => (
-                          <SelectItem key={unit.id} value={unit.id}>{unit.nameTh || unit.code}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <MasterDataSelect
+                      options={lookups.units.map((unit) => ({ id: unit.id, label: unit.nameTh || unit.code }))}
+                      value={item.unitId}
+                      onValueChange={(v) => updateBomItem(item.key, { unitId: v })}
+                      placeholder="เลือกหน่วย"
+                      href="/master-data/units"
+                      resourceLabel="หน่วยนับ"
+                    />
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <Label>เปอร์เซ็นต์สูญเสีย (ไม่บังคับ)</Label>
@@ -1280,50 +1288,22 @@ export function ProductsWizardView({
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="flex flex-col gap-1.5">
                   <Label>ประเภทสินค้า</Label>
-                  <Select value={watch("productTypeId")} onValueChange={(v) => setValue("productTypeId", v, { shouldValidate: true })}>
-                    <SelectTrigger><SelectValue placeholder="เลือกประเภทสินค้า" /></SelectTrigger>
-                    <SelectContent>
-                      {lookups.productTypes.map((item) => (
-                        <SelectItem key={item.id} value={item.id}>{item.nameTh || item.code}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <MasterDataSelect options={lookups.productTypes.map((item) => ({ id: item.id, label: item.nameTh || item.code }))} value={watch("productTypeId")} onValueChange={(v) => setValue("productTypeId", v, { shouldValidate: true })} placeholder="เลือกประเภทสินค้า" href="/master-data/product-types" resourceLabel="ประเภทสินค้า" invalid={!!errors.productTypeId} />
                   {errors.productTypeId && <p className="text-xs text-danger">{errors.productTypeId.message}</p>}
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <Label>รุ่น</Label>
-                  <Select value={watch("modelId")} onValueChange={(v) => setValue("modelId", v, { shouldValidate: true })}>
-                    <SelectTrigger><SelectValue placeholder="เลือกรุ่น" /></SelectTrigger>
-                    <SelectContent>
-                      {lookups.productModels.map((item) => (
-                        <SelectItem key={item.id} value={item.id}>{item.nameTh || item.code}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <MasterDataSelect options={lookups.productModels.map((item) => ({ id: item.id, label: item.nameTh || item.code }))} value={watch("modelId")} onValueChange={(v) => setValue("modelId", v, { shouldValidate: true })} placeholder="เลือกรุ่น" href="/master-data/product-models" resourceLabel="รุ่นสินค้า" invalid={!!errors.modelId} />
                   {errors.modelId && <p className="text-xs text-danger">{errors.modelId.message}</p>}
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <Label>ลูกค้า</Label>
-                  <Select value={watch("customerId")} onValueChange={(v) => setValue("customerId", v, { shouldValidate: true })}>
-                    <SelectTrigger><SelectValue placeholder="เลือกลูกค้า" /></SelectTrigger>
-                    <SelectContent>
-                      {lookups.customers.map((item) => (
-                        <SelectItem key={item.id} value={item.id}>{item.nameTh || item.code}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <MasterDataSelect options={lookups.customers.map((item) => ({ id: item.id, label: item.nameTh || item.code }))} value={watch("customerId")} onValueChange={(v) => setValue("customerId", v, { shouldValidate: true })} placeholder="เลือกลูกค้า" href="/master-data/customers" resourceLabel="ลูกค้า" invalid={!!errors.customerId} />
                   {errors.customerId && <p className="text-xs text-danger">{errors.customerId.message}</p>}
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <Label>หน่วย</Label>
-                  <Select value={watch("unitId")} onValueChange={(v) => setValue("unitId", v, { shouldValidate: true })}>
-                    <SelectTrigger><SelectValue placeholder="เลือกหน่วย" /></SelectTrigger>
-                    <SelectContent>
-                      {lookups.units.map((item) => (
-                        <SelectItem key={item.id} value={item.id}>{item.nameTh || item.code}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <MasterDataSelect options={lookups.units.map((item) => ({ id: item.id, label: item.nameTh || item.code }))} value={watch("unitId")} onValueChange={(v) => setValue("unitId", v, { shouldValidate: true })} placeholder="เลือกหน่วย" href="/master-data/units" resourceLabel="หน่วยนับ" invalid={!!errors.unitId} />
                   {errors.unitId && <p className="text-xs text-danger">{errors.unitId.message}</p>}
                 </div>
               </div>
@@ -1333,50 +1313,22 @@ export function ProductsWizardView({
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="flex flex-col gap-1.5">
                   <Label>สถานที่</Label>
-                  <Select value={watch("locationId")} onValueChange={(v) => setValue("locationId", v, { shouldValidate: true })}>
-                    <SelectTrigger><SelectValue placeholder="เลือกสถานที่" /></SelectTrigger>
-                    <SelectContent>
-                      {lookups.locations.map((item) => (
-                        <SelectItem key={item.id} value={item.id}>{item.nameTh || item.code}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <MasterDataSelect options={lookups.locations.map((item) => ({ id: item.id, label: item.nameTh || item.code }))} value={watch("locationId")} onValueChange={(v) => setValue("locationId", v, { shouldValidate: true })} placeholder="เลือกสถานที่" href="/master-data/locations" resourceLabel="สถานที่" invalid={!!errors.locationId} />
                   {errors.locationId && <p className="text-xs text-danger">{errors.locationId.message}</p>}
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <Label>ประเภทการจัดส่ง</Label>
-                  <Select value={watch("deliveryTypeId")} onValueChange={(v) => setValue("deliveryTypeId", v, { shouldValidate: true })}>
-                    <SelectTrigger><SelectValue placeholder="เลือกประเภทการจัดส่ง" /></SelectTrigger>
-                    <SelectContent>
-                      {lookups.deliveryTypes.map((item) => (
-                        <SelectItem key={item.id} value={item.id}>{item.nameTh || item.code}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <MasterDataSelect options={lookups.deliveryTypes.map((item) => ({ id: item.id, label: item.nameTh || item.code }))} value={watch("deliveryTypeId")} onValueChange={(v) => setValue("deliveryTypeId", v, { shouldValidate: true })} placeholder="เลือกประเภทการจัดส่ง" href="/master-data/delivery-types" resourceLabel="ประเภทการจัดส่ง" invalid={!!errors.deliveryTypeId} />
                   {errors.deliveryTypeId && <p className="text-xs text-danger">{errors.deliveryTypeId.message}</p>}
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <Label>จุดขึ้นสินค้า</Label>
-                  <Select value={watch("loadingPointId")} onValueChange={(v) => setValue("loadingPointId", v, { shouldValidate: true })}>
-                    <SelectTrigger><SelectValue placeholder="เลือกจุดขึ้นสินค้า" /></SelectTrigger>
-                    <SelectContent>
-                      {lookups.loadingPoints.map((item) => (
-                        <SelectItem key={item.id} value={item.id}>{item.nameTh || item.code}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <MasterDataSelect options={lookups.loadingPoints.map((item) => ({ id: item.id, label: item.nameTh || item.code }))} value={watch("loadingPointId")} onValueChange={(v) => setValue("loadingPointId", v, { shouldValidate: true })} placeholder="เลือกจุดขึ้นสินค้า" href="/master-data/loading-points" resourceLabel="จุดขึ้นสินค้า" invalid={!!errors.loadingPointId} />
                   {errors.loadingPointId && <p className="text-xs text-danger">{errors.loadingPointId.message}</p>}
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <Label>สายการผลิต</Label>
-                  <Select value={watch("processLineId")} onValueChange={(v) => setValue("processLineId", v, { shouldValidate: true })}>
-                    <SelectTrigger><SelectValue placeholder="เลือกสายการผลิต" /></SelectTrigger>
-                    <SelectContent>
-                      {lookups.processLines.map((item) => (
-                        <SelectItem key={item.id} value={item.id}>{item.nameTh || item.code}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <MasterDataSelect options={lookups.processLines.map((item) => ({ id: item.id, label: item.nameTh || item.code }))} value={watch("processLineId")} onValueChange={(v) => setValue("processLineId", v, { shouldValidate: true })} placeholder="เลือกสายการผลิต" href="/master-data/process-lines" resourceLabel="สายการผลิต" invalid={!!errors.processLineId} />
                   {errors.processLineId && <p className="text-xs text-danger">{errors.processLineId.message}</p>}
                 </div>
               </div>

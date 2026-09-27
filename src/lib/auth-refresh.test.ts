@@ -85,6 +85,37 @@ test("retry 401 stops after one refresh; auth endpoints never refresh", async (t
   assert.equal(refreshes, 1);
 });
 
+test("API retries retain their correlation id and receive a fresh request id", async (t) => {
+  const before = process.env.API_BASE_URL;
+  process.env.API_BASE_URL = "https://api.test";
+  t.after(() => { if (before === undefined) delete process.env.API_BASE_URL; else process.env.API_BASE_URL = before; });
+  const contexts = [
+    { correlationId: "activity-1", requestId: "request-1" },
+    { correlationId: "activity-1", requestId: "request-2" },
+  ];
+  const seen: Array<{ correlationId: string | null; requestId: string | null }> = [];
+  t.mock.method(globalThis, "fetch", async (_url: unknown, init?: RequestInit) => {
+    const requestHeaders = new Headers(init?.headers);
+    seen.push({
+      correlationId: requestHeaders.get("x-correlation-id"),
+      requestId: requestHeaders.get("x-request-id"),
+    });
+    return seen.length === 1
+      ? Response.json({ code: "ACCESS_TOKEN_EXPIRED" }, { status: 401 })
+      : Response.json({ ok: true });
+  });
+  const api = createApiFetch(
+    async () => "fresh-access",
+    async () => contexts.shift() ?? { correlationId: "activity-1", requestId: "request-extra" },
+  );
+
+  assert.deepEqual(await api("/resource", { headers: { Authorization: "Bearer old-access" } }), { ok: true });
+  assert.deepEqual(seen, [
+    { correlationId: "activity-1", requestId: "request-1" },
+    { correlationId: "activity-1", requestId: "request-2" },
+  ]);
+});
+
 test("transient refresh failures preserve auth and can be retried", async () => {
   let attempts = 0;
   const refresh = createRefreshCoordinator(async () => {

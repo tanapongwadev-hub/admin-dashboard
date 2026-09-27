@@ -2,6 +2,10 @@
 // from Server Components, Route Handlers, or Server Actions.
 
 import { ApiError } from "./api-error";
+import {
+  createActivityRequestContext,
+  type ActivityRequestContext,
+} from "../activity-request-context";
 export { ApiError } from "./api-error";
 
 function baseUrl() {
@@ -16,16 +20,26 @@ function baseUrl() {
 
 type Recovery = string | { accessToken: string; commit: () => Promise<void> };
 type RecoverToken = (accessToken: string) => Promise<Recovery | null>;
+type CreateActivityRequestContext = () => Promise<ActivityRequestContext>;
 
-export function createApiFetch(recover: RecoverToken) {
+export function createApiFetch(
+  recover: RecoverToken,
+  createContext: CreateActivityRequestContext = createActivityRequestContext,
+) {
   return async function request<T>(
     path: string,
     init?: RequestInit,
     retried = false,
+    correlationId?: string,
   ): Promise<T> {
+    const context = await createContext();
     const isFormData = init?.body instanceof FormData;
     const headers = new Headers(init?.headers);
     if (!isFormData && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+    // Correlation persists for one logical activity; request id changes for
+    // each network attempt, including an ACCESS_TOKEN_EXPIRED retry.
+    headers.set("X-Correlation-Id", correlationId ?? context.correlationId);
+    headers.set("X-Request-Id", context.requestId);
     if (!headers.has("Authorization") && process.env.API_AUTH_TOKEN) {
       headers.set("Authorization", `Bearer ${process.env.API_AUTH_TOKEN}`);
     }
@@ -56,7 +70,12 @@ export function createApiFetch(recover: RecoverToken) {
           headers.set("Authorization", `Bearer ${token}`);
           let result: T;
           try {
-            result = await request<T>(path, { ...init, headers }, true);
+            result = await request<T>(
+              path,
+              { ...init, headers },
+              true,
+              correlationId ?? context.correlationId,
+            );
           } catch (error) {
             // A second 401 terminates before an RSC recovery redirect, avoiding
             // a redirect/refresh loop when fresh access credentials fail too.

@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { MasterDataEmptyLink } from "@/components/ui/master-data-empty-link";
 import {
   Select,
   SelectTrigger,
@@ -421,15 +422,19 @@ export function MaterialPcFormDialog({
 
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="materialTypeId">ประเภทวัสดุ</Label>
-                <Select value={watch("materialTypeId")} onValueChange={(v) => setValue("materialTypeId", v, { shouldValidate: true })}>
-                  <SelectTrigger id="materialTypeId"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={NONE}>ไม่ระบุ</SelectItem>
-                    {lookups.materialTypes.map((item) => (
-                      <SelectItem key={item.id} value={item.id}>{item.nameTh || item.code}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {lookups.materialTypes.length === 0 ? (
+                  <MasterDataEmptyLink href="/master-data/material-types" resourceLabel="ประเภทวัสดุ" />
+                ) : (
+                  <Select value={watch("materialTypeId")} onValueChange={(v) => setValue("materialTypeId", v, { shouldValidate: true })}>
+                    <SelectTrigger id="materialTypeId"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={NONE}>ไม่ระบุ</SelectItem>
+                      {lookups.materialTypes.map((item) => (
+                        <SelectItem key={item.id} value={item.id}>{item.nameTh || item.code}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="materialType">รูปทรง</Label>
@@ -464,16 +469,20 @@ export function MaterialPcFormDialog({
 
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="unitId">หน่วย</Label>
-                <Select value={watch("unitId")} onValueChange={(v) => setValue("unitId", v, { shouldValidate: true })}>
-                  <SelectTrigger id="unitId" aria-invalid={errors.unitId ? true : undefined} aria-describedby={errors.unitId ? "unitId-error" : undefined}>
-                    <SelectValue placeholder="เลือกหน่วย" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {lookups.units.map((unit) => (
-                      <SelectItem key={unit.id} value={unit.id}>{unit.nameEn ?? unit.code}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {lookups.units.length === 0 ? (
+                  <MasterDataEmptyLink href="/master-data/units" resourceLabel="หน่วยนับ" />
+                ) : (
+                  <Select value={watch("unitId")} onValueChange={(v) => setValue("unitId", v, { shouldValidate: true })}>
+                    <SelectTrigger id="unitId" aria-invalid={errors.unitId ? true : undefined} aria-describedby={errors.unitId ? "unitId-error" : undefined}>
+                      <SelectValue placeholder="เลือกหน่วย" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {lookups.units.map((unit) => (
+                        <SelectItem key={unit.id} value={unit.id}>{unit.nameEn ?? unit.code}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
                 {errors.unitId && (
                   <p id="unitId-error" className="text-xs text-danger" role="alert">
                     {errors.unitId.message}
@@ -493,40 +502,52 @@ export function MaterialPcFormDialog({
 
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="deliveryTypeId">ประเภทการจัดส่ง</Label>
-                <Select value={watch("deliveryTypeId")} onValueChange={(v) => setValue("deliveryTypeId", v, { shouldValidate: true })}>
-                  <SelectTrigger id="deliveryTypeId"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={NONE}>ไม่ระบุ</SelectItem>
-                    {lookups.deliveryTypes.map((item) => (
-                      <SelectItem key={item.id} value={item.id}>{item.nameEn ?? item.code}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {lookups.deliveryTypes.length === 0 ? (
+                  <MasterDataEmptyLink href="/master-data/delivery-types" resourceLabel="ประเภทการจัดส่ง" />
+                ) : (
+                  <Select value={watch("deliveryTypeId")} onValueChange={(v) => setValue("deliveryTypeId", v, { shouldValidate: true })}>
+                    <SelectTrigger id="deliveryTypeId"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={NONE}>ไม่ระบุ</SelectItem>
+                      {lookups.deliveryTypes.map((item) => (
+                        <SelectItem key={item.id} value={item.id}>{item.nameEn ?? item.code}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="modelId">รุ่น</Label>
-                <Select value={watch("modelId")} onValueChange={(v) => setValue("modelId", v, { shouldValidate: true })}>
-                  <SelectTrigger id="modelId"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={NONE}>ไม่ระบุ</SelectItem>
-                    {lookups.models.map((item) => (
-                      <SelectItem key={item.id} value={item.id}>{item.nameEn ?? item.code}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {lookups.models.length === 0 ? (
+                  <MasterDataEmptyLink href="/master-data/material-models" resourceLabel="รุ่นวัสดุ" />
+                ) : (
+                  <Select value={watch("modelId")} onValueChange={(v) => setValue("modelId", v, { shouldValidate: true })}>
+                    <SelectTrigger id="modelId"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={NONE}>ไม่ระบุ</SelectItem>
+                      {lookups.models.map((item) => (
+                        <SelectItem key={item.id} value={item.id}>{item.nameEn ?? item.code}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
 
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="loadingPointId">จุดขึ้นสินค้า</Label>
-                <Select value={watch("loadingPointId")} onValueChange={(v) => setValue("loadingPointId", v, { shouldValidate: true })}>
-                  <SelectTrigger id="loadingPointId"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={NONE}>ไม่ระบุ</SelectItem>
-                    {lookups.loadingPoints.map((item) => (
-                      <SelectItem key={item.id} value={item.id}>{item.nameEn ?? item.code}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {lookups.loadingPoints.length === 0 ? (
+                  <MasterDataEmptyLink href="/master-data/loading-points" resourceLabel="จุดขึ้นสินค้า" />
+                ) : (
+                  <Select value={watch("loadingPointId")} onValueChange={(v) => setValue("loadingPointId", v, { shouldValidate: true })}>
+                    <SelectTrigger id="loadingPointId"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={NONE}>ไม่ระบุ</SelectItem>
+                      {lookups.loadingPoints.map((item) => (
+                        <SelectItem key={item.id} value={item.id}>{item.nameEn ?? item.code}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="processLineName">สายการผลิต</Label>
@@ -541,29 +562,33 @@ export function MaterialPcFormDialog({
 
             <div className="mt-4 flex flex-col gap-1.5">
               <Label htmlFor="addSupplierId">ซัพพลายเออร์</Label>
-              <div className="flex gap-2">
-                <Select value={addSupplierId} onValueChange={setAddSupplierId}>
-                  <SelectTrigger id="addSupplierId" className="flex-1"><SelectValue placeholder="เพิ่มซัพพลายเออร์..." /></SelectTrigger>
-                  <SelectContent>
-                    {availableSuppliers.map((s) => (
-                      <SelectItem key={s.id} value={s.id}>{s.nameEn ?? s.code}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={!addSupplierId}
-                  onClick={() => {
-                    if (addSupplierId) {
-                      setSupplierIds((prev) => [...prev, addSupplierId]);
-                      setAddSupplierId("");
-                    }
-                  }}
-                >
-                  เพิ่ม
-                </Button>
-              </div>
+              {lookups.suppliers.length === 0 ? (
+                <MasterDataEmptyLink href="/master-data/suppliers" resourceLabel="ซัพพลายเออร์" />
+              ) : (
+                <div className="flex gap-2">
+                  <Select value={addSupplierId} onValueChange={setAddSupplierId}>
+                    <SelectTrigger id="addSupplierId" className="flex-1"><SelectValue placeholder="เพิ่มซัพพลายเออร์..." /></SelectTrigger>
+                    <SelectContent>
+                      {availableSuppliers.map((s) => (
+                        <SelectItem key={s.id} value={s.id}>{s.nameEn ?? s.code}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={!addSupplierId}
+                    onClick={() => {
+                      if (addSupplierId) {
+                        setSupplierIds((prev) => [...prev, addSupplierId]);
+                        setAddSupplierId("");
+                      }
+                    }}
+                  >
+                    เพิ่ม
+                  </Button>
+                </div>
+              )}
               {selectedSuppliers.length > 0 && (
                 <div className="mt-1 flex flex-wrap gap-1.5">
                   {selectedSuppliers.map((s) => (

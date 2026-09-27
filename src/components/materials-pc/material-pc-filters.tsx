@@ -71,7 +71,10 @@ export function MaterialPcFilters({
     const patch: Partial<Record<keyof MaterialPcFilterState, string | null>> = {};
     for (const key of MATERIAL_PC_ALL_FILTER_KEYS) {
       const value = next[key];
-      patch[key] = value === "all" || !value ? null : value;
+      // Unlike the other facets, missing `status` means the default active
+      // view. Preserve an explicit `status=all` when the user asks to remove
+      // that default restriction.
+      patch[key] = key === "status" && value === "all" ? "all" : value === "all" || !value ? null : value;
     }
     updateParams(patch);
   }
@@ -132,7 +135,7 @@ export function MaterialPcFilters({
               label="สถานะการใช้งาน"
               labelVariant="sr-only"
               value={filters.status === "all" ? "" : filters.status}
-              onChange={(value) => updateParams({ status: value || null })}
+              onChange={(value) => updateParams({ status: value || "all" })}
               options={[
                 { value: "active", label: "ใช้งาน" },
                 { value: "inactive", label: "ไม่ใช้งาน" },

@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { MasterDataEmptyLink } from "@/components/ui/master-data-empty-link";
 import {
   createProductionPlanAction,
   updateProductionPlanAction,
@@ -164,33 +165,37 @@ export function ProductionPlanFormDialog({
                   <div className="grid gap-3 md:grid-cols-[minmax(0,1.6fr)_minmax(120px,.5fr)_minmax(160px,.7fr)_auto]">
                     <div className="space-y-1.5">
                       <Label>สินค้า</Label>
-                      <Controller
-                        control={form.control}
-                        name={`lines.${index}.productId`}
-                        render={({ field: input }) => (
-                          <Select
-                            value={input.value}
-                            onValueChange={input.onChange}
-                          >
-                            <SelectTrigger
-                              aria-invalid={
-                                !!form.formState.errors.lines?.[index]
-                                  ?.productId
-                              }
+                      {lookups.products.length === 0 ? (
+                        <MasterDataEmptyLink href="/products/list" resourceLabel="สินค้า" />
+                      ) : (
+                        <Controller
+                          control={form.control}
+                          name={`lines.${index}.productId`}
+                          render={({ field: input }) => (
+                            <Select
+                              value={input.value}
+                              onValueChange={input.onChange}
                             >
-                              <SelectValue placeholder="เลือกสินค้า" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {lookups.products.map((product) => (
-                                <SelectItem key={product.id} value={product.id}>
-                                  {product.code} · {product.name} · BOM{" "}
-                                  {product.activeBomVersion}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        )}
-                      />
+                              <SelectTrigger
+                                aria-invalid={
+                                  !!form.formState.errors.lines?.[index]
+                                    ?.productId
+                                }
+                              >
+                                <SelectValue placeholder="เลือกสินค้า" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {lookups.products.map((product) => (
+                                  <SelectItem key={product.id} value={product.id}>
+                                    {product.code} · {product.name} · BOM{" "}
+                                    {product.activeBomVersion}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
+                        />
+                      )}
                       {form.formState.errors.lines?.[index]?.productId && (
                         <p className="text-xs text-danger">
                           {

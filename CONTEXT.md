@@ -54,3 +54,29 @@ Issuing less than a reservation line's full outstanding quantity in one call —
 - **ISSUED**: every reservation's outstanding quantity is fully issued (or released) — terminal, and the linked Production Plan becomes ISSUED at the same moment.
 - **CANCELLED**: the linked Plan was cancelled or expired before anything was issued (blocked, 409, once PARTIALLY_ISSUED — see `MaterialJobOrdersService#assertCancellable`).
 _Avoid_: Open, closed, done — this app already overloads those informally elsewhere; use the exact enum name.
+
+### Activity Evidence
+
+**Activity Event**:
+The umbrella term for a meaningful occurrence produced by CPS. Every Activity Event belongs to exactly one of the Audit, Operational, or Analytics streams.
+_Avoid_: Activity Log — this sounds like one database or trust level, while CPS deliberately has three.
+
+**Audit Event**:
+Authoritative evidence of a business, security, sensitive-access, or administrative occurrence, including actor, target, outcome, and correlation context. A browser intention is not an Audit success; the service that owns the outcome is authoritative.
+_Avoid_: Request log, click log, history row.
+
+**Operational Event**:
+Diagnostic evidence about service health and execution, such as latency, dependency failure, queue lag, or stack trace. It can explain how a failure happened but is not proof that a business outcome occurred.
+_Avoid_: Audit Event.
+
+**Analytics Event**:
+Pseudonymous, allowlisted evidence about how a person interacts with the product, such as a page view, meaningful action, filter, or abandoned workflow. It never carries business authority or unrestricted user-entered values.
+_Avoid_: Audit Event, raw clickstream.
+
+**Actor**:
+The user, anonymous visitor, system, service, or integration responsible for an Activity Event. Initiator, executor, and represented party remain distinct when an action crosses a job, service, or impersonation boundary.
+_Avoid_: User — not every Actor is a user.
+
+**Correlation**:
+The link joining one business or user activity across frontend intent, HTTP attempts, retries, jobs, and resulting events. One Correlation may contain several Requests, each with its own identity.
+_Avoid_: Request trace — a single request is narrower than the correlated activity.

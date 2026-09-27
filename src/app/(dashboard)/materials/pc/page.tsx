@@ -51,7 +51,10 @@ export default async function MaterialsPcPage({
   const requestedLimit = Number(params.limit);
   const limit = PAGE_SIZES.has(requestedLimit) ? requestedLimit : 20;
   const search = params.search?.trim() || undefined;
-  const isActive = params.status === "active" ? true : params.status === "inactive" ? false : undefined;
+  // Active materials are the default view. `status=all` is explicit so a
+  // missing status can keep meaning "active" without removing the user's
+  // ability to inspect inactive and active rows together.
+  const isActive = params.status === "inactive" ? false : params.status === "all" ? undefined : true;
   // No longer hardcoded to "PC" — this page now shows every material type
   // (PC/OF/OF_MAT) by default, and the type filter narrows it. See
   // AGENTS.md § Materials PC — "แสดงทุก active แต่แยกที่ตัวกรอง".

@@ -270,6 +270,7 @@ src/
    ├─ menu-tree.ts               # pure tree algorithms for the D&D editor — flatten/project/apply-move, framework-agnostic
    ├─ session.ts                 # getCurrentSession() — server-only, React.cache-wrapped GET /auth/me, returns menus + permissions; only 401/403 mean "no session" (other statuses rethrow), see Conventions § Session expiry
    ├─ session-expiry.ts           # redirectIfSessionExpired()/redirectMissingSession() — shared Server Action guard, signs the user out immediately on a 401 or a missing cookie instead of returning a dead-end error, see Conventions § Session expiry
+   ├─ activity-request-context.ts # server-only request context — preserves incoming correlation IDs and creates per-attempt request IDs for apiFetch
    ├─ filters/                     # canonical per-page filter-state modules — see Conventions § Materials PC advanced filter redesign
    │  ├─ material-pc-filters.ts     # MaterialPcFilterState + readMaterialPcFilters()/buildMaterialPcChips() — the one place /materials/pc's URL is parsed into a typed filter object
    │  ├─ materials-receiving-filters.ts # same shape for /materials/materials-receiving — MaterialsReceivingFilterState + readMaterialsReceivingFilters()/buildMaterialsReceivingChips(); read*Filters() takes an optional `lookups` param so a `?materialCode=` URL param resolves into `materialId` too (see Conventions § Material ↔ Receiving/Disbursement/BOM cross-links)
@@ -293,7 +294,7 @@ src/
    │     ├─ supplier.ts              # supplierResource — Shape D (9 fields, size="xl", hasDescription: false)
    │     └─ status.tsx               # statusResource — module, semantic color select, default switch, sortOrder
    └─ api/                       # REST client — server-only, see Conventions § API
-      ├─ client.ts               # apiFetch<T>() + ApiError, reads API_BASE_URL/API_AUTH_TOKEN
+      ├─ client.ts               # apiFetch<T>() + ApiError, reads API_BASE_URL/API_AUTH_TOKEN and sends correlation/request IDs on every attempt
       ├─ create-resource-api.ts   # createResourceApi() — shared list/get/create/update/deactivate/restore factory for simple-master resources, see Conventions § Master-data CRUD factories
       ├─ auth.ts                 # login()/selectDepartment()/getMe()/logout() — mirrors cps-api /auth contract; MenuNode type
       ├─ menus.ts                # getManagementTree()/reorderMenus() — mirrors cps-api's undocumented /menus management contract
@@ -319,6 +320,8 @@ src/
       ├─ users.ts  products.ts  orders.ts   # typed resource fetchers
       └─ index.ts                # barrel export
 ```
+
+Activity-event design documents (2026-09-26): `docs/activity-logging/architecture.md` is the accepted cross-repo specification, `docs/activity-logging/event-catalog.md` is the source of truth for registered Audit/Operational/Analytics event families, `docs/plans/2026-09-26-activity-event-platform-plan.md` is the phased implementation plan, and `docs/adr/0003-separate-activity-event-pipelines.md` records the stream boundary. Read all four before changing audit/activity logging, request correlation, telemetry, sensitive access/export, retention, or the `/audit-logs` page.
 
 ## Design System (cheat sheet)
 
@@ -349,6 +352,13 @@ src/
 **The `.on-navy` scoping class** (see globals.css) redefines `--surface`, `--surface-2`, `--border`, `--border-strong`, `--fg`, `--fg-secondary`, `--fg-muted`, `--primary`, and `--primary-soft` for its subtree — apply it to a container (`<aside className="on-navy ...">`) to make every _already-token-driven_ class inside it (`bg-surface`, `text-fg-secondary`, `bg-primary-soft`, ...) resolve against the dark-navy palette instead of the light one, with zero changes to the descendant components themselves. This is the same mechanism the old `.dark` class used — see Conventions § Theme.
 
 ## Conventions
+
+### Master-backed Select empty state — 2026-09-23
+
+- Selects whose options come from configurable master/reference data must not render an empty popup. When their source array is empty, render `MasterDataEmptyLink` (or the shared `MasterDataSelect`, which does this automatically) in the field's place and point it at the matching management route, e.g. units → `/master-data/units`, products → `/products/list`, and materials → `/materials/pc`.
+- The fallback is an explicit, keyboard-focusable Next.js link reading “ยังไม่มี… — ไปเพิ่มข้อมูล”; do not navigate merely because a field receives focus or its empty popup opens. That avoids an unexpected context shift and keeps keyboard/screen-reader behavior predictable.
+- Static enum Selects (status, shape, type, page size, language, etc.) and filters that always retain an “ทั้งหมด” choice are not master-backed and do not use this fallback. A row-level list filtered empty because all values were already selected is also not “missing master data”; test the original lookup array, not the filtered row options.
+- Applied to Materials PC create/edit, Material Receiving, Material Disbursement, Product create/edit + BOM/workflow wizard, and Production Plan product selection. The process-step lookup currently has no dedicated CRUD route, so its fallback points to the `/master-data` hub until a Process Steps management page exists.
 
 ### Theme — Navy Enterprise, single fixed palette (no light/dark toggle) — 2026-09-09
 
@@ -416,6 +426,13 @@ src/
 - **User-facing errors are Thai at one shared seam**: Server Actions must pass `ApiError` through `src/lib/user-error.ts#apiErrorMessage()` instead of rendering `body.message` directly. The helper preserves Thai backend copy, translates known legacy English messages, and replaces unknown English/technical errors with a Thai status-aware fallback. Network failures use `CONNECTION_ERROR_MESSAGE`; keep technical error text in logs only. `src/app/error.tsx` and `global-error.tsx` are the Thai fallbacks for unexpected render/runtime failures.
 - One file per resource (`users.ts`, `products.ts`, `orders.ts`), each returning the existing domain types from `src/lib/types.ts` — the API layer must not introduce parallel/duplicate types.
 - `src/lib/data.ts` (mock generator) is untouched and still what pages currently render (except `/login`, see below). Swapping a page from mock data to `src/lib/api/*` is a separate, explicit task per page — don't do it silently as a side effect of unrelated work.
+
+### Activity Events — Phase 0 + existing inventory write seam implemented; coverage expansion pending
+
+- **“Activity Event” is the umbrella; it is not one log table.** Audit Events are authoritative business/security evidence, Operational Events diagnose execution, and Analytics Events describe allowlisted product usage. Keep the three pipelines separate per ADR-0003 and `docs/activity-logging/architecture.md`.
+- `cps-api` owns successful/failed business outcomes. The dashboard may create intent and UI Analytics events, but it must never claim that a backend mutation succeeded. `src/lib/api/client.ts` now sends one `X-Correlation-Id` per logical activity and a fresh `X-Request-Id` per API attempt/retry; `cps-api` validates or creates both, returns them in response headers, and shares them with logging/Audit writes through request-local context.
+- Every new or changed producer must update `docs/activity-logging/event-catalog.md` first. Audit payloads store classified changed fields, never unrestricted request bodies, passwords, tokens, secrets, cookies, or session credentials. The existing `recordAuditEvent()` seam writes a v1 `eventId`/`eventName`/outcome/correlation envelope directly to PostgreSQL inside the caller's transaction where one exists.
+- Current coverage is deliberately partial: the upgraded `iam.audit_logs` write seam covers inventory workflows and the implemented Auth events; RBAC, master data, products/materials/BOM/workflow, sensitive reads, Analytics, checkpoint, and retention remain phased work. `/audit-logs` is now a real Super Admin list page: it reads the server-projected list only, supports backend `action`/`userId` URL filters and pagination, and deliberately excludes before/after payloads from the browser response. The user selected ordinary PostgreSQL log storage—do not add a queue/outbox or external sink unless explicitly requested.
 
 ### Sidebar permissions — resolved, see ADR-004 (supersedes ADR-003) and ADR-005 (routes)
 
@@ -921,6 +938,23 @@ Before writing any new route, component, data-layer file, or Server Action, chec
 ---
 
 ## Recent Changes
+
+### 2026-09-27 — Materials PC defaults to active rows
+
+- `/materials/pc` now treats a missing `status` query as active-only (`isActive=true`) and keeps `status=all` as the explicit opt-out, so the server result, quick filter, advanced drawer, reset, and clear-all behavior stay aligned while users can still inspect inactive or all rows.
+
+### 2026-09-26 — Activity Event Phase 0 and inventory Audit v1 foundation
+
+- `src/lib/activity-request-context.ts` and `src/lib/api/client.ts` now propagate a safe correlation id plus a fresh request id for every cps-api attempt, including the one token-refresh retry; regression coverage was added to `auth-refresh.test.ts`. Backend `cps-api` adds request-local context, returns both headers, and changes runtime HTTP logs to structured metadata only—never request/response payloads or query strings.
+- `cps-api` migration `1790500000000-AddActivityEventEnvelope` upgrades `iam.audit_logs` in place with `eventId`, canonical event name, schema version, stream, outcome, correlation id, and occurred time, backfilling legacy evidence without deletion. Existing transaction-local inventory writers automatically inherit these fields plus request IP/user agent. Audit list/detail expose the v1 envelope and project actor fields explicitly; nested sensitive keys are redacted instead of serializing the User relation. The migration was applied successfully to the configured database on 2026-09-26; regression checks remain documented with their respective changes.
+- `cps-api` Auth records `auth.login.attempted`, login outcome, department selection, successful refresh, `auth.account.locked`, `auth.token.reuse.detected`, `auth.session.revoked`, and backend `auth.logout.completed` directly in `iam.audit_logs`; no password, refresh token, or token hash enters the event data. Account lock/reuse/logout remain transaction-local. Regression coverage lives beside the existing Auth refresh tests.
+- The user explicitly simplified the design on 2026-09-26: Activity Logs are direct PostgreSQL rows only. `docs/activity-logging/architecture.md` and the Event Catalog use `direct_db` for ordinary activity; do not add a queue, outbox migration, worker, broker, or external sink without a new explicit request.
+- Added the real `/audit-logs` page and `src/lib/api/audit-logs.ts`. The Server Component mirrors the API's Super Admin gate, reads the access token only server-side, then passes the minimal list projection to a URL-filtered, paginated client table. It exposes action, actor, target, timestamp, and outcome, but intentionally does not fetch or render `beforeData`/`afterData` in the list view.
+- The Audit Log table resolves any unknown or missing API `outcome` to a neutral “ไม่ทราบผลลัพธ์” badge via `src/lib/audit-log-outcome.ts`; never index a frontend-only outcome map directly from network data. Regression coverage is `src/lib/audit-log-outcome.test.ts`.
+
+### 2026-09-26 — Activity Event architecture and implementation plan
+
+- Added the accepted cross-repo Activity Event specification, ADR-0003, initial Event Catalog, phased implementation plan, and canonical glossary. The design separates authoritative Audit, diagnostic Operational, and product Analytics pipelines; defines correlation, versioned schemas, field classification/redaction, atomic/outbox delivery, retention, tamper evidence, scoped access/export, alerts, reconciliation, and rollout order. This is documentation only; no production logging code or `/audit-logs` UI was implemented.
 
 ### 2026-09-23 — Job Order detail: "หยิบทั้งหมด" (pick-all) button + pick lines/print sheet grouped by material
 
@@ -2055,6 +2089,10 @@ Before writing any new route, component, data-layer file, or Server Action, chec
 ---
 
 ## Architecture Decisions (ADR)
+
+### ADR-0003 — Separate Audit, Operational, and Analytics event pipelines — 2026-09-26
+
+“Activity Event” is an umbrella, not one storage model. `cps-api` is authoritative for business outcomes; critical Audit events are written atomically or through an outbox created in the same transaction, while Operational and Analytics events remain non-blocking and use separate retention/access policies. All streams share correlation identifiers and registered, versioned schemas, but UI telemetry and stack traces never become authoritative Audit evidence. See `docs/adr/0003-separate-activity-event-pipelines.md`, `docs/activity-logging/architecture.md`, and `docs/activity-logging/event-catalog.md`.
 
 ### ADR-007 — Refresh tokens across Next.js request boundaries — 2026-09-19
 

@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { MasterDataEmptyLink } from "@/components/ui/master-data-empty-link";
 import {
   createMaterialsDisbursementAction,
   updateMaterialsDisbursementAction,
@@ -304,19 +305,23 @@ export function MaterialsDisbursementFormDialog({
                       <div className="grid gap-3 p-3 sm:grid-cols-2">
                         <div className="space-y-1.5">
                           <Label>วัสดุ</Label>
-                          <Select
-                            value={item.materialId}
-                            onValueChange={(v) => updateItem(item.key, { materialId: v })}
-                          >
-                            <SelectTrigger><SelectValue placeholder="เลือกวัสดุ" /></SelectTrigger>
-                            <SelectContent>
-                              {materialOptionsFor(item.key).map((m) => (
-                                <SelectItem key={m.id} value={m.id}>
-                                  {m.code} · {m.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          {lookups.materials.length === 0 ? (
+                            <MasterDataEmptyLink href="/materials/pc" resourceLabel="วัสดุ" />
+                          ) : (
+                            <Select
+                              value={item.materialId}
+                              onValueChange={(v) => updateItem(item.key, { materialId: v })}
+                            >
+                              <SelectTrigger><SelectValue placeholder="เลือกวัสดุ" /></SelectTrigger>
+                              <SelectContent>
+                                {materialOptionsFor(item.key).map((m) => (
+                                  <SelectItem key={m.id} value={m.id}>
+                                    {m.code} · {m.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
                           <p className="text-xs text-fg-muted">วัสดุที่เลือกในรายการอื่นแล้วจะไม่แสดงซ้ำที่นี่</p>
                         </div>
                         <div className="space-y-1.5">

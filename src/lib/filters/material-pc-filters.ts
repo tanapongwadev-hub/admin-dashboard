@@ -28,7 +28,7 @@ export interface MaterialPcFilterState {
 
 export const MATERIAL_PC_FILTER_DEFAULTS: MaterialPcFilterState = {
   search: "",
-  status: "all",
+  status: "active",
   type: "all",
   stockStatus: "all",
   supplierId: "",
@@ -60,7 +60,7 @@ export function readMaterialPcFilters(searchParams: URLSearchParams): MaterialPc
 }
 
 function asStatus(value: string | null): MaterialPcStatusFilter {
-  return value === "active" || value === "inactive" ? value : "all";
+  return value === "all" || value === "active" || value === "inactive" ? value : "active";
 }
 function asType(value: string | null): MaterialPcTypeFilter {
   return value === "PC" || value === "OF" || value === "OF_MAT" ? value : "all";
@@ -97,7 +97,12 @@ export function buildMaterialPcChips(
   lookups: MaterialLookups
 ): MaterialPcFilterChip[] {
   const chips: MaterialPcFilterChip[] = [];
-  if (filters.status !== "all") chips.push({ key: "status", label: `สถานะ: ${STATUS_LABELS[filters.status]}` });
+  // "active" is the page default, so only surface the non-default inactive
+  // state as a removable chip. `all` intentionally represents no status
+  // restriction and therefore has no chip either.
+  if (filters.status === "inactive") {
+    chips.push({ key: "status", label: `สถานะ: ${STATUS_LABELS[filters.status]}` });
+  }
   if (filters.type !== "all") {
     chips.push({ key: "type", label: `ประเภท: ${filters.type === "OF_MAT" ? "OF-MAT" : filters.type}` });
   }
