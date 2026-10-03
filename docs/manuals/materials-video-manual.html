@@ -1,0 +1,620 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0f172a">
+  <title>คู่มือวิดีโอ Materials Management</title>
+  <style>
+    :root {
+      --bg:#f5f7fb;--sidebar:#0f172a;--sidebar-soft:#17233a;
+      --primary:#0f766e;--primary-hover:#115e59;--primary-soft:#ecfdf5;
+      --text:#1f2937;--muted:#64748b;--border:#e5e7eb;--surface:#fff;
+      --warning:#a16207;--warning-soft:#fefce8;--danger:#b91c1c;
+      --danger-soft:#fef2f2;--info:#1d4ed8;--info-soft:#eff6ff;
+      --shadow:0 14px 35px rgba(15,23,42,.08);--radius:16px;--sidebar-width:304px
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;min-width:320px;min-height:100dvh;color:var(--text);background:var(--bg);font-family:"Segoe UI",Tahoma,Arial,sans-serif;line-height:1.65}
+    button,input{font:inherit}button{color:inherit}code,.mono{font-family:Consolas,"Cascadia Mono","Courier New",monospace;font-variant-numeric:tabular-nums}
+    :focus-visible{outline:3px solid #2dd4bf;outline-offset:3px}
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    .skip-link{position:fixed;inset-block-start:12px;inset-inline-start:12px;z-index:100;padding:10px 14px;border-radius:10px;color:#fff;background:var(--primary);transform:translateY(-150%)}
+    .skip-link:focus{transform:translateY(0)}
+    .app-shell{display:grid;grid-template-columns:var(--sidebar-width) minmax(0,1fr);min-height:100dvh}
+    .sidebar{position:sticky;inset-block-start:0;z-index:30;display:flex;flex-direction:column;height:100dvh;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;color:#e2e8f0;background:linear-gradient(155deg,rgba(15,118,110,.19),transparent 32%),var(--sidebar);border-inline-end:1px solid rgba(255,255,255,.08)}
+    .sidebar-head{padding:24px 20px 18px}.brand-row{display:flex;align-items:center;gap:12px}
+    .brand-mark{display:grid;place-items:center;flex:0 0 42px;width:42px;aspect-ratio:1;border:1px solid rgba(94,234,212,.35);border-radius:12px;color:#99f6e4;background:rgba(15,118,110,.24);font-weight:800}
+    .brand-copy{min-width:0}.brand-copy strong{display:block;color:#fff;font-size:15px;line-height:1.25}.brand-copy span{display:block;margin-block-start:2px;color:#94a3b8;font-size:11px;letter-spacing:.09em;text-transform:uppercase}
+    .sidebar-tools{padding:0 16px 14px}.search-wrap{position:relative;display:block}.search-icon{position:absolute;inset-block-start:50%;inset-inline-start:12px;width:16px;height:16px;color:#94a3b8;transform:translateY(-50%);pointer-events:none}
+    .guide-search{width:100%;height:40px;padding:0 12px 0 38px;border:1px solid rgba(255,255,255,.12);border-radius:10px;color:#f8fafc;background:rgba(255,255,255,.07)}
+    .guide-search::placeholder{color:#94a3b8}.episode-nav{padding:0 12px 18px}.episode-list{display:grid;gap:4px;margin:0;padding:0;list-style:none}
+    .episode-button{display:grid;grid-template-columns:30px minmax(0,1fr) 20px;align-items:center;gap:8px;width:100%;min-height:42px;padding:7px 9px;border:0;border-radius:10px;color:#cbd5e1;background:transparent;text-align:start;cursor:pointer}
+    .episode-button:hover{background:rgba(255,255,255,.07)}.episode-button[aria-current="page"]{color:#fff;background:rgba(15,118,110,.34);box-shadow:inset 3px 0 #5eead4}
+    .episode-number{color:#94a3b8;font-size:11px;letter-spacing:.05em}.episode-label{overflow:hidden;font-size:13px;font-weight:600;text-overflow:ellipsis;white-space:nowrap}
+    .episode-check{display:grid;place-items:center;width:18px;aspect-ratio:1;border:1px solid rgba(255,255,255,.16);border-radius:50%;color:transparent;font-size:11px}
+    .episode-button.is-complete .episode-check{border-color:#5eead4;color:#052e2b;background:#5eead4}.empty-search{padding:18px 12px;color:#94a3b8;font-size:12px;text-align:center}
+    .progress-panel{margin-block-start:auto;padding:16px;border-block-start:1px solid rgba(255,255,255,.09);background:rgba(2,6,23,.25)}
+    .progress-label{display:flex;align-items:center;justify-content:space-between;gap:12px;color:#cbd5e1;font-size:12px}.progress-label strong{color:#fff}
+    .progress-track{height:7px;margin-block-start:9px;overflow:clip;border-radius:99px;background:rgba(255,255,255,.11)}.progress-bar{width:0;height:100%;border-radius:inherit;background:linear-gradient(90deg,#14b8a6,#5eead4);transition:width .24s ease}
+    .sidebar-toggle{display:none;width:100%;margin-block-start:12px;padding:8px;border:1px solid rgba(255,255,255,.12);border-radius:9px;color:#cbd5e1;background:transparent;cursor:pointer}
+    .main-column{min-width:0}.topbar{position:sticky;inset-block-start:0;z-index:20;display:flex;align-items:center;gap:14px;min-height:68px;padding:12px clamp(18px,4vw,54px);border-block-end:1px solid rgba(229,231,235,.9);background:rgba(255,255,255,.9);backdrop-filter:blur(14px)}
+    .mobile-menu-button{display:none;place-items:center;width:40px;aspect-ratio:1;padding:0;border:1px solid var(--border);border-radius:10px;background:var(--surface);cursor:pointer}
+    .header-titles{min-width:0}.header-eyebrow{margin:0;color:var(--primary);font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase}.header-title{margin:1px 0 0;overflow:hidden;font-size:16px;font-weight:700;text-overflow:ellipsis;white-space:nowrap}
+    .system-status{display:inline-flex;align-items:center;gap:7px;margin-inline-start:auto;padding:6px 10px;border:1px solid #a7f3d0;border-radius:999px;color:#065f46;background:var(--primary-soft);font-size:11px;font-weight:700;white-space:nowrap}
+    .status-dot{width:7px;aspect-ratio:1;border-radius:50%;background:#10b981;box-shadow:0 0 0 4px rgba(16,185,129,.12)}
+    .content{width:min(1120px,100%);margin-inline:auto;padding:30px clamp(18px,4vw,54px) 56px}.breadcrumb{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-block-end:20px;color:var(--muted);font-size:12px}.breadcrumb strong{color:var(--text)}.breadcrumb-sep{color:#cbd5e1}
+    .episode-hero{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:24px;align-items:end;margin-block-end:24px}.episode-kicker{margin:0 0 8px;color:var(--primary);font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
+    .episode-heading{margin:0;color:#111827;font-size:clamp(28px,4vw,44px);line-height:1.12;letter-spacing:-.035em;text-wrap:balance}.episode-summary{max-width:760px;margin:12px 0 0;color:var(--muted);font-size:15px}
+    .path-badges{display:flex;flex-wrap:wrap;gap:7px;margin-block-start:14px}.path-badge{padding:5px 9px;border:1px solid #cbd5e1;border-radius:8px;color:#334155;background:rgba(255,255,255,.7);font-size:11px}
+    .complete-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:42px;padding:0 16px;border:1px solid var(--primary);border-radius:10px;color:#fff;background:var(--primary);font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
+    .complete-button:hover{background:var(--primary-hover)}.complete-button.is-complete{border-color:#a7f3d0;color:#065f46;background:var(--primary-soft)}
+    .material-flow{display:grid;grid-template-columns:repeat(5,1fr);margin-block-end:24px;overflow:clip;border:1px solid var(--border);border-radius:14px;background:var(--surface);box-shadow:0 7px 24px rgba(15,23,42,.045)}
+    .flow-step{position:relative;padding:12px 10px;color:var(--muted);font-size:10px;font-weight:800;letter-spacing:.06em;text-align:center;text-transform:uppercase}.flow-step+.flow-step{border-inline-start:1px solid var(--border)}
+    .flow-step.is-active{color:#065f46;background:var(--primary-soft)}.flow-step.is-active::after{content:"";position:absolute;inset-inline:18px;inset-block-end:0;height:3px;border-radius:99px 99px 0 0;background:var(--primary)}
+    .video-card{overflow:clip;margin-block-end:24px;border:1px solid #1e293b;border-radius:var(--radius);background:#020617;box-shadow:var(--shadow)}.video-stage{display:grid;place-items:center;width:100%;aspect-ratio:16/9;background:radial-gradient(circle at 20% 20%,rgba(20,184,166,.18),transparent 30%),linear-gradient(135deg,#111827,#020617)}
+    .video-stage video,.video-stage iframe{display:block;width:100%;height:100%;border:0;object-fit:contain}.video-placeholder{display:grid;place-items:center;width:min(440px,78%);aspect-ratio:16/7;border:1px dashed rgba(153,246,228,.45);border-radius:14px;color:#ccfbf1;background:rgba(15,118,110,.12);text-align:center}
+    .video-placeholder strong{display:block;font-size:clamp(18px,3vw,28px);letter-spacing:-.02em}.video-placeholder span{display:block;margin-block-start:5px;color:#94a3b8;font-size:12px}
+    .video-meta{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 16px;color:#94a3b8;background:#0f172a;font-size:11px}.video-meta strong{color:#e2e8f0}
+    .section-stack{display:grid;gap:18px}.doc-card{padding:clamp(18px,3vw,26px);border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);box-shadow:0 8px 25px rgba(15,23,42,.045)}
+    .doc-card h2{margin:0 0 14px;color:#111827;font-size:18px;line-height:1.35}.doc-card h3{margin:18px 0 8px;font-size:14px}.doc-card p{margin:0}.doc-card p+p{margin-block-start:10px}
+    .narration{position:relative;padding-inline-start:20px;border-inline-start:4px solid var(--primary);color:#334155;font-size:15px;font-style:italic}.narration::before{content:"“";position:absolute;inset-block-start:-18px;inset-inline-start:8px;color:rgba(15,118,110,.16);font-size:62px;font-style:normal;line-height:1}
+    .fact-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:12px}.fact{min-width:0;padding:15px;border:1px solid var(--border);border-radius:12px;background:#fbfcfe}.fact small{display:block;margin-block-end:5px;color:var(--primary);font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}.fact strong{display:block;color:#1e293b;font-size:14px}.fact p{margin-block-start:5px;color:var(--muted);font-size:12px}
+    .step-list{display:grid;gap:0;margin:0;padding:0;list-style:none;counter-reset:manual-step}.step-list li{position:relative;min-height:48px;padding:4px 0 18px 48px;counter-increment:manual-step}.step-list li:not(:last-child)::after{content:"";position:absolute;inset-block-start:33px;inset-block-end:-1px;inset-inline-start:16px;width:1px;background:#cbd5e1}
+    .step-list li::before{content:counter(manual-step,decimal-leading-zero);position:absolute;inset-block-start:0;inset-inline-start:0;display:grid;place-items:center;width:33px;aspect-ratio:1;border:1px solid #99f6e4;border-radius:9px;color:#0f766e;background:var(--primary-soft);font:700 11px/1 Consolas,monospace}.step-list strong{font-size:14px}.step-list p{margin-block-start:3px;color:var(--muted);font-size:12px}
+    .table-wrap{overflow:auto;border:1px solid var(--border);border-radius:12px;scrollbar-gutter:stable}.doc-table{width:100%;min-width:620px;border-collapse:collapse;font-size:12px}.doc-table caption{padding:10px 12px;color:var(--muted);background:#f8fafc;text-align:start}.doc-table th,.doc-table td{padding:10px 12px;border-block-end:1px solid var(--border);text-align:start;vertical-align:top}.doc-table th{color:#475569;background:#f8fafc;font-weight:700;white-space:nowrap}.doc-table tr:last-child td{border-block-end:0}.doc-table td:first-child{color:#334155;font-weight:700}
+    .callout{display:grid;grid-template-columns:28px minmax(0,1fr);gap:12px;padding:16px;border:1px solid;border-radius:12px;font-size:13px}.callout-icon{display:grid;place-items:center;width:28px;aspect-ratio:1;border-radius:8px;font-weight:800}.callout strong{display:block;margin-block-end:3px}.callout.info{border-color:#bfdbfe;color:#1e3a8a;background:var(--info-soft)}.callout.info .callout-icon{color:#fff;background:var(--info)}.callout.warning{border-color:#fde68a;color:#713f12;background:var(--warning-soft)}.callout.warning .callout-icon{color:#fff;background:var(--warning)}.callout.missing{border-color:#fecaca;color:#7f1d1d;background:var(--danger-soft)}.callout.missing .callout-icon{color:#fff;background:var(--danger)}
+    .formula{display:grid;gap:10px;padding:18px;border:1px solid #99f6e4;border-radius:12px;background:linear-gradient(135deg,#f0fdfa,#ecfdf5)}.formula-line{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px;color:#115e59;font-family:Consolas,"Cascadia Mono",monospace;font-size:clamp(14px,2vw,18px);font-weight:700}.formula small{color:#0f766e;font:600 11px/1.4 "Segoe UI",sans-serif}
+    .timeline{display:grid;gap:10px;margin:0;padding:0;list-style:none}.timeline li{display:grid;grid-template-columns:40px minmax(0,1fr);gap:12px;align-items:start;padding:12px;border:1px solid var(--border);border-radius:12px;background:#fbfcfe}.timeline-index{display:grid;place-items:center;width:36px;aspect-ratio:1;border-radius:10px;color:#fff;background:var(--sidebar);font:800 11px/1 Consolas,monospace}.timeline strong{display:block;font-size:13px}.timeline p{margin-block-start:3px;color:var(--muted);font-size:12px}
+    .expected{border-color:#a7f3d0;background:linear-gradient(135deg,#fff,#f0fdfa)}.expected h2{color:#065f46}.source-list{margin:0;padding-inline-start:18px;color:var(--muted);font-size:11px}.source-list li+li{margin-block-start:5px}.source-list code{color:#334155;overflow-wrap:anywhere}
+    .checklist-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.checklist-group{padding:16px;border:1px solid var(--border);border-radius:12px;background:#fbfcfe}.checklist-group h3{margin:0 0 10px}.checklist-items{display:grid;gap:7px}.check-item{display:flex;align-items:flex-start;gap:9px;padding:7px 8px;border-radius:8px;cursor:pointer}.check-item:hover{background:var(--primary-soft)}.check-item input{width:17px;height:17px;margin:2px 0 0;accent-color:var(--primary)}.check-item span{font-size:13px}
+    .episode-footer{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;margin-block-start:24px;padding-block-start:20px;border-block-start:1px solid var(--border)}.nav-button{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:0 15px;border:1px solid var(--border);border-radius:10px;color:#334155;background:var(--surface);font-size:13px;font-weight:700;cursor:pointer}.nav-button.next{justify-self:end}.nav-button:disabled{opacity:.42;cursor:not-allowed}.episode-position{color:var(--muted);font-size:11px}
+    .sidebar-backdrop{position:fixed;inset:0;z-index:25;display:none;border:0;background:rgba(2,6,23,.58);cursor:pointer}
+    @media(max-width:1080px) and (min-width:761px){.app-shell{grid-template-columns:88px minmax(0,1fr)}.sidebar{width:88px}.sidebar-head{padding-inline:18px}.brand-copy,.sidebar-tools,.episode-label,.progress-label span:first-child{display:none}.episode-button{grid-template-columns:30px 20px;justify-content:center}.episode-nav{padding-inline:10px}.progress-panel{padding-inline:12px}.sidebar-toggle{display:block}body.sidebar-expanded-tablet .app-shell{grid-template-columns:var(--sidebar-width) minmax(0,1fr)}body.sidebar-expanded-tablet .sidebar{width:var(--sidebar-width)}body.sidebar-expanded-tablet .brand-copy,body.sidebar-expanded-tablet .sidebar-tools,body.sidebar-expanded-tablet .episode-label,body.sidebar-expanded-tablet .progress-label span:first-child{display:block}body.sidebar-expanded-tablet .episode-button{grid-template-columns:30px minmax(0,1fr) 20px;justify-content:initial}}
+    @media(max-width:760px){.app-shell{display:block}.sidebar{position:fixed;inset-block:0;inset-inline-start:0;width:min(330px,86%);transform:translateX(-105%);transition:transform .22s ease}body.sidebar-open{overflow:hidden}body.sidebar-open .sidebar{transform:translateX(0)}body.sidebar-open .sidebar-backdrop{display:block}.mobile-menu-button{display:grid}.topbar{padding-inline:14px}.system-status{display:none}.content{padding-block-start:22px}.episode-hero{grid-template-columns:1fr;gap:16px}.complete-button{justify-self:start}.material-flow{grid-template-columns:1fr}.flow-step+.flow-step{border-inline-start:0;border-block-start:1px solid var(--border)}.flow-step.is-active::after{inset-inline:0 auto;inset-block:8px;width:3px;height:auto;border-radius:0 99px 99px 0}.video-meta{align-items:flex-start;flex-direction:column;gap:3px}.checklist-columns{grid-template-columns:1fr}.episode-footer{grid-template-columns:1fr 1fr}.episode-position{grid-column:1/-1;grid-row:1;text-align:center}.nav-button{grid-row:2}}
+    @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}}
+    @media print{.sidebar,.topbar,.sidebar-backdrop,.complete-button,.episode-footer{display:none!important}.app-shell{display:block}.content{width:100%;padding:0}.doc-card,.video-card{box-shadow:none;break-inside:avoid}}
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#manual-content">ข้ามไปยังเนื้อหาคู่มือ</a>
+  <button class="sidebar-backdrop" id="sidebar-backdrop" type="button" aria-label="ปิดเมนูคู่มือ"></button>
+  <div class="app-shell">
+    <aside class="sidebar" id="manual-sidebar" aria-label="สารบัญคู่มือ Materials">
+      <div class="sidebar-head"><div class="brand-row"><div class="brand-mark" aria-hidden="true">M</div><div class="brand-copy"><strong>Materials Manual</strong><span>Warehouse operations</span></div></div></div>
+      <div class="sidebar-tools">
+        <label class="search-wrap"><span class="sr-only">ค้นหาหัวข้อคู่มือ</span>
+          <svg class="search-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+          <input class="guide-search" id="guide-search" type="search" placeholder="ค้นหาหัวข้อคู่มือ..." autocomplete="off">
+        </label>
+      </div>
+      <nav class="episode-nav" aria-label="ตอนของคู่มือ"><ol class="episode-list" id="episode-list"></ol><p class="empty-search" id="empty-search" hidden>ไม่พบตอนที่ตรงกับคำค้น</p></nav>
+      <div class="progress-panel">
+        <div class="progress-label"><span>ความคืบหน้า</span><strong id="progress-text">0 / 13 ตอน · 0%</strong></div>
+        <div class="progress-track" role="progressbar" aria-label="ความคืบหน้าการดูคู่มือ" aria-valuemin="0" aria-valuemax="13" aria-valuenow="0"><div class="progress-bar" id="progress-bar"></div></div>
+        <button class="sidebar-toggle" id="tablet-toggle" type="button" aria-expanded="false">ขยาย / ย่อ Sidebar</button>
+      </div>
+    </aside>
+    <div class="main-column">
+      <header class="topbar">
+        <button class="mobile-menu-button" id="mobile-menu-button" type="button" aria-label="เปิดเมนูคู่มือ" aria-controls="manual-sidebar" aria-expanded="false"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"></path></svg></button>
+        <div class="header-titles"><p class="header-eyebrow">คู่มือวิดีโอภายในองค์กร</p><p class="header-title" id="header-title">ภาพรวม Materials</p></div>
+        <span class="system-status"><span class="status-dot" aria-hidden="true"></span>อ้างอิงระบบจริง · 27 ก.ย. 2026</span>
+      </header>
+      <main class="content" id="manual-content" tabindex="-1">
+        <div class="breadcrumb" id="breadcrumb" aria-label="Breadcrumb"></div>
+        <article id="episode-content" aria-live="polite"></article>
+      </main>
+    </div>
+  </div>
+  <script>
+    "use strict";
+
+    /*
+      VIDEO CONFIGURATION
+      Local MP4:  { type: "mp4", src: "./videos/material-create.mp4" }
+      Local WebM: { type: "webm", src: "./videos/create.webm" } — สร้างจริงด้วย
+                  `node scripts/record-materials-guide.mjs <episode>` (Playwright บันทึกวิดีโอ
+                  จากแอปจริงที่ localhost:3000 โดยตรง ไม่มี CDN, ไม่มีเสียง)
+      YouTube:    { type: "youtube", src: "VIDEO_ID" }
+      ค่าเริ่มต้นเป็น placeholder เพื่อให้ไฟล์เปิด offline ได้ทันทีสำหรับตอนที่ยังไม่ได้อัด
+    */
+    const videoConfig = {
+      overview:{type:"webm",src:"./videos/overview.webm"},read:{type:"webm",src:"./videos/read.webm"},
+      create:{type:"webm",src:"./videos/create.webm"},detail:{type:"webm",src:"./videos/detail.webm"},
+      update:{type:"webm",src:"./videos/update.webm"},deactivate:{type:"webm",src:"./videos/deactivate.webm"},
+      validation:{type:"webm",src:"./videos/validation.webm"},receiving:{type:"webm",src:"./videos/receiving.webm"},
+      disbursement:{type:"webm",src:"./videos/disbursement.webm"},bom:{type:"webm",src:"./videos/bom.webm"},
+      stock:{type:"webm",src:"./videos/stock.webm"},endToEnd:{type:"placeholder",src:""},
+      checklist:{type:"placeholder",src:""}
+    };
+
+    const episodes = [
+      {
+        id:"overview",number:1,title:"ภาพรวม Materials",shortTitle:"Overview",
+        path:["/materials","/materials/pc"],stage:"master",
+        keywords:"overview ภาพรวม material master receiving disbursement stock bom production",
+        summary:"ทำความเข้าใจเส้นทางจริงของข้อมูลวัสดุ ตั้งแต่ Material Master ไปจนถึงรับเข้า คงเหลือ จ่ายออก BOM และการผลิต",
+        narration:"เมนู Materials เป็นศูนย์ควบคุมวัตถุดิบ หน้า /materials ใช้ดูภาพรวมสุขภาพสต็อกและงานรับเข้าล่าสุด ส่วนการสร้างและแก้ไขข้อมูลจริงอยู่ที่ /materials/pc ก่อนวัตถุดิบจะไหลผ่าน Receiving, Stock, Disbursement, BOM และ Production",
+        blocks:[
+          {type:"facts",title:"แผนที่เมนูจริง",items:[
+            ["Control Tower","/materials","ภาพรวมสต็อก วัสดุวิกฤต และรายการรับเข้าล่าสุด"],
+            ["Material Master","/materials/pc","CRUD แบบ soft deactivate, รายละเอียด, filter และ stock health"],
+            ["Receiving","/materials/materials-receiving","รับเข้า สร้างล็อต แพ็กเกจ และ QR"],
+            ["Disbursement","/materials/materials-disbursement","สร้างร่างและยืนยันตัดสต็อกแบบ FIFO"],
+            ["Job Order","/materials/job-orders","หยิบตาม QR จาก reservation และจ่ายออกเพื่อผลิต"],
+            ["Traceability","/materials/materials-report","รายงาน movement, lot, MAIN/SUB QR และเอกสารอ้างอิง"]
+          ]},
+          {type:"steps",title:"Material เดินทางในระบบอย่างไร",items:[
+            ["กำหนด Material Master","สร้างรหัส ชื่อ รูปทรง หน่วย อัตราส่วน จำนวนต่อแพ็ก จุดขึ้นสินค้า และ Minimum Stock"],
+            ["รับเข้า","ระบบแปลงจำนวนตาม ratio, แบ่งแพ็ก, สร้าง Internal/Supplier Lot และ MAIN/SUB QR"],
+            ["ยืนยัน Stock","Stock Balance เพิ่มเมื่อ Receiving ถูกยืนยัน ไม่ใช่ตอนเปิดฟอร์ม"],
+            ["ใช้กับ BOM / Production","BOM ผูก Material กับ Product; Production Plan สร้าง reservation และ Job Order สำหรับหยิบ"],
+            ["จ่ายออก","Disbursement ยืนยันแล้วตัดจากแพ็กเกจเก่าสุดก่อน และบันทึก Stock Movement"]
+          ]},
+          {type:"callout",tone:"missing",title:"Feature นี้ยังไม่พบในระบบปัจจุบัน",text:"ไม่มี route /materials/[id] ใน admin-dashboard ปัจจุบัน รายละเอียด Material เปิดเป็น Dialog บน /materials/pc ไม่ใช่หน้า Detail แบบ URL แยก"}
+        ],
+        expected:"ผู้ชมแยกบทบาทของ /materials กับ /materials/pc ได้ และเข้าใจความสัมพันธ์ระหว่าง Material Master, Receiving, Stock, BOM, Production และ Disbursement",
+        sources:["src/app/(dashboard)/materials/page.tsx","src/app/(dashboard)/materials/pc/page.tsx","src/lib/api/materials.ts","../cps-api/src/modules/materials/"]
+      },
+      {
+        id:"read",number:2,title:"ดูรายการ / Search / Filter",shortTitle:"Read / Search",
+        path:["/materials/pc"],stage:"master",
+        keywords:"read search filter sort pagination table card list code name status stock supplier model loading point process line",
+        summary:"อ่านรายการ Material Master ด้วย Table, Card หรือ Compact Row และใช้ query ใน URL เพื่อค้นหา กรอง เรียง และแบ่งหน้า",
+        narration:"หน้าอ่านรายการจริงคือ /materials/pc โดยเริ่มต้นแสดงเฉพาะวัสดุ Active ค้นหาได้จากรหัสหรือชื่อ และเก็บ filter ไว้ใน URL เพื่อเปิดซ้ำหรือส่งต่อให้ทีมได้",
+        blocks:[
+          {type:"table",title:"คอลัมน์ใน Table View",caption:"คอลัมน์ที่ render จริงใน material-pc-table.tsx",headers:["คอลัมน์","ความหมาย","เงื่อนไข"],rows:[
+            ["รูปภาพ","Thumbnail ของ Material","คลิกดูภาพเต็มได้"],
+            ["รหัส / ประเภท / ชื่อวัสดุ","ข้อมูลระบุตัวตน","รหัสและชื่อเรียงลำดับได้"],
+            ["คงเหลือ / ขั้นต่ำ / สถานะสต็อก","Current Stock เทียบ Minimum Stock","เห็นเมื่อมี MATERIALS_RECEIVING_VIEW"],
+            ["ซัพพลายเออร์","Supplier ที่ Active และผูกกับ Material","แสดงได้หลายราย"],
+            ["จุดขึ้นสินค้า / สายการผลิต","ตำแหน่งและ line อ้างอิง","มาจาก Material Master"],
+            ["การใช้งาน","Active / Inactive","ค่าเริ่มต้นของหน้าเป็น Active"],
+            ["รับเข้าล่าสุด","วันที่รับเข้าที่ Confirm ล่าสุด","เรียงลำดับได้เมื่อเห็น stock"],
+            ["การจัดการ","รายละเอียด รับเข้า ประวัติ BOM แก้ไข เปิด/ปิดใช้งาน","แสดงตาม Permission"]
+          ]},
+          {type:"facts",title:"Filter และ Sorting ที่มีจริง",items:[
+            ["Search","รหัสหรือชื่อ","Backend ใช้ ILIKE กับ material.code และ material.name"],
+            ["Status","Active / Inactive / ทั้งหมด","URL ว่างเริ่มต้น Active; status=all คือทั้งหมด"],
+            ["ประเภท","PC / OF / OF-MAT","เป็น legacy type filter ของหน้า"],
+            ["Stock Status","ปกติ / ต่ำ / หมด","เฉพาะผู้มีสิทธิ์ดู stock"],
+            ["Advanced","Supplier, Model, Loading Point, Process Line","Apply พร้อมกันจาก drawer"],
+            ["Sorting","Code, Name, Current Stock, Last Received","กดหัวตารางสลับ asc/desc"],
+            ["Pagination","20 / 40 / 60 ต่อหน้า","เปลี่ยน filter หรือ sort จะกลับหน้า 1"],
+            ["View","Table / Card / Compact Row","บันทึก view ที่เลือกไว้ใน browser"]
+          ]},
+          {type:"steps",title:"สาธิตการค้นหา",items:[
+            ["เปิด Material Master","จาก /materials กด “จัดการวัตถุดิบ” หรือเปิด /materials/pc"],
+            ["ค้นหาด้วยรหัส","พิมพ์ OF-STPIPE-002 และรอประมาณ 300 ms"],
+            ["ค้นหาด้วยชื่อ","ล้างคำค้นแล้วพิมพ์ Steel Pipe"],
+            ["เปลี่ยน Status","เลือก Inactive หรือทั้งหมด; Active เป็นค่าเริ่มต้น"],
+            ["ใช้ Advanced Filters","เลือก Supplier, Model, จุดขึ้นสินค้า หรือสายการผลิต แล้วกดใช้ตัวกรอง"],
+            ["เรียงและแบ่งหน้า","สลับ Code/Name/Stock/Last Received และทดสอบ page size"]
+          ]},
+          {type:"callout",tone:"missing",title:"Feature นี้ยังไม่พบในระบบปัจจุบัน",text:"หน้า /materials/pc ยังไม่มี filter รูปทรง PCS/PIPE/SHEET/COIL และไม่มีคอลัมน์ Ratio หรือ Qty per Pack ใน Table View"}
+        ],
+        expected:"ผู้ชมค้นหาด้วย Code/Name, ใช้ filter ที่ backend รองรับ, เรียงข้อมูล และเปลี่ยน page size ได้",
+        sources:["src/components/materials-pc/material-pc-table.tsx","src/components/materials-pc/material-pc-filters.tsx","src/lib/filters/material-pc-filters.ts","../cps-api/src/modules/stock-balances/"]
+      },
+      {
+        id:"create",number:3,title:"Create Material",shortTitle:"Create",
+        path:["/materials/pc"],stage:"master",
+        keywords:"create add material image code name type shape unit ratio pack location active demo",
+        summary:"สร้าง Material Demo ตาม field ที่มีจริง โดยเตรียม Master Data, รูปภาพ และค่าที่จำเป็นสำหรับ Receiving ให้ครบ",
+        narration:"การสร้าง Material เริ่มจาก /materials/pc ฟอร์มต้องมีรูปภาพ รหัส ชื่อ รูปทรง และหน่วย หากเป็น PIPE, SHEET หรือ COIL ต้องกำหนด Ratio อย่างน้อย 1 และควรกำหนดจำนวนต่อแพ็กก่อนรับเข้า",
+        blocks:[
+          {type:"table",title:"ข้อมูล Demo ที่ใช้ในคลิป",caption:"เลือกค่าจาก Master Data ที่มีจริงใน environment ขณะอัด",headers:["Field จริง","ค่าตัวอย่าง","หมายเหตุ"],rows:[
+            ["รูปภาพวัสดุ","JPEG/PNG/WebP ของ Steel Pipe","จำเป็นตอน Create, สูงสุด 5 MiB"],
+            ["รหัส","DEMO-STPIPE-001","Backend trim และแปลงเป็นตัวพิมพ์ใหญ่"],
+            ["ชื่อ","Steel Pipe SGP Schedule 40","จำเป็น, สูงสุด 255 ตัวอักษร"],
+            ["ประเภทวัสดุ","เลือกจาก Master Data ที่มีจริง","ใช้ Raw Material เฉพาะเมื่อมี option นี้จริง"],
+            ["รูปทรง","PIPE","ค่าจริง: PCS / PIPE / SHEET / COIL"],
+            ["อัตราส่วน","20","PIPE ต้องเป็นจำนวนเต็ม ≥ 1"],
+            ["หน่วย","เส้น หรือหน่วยที่มีจริง","FK ที่จำเป็น"],
+            ["จำนวนต่อแพ็ก","20","จำนวนเต็ม ≥ 1; Receiving ต้องมีค่านี้"],
+            ["สต็อกขั้นต่ำ","40","ตัวเลข ≥ 0, รองรับทศนิยม 4 ตำแหน่ง"],
+            ["จุดขึ้นสินค้า","RM-A01 หรือ option ที่มีจริง","ไม่บังคับ"],
+            ["ซัพพลายเออร์","เลือก Supplier ที่มีจริง","ควรมีอย่างน้อยหนึ่งรายก่อน Receiving"],
+            ["สถานะ","Active อัตโนมัติ","ฟอร์ม Create ไม่มีช่อง Status; backend default true"]
+          ]},
+          {type:"steps",title:"Step-by-step ที่ตรงกับ UI ปัจจุบัน",items:[
+            ["เปิดหน้า CRUD","เข้า /materials/pc ไม่ใช่ /materials/[id]"],
+            ["กด “เพิ่มวัสดุ”","ปุ่มแสดงเมื่อมีสิทธิ์ Create หรือ Update"],
+            ["เลือกรูปภาพ","JPEG, PNG หรือ WebP ไม่เกิน 5 MiB"],
+            ["กรอกรหัสและชื่อ","ใช้ DEMO-STPIPE-001 และ Steel Pipe SGP Schedule 40"],
+            ["เลือกประเภทและรูปทรง","ประเภทมาจาก Master Data; รูปทรงเลือก PIPE"],
+            ["กำหนด Ratio","กรอก 20 เพราะ PIPE ต้องมี Ratio"],
+            ["เลือกหน่วยและจำนวนต่อแพ็ก","เลือกหน่วยจริงและกรอก 20"],
+            ["กำหนด Minimum Stock","กรอก 40 เพื่อให้ Stock Health ประเมินได้"],
+            ["กรอกข้อมูลอ้างอิง","Delivery Type, Model, Loading Point, Supplier, Process Line และ Scale ตามจริง"],
+            ["กรอก Specification/Description","ใส่รายละเอียดทางเทคนิคที่ช่วยแยกวัสดุ"],
+            ["บันทึก","ระบบอัปโหลดรูปก่อน แล้ว POST /materials"],
+            ["ตรวจสอบรายการ","ค้นหา DEMO-STPIPE-001 ใน Active view"]
+          ]},
+          {type:"callout",tone:"info",title:"Master Data dependency",text:"Unit เป็นข้อมูลบังคับ ส่วน Material Type, Delivery Type, Model, Loading Point และ Supplier มาจาก Master Data หากรายการว่าง UI จะแสดงลิงก์ไปหน้าจัดการแทน dropdown ว่าง"}
+        ],
+        expected:"สร้าง DEMO-STPIPE-001 สำเร็จ พร้อมรูปภาพ รูปทรง PIPE, Ratio, Unit, Packing Quantity, Minimum Stock และ Active อัตโนมัติ",
+        sources:["src/components/materials-pc/material-pc-form-dialog.tsx","src/lib/api/materials.ts","../cps-api/src/modules/materials/dto/create-material.dto.ts","../cps-api/src/entities/master/material.entity.ts"]
+      },
+      {
+        id:"detail",number:4,title:"Material Detail",shortTitle:"Detail",
+        path:["/materials/pc"],stage:"master",
+        keywords:"detail general information packaging inventory related stock dialog",
+        summary:"เปิด Dialog รายละเอียดจากแต่ละ row/card และอ่านข้อมูลที่ UI แสดงจริง พร้อมแยกส่วนที่ยังไม่มี",
+        narration:"จากรายการ Material ให้กด “รายละเอียด” ระบบจะเปิด Dialog เดิมบน /materials/pc แสดงภาพ รหัส ชื่อ สถานะ รูปทรง ยอดคงเหลือ และข้อมูลจำเพาะ โดยไม่เปลี่ยน URL",
+        blocks:[
+          {type:"facts",title:"ข้อมูลที่ Detail Dialog แสดงจริง",items:[
+            ["Identity","รูปภาพ · รหัส · ชื่อ","ข้อมูลหลักของ Material"],
+            ["Status & Shape","ใช้งาน/ไม่ใช้งาน · รูปทรง","Badge ในส่วนหัว"],
+            ["Inventory","ยอดคงเหลือ · หน่วย · Stock Health","ต้องมีสิทธิ์ดู Receiving/Stock"],
+            ["Data Sheet","Supplier · Model · Unit · Minimum Stock","รวมประเภทวัสดุและประเภทการจัดส่ง"],
+            ["Location","จุดขึ้นสินค้า · สายการผลิต","แสดงเต็มความกว้าง"],
+            ["Prose","Specification · Description","แสดงเมื่อมีค่า"],
+            ["Audit time","วันที่เพิ่ม · แก้ไขล่าสุด","อยู่ท้าย Dialog"],
+            ["Action","แก้ไข","แสดงเมื่อมีสิทธิ์"]
+          ]},
+          {type:"steps",title:"สาธิต Detail",items:[
+            ["ค้นหา Material","ค้นหา DEMO-STPIPE-001"],
+            ["เปิดรายละเอียด","กด “รายละเอียด” จาก Card/Table/List"],
+            ["ตรวจ Identity","เทียบ Code, Name, Shape และ Status"],
+            ["ตรวจ Stock","ก่อน Receiving ยอดควรเป็น 0 หรือไม่มี balance"],
+            ["ตรวจ Data Sheet","ดู Unit, Minimum Stock, Supplier, Loading Point และ Process Line"],
+            ["เปิดแก้ไขจาก Detail","ถ้ามีสิทธิ์ กด “แก้ไข” เพื่อเปิดฟอร์มเดิม"]
+          ]},
+          {type:"callout",tone:"missing",title:"Feature นี้ยังไม่พบในระบบปัจจุบัน",text:"Detail Dialog ยังไม่มี Reserved/Available, ไม่มี Packaging section แยกสำหรับ Ratio/Qty per Pack และ Related Receiving/Disbursement/BOM ไม่ได้รวมใน Dialog เดียวกัน—ใช้ Row Actions แทน"}
+        ],
+        expected:"ผู้ชมเปิดและอ่าน Detail Dialog ได้ เข้าใจข้อมูลที่ขึ้นกับ permission และไม่ค้นหา route /materials/[id] ที่ไม่มีอยู่",
+        sources:["src/components/materials-pc/material-pc-details-dialog.tsx","src/components/materials-pc/material-pc-table.tsx","src/lib/api/materials.ts"]
+      },
+      {
+        id:"update",number:5,title:"Update Material",shortTitle:"Update",
+        path:["/materials/pc"],stage:"master",
+        keywords:"update edit optimistic concurrency name packing quantity image",
+        summary:"แก้ไข Material ด้วยฟอร์มเดียวกับ Create และตรวจ optimistic concurrency ก่อนบันทึก",
+        narration:"การแก้ไขใช้ฟอร์มเดียวกับ Create แต่รูปภาพไม่บังคับถ้ามีรูปเดิม ทุกคำขอส่ง updatedAt กลับไปให้ backend เพื่อป้องกันการเขียนทับข้อมูลที่คนอื่นเพิ่งแก้",
+        blocks:[
+          {type:"table",title:"Scenario สำหรับคลิป",caption:"เปลี่ยนสองค่าแล้วตรวจซ้ำจากรายการและ Detail",headers:["Field","ก่อนแก้","หลังแก้"],rows:[
+            ["ชื่อ","Steel Pipe SGP Schedule 40","Steel Pipe SGP Schedule 40 - Updated"],
+            ["จำนวนต่อแพ็ก","20","25"]
+          ]},
+          {type:"steps",title:"Step-by-step",items:[
+            ["ค้นหา Material","ค้นหา DEMO-STPIPE-001"],
+            ["กด “แก้ไข”","เปิดจาก Row Actions หรือ Detail Dialog"],
+            ["เปลี่ยนชื่อ","เติม “ - Updated” ต่อท้ายชื่อเดิม"],
+            ["เปลี่ยนจำนวนต่อแพ็ก","จาก 20 เป็น 25; มีผลกับ Receiving ครั้งถัดไป"],
+            ["ตรวจ Ratio","PIPE ยังคงต้องมี Ratio ≥ 1"],
+            ["บันทึก","PATCH /materials/:id พร้อม updatedAt"],
+            ["กลับรายการ","UI refresh จาก Server Component"],
+            ["เปิด Detail","ตรวจชื่อใหม่และข้อมูลที่เกี่ยวข้อง"]
+          ]},
+          {type:"callout",tone:"warning",title:"Optimistic concurrency",text:"หาก record ถูกแก้จากที่อื่น backend ตอบ 409 Material has been updated และ UI แจ้งให้ refresh แทนการเขียนทับข้อมูลล่าสุด"}
+        ],
+        expected:"ชื่อ Material เปลี่ยนตาม scenario, Packing Quantity เป็น 25 และไม่เขียนทับ record ที่ updatedAt ล้าสมัย",
+        sources:["src/components/materials-pc/material-pc-form-dialog.tsx","src/app/(dashboard)/materials/pc/actions.ts","../cps-api/src/modules/materials/dto/update-material.dto.ts","../cps-api/src/modules/materials/materials.service.ts"]
+      },
+      {
+        id:"deactivate",number:6,title:"Delete Material",shortTitle:"Delete / Inactive",
+        path:["/materials/pc"],stage:"master",
+        keywords:"delete deactivate inactive restore soft delete history transaction",
+        summary:"ระบบไม่ลบ Material ออกจากฐานข้อมูล แต่สลับ isActive เป็น false และเปิดใช้งานคืนได้",
+        narration:"คำสั่งที่ผู้ใช้เห็นคือ “ปิดใช้งาน” ไม่ใช่ลบถาวร ระบบเรียก DELETE /materials/:id แต่ service เปลี่ยน isActive เป็น false เท่านั้น จึงรักษาประวัติและ Restore ได้",
+        blocks:[
+          {type:"steps",title:"Flow ที่มีจริง",items:[
+            ["ค้นหา Material","เปิด DEMO-STPIPE-001 ใน Active view"],
+            ["เลือก “ปิดใช้งาน”","เปิด Confirm Dialog และตรวจ Code/Name"],
+            ["ยืนยัน","backend เปลี่ยน isActive เป็น false ใน transaction"],
+            ["ตรวจ Active view","รายการหายจากค่าเริ่มต้น"],
+            ["เลือก Status = Inactive","ค้นหา DEMO-STPIPE-001 อีกครั้ง"],
+            ["เลือก “เปิดใช้งาน”","PATCH /materials/:id/restore เปลี่ยน isActive กลับเป็น true"]
+          ]},
+          {type:"callout",tone:"info",title:"Soft Deactivate เท่านั้น",text:"ข้อมูล Material, relation และ transaction history ไม่ถูก hard delete การปิดใช้งานทำให้รายการไม่อยู่ในตัวเลือก Active แต่เปิดคืนได้"},
+          {type:"callout",tone:"missing",title:"Feature นี้ยังไม่พบในระบบปัจจุบัน",text:"MaterialsService.setActive() ไม่ได้ตรวจว่ามี Receiving หรือ Stock ก่อนปิดใช้งาน และไม่มีกฎวัสดุมี transaction แล้วห้ามลบ เพราะระบบไม่ได้ hard delete ตั้งแต่ต้น"}
+        ],
+        expected:"Material เปลี่ยนเป็น Inactive โดยไม่สูญหาย ค้นหาได้เมื่อเลือก Inactive และ Restore ได้",
+        sources:["src/components/materials-pc/material-pc-status-dialog.tsx","src/lib/api/materials.ts","../cps-api/src/modules/materials/materials.controller.ts","../cps-api/src/modules/materials/materials.service.ts"]
+      },
+      {
+        id:"validation",number:7,title:"Validation",shortTitle:"Validation",
+        path:["/materials/pc","/materials/materials-receiving","/materials/materials-disbursement"],stage:"master",
+        keywords:"validation duplicate required invalid ratio packing image updatedAt references receiving disbursement",
+        summary:"ทดสอบ validation ที่ยืนยันได้จาก Zod, DTO และ Service จริง โดยไม่เพิ่มกรณีที่ระบบไม่ได้บังคับ",
+        narration:"Validation แบ่งเป็นชั้น UI และ backend ฟอร์มช่วยแจ้งเร็ว ส่วน DTO และ Service เป็นด่านสุดท้าย เช่น Code ซ้ำ, Ratio ของวัสดุที่แบ่งได้, Master Data inactive และ updatedAt ล้าสมัย",
+        blocks:[
+          {type:"table",title:"Validation cases ที่มีจริง",caption:"ใช้กรณีเหล่านี้ในการอัดคลิป",headers:["กรณี","ค่าทดสอบ","ผลที่คาด"],rows:[
+            ["Duplicate Code","สร้าง DEMO-STPIPE-001 ซ้ำ ไม่สนตัวพิมพ์","409 Material code already exists"],
+            ["Required Code / Name","ปล่อยว่าง","UI แจ้งและ backend IsNotEmpty"],
+            ["Required Image","ไม่เลือกรูปตอน Create","ต้องเป็น JPEG/PNG/WebP ≤ 5 MiB"],
+            ["Invalid Ratio","PIPE + ratio = 0","ต้องเป็นจำนวนเต็ม ≥ 1"],
+            ["PCS Ratio","PCS + ratio","UI disable และ service บังคับ null"],
+            ["Invalid Qty per Pack","0 หรือ -1","ถ้าระบุต้องเป็นจำนวนเต็ม ≥ 1"],
+            ["Invalid Minimum Stock","-1","ต้อง ≥ 0, ทศนิยมไม่เกิน 4 ตำแหน่ง"],
+            ["Inactive Reference","Unit/Supplier/Master inactive","Service ปฏิเสธ reference"],
+            ["Stale Update","บันทึก updatedAt เก่า","409 Material has been updated"],
+            ["Receiving Quantity","0 หรือติดลบ","ต้องมากกว่า 0"],
+            ["Future Receive Date","วันที่รับเข้าในอนาคต","Service ปฏิเสธ"],
+            ["Disbursement Quantity","≤0 หรือเกินยอดใช้ได้","UI/Service ปฏิเสธ"]
+          ]},
+          {type:"callout",tone:"warning",title:"ทดสอบใน Test Environment",text:"Code ซ้ำและ transaction validation ต้องใช้ข้อมูล demo เท่านั้น ห้ามใช้ Material จริงและต้องปกปิด Supplier, PO และผู้ใช้งานในวิดีโอ"},
+          {type:"callout",tone:"missing",title:"Feature นี้ยังไม่พบในระบบปัจจุบัน",text:"ไม่พบ validation ที่ห้ามปิดใช้งาน Material ที่มี Transaction ให้ทดสอบว่า Soft Deactivate ยังรักษาประวัติแทนการคาดหวัง error"}
+        ],
+        expected:"ผู้ชมเห็น error จากกรณีจริงและเข้าใจว่าข้อใดตรวจใน UI, DTO หรือ Service",
+        sources:["src/components/materials-pc/material-pc-form-dialog.tsx","../cps-api/src/modules/materials/dto/create-material.dto.ts","../cps-api/src/modules/materials/dto/update-material.dto.ts","../cps-api/src/modules/materials/materials.service.ts"]
+      },
+      {
+        id:"receiving",number:8,title:"Material Receiving",shortTitle:"Receiving",
+        path:["/materials/materials-receiving"],stage:"receive",
+        keywords:"receiving receive lot supplier quantity conversion package main qr sub qr confirm stock",
+        summary:"รับเข้า Material, แปลงจำนวนตามรูปทรง, แบ่งแพ็ก, สร้าง Lot/QR และเพิ่ม Stock แบบ transaction เดียว",
+        narration:"ผู้ใช้เลือก Material ระบุจำนวนรับเข้าและวันที่ Supplier ผลิต ระบบอ่าน Packing Quantity จาก Material Master สำหรับ PIPE, SHEET และ COIL จะคูณ Ratio ก่อนแบ่งแพ็ก จากนั้นสร้าง Internal Lot, Supplier Lot, MAIN QR และ SUB QR แล้ว Confirm stock จากคำสั่งเดียวใน UI",
+        blocks:[
+          {type:"steps",title:"Step-by-step",items:[
+            ["เตรียม Material Master","ต้อง Active, มี Unit, Packing Quantity และ Supplier; PIPE/SHEET/COIL ต้องมี Ratio"],
+            ["เข้า Receiving","เปิด route โดยตรงหรือกด + รับเข้า จาก Material row เพื่อ preselect"],
+            ["เลือก Material","ใช้ DEMO-STPIPE-001 หรือ OF-STPIPE-002 ถ้ามี seed ใน environment"],
+            ["เลือก Supplier","UI ให้เลือกเมื่อมี Active Supplier มากกว่า 1"],
+            ["กรอกจำนวนรับเข้า","ตัวอย่าง 2 เส้น"],
+            ["ตรวจ Ratio","ตัวอย่าง DEMO ใช้ 20; UI แสดง/ให้ override สำหรับรูปทรงที่ต้องแปลง"],
+            ["กำหนดวันที่ Supplier ผลิต","ห้ามเป็นอนาคต; Receive Date ใน UI ใช้วันนี้"],
+            ["ตรวจ Preview","ดู Internal Lot ตัวอย่าง, Supplier Lot, Converted Qty และ Package breakdown"],
+            ["ยืนยันการรับเข้า","UI เรียก command atomic: สร้าง Draft + Confirm"],
+            ["เปิดรายละเอียด","ตรวจ Lot, จำนวน, สถานะ และ QR ของแต่ละแพ็ก"],
+            ["พิมพ์ QR","ใช้ Print ใน Details โดยพิมพ์ document ปัจจุบัน"]
+          ]},
+          {type:"formula",title:"ตัวอย่าง PIPE ตามสูตรจริง",lines:[
+            ["Converted Qty","2 × 20 = 40"],
+            ["Package Count","ceil(40 ÷ 20) = 2 Packages"],
+            ["Package Breakdown","Package 01 = 20 · Package 02 = 20"],
+            ["Stock Movement","Confirm แล้ว On Hand เพิ่ม 40"]
+          ]},
+          {type:"table",title:"ข้อมูลที่ระบบสร้าง/แสดง",caption:"ชื่อเอกสารหลักในระบบคือ Internal Lot",headers:["ข้อมูล","พฤติกรรมจริง","หมายเหตุ"],rows:[
+            ["Internal Lot","CCI-{YY}{MonthCode}{DD}-{SEQ}","จัดลำดับแบบ concurrency-safe"],
+            ["Supplier Lot","{YY}{MonthCode}{DD}","คำนวณจาก supplierProductionDate"],
+            ["Receive / Converted Qty","จำนวนรับจริง / จำนวนหลังคูณ Ratio","PCS ใช้ 1:1"],
+            ["Package Count","ceil(Converted Qty / Packing Quantity)","แพ็กสุดท้ายรับเศษได้"],
+            ["MAIN QR","ผูก Receiving/Internal Lot","สร้างตอนรับเข้า"],
+            ["SUB QR","หนึ่ง QR ต่อ Package","มี lotDetailNo และ remainingQuantity"],
+            ["Status","draft → confirmed หรือ cancelled","UI ยืนยันให้ทันที"],
+            ["Stock","เพิ่มเมื่อ confirm","บันทึก movement ต่อ SUB QR"]
+          ]}
+        ],
+        expected:"รับเข้า 2 หน่วยของ PIPE ratio 20 ได้ Converted Qty 40, 2 Packages, MAIN/SUB QR และ Stock เพิ่ม 40",
+        sources:["src/components/materials-receiving/materials-receiving-form-dialog.tsx","src/lib/api/materials-receiving.ts","../cps-api/src/modules/materials-receiving/dto/create-materials-receiving.dto.ts","../cps-api/src/modules/materials-receiving/materials-receiving.service.ts"]
+      },
+      {
+        id:"disbursement",number:9,title:"Material Disbursement",shortTitle:"Disbursement",
+        path:["/materials/materials-disbursement","/materials/job-orders"],stage:"issue",
+        keywords:"disbursement fifo issue package lot qr reserved issued remaining job order picking",
+        summary:"สร้างร่างการจ่ายออกและ Confirm ให้ backend เลือกแพ็กเกจแบบ FIFO โดยไม่กินยอดที่ Reservation ไว้",
+        narration:"การจ่ายออกทั่วไปให้เลือกประเภท วันที่ วัสดุ และจำนวน ระบบสร้าง Draft ก่อน เมื่อยืนยัน backend จะเรียงแพ็กเกจตาม Receive Date จากเก่าไปใหม่ หัก Reservation ที่ยังค้าง แล้วตัด Remaining Quantity พร้อมบันทึก allocation และ stock movement",
+        blocks:[
+          {type:"steps",title:"Flow การจ่ายออกทั่วไป",items:[
+            ["เปิดหน้า","เข้า /materials/materials-disbursement"],
+            ["สร้างรายการ","เลือก เบิกเพื่อผลิต หรือ ตัดสต็อก"],
+            ["กำหนดวันที่","ห้ามเกินวันปัจจุบัน"],
+            ["ระบุเหตุผล","จำเป็นเมื่อเลือกตัดสต็อก"],
+            ["เพิ่ม Material","แต่ละ Material เลือกได้ครั้งเดียวต่อเอกสาร"],
+            ["กรอก Requested Quantity","ต้องมากกว่า 0; UI แสดง Available Stock จาก lookup"],
+            ["บันทึกร่าง","ยังไม่ตัด Stock และยังแก้ไข/ลบร่างได้"],
+            ["ยืนยันการจ่ายออก","backend ตรวจ stock หลังหัก reservation และทำ FIFO"],
+            ["ตรวจผล","สถานะ Confirmed, package remaining ลด และ Stock Balance ลด"]
+          ]},
+          {type:"facts",title:"FIFO / Package / Reservation ที่มีจริง",items:[
+            ["FIFO","Receive Date เก่าก่อน","ถ้าวันเดียวกันเรียง Package ID"],
+            ["Package","เฉพาะ in_stock / partial","ลด remainingQuantity; quantity เดิมไม่เปลี่ยน"],
+            ["QR / Lot","allocation อ้าง Receiving และ SUB QR","Movement เก็บ mainQrId/subQrId"],
+            ["Reserved Qty","outstanding reservation","reservedQuantity - issuedQuantity ที่ยังไม่ release"],
+            ["Issued Qty","บันทึกต่อ item และ package","กล่องหมดเป็น issued; เหลือบางส่วนเป็น partial"],
+            ["Cancel","ย้อน package และ stock ได้","Job Order disbursement ยกเลิกจากหน้านี้ไม่ได้"]
+          ]},
+          {type:"callout",tone:"info",title:"Job Picking Sheet / ใบจัดงานมีจริง",text:"ที่ /materials/job-orders ผู้ใช้สแกนหรือพิมพ์ QR เพื่อ Pick กล่องตาม Production Plan reservation, พิมพ์ใบจัดงาน และจ่ายออก ระบบแสดง Internal Lot, Supplier Lot, Package, Current, Reserved, Issued และ Outstanding"},
+          {type:"callout",tone:"missing",title:"Feature นี้ยังไม่พบในฟอร์มปัจจุบัน",text:"ฟอร์มจ่ายออกทั่วไปไม่มีช่องเลือก Lot, Package หรือ QR เอง และ list ไม่มี Detail Dialog สำหรับ allocation การเลือกเป็นงานอัตโนมัติของ backend FIFO; ตรวจเชิง trace จาก Material Report/Job Order"}
+        ],
+        expected:"ผู้ชมสร้าง Draft, Confirm และอธิบายได้ว่า FIFO เลือกแพ็กเกจอัตโนมัติหลังหัก reservation",
+        sources:["src/components/materials-disbursement/materials-disbursement-form-dialog.tsx","src/lib/api/materials-disbursement.ts","src/components/material-job-orders/job-order-detail.tsx","../cps-api/src/modules/materials-disbursement/materials-disbursement.service.ts"]
+      },
+      {
+        id:"bom",number:10,title:"BOM",shortTitle:"BOM",
+        path:["/materials/pc","/products","/products/list"],stage:"bom",
+        keywords:"bom product version quantity unit scrap wastage material usage",
+        summary:"ดูว่า Material ถูกใช้ใน BOM และ Product ใด พร้อม Version, Status, Quantity และ Unit",
+        narration:"BOM เป็นความสัมพันธ์จาก Product ไปยัง Material แต่หน้า Material Master มีคำสั่ง BOM / Products สำหรับย้อนดูว่า Material นี้ถูกใช้ใน BOM เวอร์ชันใดของสินค้าใดบ้าง",
+        blocks:[
+          {type:"formula",title:"ความสัมพันธ์",lines:[
+            ["Product","มี BOM หลาย Version"],
+            ["BOM Version","มี Material Item ตั้งแต่ 1 ถึง 200 รายการ"],
+            ["Material Item","Required Quantity + Unit + Scrap/Wastage"]
+          ]},
+          {type:"steps",title:"ดู BOM Usage จาก Material",items:[
+            ["เปิด /materials/pc","ค้นหา Material ที่ถูกใช้จริง"],
+            ["เปิด Row Actions","เลือก BOM / Products"],
+            ["อ่าน Product","ดู Product Code และ Product Name"],
+            ["อ่าน BOM","ดู Version และ Status: DRAFT / ACTIVE / INACTIVE"],
+            ["อ่าน Requirement","ดู Quantity, Unit และ badge เศษถ้า isScrap"],
+            ["จัดการ BOM","ไปหน้า Products เพื่อสร้าง แก้ไข หรือ Activate BOM"]
+          ]},
+          {type:"table",title:"ข้อมูล Usage Dialog ที่มีจริง",caption:"หนึ่งแถวต่อ BOM item ที่อ้าง Material",headers:["ข้อมูล","มีใน Dialog","รายละเอียด"],rows:[
+            ["Product Code / Name","มี","สินค้าที่ใช้ Material"],
+            ["BOM Version / Status","มี","Version v1, v2... และสถานะ"],
+            ["Required Quantity / Unit","มี","จำนวนต้องมากกว่า 0"],
+            ["Scrap","มี","แสดง badge เมื่อ isScrap"],
+            ["Wastage Percent","มีใน API","0–100 แต่ Dialog ปัจจุบันไม่แสดง"],
+            ["Process","ไม่มี","ไม่ใช่ field ของ BOM Usage Row"]
+          ]},
+          {type:"callout",tone:"missing",title:"Feature นี้ยังไม่พบในระบบปัจจุบัน",text:"ไม่มี route /materials/bom และ Usage Dialog ไม่มี Process field การสร้าง/แก้ BOM อยู่ในบริบท Products ไม่ได้ทำจาก Material Detail"}
+        ],
+        expected:"ผู้ชมเปิด BOM Usage และระบุ Product, Version, Status, Required Quantity และ Unit ได้",
+        sources:["src/components/materials-pc/material-bom-usage-dialog.tsx","src/lib/api/boms.ts","../cps-api/src/modules/boms/","../cps-api/src/entities/master/product-bom.entity.ts"]
+      },
+      {
+        id:"stock",number:11,title:"Stock",shortTitle:"Stock",
+        path:["/materials","/materials/pc","/materials/materials-report"],stage:"stock",
+        keywords:"stock on hand minimum normal low out reserved available lot package qr remaining location traceability",
+        summary:"อ่าน On Hand, Minimum Stock, Stock Health และ Remaining Quantity ระดับแพ็กเกจ พร้อมแยก reservation ใน workflow การผลิต",
+        narration:"Stock Balance เก็บยอด On Hand ต่อ Material หนึ่งแถว หน้า /materials และ /materials/pc ใช้ยอดนี้เทียบ Minimum Stock เพื่อจัดเป็นปกติ ต่ำ หรือหมด ส่วน Remaining Quantity ระดับกล่องอยู่ใน Receiving Package",
+        blocks:[
+          {type:"facts",title:"ข้อมูล Stock ที่มีจริง",items:[
+            ["On Hand","stock_balances.quantity","เพิ่มจาก Confirm Receiving และลดจาก Confirm Disbursement"],
+            ["Minimum Stock","master.materials.minimum_stock","ใช้ประเมินสุขภาพ ไม่ใช่ยอดจอง"],
+            ["Normal","On Hand > 0 และ ≥ Minimum","สีเขียว"],
+            ["Low Stock","On Hand > 0 และ < Minimum","สีเตือน"],
+            ["Out of Stock","On Hand ≤ 0","สีอันตราย"],
+            ["Package Remaining","remaining_quantity","ลดแบบ FIFO ต่อ SUB QR"],
+            ["Location","Loading Point ใน Material Master","ไม่มี stock แยกหลาย location ใน StockBalance"],
+            ["Reservation","production_plan_reservations","แสดงใน Job Order/Production workflow"]
+          ]},
+          {type:"formula",title:"สูตรที่ใช้จริงบนหน้า Materials",lines:[
+            ["OUT_OF_STOCK","currentStock ≤ 0"],
+            ["LOW_STOCK","0 < currentStock < minimumStock"],
+            ["NORMAL","currentStock ≥ minimumStock และ > 0"],
+            ["Package Remaining","Original Package Qty − Issued Qty"]
+          ]},
+          {type:"steps",title:"สาธิตการติดตาม Stock",items:[
+            ["เปิด /materials","ดู KPI และ Stock Health Rail ของ Active Material"],
+            ["เปิด /materials/pc","ค้นหาและดู Current/Minimum/Stock Status"],
+            ["ใช้ Stock Status Filter","แยก Normal, Low และ Out of Stock"],
+            ["เปิด Receiving Detail","ดู Package Quantity และ Remaining ต่อ SUB QR"],
+            ["เปิด Material Report","ติดตาม movement, Lot, QR, Receiving และ Disbursement"],
+            ["เปิด Job Order เมื่อมีแผนผลิต","ดู Reserved, Issued และ Outstanding"]
+          ]},
+          {type:"callout",tone:"missing",title:"Feature นี้ยังไม่พบในหน้า Stock ปัจจุบัน",text:"ไม่มี Summary Card ที่รวม On Hand, Reserved และ Available บน /materials หรือ /materials/pc จึงไม่มีสูตร UI Available = On Hand - Reserved; Reservation แสดงแยกใน Production Plan/Job Order และ backend FIFO หัก reservation ก่อนคำนวณยอดใช้ได้"}
+        ],
+        expected:"ผู้ชมอ่าน On Hand และ Stock Health ได้ ตรวจ Remaining ต่อ Package ได้ และรู้ว่า Reserved/Available ไม่ได้อยู่ในการ์ด Stock ปัจจุบัน",
+        sources:["src/components/materials-dashboard/materials-dashboard-view.tsx","src/components/materials-pc/material-pc-inventory-summary.tsx","../cps-api/src/modules/stock-balances/","../cps-api/src/entities/inventory/material-receiving-package.entity.ts"]
+      },
+      {
+        id:"endToEnd",number:12,title:"Material CRUD Full Demo",shortTitle:"End-to-End Demo",
+        path:["/materials","/materials/pc","/materials/materials-receiving","/materials/materials-disbursement","/materials/job-orders"],stage:"all",
+        keywords:"end to end full demo login create read update receiving disbursement bom stock inactive cleanup",
+        summary:"สคริปต์สาธิตตั้งแต่ Login, สร้าง Material, รับเข้า, ตรวจ Stock, เชื่อม BOM, จ่ายออก และปิดใช้งานอย่างปลอดภัย",
+        narration:"ตอนนี้รวมทุกส่วนเป็นเรื่องเดียว ใช้ DEMO-STPIPE-001 ใน Test Environment เท่านั้น เริ่มจาก Material Master รับเข้าให้เกิด Stock ตรวจ BOM และจ่ายออก ก่อนจบด้วย Soft Deactivate และ Traceability",
+        blocks:[
+          {type:"timeline",title:"ลำดับการอัด Material CRUD Full Demo",items:[
+            ["Login","เข้าด้วยบัญชีทดสอบที่มี Permission ครบ"],
+            ["Overview","เปิด /materials และอธิบาย Control Tower"],
+            ["Search","เปิด /materials/pc ค้นหา DEMO-STPIPE-001 เพื่อยืนยันว่าไม่ซ้ำ"],
+            ["Create","สร้างพร้อมรูป, PIPE, Ratio 20, Pack 20, Unit/Supplier จริง"],
+            ["Read & Detail","เปิด Detail และยืนยัน Active + Stock 0"],
+            ["Update","เปลี่ยนชื่อและ Packing Quantity เป็น 25"],
+            ["Receiving","รับเข้า 2 × 20 = 40; Pack 25 จะแบ่ง 25 + 15"],
+            ["Stock","ตรวจ On Hand เพิ่ม 40 และ Health เทียบ Minimum"],
+            ["BOM","ถ้ามี Product ทดสอบ ให้เพิ่มใน BOM แล้วเปิด Usage; ถ้าไม่มีให้บอกตรง ๆ"],
+            ["Disbursement","สร้าง Draft และ Confirm จำนวนที่น้อยกว่ายอดหลังหัก reservation"],
+            ["Job Order","สาธิต Pick/Issue เฉพาะเมื่อมี Approved Production Plan"],
+            ["Traceability","เปิด Material Report ตรวจ Lot, QR และ Movement"],
+            ["Inactive","Soft Deactivate แล้วค้นหาจาก Inactive view"],
+            ["Cleanup","Restore หรือคง Inactive ตามแผน; เอกสาร Confirmed ต้องรักษาไว้"]
+          ]},
+          {type:"callout",tone:"warning",title:"ใช้ค่าปัจจุบันให้สอดคล้องกัน",text:"หาก Update Packing Quantity จาก 20 เป็น 25 ก่อน Receiving ตัวอย่าง 40 หน่วยจะแบ่งเป็น 25 + 15 ไม่ใช่ 20 + 20"},
+          {type:"callout",tone:"info",title:"จุดหยุดที่ถูกต้อง",text:"ถ้า environment ไม่มี Product/BOM/Production Plan ทดสอบ ห้ามอ้างว่าทำสำเร็จ ให้พูดว่า Feature มีในระบบแต่ยังไม่มี Test Data แล้วข้ามไป Stock/Traceability"},
+          {type:"callout",tone:"missing",title:"วิดีโอตอนนี้ยังเป็น Placeholder",text:"ffmpeg ที่มากับ Playwright ในเครื่องที่ใช้อัด (scripts/record-materials-guide.mjs) ไม่มี concat demuxer จึงต่อ 10 คลิปของตอนที่ 1-11 เป็นไฟล์เดียวไม่ได้โดยไม่ติดตั้ง ffmpeg แบบเต็มเพิ่ม ระหว่างนี้ให้ดู flow ต่อเนื่องได้จากวิดีโอจริงของแต่ละตอนที่ 1-11 แทน"}
+        ],
+        expected:"ได้วิดีโอหนึ่งตอนที่เล่า flow จริงต่อเนื่อง ไม่สับสน route ไม่ทำลายประวัติ และไม่เปิดเผยข้อมูล Production",
+        sources:["src/app/(dashboard)/materials/pc/page.tsx","src/lib/api/materials-receiving.ts","src/lib/api/materials-disbursement.ts","src/lib/api/boms.ts","src/lib/api/material-job-orders.ts"]
+      },
+      {
+        id:"checklist",number:13,title:"Checklist",shortTitle:"Checklist",
+        path:["localStorage"],stage:"all",
+        keywords:"checklist before after recording backend frontend database sensitive cleanup console",
+        summary:"Checklist แบบกดใช้งานได้จริง บันทึกสถานะใน localStorage และคงอยู่หลัง Refresh",
+        narration:"ก่อนอัดให้ตรวจ environment, permission, master data และ API หลังอัดให้ตรวจความครบถ้วน URL, console, ข้อมูล sensitive และ cleanup ทุกช่องจะถูกเก็บใน browser เครื่องนี้",
+        blocks:[
+          {type:"checklist",title:"Checklist การอัดวิดีโอ"},
+          {type:"callout",tone:"warning",title:"ขอบเขตข้อมูล",text:"อย่าให้ Access Token, Cookie, Password, User ID จริง, Supplier contract, PO จริง หรือข้อมูล Production ที่อ่อนไหวปรากฏในหน้าจอ DevTools URL หรือชื่อไฟล์วิดีโอ"},
+          {type:"callout",tone:"info",title:"ตอนนี้ไม่มีวิดีโอ",text:"Checklist เป็นฟีเจอร์ฝั่ง client ล้วนๆ (เก็บสถานะใน localStorage) ไม่มี workflow ของระบบจริงให้สาธิตเพิ่มเติมนอกเหนือจากการติ๊กช่อง จึงไม่ได้อัดวิดีโอแยกสำหรับตอนนี้"}
+        ],
+        expected:"ทีมอัดคลิปใช้ Checklist ชุดเดียวกันได้ และสถานะยังอยู่หลัง Refresh หน้า HTML",
+        sources:["docs/manuals/materials-video-manual.html"]
+      }
+    ];
+
+    const checklistGroups = [
+      {title:"ก่อนอัดคลิป",items:["Backend Running","Frontend Running","Database Connected","Master Data พร้อม","Login ได้","Test Data พร้อม","Receiving API พร้อม","Disbursement API พร้อม","BOM API พร้อม","Stock API พร้อม"]},
+      {title:"หลังอัดคลิป",items:["CRUD ครบ","Validation ครบ","URL ถูกต้อง","ไม่มี Console Error","ไม่มีข้อมูล Sensitive","Cleanup Test Data แล้ว"]}
+    ];
+    const flowStages=[["master","01 · Material Master"],["receive","02 · Receiving"],["stock","03 · Stock"],["issue","04 · Issue"],["bom","05 · BOM / Production"]];
+    const storageKeys={completed:"materials-video-manual:completed:v1",checklist:"materials-video-manual:checklist:v1"};
+
+    function readStorage(key,fallback){try{const value=localStorage.getItem(key);return value?JSON.parse(value):fallback}catch(error){return fallback}}
+    function writeStorage(key,value){try{localStorage.setItem(key,JSON.stringify(value))}catch(error){}}
+    function escapeHtml(value){return String(value).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;")}
+
+    let completed=new Set(readStorage(storageKeys.completed,[]));
+    let checklistState=readStorage(storageKeys.checklist,{});
+    let currentIndex=Math.max(0,episodes.findIndex(function(episode){return "#"+episode.id===location.hash}));
+    const episodeList=document.getElementById("episode-list");
+    const episodeContent=document.getElementById("episode-content");
+    const guideSearch=document.getElementById("guide-search");
+    const emptySearch=document.getElementById("empty-search");
+    const progressText=document.getElementById("progress-text");
+    const progressBar=document.getElementById("progress-bar");
+    const progressTrack=document.querySelector(".progress-track");
+    const headerTitle=document.getElementById("header-title");
+    const breadcrumb=document.getElementById("breadcrumb");
+    const mobileMenuButton=document.getElementById("mobile-menu-button");
+    const sidebarBackdrop=document.getElementById("sidebar-backdrop");
+    const tabletToggle=document.getElementById("tablet-toggle");
+    const manualSidebar=document.getElementById("manual-sidebar");
+    const mainColumn=document.querySelector(".main-column");
+
+    function renderSidebar(filter){
+      const query=(filter||"").trim().toLocaleLowerCase("th");
+      const visible=episodes.filter(function(episode){return !query||(episode.title+" "+episode.shortTitle+" "+episode.keywords+" "+episode.path.join(" ")).toLocaleLowerCase("th").includes(query)});
+      episodeList.innerHTML=visible.map(function(episode){
+        const active=episodes[currentIndex].id===episode.id,done=completed.has(episode.id);
+        return '<li><button type="button" class="episode-button'+(done?' is-complete':'')+'" data-episode-id="'+escapeHtml(episode.id)+'"'+(active?' aria-current="page"':'')+' aria-label="ตอนที่ '+episode.number+' '+escapeHtml(episode.title)+(done?' ดูแล้ว':'')+'"><span class="episode-number">'+String(episode.number).padStart(2,"0")+'</span><span class="episode-label">'+escapeHtml(episode.title)+'</span><span class="episode-check" aria-hidden="true">✓</span></button></li>'
+      }).join("");
+      emptySearch.hidden=visible.length!==0;
+      episodeList.querySelectorAll("[data-episode-id]").forEach(function(button){button.addEventListener("click",function(){const index=episodes.findIndex(function(episode){return episode.id===button.dataset.episodeId});if(index>=0)showEpisode(index,true)})})
+    }
+    function renderFlow(stage){return '<div class="material-flow" aria-label="เส้นทาง Material ในระบบ">'+flowStages.map(function(item){const active=stage==="all"||stage===item[0];return '<div class="flow-step'+(active?' is-active':'')+'">'+escapeHtml(item[1])+'</div>'}).join("")+'</div>'}
+    function renderVideo(episode){
+      const config=videoConfig[episode.id]||{type:"placeholder",src:""};let media="";
+      if(config.type==="mp4"&&config.src){media='<video controls preload="metadata"><source src="'+escapeHtml(config.src)+'" type="video/mp4">Browser นี้ไม่รองรับวิดีโอ HTML5</video>'}
+      else if(config.type==="webm"&&config.src){media='<video controls preload="metadata"><source src="'+escapeHtml(config.src)+'" type="video/webm">Browser นี้ไม่รองรับวิดีโอ HTML5 — เปิดด้วย Chrome, Edge หรือ Firefox</video>'}
+      else if(config.type==="youtube"&&config.src){const videoId=config.src.replace(/^.*(?:youtu\.be\/|v=|embed\/)/,"").split(/[?&]/)[0];media='<iframe src="https://www.youtube-nocookie.com/embed/'+encodeURIComponent(videoId)+'" title="วิดีโอ ตอนที่ '+episode.number+' '+escapeHtml(episode.title)+'" loading="lazy" allow="accelerometer; autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>'}
+      else{media='<div class="video-placeholder"><div><strong>Video Episode '+String(episode.number).padStart(2,"0")+'</strong><span>'+escapeHtml(episode.title)+' · พร้อมใส่วิดีโอจริง</span></div></div>'}
+      return '<section class="video-card" aria-label="วิดีโอประจำตอน"><div class="video-stage">'+media+'</div><div class="video-meta"><strong>ตอนที่ '+String(episode.number).padStart(2,"0")+' · '+escapeHtml(episode.title)+'</strong><span>16:9 · '+escapeHtml(config.type==="placeholder"?"Placeholder":config.type.toUpperCase())+'</span></div></section>'
+    }
+    function renderBlock(block){
+      if(block.type==="facts")return '<section class="doc-card"><h2>'+escapeHtml(block.title)+'</h2><div class="fact-grid">'+block.items.map(function(item){return '<div class="fact"><small>'+escapeHtml(item[0])+'</small><strong>'+escapeHtml(item[1])+'</strong><p>'+escapeHtml(item[2])+'</p></div>'}).join("")+'</div></section>';
+      if(block.type==="steps")return '<section class="doc-card"><h2>'+escapeHtml(block.title)+'</h2><ol class="step-list">'+block.items.map(function(item){return '<li><strong>'+escapeHtml(item[0])+'</strong><p>'+escapeHtml(item[1])+'</p></li>'}).join("")+'</ol></section>';
+      if(block.type==="table")return '<section class="doc-card"><h2>'+escapeHtml(block.title)+'</h2><div class="table-wrap"><table class="doc-table"><caption>'+escapeHtml(block.caption)+'</caption><thead><tr>'+block.headers.map(function(header){return '<th scope="col">'+escapeHtml(header)+'</th>'}).join("")+'</tr></thead><tbody>'+block.rows.map(function(row){return '<tr>'+row.map(function(cell){return '<td>'+escapeHtml(cell)+'</td>'}).join("")+'</tr>'}).join("")+'</tbody></table></div></section>';
+      if(block.type==="callout"){const symbol=block.tone==="missing"?"!":block.tone==="warning"?"△":"i";return '<aside class="callout '+escapeHtml(block.tone)+'"><span class="callout-icon" aria-hidden="true">'+symbol+'</span><div><strong>'+escapeHtml(block.title)+'</strong><span>'+escapeHtml(block.text)+'</span></div></aside>'}
+      if(block.type==="formula")return '<section class="doc-card"><h2>'+escapeHtml(block.title)+'</h2><div class="formula">'+block.lines.map(function(line){return '<div class="formula-line"><small>'+escapeHtml(line[0])+'</small><span>'+escapeHtml(line[1])+'</span></div>'}).join("")+'</div></section>';
+      if(block.type==="timeline")return '<section class="doc-card"><h2>'+escapeHtml(block.title)+'</h2><ol class="timeline">'+block.items.map(function(item,index){return '<li><span class="timeline-index">'+String(index+1).padStart(2,"0")+'</span><div><strong>'+escapeHtml(item[0])+'</strong><p>'+escapeHtml(item[1])+'</p></div></li>'}).join("")+'</ol></section>';
+      if(block.type==="checklist")return renderChecklist(block.title);
+      return ""
+    }
+    function renderChecklist(title){return '<section class="doc-card"><h2>'+escapeHtml(title)+'</h2><div class="checklist-columns">'+checklistGroups.map(function(group,groupIndex){return '<div class="checklist-group"><h3>'+escapeHtml(group.title)+'</h3><div class="checklist-items">'+group.items.map(function(item,itemIndex){const key=groupIndex+":"+itemIndex;return '<label class="check-item"><input type="checkbox" data-check-key="'+key+'"'+(checklistState[key]?' checked':'')+'><span>'+escapeHtml(item)+'</span></label>'}).join("")+'</div></div>'}).join("")+'</div></section>'}
+    function bindChecklist(){episodeContent.querySelectorAll("[data-check-key]").forEach(function(input){input.addEventListener("change",function(){checklistState[input.dataset.checkKey]=input.checked;writeStorage(storageKeys.checklist,checklistState)})})}
+    function renderSources(list){return '<section class="doc-card"><h2>ตรวจสอบกับ Source Code</h2><ul class="source-list">'+list.map(function(source){return '<li><code>'+escapeHtml(source)+'</code></li>'}).join("")+'</ul></section>'}
+    function showEpisode(index,scrollToTop){
+      currentIndex=Math.max(0,Math.min(index,episodes.length-1));const episode=episodes[currentIndex],isComplete=completed.has(episode.id);
+      headerTitle.textContent=episode.title;document.title="ตอนที่ "+episode.number+" · "+episode.title+" | Materials Manual";history.replaceState(null,"","#"+episode.id);
+      breadcrumb.innerHTML='<span>คู่มือระบบ</span><span class="breadcrumb-sep" aria-hidden="true">›</span><span>Materials</span><span class="breadcrumb-sep" aria-hidden="true">›</span><strong>'+escapeHtml(episode.title)+'</strong>';
+      episodeContent.innerHTML='<header class="episode-hero"><div><p class="episode-kicker">ตอนที่ '+String(episode.number).padStart(2,"0")+' · '+escapeHtml(episode.shortTitle)+'</p><h1 class="episode-heading">'+escapeHtml(episode.title)+'</h1><p class="episode-summary">'+escapeHtml(episode.summary)+'</p><div class="path-badges">'+episode.path.map(function(path){return '<code class="path-badge">'+escapeHtml(path)+'</code>'}).join("")+'</div></div><button type="button" class="complete-button'+(isComplete?' is-complete':'')+'" id="complete-button">'+(isComplete?'✓ ดูตอนนี้แล้ว':'ทำเครื่องหมายว่าดูแล้ว')+'</button></header>'+renderFlow(episode.stage)+renderVideo(episode)+'<div class="section-stack"><section class="doc-card"><h2>คำพูดผู้บรรยาย</h2><p class="narration">'+escapeHtml(episode.narration)+'</p></section>'+episode.blocks.map(renderBlock).join("")+'<section class="doc-card expected"><h2>Expected Result</h2><p>'+escapeHtml(episode.expected)+'</p></section>'+renderSources(episode.sources)+'</div><footer class="episode-footer"><button class="nav-button prev" type="button"'+(currentIndex===0?' disabled':'')+'>← ตอนก่อนหน้า</button><span class="episode-position">'+(currentIndex+1)+' / '+episodes.length+'</span><button class="nav-button next" type="button"'+(currentIndex===episodes.length-1?' disabled':'')+'>ตอนถัดไป →</button></footer>';
+      document.getElementById("complete-button").addEventListener("click",toggleCurrentComplete);
+      episodeContent.querySelector(".prev").addEventListener("click",function(){showEpisode(currentIndex-1,true)});
+      episodeContent.querySelector(".next").addEventListener("click",function(){showEpisode(currentIndex+1,true)});
+      bindChecklist();renderSidebar(guideSearch.value);updateProgress();closeMobileSidebar();
+      if(scrollToTop){document.getElementById("manual-content").scrollIntoView({block:"start"});document.getElementById("manual-content").focus({preventScroll:true})}
+    }
+    function toggleCurrentComplete(){const id=episodes[currentIndex].id;if(completed.has(id))completed.delete(id);else completed.add(id);writeStorage(storageKeys.completed,Array.from(completed));showEpisode(currentIndex,false)}
+    function updateProgress(){const count=episodes.filter(function(episode){return completed.has(episode.id)}).length,percent=Math.round(count/episodes.length*100);progressText.textContent=count+" / "+episodes.length+" ตอน · "+percent+"%";progressBar.style.width=percent+"%";progressTrack.setAttribute("aria-valuenow",String(count));progressTrack.setAttribute("aria-valuemax",String(episodes.length))}
+    function syncSidebarAccessibility(){const mobile=window.innerWidth<=760,open=document.body.classList.contains("sidebar-open");manualSidebar.inert=mobile&&!open;mainColumn.inert=mobile&&open}
+    function openMobileSidebar(){document.body.classList.add("sidebar-open");mobileMenuButton.setAttribute("aria-expanded","true");syncSidebarAccessibility();const firstButton=episodeList.querySelector("button");if(firstButton)firstButton.focus()}
+    function closeMobileSidebar(){const wasOpen=document.body.classList.contains("sidebar-open");document.body.classList.remove("sidebar-open");mobileMenuButton.setAttribute("aria-expanded","false");syncSidebarAccessibility();if(wasOpen&&window.innerWidth<=760)mobileMenuButton.focus()}
+
+    guideSearch.addEventListener("input",function(){renderSidebar(guideSearch.value)});
+    mobileMenuButton.addEventListener("click",openMobileSidebar);
+    sidebarBackdrop.addEventListener("click",closeMobileSidebar);
+    tabletToggle.addEventListener("click",function(){const expanded=document.body.classList.toggle("sidebar-expanded-tablet");tabletToggle.setAttribute("aria-expanded",String(expanded))});
+    document.addEventListener("keydown",function(event){if(event.key==="Escape"&&document.body.classList.contains("sidebar-open"))closeMobileSidebar()});
+    window.addEventListener("hashchange",function(){const index=episodes.findIndex(function(episode){return "#"+episode.id===location.hash});if(index>=0&&index!==currentIndex)showEpisode(index,true)});
+    window.addEventListener("resize",syncSidebarAccessibility);
+    showEpisode(currentIndex,false);
+  </script>
+</body>
+</html>
