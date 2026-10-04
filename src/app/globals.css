@@ -46,6 +46,25 @@
   --chart-4: #0F2747;
   --chart-5: #64748B;
 
+  /* Lot color coding (traceability report): 8 clearly different hues, each
+     with a soft tint. Assigned per lot number by lib/lot-colors.ts. */
+  --lot-1: #16A34A;
+  --lot-1-soft: #E4F6EA;
+  --lot-2: #7C3AED;
+  --lot-2-soft: #EFE8FD;
+  --lot-3: #1769D1;
+  --lot-3-soft: #E7F1FC;
+  --lot-4: #EA580C;
+  --lot-4-soft: #FDEDE2;
+  --lot-5: #0D9488;
+  --lot-5-soft: #DFF5F2;
+  --lot-6: #DB2777;
+  --lot-6-soft: #FCE7F1;
+  --lot-7: #A16207;
+  --lot-7-soft: #FBF1D9;
+  --lot-8: #4F46E5;
+  --lot-8-soft: #E8E7FC;
+
   --ring: #1769D1;
   /* Slightly tighter than a typical SaaS default — the brief asks for a
      practical, compact enterprise look, not soft/bubbly cards. */
@@ -109,6 +128,23 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+
+  --color-lot-1: var(--lot-1);
+  --color-lot-1-soft: var(--lot-1-soft);
+  --color-lot-2: var(--lot-2);
+  --color-lot-2-soft: var(--lot-2-soft);
+  --color-lot-3: var(--lot-3);
+  --color-lot-3-soft: var(--lot-3-soft);
+  --color-lot-4: var(--lot-4);
+  --color-lot-4-soft: var(--lot-4-soft);
+  --color-lot-5: var(--lot-5);
+  --color-lot-5-soft: var(--lot-5-soft);
+  --color-lot-6: var(--lot-6);
+  --color-lot-6-soft: var(--lot-6-soft);
+  --color-lot-7: var(--lot-7);
+  --color-lot-7-soft: var(--lot-7-soft);
+  --color-lot-8: var(--lot-8);
+  --color-lot-8-soft: var(--lot-8-soft);
 
   --color-ring: var(--ring);
   --radius-sm: calc(var(--radius) - 4px);

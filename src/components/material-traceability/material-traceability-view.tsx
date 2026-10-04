@@ -2,8 +2,9 @@
 
 import * as React from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, List as ListIcon, PackageMinus, PackagePlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import type { FilterDropdownOption } from "@/components/ui/filter-dropdown";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MaterialTraceabilityFilters } from "@/components/material-traceability/material-traceability-filters";
 import { MaterialTraceabilitySummaryCards } from "@/components/material-traceability/material-traceability-summary";
@@ -12,7 +13,8 @@ import { MaterialTraceabilityQrSearch } from "@/components/material-traceability
 import { MaterialTraceabilityExports } from "@/components/material-traceability/material-traceability-exports";
 import { MaterialTraceabilityDetailsDialog, type DrillTarget } from "@/components/material-traceability/material-traceability-details";
 import { filtersToParams, readMaterialTraceabilityFilters } from "@/lib/filters/material-traceability-filters";
-import type { MaterialTraceabilityReport } from "@/lib/api/material-traceability";
+import { MaterialTraceabilityLotFlow } from "@/components/material-traceability/material-traceability-lot-flow";
+import type { LotFlow, MaterialTraceabilityReport } from "@/lib/api/material-traceability";
 
 // Orchestrator: the Server Component page (page.tsx) does the permission
 // gate + initial fetch; this client component owns only UI state (which
@@ -22,7 +24,29 @@ import type { MaterialTraceabilityReport } from "@/lib/api/material-traceability
 // searchParams and hands this component a fresh `report`, same
 // Server-Component-fetch/Server-Action-mutate pattern as every other list
 // page in this app (see AGENTS.md ADR-006).
-export function MaterialTraceabilityView({ report }: { report: MaterialTraceabilityReport }) {
+// First, last, and a window of 1 page around the current one; "gap" marks a
+// skipped run so the control stays compact on large result sets.
+function pageNumbers(current: number, total: number): Array<number | "gap"> {
+  const last = Math.max(1, total);
+  const keep = new Set([1, last, current - 1, current, current + 1]);
+  const sorted = [...keep].filter((n) => n >= 1 && n <= last).sort((a, b) => a - b);
+  const result: Array<number | "gap"> = [];
+  sorted.forEach((n, i) => {
+    if (i > 0 && n - sorted[i - 1] > 1) result.push("gap");
+    result.push(n);
+  });
+  return result;
+}
+
+export function MaterialTraceabilityView({
+  report,
+  materialOptions,
+  lotFlow,
+}: {
+  lotFlow: LotFlow | null;
+  report: MaterialTraceabilityReport;
+  materialOptions: FilterDropdownOption[];
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -36,6 +60,16 @@ export function MaterialTraceabilityView({ report }: { report: MaterialTraceabil
   function goToPage(next: number) {
     const params = new URLSearchParams(searchParams.toString());
     params.set("page", String(next));
+    router.push(`${pathname}?${params.toString()}`);
+  }
+
+  // Receiving / disbursement tabs are the same `transactionType` URL filter the
+  // quick-bar dropdown and chips use, so the three controls always agree.
+  function setTransactionType(value: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) params.set("transactionType", value);
+    else params.delete("transactionType");
+    params.delete("page");
     router.push(`${pathname}?${params.toString()}`);
   }
 
@@ -60,7 +94,52 @@ export function MaterialTraceabilityView({ report }: { report: MaterialTraceabil
 
       <MaterialTraceabilitySummaryCards summary={report.summary} />
 
-      <MaterialTraceabilityFilters totalItems={report.meta.totalItems} />
+      <MaterialTraceabilityFilters totalItems={report.meta.totalItems} materialOptions={materialOptions} />
+
+      {lotFlow && filters.materialCode && (
+        <MaterialTraceabilityLotFlow
+          materialCode={filters.materialCode}
+          flow={lotFlow}
+          onOpenReceiving={(id) => setDrillTarget({ type: "receiving", id })}
+          onOpenDisbursement={(id) => setDrillTarget({ type: "disbursement", id })}
+        />
+      )}
+
+      <div
+        role="group"
+        aria-label="มุมมองรายการ"
+        className="inline-flex w-fit items-center gap-1 rounded-lg border border-border bg-surface-2 p-1"
+      >
+        {(
+          [
+            { value: "", label: "รายการทั้งหมด", icon: ListIcon, count: null },
+            { value: "RECEIVE", label: "รายการรับเข้า", icon: PackagePlus, count: report.summary.receivingCount },
+            { value: "ISSUE", label: "รายการจ่ายออก", icon: PackageMinus, count: report.summary.disbursementCount },
+          ] as const
+        ).map((tab) => {
+          const active = filters.transactionType === tab.value;
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.value}
+              type="button"
+              aria-pressed={active}
+              onClick={() => setTransactionType(tab.value)}
+              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-colors ${
+                active ? "bg-surface font-semibold text-primary shadow-sm" : "text-fg-secondary hover:text-fg"
+              }`}
+            >
+              <Icon className="size-4" />
+              {tab.label}
+              {tab.count !== null && (
+                <span className="rounded-full bg-surface-2 px-1.5 text-[11px] tabular-nums text-fg-muted">
+                  {tab.count.toLocaleString("th-TH")}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
 
       <MaterialTraceabilityTable
         items={report.items}
@@ -100,6 +179,28 @@ export function MaterialTraceabilityView({ report }: { report: MaterialTraceabil
           >
             <ChevronLeft className="h-3.5 w-3.5" /> <span className="hidden sm:inline">ก่อนหน้า</span>
           </Button>
+          <div className="hidden items-center gap-1 sm:flex">
+            {pageNumbers(page, totalPages).map((item, index) =>
+              item === "gap" ? (
+                <span key={`gap-${index}`} className="px-1 text-fg-muted" aria-hidden>
+                  …
+                </span>
+              ) : (
+                <Button
+                  key={item}
+                  type="button"
+                  variant={item === page ? "primary" : "outline"}
+                  size="sm"
+                  className="min-w-8 px-2"
+                  aria-label={`ไปหน้า ${item}`}
+                  aria-current={item === page ? "page" : undefined}
+                  onClick={() => item !== page && goToPage(item)}
+                >
+                  {item}
+                </Button>
+              ),
+            )}
+          </div>
           <Button
             type="button"
             variant="outline"

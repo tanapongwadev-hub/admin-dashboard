@@ -258,6 +258,115 @@ export function getMaterialTraceabilityReport(accessToken: string, params: ListM
   });
 }
 
+export interface LotFlowIssue {
+  disbursementId: string | null;
+  disbursementNo: string | null;
+  quantity: number;
+  department: string | null;
+  productionOrder: string | null;
+  boxes: string[];
+}
+
+export interface LotFlowBox {
+  lotDetailNo: string;
+  initialQuantity: string;
+  currentQuantity: string;
+  status: string;
+}
+
+export interface LotFlowEntry {
+  receivingId: string;
+  boxes: LotFlowBox[];
+  internalLotNo: string;
+  supplierLotNo: string | null;
+  receiveDate: string;
+  receivedQty: string;
+  remainingQty: string;
+  unit: string | null;
+  status: string;
+  issues: LotFlowIssue[];
+}
+
+export interface LotFlow {
+  material: { code: string; name: string } | null;
+  lots: LotFlowEntry[];
+  /** True when the material has more receivings than we trace in one request. */
+  truncated: boolean;
+}
+
+// Max receivings traced per page load — each one is a separate
+// `receivings/:id` call (there is no aggregate lot→disbursement endpoint).
+const LOT_FLOW_MAX_RECEIVINGS = 30;
+
+/**
+ * "Which receiving lot was issued to which disbursement" for one material:
+ * collects the material's RECEIVE movements, then traces each receiving's
+ * (non-reversed) issue history. Built only from existing endpoints.
+ */
+export async function getMaterialLotFlow(accessToken: string, materialCode: string): Promise<LotFlow> {
+  const receives = await getMaterialTraceabilityReport(accessToken, {
+    materialCode,
+    transactionType: "RECEIVE",
+    limit: 200,
+  });
+  const ids: string[] = [];
+  for (const item of receives.items) {
+    if (item.receiving?.id && !ids.includes(item.receiving.id)) ids.push(item.receiving.id);
+  }
+  const traced = ids.slice(0, LOT_FLOW_MAX_RECEIVINGS);
+  const results = await Promise.all(traced.map((id) => traceReceiving(accessToken, id).catch(() => null)));
+
+  const lots: LotFlowEntry[] = [];
+  for (const trace of results) {
+    if (!trace) continue;
+    const boxById = new Map(trace.packages.map((p) => [p.id, p.lotDetailNo ?? `#${p.packageNo}`]));
+    const byDisbursement = new Map<string, LotFlowIssue>();
+    for (const entry of trace.issueHistory) {
+      if (entry.reversedAt) continue;
+      const key = entry.disbursementId ?? entry.disbursementNo ?? entry.allocationId;
+      let issue = byDisbursement.get(key);
+      if (!issue) {
+        issue = {
+          disbursementId: entry.disbursementId,
+          disbursementNo: entry.disbursementNo,
+          quantity: 0,
+          department: entry.department,
+          productionOrder: entry.productionOrder,
+          boxes: [],
+        };
+        byDisbursement.set(key, issue);
+      }
+      issue.quantity += Number(entry.disbursedQuantity) || 0;
+      const box = boxById.get(entry.packageId);
+      if (box && !issue.boxes.includes(box)) issue.boxes.push(box);
+    }
+    lots.push({
+      receivingId: trace.receiving.id,
+      boxes: trace.packages.map((p) => ({
+        lotDetailNo: p.lotDetailNo ?? `#${p.packageNo}`,
+        initialQuantity: p.initialQuantity,
+        currentQuantity: p.currentQuantity,
+        status: p.status,
+      })),
+      internalLotNo: trace.receiving.internalLotNo,
+      supplierLotNo: trace.receiving.supplierLotNo,
+      receiveDate: trace.receiving.receiveDate,
+      receivedQty: trace.receiving.convertedQuantity,
+      remainingQty: trace.currentRemaining,
+      unit: trace.receiving.unitSymbol,
+      status: trace.receiving.status,
+      issues: [...byDisbursement.values()],
+    });
+  }
+  lots.sort((a, b) => a.receiveDate.localeCompare(b.receiveDate));
+  const material = results.find((t) => t?.receiving.material)?.receiving.material ?? null;
+  return {
+    material: material ? { code: material.code, name: material.name } : null,
+    lots,
+    truncated: ids.length > LOT_FLOW_MAX_RECEIVINGS,
+  };
+}
+
 export function getMaterialTraceabilitySummary(accessToken: string, params: ListMaterialTraceabilityParams = {}) {
   return apiFetch<MaterialTraceabilitySummary>(`/material-traceability/summary${buildQuery(params)}`, {
     headers: { Authorization: `Bearer ${accessToken}` },

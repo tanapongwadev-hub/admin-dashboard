@@ -59,11 +59,11 @@ export const MATERIAL_TRACEABILITY_FILTER_DEFAULTS: MaterialTraceabilityFilterSt
 // Fields exposed on the quick bar (always visible at md:+) — the rest only
 // ever live in the Advanced Filters drawer.
 export const MATERIAL_TRACEABILITY_QUICK_KEYS: (keyof MaterialTraceabilityFilterState)[] = [
-  "materialCode",
   "transactionType",
 ];
 
 export const MATERIAL_TRACEABILITY_ADVANCED_ONLY_KEYS: (keyof MaterialTraceabilityFilterState)[] = [
+  "materialCode",
   "dateFrom",
   "materialName",
   "materialType",

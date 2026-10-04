@@ -959,6 +959,51 @@ Before writing any new route, component, data-layer file, or Server Action, chec
 
 ## Recent Changes
 
+### 2026-10-04 — Traceability MAIN QR / receiving dialog redesigned
+
+- `MainQrDetail` (`material-traceability-details.tsx`, also used for the "receiving" drill target): hero in the lot's own color (lot no., material, status), KPI cells (received / issued / remaining / box count) + a used-% bar, 8-field meta grid (date, supplier lot, supplier, entered qty, confirmed by/at, created by/at), SUB QR boxes as a 2-column tile grid with per-box remaining bars (click → SUB QR), issue history, Timeline in a collapsed `<details>`. Display-only; no API change. tsc + eslint on `components/material-traceability` clean; build/test not re-run.
+
+### 2026-10-04 — Materials report: per-lot color coding
+
+- **Final (same day, supersedes the two notes around it)**: each lot number gets its own color (e.g. CCI-26J26-003 green, -001 purple), consistent across views. New `--lot-1..8` (+ `-soft`) tokens in `globals.css` (`--color-lot-N` in `@theme`); `lib/lot-colors.ts#lotColor()` picks by the lot's trailing `-NNN` sequence (consecutive lots always differ; falls back to a string hash), so lots from different days with the same sequence share a color. Applied to lot groups + their disbursement entries, the disbursement dialog lot groups, and a tinted lot chip in the movement table.
+- _Superseded earlier note_: color separates receiving vs disbursement lots, not individual lots. `lib/lot-colors.ts` now exports `LOT_KIND_COLORS`/`lotKindColor()` — receive = green (success), issue = blue (info), matching the RECEIVE/ISSUE badges. Applied in `material-traceability-lot-flow.tsx` (receiving lot rows + boxes green, disbursement entries blue), the disbursement dialog (receiving-lot groups green with a "Lot รับเข้า" label, legend line in blue), and the movement table's lot dot (by transaction type). Color is a visual aid; labels/text always present. Not validated with tsc/lint/build per R0.
+
+### 2026-10-04 — Materials report: header removed, PDF/print layout redesigned
+
+- `materials-report/page.tsx` no longer renders the title/description block (the topbar breadcrumb already names the page). The print/PDF sheet in `material-traceability-exports.tsx` drops its title + "Generated" lines: it opens on the KPI strip (+ mismatch warning) and then prints separate รับเข้า / จ่ายออก / อื่นๆ tables (document no., material, lot, SUB QR, qty, balance), A4 landscape via an injected `@page` rule; cell values are HTML-escaped. CSV/Excel unchanged. Not validated with tsc/lint/build per R0.
+
+### 2026-10-04 — Materials report: รับเข้า / จ่ายออก list tabs
+
+- Added a segmented control above the movement table in `material-traceability-view.tsx`: รายการทั้งหมด / รายการรับเข้า / รายการจ่ายออก (with `summary.receivingCount` / `disbursementCount`). It sets the existing `transactionType` URL filter (`RECEIVE` / `ISSUE`), so it stays in sync with the quick-bar dropdown and chip; no backend change. Not validated with tsc/lint/build per R0.
+
+### 2026-10-04 — Traceability "รายละเอียดการจ่ายออก" dialog redesigned
+
+- `DisbursementDetail` in `material-traceability-details.tsx`: hero (document no., date/type, status badge, 3 KPI cells: item count / requested / issued, meta grid of PO/ref/requested/approved/confirmed-by/at, red cancel banner), one card per material with FIFO allocations grouped by receiving lot (lot subtotal excludes reversed rows; reversed rows dimmed + struck through; box links still drill to SUB QR), Timeline moved into a collapsed `<details>`. Display-only; no data/API change. Not validated with tsc/lint/build per R0.
+
+### 2026-10-04 — Materials report: filtered view regrouped as Material → Lot with expandable sub-detail
+
+- `material-traceability-lot-flow.tsx` rewritten: header = material (code · name) with lot count / total received / issued / remaining; each lot (= one receiving) is a native `<details>` row (first one open) with received/issued/remaining in the summary and, expanded, the lot's boxes (SUB QR, current/initial qty, status) beside the disbursements that consumed it. `getMaterialLotFlow()` now also returns `material` and per-lot `boxes`. Flat movement table still follows below. Not validated with tsc/lint/build per R0.
+
+### 2026-10-04 — Materials report: receiving-lot → disbursement map when a material is filtered
+
+- With `?materialCode=` set, `page.tsx` also calls `getMaterialLotFlow()` (new, `lib/api/material-traceability.ts`): lists the material's RECEIVE movements (limit 200), then `traceReceiving()` for up to 30 distinct receivings in parallel, grouping each one's non-reversed `issueHistory` by disbursement (qty summed, boxes via package `lotDetailNo`). New `material-traceability-lot-flow.tsx` renders it above the movement table (receiving/disbursement numbers open the existing drill-down dialog). No backend change — there is no aggregate endpoint, so >30 receivings shows a truncation note; failures hide the panel silently. The movement table below already lists that material's receiving/disbursement rows. Not validated with tsc/lint/build per R0.
+
+### 2026-10-04 — Materials report: material select moved into the Advanced Filters drawer
+
+- `materialCode` is now an advanced-only key (`MATERIAL_TRACEABILITY_ADVANCED_ONLY_KEYS`; the quick bar keeps only `transactionType` + the result count). The drawer shows the `SearchableFilterSelect` (falls back to a plain text input when no material options are available); drawer "รีเซ็ต" now clears it too. Chip/URL param unchanged. Not validated with tsc/lint/build per R0.
+
+### 2026-10-04 — Materials report: material select is searchable and de-duplicated
+
+- Added `ui/searchable-filter-select.tsx` (`SearchableFilterSelect`): a select box with a type-to-filter input inside the popup, built on Radix DropdownMenu like `menu-icon-picker.tsx` (keydown stopped from reaching menu typeahead). Same `""` = no-filter contract as `FilterDropdown`; duplicate option values are rendered once. `materials-report/page.tsx` also dedupes materials by code before building options. Not validated with tsc/lint/build per R0.
+
+### 2026-10-04 — `/materials/materials-report`: material filter is now a select box
+
+- The quick bar's รหัสวัสดุ text search became a `FilterDropdown` ("code · name" options, value = `materialCode`, same URL param/chip as before). `page.tsx` loads the full material catalog via `loadProductMaterialCatalog` + `listMaterials` in parallel with the report; on failure/no `MATERIAL_VIEW` it returns `[]` and the filter falls back to the old text `SearchInput`. Options flow page → `MaterialTraceabilityView` → `MaterialTraceabilityFilters` as a `materialOptions` prop. Not validated with tsc/lint/build per R0.
+
+### 2026-10-04 — `/materials/materials-report`: numbered page buttons added to the pagination footer
+
+- `material-traceability-view.tsx` already had prev/next + page-size select; added numbered page buttons (first, last, current ±1, "…" for gaps; hidden below `sm:`) via a local `pageNumbers()` helper, with `aria-current="page"` on the active one. No backend/URL contract change (`?page=`/`?limit=` as before). Not validated with tsc/lint/build per R0.
+
 ### 2026-09-27 — Materials video manual: 11 of 13 episodes now have real recorded video, via Playwright
 
 - Extended `scripts/record-materials-guide.mjs` (+ `playwright`/`pg` devDependencies, `pnpm run guide:materials [episode|all]`) from a single proof-of-concept episode to 11: `overview`, `read`, `create`, `detail`, `update`, `deactivate`, `validation`, `receiving`, `disbursement`, `bom`, `stock`. Each drives the real running app end-to-end (real login, real clicks/typing, real backend mutations against the dev database) and records a genuine `.webm` via Playwright's native `recordVideo`, with narration/cursor/spotlight overlays drawn entirely in-page (no CDN). All 11 `videoConfig` entries in the HTML now point at `./videos/<episode>.webm` with `type:"webm"`.

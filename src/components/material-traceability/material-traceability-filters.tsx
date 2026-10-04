@@ -4,8 +4,7 @@ import * as React from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SearchInput } from "@/components/ui/search-input";
-import { FilterDropdown } from "@/components/ui/filter-dropdown";
+import { FilterDropdown, type FilterDropdownOption } from "@/components/ui/filter-dropdown";
 import { FilterChip } from "@/components/ui/filter-chip";
 import { MaterialTraceabilityAdvancedFilters } from "@/components/material-traceability/material-traceability-advanced-filters";
 import {
@@ -23,12 +22,17 @@ import {
 // URL immediately, a staged Advanced Filters drawer that commits everything
 // in one navigation, and a removable-chip row + "ล้างตัวกรองทั้งหมด" derived
 // from that same canonical state.
-export function MaterialTraceabilityFilters({ totalItems }: { totalItems: number }) {
+export function MaterialTraceabilityFilters({
+  totalItems,
+  materialOptions,
+}: {
+  totalItems: number;
+  materialOptions: FilterDropdownOption[];
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const filters = readMaterialTraceabilityFilters(searchParams);
-  const [materialCode, setMaterialCode] = React.useState(filters.materialCode);
 
   function updateParams(next: Partial<Record<keyof MaterialTraceabilityFilterState, string | null>>) {
     const params = new URLSearchParams(searchParams.toString());
@@ -40,14 +44,6 @@ export function MaterialTraceabilityFilters({ totalItems }: { totalItems: number
     router.push(`${pathname}?${params.toString()}`);
   }
 
-  React.useEffect(() => {
-    const timeout = setTimeout(() => {
-      if (materialCode !== filters.materialCode) updateParams({ materialCode: materialCode || null });
-    }, 300);
-    return () => clearTimeout(timeout);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [materialCode]);
-
   function applyAdvanced(next: MaterialTraceabilityFilterState) {
     const patch: Partial<Record<keyof MaterialTraceabilityFilterState, string | null>> = {};
     for (const key of MATERIAL_TRACEABILITY_ALL_FILTER_KEYS) {
@@ -57,7 +53,6 @@ export function MaterialTraceabilityFilters({ totalItems }: { totalItems: number
   }
 
   function clearAll() {
-    setMaterialCode("");
     const params = new URLSearchParams(searchParams.toString());
     [...MATERIAL_TRACEABILITY_ALL_FILTER_KEYS, "page"].forEach((key) => params.delete(key));
     router.push(`${pathname}?${params.toString()}`);
@@ -68,7 +63,6 @@ export function MaterialTraceabilityFilters({ totalItems }: { totalItems: number
       updateParams({ dateFrom: null, dateTo: null });
       return;
     }
-    if (key === "materialCode") setMaterialCode("");
     updateParams({ [key]: null });
   }
 
@@ -80,15 +74,7 @@ export function MaterialTraceabilityFilters({ totalItems }: { totalItems: number
     <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex min-w-0 flex-1 items-center gap-3">
-          <SearchInput
-            id="material-traceability-code"
-            value={materialCode}
-            onChange={setMaterialCode}
-            placeholder="ค้นหารหัสวัสดุ..."
-            srLabel="ค้นหาด้วยรหัสวัสดุ"
-            className="w-full sm:max-w-xs"
-          />
-          <span className="hidden shrink-0 whitespace-nowrap text-xs text-fg-muted sm:inline">
+          <span className="shrink-0 whitespace-nowrap text-xs text-fg-muted">
             พบ {totalItems.toLocaleString("th-TH")} รายการ
           </span>
         </div>
@@ -109,6 +95,7 @@ export function MaterialTraceabilityFilters({ totalItems }: { totalItems: number
           <MaterialTraceabilityAdvancedFilters
             filters={filters}
             advancedActiveCount={advancedActiveCount}
+            materialOptions={materialOptions}
             onApply={applyAdvanced}
           />
         </div>

@@ -141,51 +141,76 @@ ${summarySheet}${movementSheet}${receivingSheet}${disbursementSheet}${qrSheet}
 // click counts as a user gesture. `globals.css` already hides the rest of
 // the app shell (`#dashboard-shell`) under `@media print`, so this node just
 // needs to be marked visible-only-when-printing.
-function buildPrintContent(summary: MaterialTraceabilitySummary, items: MaterialTraceabilityMovement[]): string {
-  const rows = items
-    .map(
-      (r) => `<tr>
-        <td>${new Date(r.transactionDate).toLocaleString("th-TH")}</td>
-        <td>${TRANSACTION_TYPE_LABELS[r.transactionType]}</td>
-        <td>${r.material.code}</td>
-        <td>${r.internalLotNo ?? ""}</td>
-        <td>${r.mainQr?.code ?? ""}</td>
-        <td>${r.subQr?.code ?? ""}</td>
-        <td style="text-align:right">${r.quantityBefore}</td>
-        <td style="text-align:right">${r.movementQty}</td>
-        <td style="text-align:right">${r.quantityAfter}</td>
-      </tr>`
-    )
-    .join("");
+function htmlEscape(value: string | number | null | undefined): string {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
 
-  return `<div style="font-family: 'IBM Plex Sans Thai', Tahoma, sans-serif; padding: 24px; color: #172033;">
-  <h1 style="font-size: 18px; margin-bottom: 4px;">Material Receiving &amp; Disbursement Traceability Report</h1>
-  <p>Generated: ${new Date().toLocaleString("th-TH")}</p>
-  ${summary.hasMismatch ? '<p style="color:#DC2626;font-weight:600;">⚠ STOCK MISMATCH DETECTED</p>' : ""}
-  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:16px 0;font-size:12px;">
-    <div style="border:1px solid #E2E8F0;padding:6px 8px;border-radius:6px;">รับเข้า: ${summary.receivingCount}</div>
-    <div style="border:1px solid #E2E8F0;padding:6px 8px;border-radius:6px;">จ่ายออก: ${summary.disbursementCount}</div>
-    <div style="border:1px solid #E2E8F0;padding:6px 8px;border-radius:6px;">Total Received: ${summary.totalReceived}</div>
-    <div style="border:1px solid #E2E8F0;padding:6px 8px;border-radius:6px;">Total Issued: ${summary.totalIssued}</div>
-    <div style="border:1px solid #E2E8F0;padding:6px 8px;border-radius:6px;">Lot: ${summary.lotCount}</div>
-    <div style="border:1px solid #E2E8F0;padding:6px 8px;border-radius:6px;">MAIN QR: ${summary.mainQrCount}</div>
-    <div style="border:1px solid #E2E8F0;padding:6px 8px;border-radius:6px;">SUB QR: ${summary.subQrCount}</div>
-    <div style="border:1px solid #E2E8F0;padding:6px 8px;border-radius:6px;">Active/Exhausted: ${summary.activeQrCount}/${summary.exhaustedQrCount}</div>
+const PRINT_TH = "border:1px solid #CBD5E1;padding:4px 6px;background:#F1F5F9;text-align:left;font-weight:600;";
+const PRINT_TD = "border:1px solid #E2E8F0;padding:3px 6px;vertical-align:top;";
+
+function printSection(title: string, accent: string, rows: MaterialTraceabilityMovement[], docLabel: string): string {
+  if (rows.length === 0) return "";
+  const body = rows
+    .map((r) => {
+      const docNo = r.receiving?.no ?? r.disbursement?.no ?? r.referenceNo ?? "";
+      return `<tr>
+        <td style="${PRINT_TD}">${htmlEscape(new Date(r.transactionDate).toLocaleString("th-TH"))}</td>
+        <td style="${PRINT_TD}">${htmlEscape(docNo)}</td>
+        <td style="${PRINT_TD}">${htmlEscape(r.material.code)} · ${htmlEscape(r.material.name)}</td>
+        <td style="${PRINT_TD}">${htmlEscape(r.internalLotNo)}</td>
+        <td style="${PRINT_TD}">${htmlEscape(r.subQr?.code)}</td>
+        <td style="${PRINT_TD}text-align:right;">${htmlEscape(r.movementQty)} ${htmlEscape(r.unit)}</td>
+        <td style="${PRINT_TD}text-align:right;">${htmlEscape(r.quantityAfter)}</td>
+      </tr>`;
+    })
+    .join("");
+  return `<section style="margin-top:18px;">
+    <h2 style="font-size:13px;margin:0 0 6px;padding-left:8px;border-left:4px solid ${accent};">${title} (${rows.length})</h2>
+    <table style="width:100%;border-collapse:collapse;font-size:10.5px;">
+      <thead><tr>
+        <th style="${PRINT_TH}">วันที่/เวลา</th>
+        <th style="${PRINT_TH}">${docLabel}</th>
+        <th style="${PRINT_TH}">วัสดุ</th>
+        <th style="${PRINT_TH}">Internal Lot</th>
+        <th style="${PRINT_TH}">SUB QR</th>
+        <th style="${PRINT_TH}text-align:right;">จำนวน</th>
+        <th style="${PRINT_TH}text-align:right;">คงเหลือหลังรายการ</th>
+      </tr></thead>
+      <tbody>${body}</tbody>
+    </table>
+  </section>`;
+}
+
+// Print layout (redesigned): no page title/"generated" banner block — the
+// sheet opens straight on the KPI strip, then three separate tables
+// (รับเข้า / จ่ายออก / รายการอื่น) instead of one flat movement dump.
+function buildPrintContent(summary: MaterialTraceabilitySummary, items: MaterialTraceabilityMovement[]): string {
+  const received = items.filter((r) => r.transactionType === "RECEIVE");
+  const issued = items.filter((r) => r.transactionType === "ISSUE");
+  const others = items.filter((r) => r.transactionType !== "RECEIVE" && r.transactionType !== "ISSUE");
+  const kpi = (label: string, value: string | number) =>
+    `<div style="border:1px solid #E2E8F0;border-radius:6px;padding:6px 10px;">
+      <div style="font-size:9.5px;color:#64748B;">${label}</div>
+      <div style="font-size:14px;font-weight:600;">${htmlEscape(value)}</div>
+    </div>`;
+
+  return `<style>@page { size: A4 landscape; margin: 12mm; }</style>
+<div style="font-family: 'IBM Plex Sans Thai', Tahoma, sans-serif; color: #172033;">
+  ${summary.hasMismatch ? '<p style="color:#DC2626;font-weight:600;margin:0 0 10px;">⚠ STOCK MISMATCH DETECTED</p>' : ""}
+  <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;">
+    ${kpi("รับเข้า (รายการ)", summary.receivingCount)}
+    ${kpi("จ่ายออก (รายการ)", summary.disbursementCount)}
+    ${kpi("รับเข้ารวม", summary.totalReceived)}
+    ${kpi("จ่ายออกรวม", summary.totalIssued)}
+    ${kpi("คงเหลือ", summary.currentBalance)}
+    ${kpi("Lot / MAIN / SUB QR", `${summary.lotCount} / ${summary.mainQrCount} / ${summary.subQrCount}`)}
   </div>
-  <table style="width:100%;border-collapse:collapse;font-size:11px;">
-    <thead><tr>
-      <th style="border:1px solid #E2E8F0;padding:4px 6px;background:#F5F7FA;text-align:left;">Date/Time</th>
-      <th style="border:1px solid #E2E8F0;padding:4px 6px;background:#F5F7FA;text-align:left;">Type</th>
-      <th style="border:1px solid #E2E8F0;padding:4px 6px;background:#F5F7FA;text-align:left;">Material</th>
-      <th style="border:1px solid #E2E8F0;padding:4px 6px;background:#F5F7FA;text-align:left;">Internal Lot</th>
-      <th style="border:1px solid #E2E8F0;padding:4px 6px;background:#F5F7FA;text-align:left;">MAIN QR</th>
-      <th style="border:1px solid #E2E8F0;padding:4px 6px;background:#F5F7FA;text-align:left;">SUB QR</th>
-      <th style="border:1px solid #E2E8F0;padding:4px 6px;background:#F5F7FA;text-align:left;">Before</th>
-      <th style="border:1px solid #E2E8F0;padding:4px 6px;background:#F5F7FA;text-align:left;">Movement</th>
-      <th style="border:1px solid #E2E8F0;padding:4px 6px;background:#F5F7FA;text-align:left;">After</th>
-    </tr></thead>
-    <tbody>${rows}</tbody>
-  </table>
+  ${printSection("รายการรับเข้า", "#16A34A", received, "เลขที่รับเข้า")}
+  ${printSection("รายการจ่ายออก", "#1769D1", issued, "เลขที่จ่ายออก")}
+  ${printSection("รายการอื่น (ยกเลิก/ปรับปรุง/อื่นๆ)", "#F59E0B", others, "เอกสารอ้างอิง")}
 </div>`;
 }
 

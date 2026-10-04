@@ -5,7 +5,8 @@ import { Filter, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { FilterDropdown } from "@/components/ui/filter-dropdown";
+import { FilterDropdown, type FilterDropdownOption } from "@/components/ui/filter-dropdown";
+import { SearchableFilterSelect } from "@/components/ui/searchable-filter-select";
 import { Sheet, SheetClose, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
   MATERIAL_TRACEABILITY_FILTER_DEFAULTS,
@@ -22,7 +23,9 @@ export function MaterialTraceabilityAdvancedFilters({
   filters,
   advancedActiveCount,
   onApply,
+  materialOptions,
 }: {
+  materialOptions: FilterDropdownOption[];
   filters: MaterialTraceabilityFilterState;
   advancedActiveCount: number;
   onApply: (next: MaterialTraceabilityFilterState) => void;
@@ -98,6 +101,23 @@ export function MaterialTraceabilityAdvancedFilters({
             </div>
           </div>
 
+          {materialOptions.length > 0 ? (
+            <div className="space-y-1.5">
+              <Label>Material (รหัสวัสดุ)</Label>
+              <SearchableFilterSelect
+                label="วัสดุ"
+                value={draft.materialCode}
+                onChange={(value) => set("materialCode", value)}
+                options={materialOptions}
+                allLabel="วัสดุทั้งหมด"
+                placeholder="เลือกวัสดุ"
+                searchPlaceholder="พิมพ์รหัสหรือชื่อวัสดุ..."
+              />
+            </div>
+          ) : (
+            field("materialCode", "Material Code (รหัสวัสดุ)")
+          )}
+
           {field("materialName", "Material Name")}
 
           <div className="grid grid-cols-2 gap-3">
@@ -163,7 +183,6 @@ export function MaterialTraceabilityAdvancedFilters({
             onClick={() =>
               setDraft((prev) => ({
                 ...MATERIAL_TRACEABILITY_FILTER_DEFAULTS,
-                materialCode: prev.materialCode,
                 transactionType: prev.transactionType,
               }))
             }

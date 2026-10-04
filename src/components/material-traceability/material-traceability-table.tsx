@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { lotColor } from "@/lib/lot-colors";
 import { TRANSACTION_TYPE_LABELS } from "@/lib/filters/material-traceability-filters";
 import type { MaterialTraceabilityMovement, StockTransactionType } from "@/lib/api/material-traceability";
 
@@ -86,7 +87,18 @@ export function MaterialTraceabilityTable({
                   <div className="text-xs text-fg-muted">{row.material.name}</div>
                 </TableCell>
                 <TableCell className="whitespace-nowrap text-xs">
-                  <div className="font-mono text-fg-secondary">{row.internalLotNo ?? "—"}</div>
+                  <div className="flex items-center gap-1.5 font-mono text-fg-secondary">
+                    {row.internalLotNo ? (
+                      <span
+                        className={`inline-flex items-center gap-1.5 rounded-md px-1.5 py-0.5 ${lotColor(row.internalLotNo).soft} ${lotColor(row.internalLotNo).text}`}
+                      >
+                        <span aria-hidden className={`size-2 shrink-0 rounded-full ${lotColor(row.internalLotNo).bar}`} />
+                        {row.internalLotNo}
+                      </span>
+                    ) : (
+                      "—"
+                    )}
+                  </div>
                   <div className="text-fg-muted">{row.supplierLotNo ?? ""}</div>
                 </TableCell>
                 <TableCell>

@@ -1,7 +1,9 @@
 import { cookies } from "next/headers";
 import { ShieldAlert } from "lucide-react";
 import { getCurrentSession } from "@/lib/session";
-import { getMaterialTraceabilityReport } from "@/lib/api/material-traceability";
+import { getMaterialLotFlow, getMaterialTraceabilityReport } from "@/lib/api/material-traceability";
+import { listMaterials } from "@/lib/api/materials";
+import { loadProductMaterialCatalog } from "@/lib/product-materials";
 import { MaterialTraceabilityView } from "@/components/material-traceability/material-traceability-view";
 import { readMaterialTraceabilityFilters, filtersToParams } from "@/lib/filters/material-traceability-filters";
 
@@ -56,22 +58,42 @@ export default async function MaterialsReportPage({
   const store = await cookies();
   const accessToken = store.get("accessToken")!.value;
 
-  const report = await getMaterialTraceabilityReport(accessToken, {
-    ...filtersToParams(filters),
-    page,
-    limit,
-  });
+  // Material options for the select-box filter. Needs MATERIAL_VIEW; a viewer
+  // without it (or a failed lookup) gets an empty list and the filter bar falls
+  // back to the free-text code search.
+  const materialOptionsPromise = loadProductMaterialCatalog((p) =>
+    listMaterials(accessToken, { page: p, limit: 100, sortBy: "code", sortOrder: "asc" })
+  )
+    .then(({ diagramMaterials }) => {
+      // Dedupe by code — the filter value is the material code, so two rows
+      // sharing one code must not appear twice.
+      const byCode = new Map<string, { value: string; label: string }>();
+      for (const m of diagramMaterials) {
+        if (!byCode.has(m.code)) byCode.set(m.code, { value: m.code, label: `${m.code} · ${m.name}` });
+      }
+      return [...byCode.values()];
+    })
+    .catch(() => []);
+
+  // Lot-to-disbursement map only while a single material is filtered; a
+  // failed trace just hides the panel, it never breaks the report.
+  const lotFlowPromise = filters.materialCode
+    ? getMaterialLotFlow(accessToken, filters.materialCode).catch(() => null)
+    : Promise.resolve(null);
+
+  const [report, materialOptions, lotFlow] = await Promise.all([
+    getMaterialTraceabilityReport(accessToken, {
+      ...filtersToParams(filters),
+      page,
+      limit,
+    }),
+    materialOptionsPromise,
+    lotFlowPromise,
+  ]);
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-xl font-semibold text-fg">รายงานสอบกลับวัสดุ (Material Traceability)</h1>
-        <p className="mt-1 text-sm text-fg-muted">
-          สอบกลับได้ทั้งสองทิศทาง ตั้งแต่การรับเข้า Lot MAIN QR SUB QR จนถึงการจ่ายออกและปลายทาง — อ้างอิงจาก Stock Movement Ledger
-        </p>
-      </div>
-
-      <MaterialTraceabilityView report={report} />
+      <MaterialTraceabilityView report={report} materialOptions={materialOptions} lotFlow={lotFlow} />
     </div>
   );
 }
