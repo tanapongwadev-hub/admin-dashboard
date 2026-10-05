@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { OrdersTable } from "@/components/orders/order-table";
 
-export const metadata: Metadata = { title: "Orders" };
+export const metadata: Metadata = { title: "คำสั่งซื้อ" };
 
 export default function OrdersPage() {
   return (

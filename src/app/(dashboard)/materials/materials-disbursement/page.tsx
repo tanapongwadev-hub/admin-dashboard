@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { ShieldAlert } from "lucide-react";
 import { getCurrentSession } from "@/lib/session";
@@ -129,3 +130,5 @@ export default async function MaterialsDisbursementPage({
     </div>
   );
 }
+
+export const metadata: Metadata = { title: "จ่ายออกวัสดุ" };

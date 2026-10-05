@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { DashboardView } from "@/components/dashboard/dashboard-view";
 import { getCurrentSession } from "@/lib/session";
 
@@ -18,3 +19,5 @@ export default async function DashboardPage() {
 
   return <DashboardView greeting={`${shiftGreeting()}, ${firstName}`} />;
 }
+
+export const metadata: Metadata = { title: "แดชบอร์ด" };

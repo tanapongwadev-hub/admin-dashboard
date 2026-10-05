@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { ShieldAlert } from "lucide-react";
 import { MaterialsDashboardView } from "@/components/materials-dashboard/materials-dashboard-view";
@@ -84,3 +85,5 @@ export default async function MaterialsDashboardPage() {
     />
   );
 }
+
+export const metadata: Metadata = { title: "ภาพรวมวัตถุดิบ" };

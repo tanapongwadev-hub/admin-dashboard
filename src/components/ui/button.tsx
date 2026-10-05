@@ -12,10 +12,12 @@ const variants = {
 };
 
 const sizes = {
-  sm: "h-8 px-3 text-sm gap-1.5",
-  md: "h-9 px-4 text-sm gap-2",
+  // Coarse pointers (phones/tablets) get a 40-44px touch target; desktop keeps
+  // the compact sizes.
+  sm: "h-8 px-3 text-sm gap-1.5 pointer-coarse:h-10",
+  md: "h-9 px-4 text-sm gap-2 pointer-coarse:h-11",
   lg: "h-10 px-5 text-[15px] gap-2",
-  icon: "h-9 w-9",
+  icon: "h-9 w-9 pointer-coarse:h-11 pointer-coarse:w-11",
 };
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {

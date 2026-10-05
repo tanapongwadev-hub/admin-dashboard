@@ -959,6 +959,53 @@ Before writing any new route, component, data-layer file, or Server Action, chec
 
 ## Recent Changes
 
+### 2026-10-05 — Production Lot traceability Phase 1 (database + entities)
+
+- Team summary + UI mockups published: https://claude.ai/artifact/T6iFuQBeCQVQyvTHn1nhcB. Decisions are recorded at the top of the plan doc: the §0 defaults are accepted, except C8 is now **one lot per line / step / production date / shift** (output merges into the open lot; `output_closed_at` closes it). C13 keeps legacy orders as `tracking_model='PACKET'`, with no deletes.
+- cps-api migration `1790600000008-CreateProductionLotTraceability.ts` (run, revert and re-run verified) adds:
+  - New tables: `production_lots` (+ partial unique open bucket), `production_lot_sources`, `production_lot_origins`, `production_lot_counters`, `process_wip` (+ balance CHECK), `process_wip_origins`, `production_transactions` (+ idempotency unique index, sign CHECK), `production_transaction_origins`, `production_packages`, `production_package_sources`.
+  - DB triggers forbid DELETE on every lot-model table and UPDATE on ledger/lineage/package-composition tables.
+  - `process_steps.receiving_type` (INCOME-FG=FG, INCOME-STORE=STORE); `production_orders.tracking_model` (default 'PACKET' until Phase 2 switches it); line counters `produced_qty/received_qty/rejected_qty`.
+- Entities live in `src/modules/production/entities/*` and are registered by `ProductionModule` (no controllers yet).
+- Verified on the dev DB inside a rolled-back transaction: a duplicate open lot, remaining > produced, deleting a lot, unbalanced WIP, editing the ledger and a negative output are all rejected. tsc is clean; the API boots.
+- No API or UI change yet. Dev cleanup can no longer DELETE these tables; use a migration revert while they hold only test data.
+
+### 2026-10-05 — Production Lot & QR traceability: analysis + plan (no code yet)
+
+- Added `docs/plans/2026-10-05-production-lot-traceability-plan.md`: gap analysis vs. the packet/line-hold model built today, lot lineage design (ORIGIN/PROCESS/FG lots, many-to-many `production_lot_sources`, materialized origin composition on WIP/lot/package/transaction), PostgreSQL schema, NestJS API, concurrency strategy, a 10-phase plan, and a test plan. 13 conflicts (C1–C13) await user decisions before Phase 1. Read this plan before touching production-order, lot, WIP or QR code. It supersedes the per-step box QR design if approved.
+
+### 2026-10-05 — Production line hold: QR only from real output
+
+- Placing an order no longer pre-creates boxes/QR. The whole plan quantity is **on hold at the first workflow step**. Real output is recorded at the first step via "บันทึกผลผลิต" (`POST /production-orders/lines/:lineId/output {quantity, workDate?, shift?, remark?}`, needs `PRODUCTION_ORDER_ADVANCE`). The quantity cannot exceed the hold (409). It is split into full boxes of `packingQuantity` plus one partial remainder box (`unitType` FULL/PARTIAL), each with a QR, and handed over to step 2. Boxes then advance one at a time as before. The rest stays on hold for later days.
+- "ปิดยอดค้าง" (`POST .../lines/:lineId/close-remaining {reason}`) closes the remaining hold with a reason. The plan quantity is kept; `shortClosedQuantity`/reason/at/by are stored on the line, plus an audit event. An order completes only when every box is COMPLETED **and** produced + closed = plan, via shared `refreshOrderStatus()`.
+- cps-api migration `1790600000006-ProductionOrderLineHold.ts` (additive) adds `inventory.production_order_outputs`, `unit_type` + `production_order_output_id` on packets, and short-close columns on lines. Existing packets are tagged FULL/PARTIAL by quantity, count as produced, and keep their timeline. Audit events `production_order.output_recorded` and `production_order.remaining_closed` are new. Output `work_date` defaults to Bangkok today, and future dates are rejected.
+- Dashboard: new `components/production-orders/production-order-line-hold.tsx` adds plan/produced/closed/hold stats, the output form with a live box-split preview, the close-remaining form, and per-day output history with reprint per output. The detail page appends the new boxes locally (no `revalidatePath`, same reason as advance). Step progress is now shown in pieces including hold, with a "กล่องเศษ" badge. The orders list shows produced/plan pieces.
+- **Same-day follow-up — hold at every step, not just the first**: the user clarified that work held on the line must still go through the workflow at every step. `POST /production-orders/packets/:id/advance` now takes an optional `{quantity}` (`dto/advance-packet.dto.ts`). Without it, or with the full box quantity, the whole box moves as before. With less, only that many pieces were produced at this step: they are split into a new box with a new QR, the next `packetNo`, and `parent_packet_id` → the source box. The new box copies the parent's timeline and moves to the next step. The remainder keeps the original QR and stays held at the current step (FULL/PARTIAL re-derived). Audit event: `production_order.packet_split`. Migration `1790600000007-AddProductionOrderPacketParent.ts` (additive) has been run. Dashboard: each card has "ส่งต่อบางส่วน" (only when quantity > 1) opening `PartialAdvanceForm` with a live "new box N / remains M" hint; the result appends the new box locally, a toast offers "พิมพ์ QR" for just that box (`PrintSheet` now takes an `include` predicate), and split boxes show "แยกจากกล่อง N".
+- Not done yet: NG/scrap recording, merging partial boxes, and output reversal. Live output/close calls have not been exercised: no plan is ready to order, so this was not tested on dev data. Only typecheck/lint, the migration, the API route (401 without a token), and rendering of the existing order were checked.
+
+### 2026-10-05 — Workflow timeline per packet + "ไปขั้นตอนถัดไป" performance
+
+- **Timeline**: cps-api table `inventory.production_order_packet_events` (migration `1790600000004`, backfilled) logs every step change (`from_step_index` null = created). `GET /production-orders/:id` returns `packet.timeline[]` (with performer name). Detail page shows a per-line `StepProgress` (packets per step + % done) and a per-packet "ดู timeline" (`PacketTimeline`: done/current/waiting, start/finish time, who).
+- **Advance was ~2.8s per click** (measured from API logs): the endpoint returned the whole order via `findOne` (all packets + regenerating every QR), and the Server Action's `revalidatePath` made the page re-fetch the whole order again plus `/auth/me`. DB queries themselves were 0.1–2ms (EXPLAIN ANALYZE). Fixes: `advancePacket` returns only `{orderStatus, packetCount, completedPacketCount, packet}`; the action no longer revalidates and the page patches that one packet in state; QR SVGs are cached in-process (bounded 20k) so a warm detail load went ~1.0–1.4s → ~0.35s; migration `1790600000005` ANALYZEs the four production-order tables (they had no stats, planner assumed 2 rows).
+- **Clock bug found & fixed**: DB-default timestamps are Asia/Bangkok wall-clock while app-written JS Dates are UTC wall-clock (both `timestamp` without tz). Backfilled "created" events were 7h ahead ("started" after "finished"). Migration `1790600000005` converts them; `performed_at` has no default and is always written by the service. Other tables still mix the two conventions (e.g. `created_at` vs `step_updated_at`) — app-wide issue, not fixed here.
+- Rule: in a Server Action that changes one row of a large page, don't `revalidatePath` the current page — return the delta and patch client state.
+
+### 2026-10-05 — Production order detail is a page, not a dialog
+
+- New route `/products/process-orders/[id]` (server: `PRODUCTION_ORDER_VIEW` gate, `getProductionOrder`, 404 on unknown id, back link) rendering client `components/production-orders/production-order-detail.tsx` (scan/search box, status filter, 24-per-page, advance, print QR). List "รายละเอียด" is now a `Link`; the old `production-order-details-button.tsx` dialog moved to `%TEMP%`. Product column on the list has `min-w-[14rem]`. tsc/eslint clean; browser-verified.
+
+### 2026-10-05 — Pre-release QA fixes (audit items 1–17)
+
+- **No more fake success**: `/settings` is now a read-only account page from the session (old `components/settings/*` moved to `%TEMP%`); `/register` redirects to `/login` (internal system); `/forgot-password` explains to contact an admin; auth layout testimonial/"Panel, Inc." replaced with CPS copy; user menu trimmed to "บัญชีของฉัน" + logout.
+- `/dashboard` shows a "ข้อมูลตัวอย่าง" note (data is still `lib/dashboard-data.ts` mock) linking to `/materials`.
+- New `/master-data/organizations` (descriptor recipe over existing cps-api `/organizations`, ORGANIZATION_* perms, hub card).
+- Production order dialog: QR now SVG data-URL (cps-api, ~15x faster), packet search/scan-to-advance box, status filter (default กำลังผลิต), 24-per-page "แสดงเพิ่ม". Ready tab summary states both counts.
+- Contrast: new `--{success,warning,danger,info}-fg` tokens (`text-*-fg`) used by `Badge` and dashboard pills; `.on-navy` sets `--ring: #93C5FD`. Badge is `whitespace-nowrap`.
+- Metadata: root title/description → CPS, `%s · CPS`, `app/icon.png` (CCI logo) replaces the default favicon, titles on 13 more pages + `login/layout.tsx` (also redirects signed-in users to `/dashboard`).
+- `loading.tsx` (shared `components/layout/list-page-skeleton.tsx`) for products, production/plans, menus, audit-logs; catch-all `[...rest]` 404s unless the path is a real menu item.
+- Buttons get 40–44px height on `pointer-coarse`; skip link "ข้ามไปเนื้อหาหลัก" → `#main-content`; topbar breadcrumb no longer wraps (prefix only at `xl`); Thai labels for audit log / packet column; sr-only h1 on materials-report; cps-api migration `1790600000003` renames menu "MAster Data" → "ข้อมูลหลัก".
+- Verified: tsc clean, eslint 0 errors, `pnpm test` 408/408, cps-api `nest build` + migration; browser-checked each fix. `pnpm build` not run (dev server running).
+
 ### 2026-10-05 — Sidebar: only one menu row is "active" at a time
 
 - `sidebar-nav.tsx` previously marked every node whose href prefix-matched the route, so `/products/process-orders` highlighted both "จัดการสินค้า" (`/products`) and its child. New `findActiveId()` picks the single most specific node (longest matching href; ties → the row the user just clicked (`clickedId` state in `SidebarNav`), else shallowest/first, so `BOMS` sharing `/products` highlights when clicked and never duplicates the parent; a fresh load of `/products` highlights the parent); parents of the active node still auto-expand via `activeChainIds`. tsc/eslint clean.

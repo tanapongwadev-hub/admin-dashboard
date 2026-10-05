@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Download, RefreshCw, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -47,6 +48,18 @@ export function DashboardHeader({
       <div className="min-w-0">
         <h1 className="text-2xl font-semibold leading-tight tracking-[-0.02em] text-fg">แดชบอร์ด</h1>
         <p className="mt-1 text-sm text-fg-muted">{greeting} · ภาพรวมความเคลื่อนไหวบนพื้นโรงงานวันนี้</p>
+        {/* Every number on this page comes from lib/dashboard-data.ts (mock),
+            not cps-api. Say so plainly until it is wired to real data. */}
+        <p
+          role="note"
+          className="mt-3 inline-flex flex-wrap items-center gap-x-1.5 rounded-md border border-warning/40 bg-warning-soft px-3 py-2 text-[13px] text-warning-fg"
+        >
+          <span className="font-semibold">ข้อมูลตัวอย่าง:</span>
+          ตัวเลขในหน้านี้ยังไม่เชื่อมกับข้อมูลจริง ดูสต็อกจริงได้ที่
+          <Link href="/materials" className="font-semibold underline underline-offset-2">
+            ภาพรวมวัตถุดิบ
+          </Link>
+        </p>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -54,8 +67,8 @@ export function DashboardHeader({
           className={cn(
             "inline-flex h-9 shrink-0 items-center gap-2 rounded-md border px-3 text-[12px] font-medium",
             needsAttention
-              ? "border-warning/30 bg-warning-soft text-warning"
-              : "border-success/30 bg-success-soft text-success"
+              ? "border-warning/30 bg-warning-soft text-warning-fg"
+              : "border-success/30 bg-success-soft text-success-fg"
           )}
         >
           <span className="relative flex size-1.5" aria-hidden="true">
@@ -76,7 +89,8 @@ export function DashboardHeader({
           </label>
           <Select value={range} onValueChange={(next) => onRangeChange(next as TrendRange)}>
             <SelectTrigger id="dashboard-range" className="text-[13px]">
-              <SelectValue />
+              {/* Explicit label so SSR (before Radix mounts the items) is not blank. */}
+              <SelectValue>{TREND_RANGE_OPTIONS.find((o) => o.value === range)?.label}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               {TREND_RANGE_OPTIONS.map((option) => (

@@ -4,10 +4,10 @@ import { cn } from "@/lib/utils";
 const variants = {
   neutral: "bg-surface-2 text-fg-secondary border-border",
   primary: "bg-primary-soft text-primary border-transparent",
-  success: "bg-success-soft text-success border-transparent",
-  warning: "bg-warning-soft text-warning border-transparent",
-  danger: "bg-danger-soft text-danger border-transparent",
-  info: "bg-info-soft text-info border-transparent",
+  success: "bg-success-soft text-success-fg border-transparent",
+  warning: "bg-warning-soft text-warning-fg border-transparent",
+  danger: "bg-danger-soft text-danger-fg border-transparent",
+  info: "bg-info-soft text-info-fg border-transparent",
   outline: "bg-transparent text-fg-secondary border-border-strong",
 };
 
@@ -20,7 +20,7 @@ export function Badge({ className, variant = "neutral", dot, children, ...props 
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs font-medium",
+        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-md border px-2 py-0.5 text-xs font-medium",
         variants[variant],
         className
       )}

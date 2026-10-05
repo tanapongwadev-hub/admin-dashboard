@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { ShieldAlert } from "lucide-react";
 import { MaterialJobOrderClient } from "@/components/material-job-orders/job-order-client";
@@ -79,3 +80,5 @@ export default async function MaterialJobOrdersPage({
     </div>
   );
 }
+
+export const metadata: Metadata = { title: "ใบจัดงาน" };

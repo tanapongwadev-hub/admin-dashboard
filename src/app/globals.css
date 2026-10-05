@@ -39,6 +39,13 @@
   --danger-soft: #FDEAEA;
   --info: #0EA5E9;
   --info-soft: #E3F4FC;
+  /* Darker status text for use ON the matching -soft background (badges,
+     pills). The base status colors are tuned for icons/borders and fail
+     WCAG AA 4.5:1 as small text on their own soft tints. */
+  --success-fg: #166534;
+  --warning-fg: #92400E;
+  --danger-fg: #B91C1C;
+  --info-fg: #0369A1;
 
   --chart-1: #1769D1;
   --chart-2: #16A34A;
@@ -93,6 +100,8 @@
      white, not white-on-navy. */
   --primary: #4C9AEF;
   --primary-soft: rgba(76, 154, 239, 0.18);
+  /* Focus ring must reach 3:1 against navy (base #1769D1 is only 2.8:1). */
+  --ring: #93C5FD;
   color-scheme: dark;
 }
 
@@ -115,6 +124,10 @@
   --color-navy-dark: var(--navy-dark);
 
   --color-success: var(--success);
+  --color-success-fg: var(--success-fg);
+  --color-warning-fg: var(--warning-fg);
+  --color-danger-fg: var(--danger-fg);
+  --color-info-fg: var(--info-fg);
   --color-success-soft: var(--success-soft);
   --color-warning: var(--warning);
   --color-warning-soft: var(--warning-soft);

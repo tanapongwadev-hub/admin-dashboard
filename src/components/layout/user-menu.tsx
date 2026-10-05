@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LogOut, Settings, User, CreditCard, LifeBuoy } from "lucide-react";
+import { LogOut, User } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -64,16 +64,7 @@ export function UserMenu({
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link href="/settings"><User className="h-4 w-4" /> โปรไฟล์</Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link href="/settings?tab=billing"><CreditCard className="h-4 w-4" /> การเรียกเก็บเงิน</Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link href="/settings"><Settings className="h-4 w-4" /> ตั้งค่า</Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem>
-          <LifeBuoy className="h-4 w-4" /> ฝ่ายสนับสนุน
+          <Link href="/settings"><User className="h-4 w-4" /> บัญชีของฉัน</Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem destructive disabled={loggingOut} onSelect={handleLogout}>

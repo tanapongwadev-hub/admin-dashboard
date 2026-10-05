@@ -22,6 +22,13 @@ export function DashboardShell({
   return (
     <TooltipProvider delayDuration={200}>
       <div id="dashboard-shell" className="flex h-dvh gap-2 overflow-hidden bg-bg p-2 sm:gap-3 sm:p-3 lg:gap-4 lg:p-4">
+        {/* Keyboard users skip the ~20-item sidebar straight to the page. */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-fg"
+        >
+          ข้ามไปเนื้อหาหลัก
+        </a>
         <Sidebar
           collapsed={collapsed}
           user={user}
@@ -36,7 +43,7 @@ export function DashboardShell({
             collapsed={collapsed}
             onToggleCollapsed={() => setCollapsed((v) => !v)}
           />
-          <main className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain rounded-xl border border-border bg-surface [scrollbar-gutter:stable] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <main id="main-content" tabIndex={-1} className="min-h-0 focus:outline-none flex-1 overflow-y-auto overscroll-y-contain rounded-xl border border-border bg-surface [scrollbar-gutter:stable] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <div className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">{children}</div>
           </main>
         </div>

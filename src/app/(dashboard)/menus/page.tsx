@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { ShieldAlert } from "lucide-react";
 import { getCurrentSession } from "@/lib/session";
@@ -44,3 +45,5 @@ export default async function MenuManagementPage() {
     </div>
   );
 }
+
+export const metadata: Metadata = { title: "จัดการเมนู" };

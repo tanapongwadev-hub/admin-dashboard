@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { ShieldAlert } from "lucide-react";
 import { ProductionPlanClient } from "@/components/production-plans/production-plan-client";
@@ -84,3 +85,5 @@ export default async function ProductionPlansPage({
     </div>
   );
 }
+
+export const metadata: Metadata = { title: "แผนการผลิต" };

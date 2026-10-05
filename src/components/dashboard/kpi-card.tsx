@@ -15,8 +15,8 @@ export interface KpiDelta {
 }
 
 const SENTIMENT_CLASS: Record<KpiSentiment, string> = {
-  positive: "bg-success-soft text-success",
-  negative: "bg-danger-soft text-danger",
+  positive: "bg-success-soft text-success-fg",
+  negative: "bg-danger-soft text-danger-fg",
   neutral: "bg-surface-2 text-fg-secondary",
 };
 
@@ -109,7 +109,7 @@ export function KpiCard({
         <span
           className={cn(
             "flex size-8 shrink-0 items-center justify-center rounded-lg",
-            alert ? "bg-warning-soft text-warning" : "bg-surface-2 text-fg-secondary"
+            alert ? "bg-warning-soft text-warning-fg" : "bg-surface-2 text-fg-secondary"
           )}
           aria-hidden="true"
         >

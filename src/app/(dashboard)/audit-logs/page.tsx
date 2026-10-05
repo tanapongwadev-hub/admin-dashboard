@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { ShieldAlert } from "lucide-react";
 import { AuditLogsView } from "@/components/audit-logs/audit-logs-view";
@@ -21,7 +22,7 @@ export default async function AuditLogsPage({
         <ShieldAlert className="size-8 text-fg-muted" />
         <p className="text-lg font-semibold text-fg">ต้องใช้สิทธิ์ Super Admin</p>
         <p className="max-w-sm text-sm text-fg-muted">
-          Activity Log อาจมีข้อมูลการดำเนินงานที่ละเอียดอ่อน จึงเปิดดูได้เฉพาะบัญชี Super Admin เท่านั้น
+          บันทึกการใช้งานอาจมีข้อมูลการดำเนินงานที่ละเอียดอ่อน จึงเปิดดูได้เฉพาะบัญชี Super Admin เท่านั้น
         </p>
       </div>
     );
@@ -39,7 +40,7 @@ export default async function AuditLogsPage({
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-xl font-semibold text-fg">Activity Log</h1>
+        <h1 className="text-xl font-semibold text-fg">บันทึกการใช้งาน</h1>
         <p className="mt-1 text-sm text-fg-muted">
           ตรวจสอบเหตุการณ์ที่ระบบบันทึกไว้ พร้อมผู้ดำเนินการ เป้าหมาย และผลลัพธ์ของแต่ละรายการ
         </p>
@@ -48,3 +49,5 @@ export default async function AuditLogsPage({
     </div>
   );
 }
+
+export const metadata: Metadata = { title: "บันทึกการใช้งาน" };

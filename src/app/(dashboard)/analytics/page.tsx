@@ -8,7 +8,7 @@ import { TrafficChart } from "@/components/dashboard/traffic-chart";
 import { CategoryChart } from "@/components/dashboard/category-chart";
 import { ConversionFunnel } from "@/components/dashboard/conversion-funnel";
 
-export const metadata: Metadata = { title: "Analytics" };
+export const metadata: Metadata = { title: "การวิเคราะห์" };
 
 export default function AnalyticsPage() {
   return (

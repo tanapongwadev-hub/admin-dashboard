@@ -90,14 +90,14 @@ export function Topbar({
         </SheetContent>
       </Sheet>
 
-      <div className="hidden items-center gap-1.5 text-sm text-fg-muted lg:flex">
-        <span>แผงควบคุม</span>
-        <span>/</span>
-        <span className="font-medium text-fg">{crumb}</span>
+      <div className="hidden min-w-0 flex-1 items-center gap-1.5 whitespace-nowrap text-sm text-fg-muted lg:flex">
+        <span className="hidden shrink-0 xl:inline">แผงควบคุม</span>
+        <span className="hidden shrink-0 xl:inline">/</span>
+        <span className="min-w-[5rem] truncate font-medium text-fg" title={crumb}>{crumb}</span>
       </div>
 
       <div className="ml-auto flex flex-1 items-center justify-end gap-2 sm:flex-none">
-        <div className="hidden sm:block sm:w-64 md:w-80">
+        <div className="hidden sm:block sm:w-64 md:w-72 lg:w-60 xl:w-80">
           <CommandPalette />
         </div>
         <Button variant="ghost" size="icon" className="text-fg-secondary sm:hidden" aria-label="ค้นหา">

@@ -138,7 +138,7 @@ export function AuditLogsView({ auditLogs }: { auditLogs: PaginatedAuditLogs }) 
 
       {auditLogs.items.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border py-16 text-center">
-          <p className="font-medium text-fg">ไม่พบ Activity Log</p>
+          <p className="font-medium text-fg">ไม่พบบันทึกการใช้งาน</p>
           <p className="mt-1 text-sm text-fg-muted">
             {hasFilters ? "ลองล้างหรือปรับเงื่อนไขการกรอง" : "เหตุการณ์ที่บันทึกแล้วจะแสดงในหน้านี้"}
           </p>

@@ -1,4 +1,8 @@
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { Construction } from "lucide-react";
+import { flattenMenus, menuHref } from "@/lib/nav";
+import { getCurrentSession } from "@/lib/session";
 
 // Catch-all for real, permission-granted menu items (from cps-api's menu
 // tree) that don't have a page built yet — keeps the dashboard chrome
@@ -12,6 +16,13 @@ export default async function DashboardCatchAllPage({
 }) {
   const { rest } = await params;
   const path = `/${rest.join("/")}`;
+  // Only a path that really is one of the viewer's menu items gets the
+  // "not built yet" message; any other unknown URL is a plain 404.
+  const session = await getCurrentSession();
+  const isMenuPath = flattenMenus(session?.menus ?? []).some(
+    (m) => m.path && menuHref(m.path) === path,
+  );
+  if (!isMenuPath) notFound();
 
   return (
     <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border py-24 text-center">
@@ -24,3 +35,6 @@ export default async function DashboardCatchAllPage({
     </div>
   );
 }
+
+// Shared by the 404 branch (notFound) and the rare "menu not built" branch.
+export const metadata: Metadata = { title: "ไม่พบหน้า" };

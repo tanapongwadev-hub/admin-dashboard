@@ -5,9 +5,15 @@ import { revalidatePath } from "next/cache";
 import { ApiError } from "@/lib/api/client";
 import {
   advanceProductionOrderPacket,
+  closeProductionOrderRemaining,
   createProductionOrder,
   getProductionOrder,
+  recordProductionOrderOutput,
+  type AdvancePacketResult,
+  type CloseRemainingResult,
   type ProductionOrderDetail,
+  type RecordOutputPayload,
+  type RecordOutputResult,
 } from "@/lib/api/production-orders";
 import {
   redirectIfSessionExpired,
@@ -53,17 +59,85 @@ export async function performCreateProductionOrder(
   }
 }
 
+export type AdvancePacketActionResult =
+  | { status: "success"; result: AdvancePacketResult }
+  | { status: "error"; message: string };
+
+// Deliberately no revalidatePath: in a Server Action it makes the router
+// re-render the current page, i.e. re-fetch the whole order (hundreds of
+// packets + QR images) after every scan. The detail page patches the one
+// packet locally instead; the list pages are dynamic and re-fetch on visit.
 export async function performAdvanceProductionOrderPacket(
   accessToken: string,
   packetId: string,
-): Promise<ProductionOrderActionResult> {
+  quantity?: number,
+): Promise<AdvancePacketActionResult> {
   try {
-    const order = await advanceProductionOrderPacket(accessToken, packetId);
-    revalidateOrderPaths();
-    return { status: "success", order };
+    return {
+      status: "success",
+      result: await advanceProductionOrderPacket(accessToken, packetId, quantity),
+    };
   } catch (err) {
     return errorResult(err);
   }
+}
+
+// Same reasoning as advance: no revalidatePath, the detail page appends the
+// new boxes / patches the line counters locally.
+export type RecordOutputActionResult =
+  | { status: "success"; result: RecordOutputResult }
+  | { status: "error"; message: string };
+
+export async function performRecordProductionOrderOutput(
+  accessToken: string,
+  lineId: string,
+  payload: RecordOutputPayload,
+): Promise<RecordOutputActionResult> {
+  try {
+    return {
+      status: "success",
+      result: await recordProductionOrderOutput(accessToken, lineId, payload),
+    };
+  } catch (err) {
+    return errorResult(err);
+  }
+}
+
+export type CloseRemainingActionResult =
+  | { status: "success"; result: CloseRemainingResult }
+  | { status: "error"; message: string };
+
+export async function performCloseProductionOrderRemaining(
+  accessToken: string,
+  lineId: string,
+  reason: string,
+): Promise<CloseRemainingActionResult> {
+  try {
+    return {
+      status: "success",
+      result: await closeProductionOrderRemaining(accessToken, lineId, reason),
+    };
+  } catch (err) {
+    return errorResult(err);
+  }
+}
+
+export async function recordProductionOrderOutputAction(
+  lineId: string,
+  payload: RecordOutputPayload,
+) {
+  const token = await requireAccessToken();
+  if (!token) return redirectMissingSession();
+  return performRecordProductionOrderOutput(token, lineId, payload);
+}
+
+export async function closeProductionOrderRemainingAction(
+  lineId: string,
+  reason: string,
+) {
+  const token = await requireAccessToken();
+  if (!token) return redirectMissingSession();
+  return performCloseProductionOrderRemaining(token, lineId, reason);
 }
 
 export async function performGetProductionOrder(
@@ -83,10 +157,13 @@ export async function createProductionOrderAction(productionPlanId: string) {
   return performCreateProductionOrder(token, productionPlanId);
 }
 
-export async function advanceProductionOrderPacketAction(packetId: string) {
+export async function advanceProductionOrderPacketAction(
+  packetId: string,
+  quantity?: number,
+) {
   const token = await requireAccessToken();
   if (!token) return redirectMissingSession();
-  return performAdvanceProductionOrderPacket(token, packetId);
+  return performAdvanceProductionOrderPacket(token, packetId, quantity);
 }
 
 export async function getProductionOrderAction(id: string) {

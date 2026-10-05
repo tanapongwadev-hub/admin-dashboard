@@ -23,10 +23,11 @@ const plexSansThai = IBM_Plex_Sans_Thai({
 
 export const metadata: Metadata = {
   title: {
-    default: "Panel — แดชบอร์ดผู้ดูแลระบบ",
-    template: "%s · Panel",
+    default: "CPS — ระบบควบคุมวัตถุดิบและการผลิต",
+    template: "%s · CPS",
   },
-  description: "เทมเพลตแดชบอร์ดผู้ดูแลระบบที่สร้างด้วย Next.js 16",
+  description:
+    "CPS (Chiewchan Production System) ระบบภายในของ Chiewchan Industry สำหรับรับเข้า จ่ายออกวัตถุดิบ วางแผนและติดตามการผลิต",
 };
 
 // Single fixed Navy Enterprise theme, no light/dark toggle (see AGENTS.md

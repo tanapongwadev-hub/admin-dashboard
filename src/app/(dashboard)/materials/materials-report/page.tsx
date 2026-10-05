@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { ShieldAlert } from "lucide-react";
 import { getCurrentSession } from "@/lib/session";
@@ -93,7 +94,12 @@ export default async function MaterialsReportPage({
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Visual header was removed on request (topbar names the page); keep
+          a real h1 for screen readers and heading navigation. */}
+      <h1 className="sr-only">รายงานวัสดุคงคลัง</h1>
       <MaterialTraceabilityView report={report} materialOptions={materialOptions} lotFlow={lotFlow} />
     </div>
   );
 }
+
+export const metadata: Metadata = { title: "รายงานวัสดุคงคลัง" };

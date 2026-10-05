@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { UsersTable } from "@/components/users/user-table";
 
-export const metadata: Metadata = { title: "Users" };
+export const metadata: Metadata = { title: "ผู้ใช้งาน" };
 
 export default async function UsersPage({
   searchParams,

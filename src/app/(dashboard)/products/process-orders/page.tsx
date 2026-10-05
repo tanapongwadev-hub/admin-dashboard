@@ -1,10 +1,12 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { cookies } from "next/headers";
-import { ShieldAlert, Workflow } from "lucide-react";
+import { Eye, ShieldAlert, Workflow } from "lucide-react";
 import { CreateOrderButton } from "@/components/production-orders/create-order-button";
-import { ProductionOrderDetailsButton } from "@/components/production-orders/production-order-details-button";
 import { ProcessOrderRowActions } from "@/components/production-plans/process-order-row-actions";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -26,8 +28,8 @@ type Tab = "ready" | "orders";
  * การสั่งผลิตตามกระบวนการ
  *  - tab "ready"  : plans whose Job Order is fully issued (จ่ายออกครบแล้ว) and
  *                   that have no production order yet — has the "สั่งผลิต" button.
- *  - tab "orders" : production orders already placed, with per-packet QR codes
- *                   and the workflow step each packet is currently at.
+ *  - tab "orders" : production orders already placed; boxes + QR are created
+ *                   only when real output is recorded (line hold).
  */
 export default async function ProductProcessOrdersPage({
   searchParams,
@@ -70,6 +72,9 @@ export default async function ProductProcessOrdersPage({
 
   let body: React.ReactNode;
   let meta = { totalPages: 1, totalItems: 0 };
+  // Ready tab: plans are paged by the plan API, then already-ordered plans
+  // are removed, so the page summary states both numbers explicitly.
+  let summary = "";
 
   if (tab === "ready") {
     const list = await listProductionPlans(accessToken, {
@@ -90,6 +95,7 @@ export default async function ProductProcessOrdersPage({
     const orderedPlanIds = new Set(ordered.items.map((o) => o.productionPlanId));
     const plans = issued.filter((p) => !orderedPlanIds.has(p.id));
     meta = list.meta;
+    summary = `รอสั่งผลิต ${plans.length} รายการในหน้านี้ (จากแผนที่จ่ายวัตถุดิบครบ ${list.meta.totalItems} แผน)`;
 
     body =
       plans.length === 0 ? (
@@ -116,14 +122,14 @@ export default async function ProductProcessOrdersPage({
               {plans.map((plan) => (
                 <TableRow key={plan.id}>
                   <TableCell>
-                    <p className="font-mono text-sm font-medium text-fg">
+                    <p className="whitespace-nowrap font-mono text-sm font-medium text-fg">
                       {plan.code}
                     </p>
                     {plan.title && (
                       <p className="text-xs text-fg-muted">{plan.title}</p>
                     )}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="min-w-[14rem]">
                     <ul className="flex flex-col gap-0.5 text-sm">
                       {plan.lines.map((line) => (
                         <li key={line.id}>
@@ -196,13 +202,12 @@ export default async function ProductProcessOrdersPage({
       search,
     });
     meta = list.meta;
-    const canAdvance = can("PRODUCTION_ORDER_ADVANCE");
 
     body =
       list.items.length === 0 ? (
         <EmptyState
           title="ยังไม่มีใบสั่งผลิต"
-          hint="กด “สั่งผลิต” ในแท็บ รอสั่งผลิต เพื่อสร้างใบสั่งผลิตและ QR Code ของแต่ละ packet"
+          hint="กด “สั่งผลิต” ในแท็บ รอสั่งผลิต เพื่อสร้างใบสั่งผลิต แล้วบันทึกผลผลิตจริงเพื่อสร้างกล่องและ QR"
         />
       ) : (
         <div className="overflow-x-auto rounded-xl border border-border bg-surface">
@@ -211,7 +216,7 @@ export default async function ProductProcessOrdersPage({
               <TableRow>
                 <TableHead>ใบสั่งผลิต</TableHead>
                 <TableHead>สินค้า</TableHead>
-                <TableHead className="text-right">Packet</TableHead>
+                <TableHead className="text-right">ผลิตแล้ว / แผน (ชิ้น)</TableHead>
                 <TableHead>สถานะ</TableHead>
                 <TableHead>สั่งผลิตเมื่อ</TableHead>
                 <TableHead className="text-right">
@@ -223,14 +228,14 @@ export default async function ProductProcessOrdersPage({
               {list.items.map((order) => (
                 <TableRow key={order.id}>
                   <TableCell>
-                    <p className="font-mono text-sm font-medium text-fg">
+                    <p className="whitespace-nowrap font-mono text-sm font-medium text-fg">
                       {order.code}
                     </p>
                     <p className="text-xs text-fg-muted">
                       แผน {order.planCode ?? "—"}
                     </p>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="min-w-[14rem]">
                     <ul className="flex flex-col gap-0.5 text-sm">
                       {order.lines.map((line) => (
                         <li key={line.id}>
@@ -246,7 +251,11 @@ export default async function ProductProcessOrdersPage({
                     </ul>
                   </TableCell>
                   <TableCell className="text-right text-sm tabular-nums">
-                    {order.completedPacketCount}/{order.packetCount}
+                    {formatNumber(order.lines.reduce((s, l) => s + l.producedQuantity, 0))}/
+                    {formatNumber(order.lines.reduce((s, l) => s + l.quantity, 0))}
+                    <p className="text-xs text-fg-muted">
+                      กล่องเสร็จ {order.completedPacketCount}/{order.packetCount}
+                    </p>
                   </TableCell>
                   <TableCell>
                     {order.status === "COMPLETED" ? (
@@ -259,11 +268,15 @@ export default async function ProductProcessOrdersPage({
                     {formatDate(order.createdAt)}
                   </TableCell>
                   <TableCell className="text-right">
-                    <ProductionOrderDetailsButton
-                      orderId={order.id}
-                      orderCode={order.code}
-                      canAdvance={canAdvance}
-                    />
+                    <Button asChild variant="outline" size="sm">
+                      <Link
+                        href={`/products/process-orders/${order.id}`}
+                        aria-label={`ดูรายละเอียด ${order.code}`}
+                      >
+                        <Eye className="size-4" aria-hidden />
+                        รายละเอียด
+                      </Link>
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
@@ -286,8 +299,8 @@ export default async function ProductProcessOrdersPage({
       <div>
         <h1 className="text-xl font-semibold text-fg">การสั่งผลิตตามกระบวนการ</h1>
         <p className="mt-1 text-sm text-fg-muted">
-          สั่งผลิตจากแผนที่จ่ายวัตถุดิบครบแล้ว สร้าง QR Code ตาม packet
-          และติดตามว่าอยู่ขั้นตอนไหน
+          สั่งผลิตจากแผนที่จ่ายวัตถุดิบครบแล้ว บันทึกผลผลิตจริงเพื่อสร้างกล่องและ QR
+          แล้วติดตามว่าแต่ละกล่องอยู่ขั้นตอนไหน
         </p>
       </div>
 
@@ -310,27 +323,22 @@ export default async function ProductProcessOrdersPage({
 
       <form className="flex gap-2" action="/products/process-orders">
         <input type="hidden" name="tab" value={tab} />
-        <input
+        <Input
           name="search"
           defaultValue={search}
           placeholder="ค้นหารหัสแผน / ใบสั่งผลิต / สินค้า"
           aria-label="ค้นหา"
-          className="h-9 w-full max-w-sm rounded-md border border-border-strong bg-surface px-3 text-sm text-fg placeholder:text-fg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          className="w-full max-w-sm"
         />
-        <button
-          type="submit"
-          className="h-9 rounded-md bg-primary px-4 text-sm font-medium text-primary-fg"
-        >
-          ค้นหา
-        </button>
+        <Button type="submit">ค้นหา</Button>
       </form>
 
       {body}
 
       <div className="flex items-center justify-between text-sm text-fg-muted">
         <span>
-          หน้า {page} จาก {Math.max(meta.totalPages, 1)} · ทั้งหมด{" "}
-          {meta.totalItems} รายการ
+          หน้า {page} จาก {Math.max(meta.totalPages, 1)} ·{" "}
+          {summary || `ทั้งหมด ${meta.totalItems} รายการ`}
         </span>
         <div className="flex gap-2">
           {page > 1 && (
@@ -364,3 +372,5 @@ function EmptyState({ title, hint }: { title: string; hint: string }) {
     </div>
   );
 }
+
+export const metadata: Metadata = { title: "การสั่งผลิตตามกระบวนการ" };

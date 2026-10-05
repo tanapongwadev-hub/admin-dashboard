@@ -136,7 +136,7 @@ function StockHealth({ summary, canViewMaterials }: { summary: MaterialInventory
           <div>
             <span className={cn(
               "flex size-10 items-center justify-center rounded-md",
-              actionable > 0 ? "bg-warning-soft text-warning" : "bg-success-soft text-success"
+              actionable > 0 ? "bg-warning-soft text-warning-fg" : "bg-success-soft text-success-fg"
             )}>
               {actionable > 0 ? <AlertTriangle className="size-5" /> : <CheckCircle2 className="size-5" />}
             </span>
