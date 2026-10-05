@@ -2,7 +2,9 @@
 
 import {
   ArrowRight,
+  Ban,
   Boxes,
+  CircleCheck,
   ClipboardPen,
   Loader2,
   PackageCheck,
@@ -23,6 +25,7 @@ import { cn } from "@/lib/utils";
 import { PackDialog } from "./pack-dialog";
 import { PackageLabelSheet, type LabelContext } from "./package-label-sheet";
 import { ProduceDialog, type RejectReasonOption } from "./produce-dialog";
+import { CloseRemainingDialog } from "./close-remaining-dialog";
 import { ReverseDialog, type ReverseTarget } from "./reverse-dialog";
 import { TransferDialog } from "./transfer-dialog";
 
@@ -30,7 +33,8 @@ type Pending =
   | { kind: "produce"; lineId: string; step: BoardStep; session: number }
   | { kind: "transfer"; lineId: string; step: BoardStep; next: BoardStep; session: number }
   | { kind: "pack"; lineId: string; lot: BoardLot; session: number }
-  | { kind: "reverse"; target: ReverseTarget; session: number };
+  | { kind: "reverse"; target: ReverseTarget; session: number }
+  | { kind: "close"; lineId: string; step: BoardStep; session: number };
 
 const fmt = (n: number) => n.toLocaleString("th-TH");
 
@@ -100,6 +104,8 @@ export function LotOrderBoard({
       {boards.map((board) => {
         const { line } = board;
         const pct = line.plannedQty ? Math.min(100, Math.round((line.receivedQty / line.plannedQty) * 100)) : 0;
+        const completed = line.orderStatus === "COMPLETED";
+        const act = canAct && !completed;
         return (
           <section key={line.id} className="flex flex-col gap-3" aria-labelledby={`line-${line.id}`}>
             <div className="flex flex-wrap items-end justify-between gap-3">
@@ -119,6 +125,11 @@ export function LotOrderBoard({
             <div className="h-1.5 overflow-hidden rounded-full bg-surface-2" aria-label={`รับเข้าแล้ว ${pct}%`}>
               <div className="h-full rounded-full bg-success" style={{ width: `${pct}%` }} />
             </div>
+            {completed && (
+              <p className="flex items-center gap-1.5 rounded-md border border-success/40 bg-success-soft px-3 py-2 text-sm font-medium text-success-fg">
+                <CircleCheck className="size-4" aria-hidden /> ใบสั่งผลิตเสร็จสิ้น — ทุกชิ้นรับเข้าและแพ็กแล้ว เป็นของเสีย หรือปิดยอดแล้ว
+              </p>
+            )}
             <ReconciliationNote result={reconciliations[line.id]} />
 
             <div className="grid gap-3 @container sm:grid-cols-2 xl:grid-cols-4">
@@ -177,7 +188,7 @@ export function LotOrderBoard({
                             {fmt(lot.remainingQty)}
                             <span className="text-fg-muted">/{fmt(lot.producedQty)}</span>
                           </span>
-                          {isReceiving && canAct && lot.remainingQty > 0 && (
+                          {isReceiving && act && lot.remainingQty > 0 && (
                             <Button
                               size="sm"
                               variant="ghost"
@@ -203,7 +214,7 @@ export function LotOrderBoard({
                         </li>
                       ))}
                     </ul>
-                    {canAct && (
+                    {act && (
                       <footer className="flex gap-2 border-t border-border p-2">
                         <Button
                           size="sm"
@@ -224,6 +235,18 @@ export function LotOrderBoard({
                           >
                             <span className="truncate">ส่ง {next.code}</span>
                             <ArrowRight className="size-4 shrink-0" />
+                          </Button>
+                        )}
+                        {step.waitingQty > 0 && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="shrink-0 px-2"
+                            aria-label={`ปิดยอดค้างที่ ${step.code}`}
+                            title="ปิดยอดค้าง (ชิ้นงานที่จะไม่ผลิตต่อ)"
+                            onClick={() => open({ kind: "close", lineId: line.id, step })}
+                          >
+                            <Ban className="size-4" />
                           </Button>
                         )}
                       </footer>
@@ -249,6 +272,19 @@ export function LotOrderBoard({
           lineId={pending.lineId}
           step={pending.step}
           rejectReasons={rejectReasons}
+          onClose={() => setPending(null)}
+          onDone={(b) => {
+            applyBoard(b);
+            setPending(null);
+          }}
+          onUndo={(target) => open({ kind: "reverse", target })}
+        />
+      )}
+      {pending?.kind === "close" && (
+        <CloseRemainingDialog
+          key={pending.session}
+          lineId={pending.lineId}
+          step={pending.step}
           onClose={() => setPending(null)}
           onDone={(b) => {
             applyBoard(b);

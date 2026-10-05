@@ -959,6 +959,14 @@ Before writing any new route, component, data-layer file, or Server Action, chec
 
 ## Recent Changes
 
+### 2026-10-05 — LOT orders: close remaining + automatic completion (plan Case 13)
+
+- cps-api `POST /production/lines/:lineId/steps/:stepIndex/close-remaining {requestId, qty?, reason}` (`CloseService`, ADVANCE): closes WIP waiting at a step (default all), oldest first, with origins on a SHORT_CLOSE ledger row; adds to the line's `short_closed_quantity` (+ reason/at/by); audit `production_order.remaining_closed`. Idempotent; reversible through the existing reverse endpoint (SHORT_CLOSE added to `ReversalService`).
+- `completion.ts#completeLotOrderIfDone()` runs at the end of produce, transfer, close and packing (inside their transaction): the order becomes COMPLETED (+ audit `production_order.completed`) when no line has open WIP or pieces left in any lot (FG/STORE lots fully packed) and received + rejected + closed = plan. A completed order takes no new movement (409 from `lockLotModelLine`).
+- Reconciliation gained `wip.closed = ledger closes` and `short_closed_quantity` in the line-counter check (10 checks). Board line now carries `orderStatus`.
+- Dashboard: each step card has a "ปิดยอดค้าง" icon button (when work waits) → `CloseRemainingDialog` (qty default all, reason required, undo in the toast unless the order just completed). A completed line shows a green "ใบสั่งผลิตเสร็จสิ้น" note and hides all action buttons.
+- e2e suite: close + reversal test and Case 13 (wind the order down → still IN_PROGRESS until the last FG pieces are packed → COMPLETED, counters add up to plan, reconciliation clean, further movement 409). 15/15 pass, run twice.
+
 ### 2026-10-05 — Production Lot traceability Phase 10 (automated e2e suite)
 
 - cps-api `test/production/production-lot.e2e-spec.ts` + `test/jest-production.json` + `setup-env.ts`; run `pnpm test:production` (host, `--runInBand`). Sets `DB_DATABASE=cps_db_test` (override with `PRODUCTION_TEST_DB`) and refuses any DB not ending in `_test`. Excluded from `test:e2e`.

@@ -16,6 +16,7 @@ import {
   type RecordOutputResult,
 } from "@/lib/api/production-orders";
 import {
+  closeRemainingAtStep,
   generatePackages,
   getAllocationPreview,
   getLineBoard,
@@ -211,6 +212,14 @@ export async function generatePackagesAction(
   payload: { requestId: string; fgLotId: string; qty?: number; packSize?: number },
 ) {
   return withBoard(lineId, (token) => generatePackages(token, payload));
+}
+
+export async function closeRemainingLotAction(
+  lineId: string,
+  stepIndex: number,
+  payload: { requestId: string; qty?: number; reason: string },
+) {
+  return withBoard(lineId, (token) => closeRemainingAtStep(token, lineId, stepIndex, payload));
 }
 
 export async function reverseLotRequestAction(

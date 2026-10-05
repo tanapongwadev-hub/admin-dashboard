@@ -40,6 +40,8 @@ export interface LineBoard {
     lineNo: number;
     orderId: string;
     orderCode: string | null;
+    /** IN_PROGRESS | COMPLETED — a completed order takes no new movement. */
+    orderStatus: string | null;
     product: { id: string; code: string; name: string } | null;
     plannedQty: number;
     producedQty: number;
@@ -206,6 +208,27 @@ export function reverseLotRequest(
   payload: { requestId: string; reason: string },
 ) {
   return apiFetch<ReverseResult>(`/production/lines/${lineId}/requests/${targetRequestId}/reverse`, {
+    method: "POST",
+    headers: auth(accessToken),
+    body: JSON.stringify(payload),
+  });
+}
+
+export interface CloseRemainingResult {
+  replayed: boolean;
+  closedQty: number;
+  step: { stepIndex: number; code: string; waitingQty: number };
+  orderCompleted: boolean;
+}
+
+/** Close pieces waiting at a step that will not be produced (qty default: all). */
+export function closeRemainingAtStep(
+  accessToken: string,
+  lineId: string,
+  stepIndex: number,
+  payload: { requestId: string; qty?: number; reason: string },
+) {
+  return apiFetch<CloseRemainingResult>(`/production/lines/${lineId}/steps/${stepIndex}/close-remaining`, {
     method: "POST",
     headers: auth(accessToken),
     body: JSON.stringify(payload),
