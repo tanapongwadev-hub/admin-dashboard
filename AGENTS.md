@@ -959,6 +959,13 @@ Before writing any new route, component, data-layer file, or Server Action, chec
 
 ## Recent Changes
 
+### 2026-10-05 — Production Lot traceability Phase 10 (automated e2e suite)
+
+- cps-api `test/production/production-lot.e2e-spec.ts` + `test/jest-production.json` + `setup-env.ts`; run `pnpm test:production` (host, `--runInBand`). Sets `DB_DATABASE=cps_db_test` (override with `PRODUCTION_TEST_DB`) and refuses any DB not ending in `_test`. Excluded from `test:e2e`.
+- Each run inserts its own plan/LOT order (500 pcs, an ACTIVE 4-step workflow ending in an FG step, 100/box) and releases WIP, so runs never collide and nothing is deleted. Dates are relative (yesterday shift A / current production day); lot numbers are looked up, not hard-coded.
+- Covers plan §13 Case 1–12 in order: two-day ORIGIN lots, idempotent replay, WIP per source lot across days, MANUAL merge (origins + lineage), forward split, rejects with reason/origins, concurrent produce (one 409), over-draws rolled back with no partial ledger rows, partial transfer FIFO origins, FG packing 100 FULL + 50 PARTIAL, BOX001 scan FG→CHECK→PS→WE, reversal (409 then OK), and full reconciliation. 13 pass, run three times in a row.
+- Case 13 is `it.todo`: LOT orders have no completion/short-close yet.
+
 ### 2026-10-05 — Production Lot traceability Phase 9 (reversal, reconciliation, concurrency)
 
 - cps-api migration `1790600000010-ProductionLotReversal` (applied to `cps_db`): lots may sit at produced 0 only with status REVERSED; lot origin rows may reach qty 0; lineage edges accept negative qty. Still no UPDATE on ledger/lineage and no DELETE anywhere — a reversal only appends.
