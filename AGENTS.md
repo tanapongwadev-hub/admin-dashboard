@@ -959,6 +959,20 @@ Before writing any new route, component, data-layer file, or Server Action, chec
 
 ## Recent Changes
 
+### 2026-10-05 — Production Lot traceability Phase 6 (FG packages + QR, API only)
+
+- `POST /production/packages/generate` takes `{requestId, fgLotId, qty? (default: all unpacked), packSize? (default: line packing qty)}` (`production-package/package.service.ts`).
+  - Only FG/STORE lots can be packed. The line is locked, then the lot.
+  - Boxes come from `splitIntoBoxes`: full boxes then one PARTIAL box. Numbering `QR-{lotNo}-BOX{nnn}` continues per lot across calls.
+  - Each box takes its origins from the lot oldest-first into `production_package_sources` (materialized composition). PACKING ledger rows carry the origin breakdown. Lot remaining drops; it becomes CONSUMED at 0. Audit `production.package.generated`. Idempotent on `requestId`.
+- `GET /production/lots/:lotId/packages` lists boxes with `qrImage` (SVG data URL) and origins.
+- The QR SVG cache moved to `src/common/qr-svg.ts` (`qrSvgDataUrl`), shared with the legacy packet model.
+- Live-verified, continuing the Phase 5 scenario in a rolled-back transaction:
+  - FG-691005-001 150: pack 120/100 → BOX001 100 + BOX002 20 (partial), plus a replay; over-pack and packing a PS lot were rejected; the rest went into BOX003 30.
+  - The remaining 200 at PS (WE-691004-001 50 + WE-691005-001 150) flowed through CHECK → FG (the lot grew to 400), then packed into BOX004–BOX006. Box composition follows oldest-origin-first (BOX006 = WE-691005-001 50).
+  - Box origin sums = box qty and FG produced = remaining + packed (no rows); board/lineage/ledger are consistent and nothing remained after rollback. Domain tests 50/50.
+- The default label size is 60×40 mm until the shop floor confirms (Phase 8).
+
 ### 2026-10-05 — Production Lot traceability Phase 5 (transfer between steps + Process Board API)
 
 - `POST /production/lines/:lineId/steps/:stepIndex/transfer` takes `{requestId, qty, allocationMode?: FIFO|MANUAL, allocations?: [{lotId, qty}], transferDate?+shift?, remark?}` (`TransferService`).
