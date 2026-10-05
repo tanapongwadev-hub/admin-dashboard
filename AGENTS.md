@@ -959,6 +959,21 @@ Before writing any new route, component, data-layer file, or Server Action, chec
 
 ## Recent Changes
 
+### 2026-10-05 — Production Lot traceability Phase 5 (transfer between steps + Process Board API)
+
+- `POST /production/lines/:lineId/steps/:stepIndex/transfer` takes `{requestId, qty, allocationMode?: FIFO|MANUAL, allocations?: [{lotId, qty}], transferDate?+shift?, remark?}` (`TransferService`).
+  - Locks the line, then draws from the step's ready lots: FIFO by lot production date/id, or MANUAL checked by the pure `validateManualAllocation` (exact sum, no duplicates, ≤ lot remaining, lot must belong to the step).
+  - Takes origins oldest-first (`LotService.takeOrigins`) and creates one WIP row per source lot at the next step (`WipService.receiveTransfer`) with its origins. Writes a TRANSFER ledger row with the origin breakdown (step_index = source step) and the `production.lot.transferred` audit event.
+  - Lots reaching 0 become CONSUMED. The last step cannot transfer (its lots are packed in Phase 6). Idempotent on `requestId`.
+- `GET /production/lines/:lineId/board` (`BoardService`) returns, per step, input / produced / waiting / ready / transferred / rejected / closed plus its lots, and the line counters — the data for the planned Process Board screen.
+- The produce and transfer services share `production-process/line-context.ts` (`lockLotModelLine`, `stepAt`).
+- Live-verified with the full scenario on line 4 inside one rolled-back transaction, with real produce + transfer:
+  - WE 350 → PS → PS 100 → WE 150 → PS; PS WIP 400; PS 200 (FIFO = WE-691004-001).
+  - MANUAL transfer of 150 from PS-691005-001 to CHECK, then a replay; over-ready, sum ≠ qty, foreign-lot and last-step transfers were rejected.
+  - CHECK 150 → INCOME-FG → FG-691005-001 150.
+  - The board matches the team mockup: PS in 500 / produced 300 / waiting 200 / ready 150 / transferred 150. Lineage FG→CHECK→PS→WE is complete, invariants are clean, and nothing remained after rollback.
+  - Domain tests 46/46; tsc and lint are clean.
+
 ### 2026-10-05 — Production Lot traceability Phase 3 (every step + rejects, API only)
 
 - `produce` now works at every step. `{goodQty, rejects?: [{reasonId, qty}]}`, with at least 1 piece in total.
