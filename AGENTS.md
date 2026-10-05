@@ -959,6 +959,28 @@ Before writing any new route, component, data-layer file, or Server Action, chec
 
 ## Recent Changes
 
+### 2026-10-05 — Sidebar: only one menu row is "active" at a time
+
+- `sidebar-nav.tsx` previously marked every node whose href prefix-matched the route, so `/products/process-orders` highlighted both "จัดการสินค้า" (`/products`) and its child. New `findActiveId()` picks the single most specific node (longest matching href; ties → the row the user just clicked (`clickedId` state in `SidebarNav`), else shallowest/first, so `BOMS` sharing `/products` highlights when clicked and never duplicates the parent; a fresh load of `/products` highlights the parent); parents of the active node still auto-expand via `activeChainIds`. tsc/eslint clean.
+
+### 2026-10-05 — Master data กระบวนการผลิต (`/master-data/process-steps`)
+
+- Process Step simple master (Shape A) now has an admin CRUD page via the generic descriptor recipe: `lib/master-data/resources/process-step.ts` (registered), 3-line `page.tsx`, `actions.ts` (`createCrudActions`), `lib/api/process-steps.ts` rewritten on `createResourceApi` (same exports + CRUD; `process-steps.test.ts` still passes), hub card in `/master-data`. cps-api migration `1790600000002-AddProcessStepMenuAndPermissions.ts` adds menu `PROCESS_STEP_MANAGEMENT` (under MASTER DATA, icon `workflow`) and `PROCESS_STEP_VIEW/CREATE/UPDATE/DELETE` permissions (previously unseeded) — run on dev DB; `process_steps` table is empty (no defaults). Not added: dedicated `*-actions.test.ts`. tsc clean; lint/build not run (R0).
+
+### 2026-10-05 — ใบสั่งผลิต: สั่งผลิต → QR ต่อ packet → ติดตามขั้นตอน
+
+- **cps-api** new module `production-orders` (migration `1790600000001-CreateProductionOrders.ts`, tables `inventory.production_orders/_lines/_packets`, permissions `PRODUCTION_ORDER_VIEW/CREATE/ADVANCE` on menu `PRODUCT_PROCESS_ORDERS`, registry updated; no longer reuses `PRODUCTS_VIEW`). `POST /production-orders {productionPlanId}` only for plans with plan+Job Order `ISSUED`, one order per plan; each line pins the product's **ACTIVE workflow** (409 naming the product if none) and is split into `ceil(quantity / product.packing)` packets (`packing<=0` → one packet), each with unique QR `PO-YYYYMMDD-NNNN-L{line}-{NNN}`. `POST /production-orders/packets/:id/advance` moves a packet to the next workflow step (completes after the last; order auto-COMPLETED when all packets are). `GET /production-orders[/:id]` returns QR as data-URL + `currentStep`.
+- **Dashboard** `/products/process-orders` now has 2 URL tabs (`?tab=ready` default / `?tab=orders`): ready = issued plans without an order + "สั่งผลิต" button (`create-order-button.tsx`); orders = placed orders (packets done/total, status) + details dialog (`production-order-details-button.tsx`: per-line step chain, packet QR cards with current step, "ไปขั้นตอนถัดไป", print QR via portal print sheet). Server Actions in `process-orders/actions.ts`, client in `lib/api/production-orders.ts`. `ui/dialog.tsx` overlay gained `print:hidden`. tsc/eslint clean on touched files; migration run on dev DB; end-to-end create not exercised (only issued plan `PP-202609-0001` has product FRAME-001 without an ACTIVE workflow).
+- Grant the new permissions to non-SUPER_ADMIN roles via IAM before they can see the menu.
+
+### 2026-10-05 — `/products/process-orders` now lists issued plans
+
+- Page lists production plans with `status=ISSUED` and `jobOrder.status === "ISSUED"` (ใบจัดงานจ่ายออกครบแล้ว) via `listProductionPlans`; search + prev/next only, read-only, gated on `PRODUCTS_VIEW` + `PRODUCTION_PLAN_VIEW`, links to `/materials/job-orders/[id]`. Each row has a `RowActionsMenu` (`production-plans/process-order-row-actions.tsx`, pure `getProcessOrderRowActions`): ดูใบจัดงาน / พิมพ์ใบจัดงาน (`?print=1`) gated on `MATERIAL_JOB_ORDER_VIEW`/`PRINT`, ดูแผนการผลิต (`/production/plans?search=<code>`). No backend change. Supersedes the placeholder note below.
+
+### 2026-10-05 — เมนูย่อย "การสั่งผลิตตามกระบวนการ" ใต้ จัดการสินค้า
+
+- cps-api migration `1790600000000-AddProductProcessOrdersMenu.ts` adds menu `PRODUCT_PROCESS_ORDERS` (SUB under `PRODUCTS_LIST`, path `/products/process-orders`, icon `workflow`, appended after live siblings), also in `seed.ts`; reuses `PRODUCTS_VIEW` (no new permission, `permission-registry.ts`). Dashboard: new `products/process-orders/page.tsx` (PRODUCTS_VIEW gate, **placeholder empty state — no backend/CRUD yet**) and `workflow` icon in `menu-icons.ts`. Not validated with tsc/lint/build per R0.
+
 ### 2026-10-04 — Traceability MAIN QR / receiving dialog redesigned
 
 - `MainQrDetail` (`material-traceability-details.tsx`, also used for the "receiving" drill target): hero in the lot's own color (lot no., material, status), KPI cells (received / issued / remaining / box count) + a used-% bar, 8-field meta grid (date, supplier lot, supplier, entered qty, confirmed by/at, created by/at), SUB QR boxes as a 2-column tile grid with per-box remaining bars (click → SUB QR), issue history, Timeline in a collapsed `<details>`. Display-only; no API change. tsc + eslint on `components/material-traceability` clean; build/test not re-run.

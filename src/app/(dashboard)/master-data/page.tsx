@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
-import { Box, Car, FolderTree, GitBranch, ListChecks, MapPin, Route, Ruler, ShieldAlert, Tag, Truck, UserCircle, XCircle } from "lucide-react";
+import { Box, Car, FolderTree, GitBranch, ListChecks, MapPin, Route, Ruler, ShieldAlert, Tag, Truck, UserCircle, Workflow, XCircle } from "lucide-react";
 import { getCurrentSession } from "@/lib/session";
 import { listCategories } from "@/lib/api/categories";
 import { listCustomers } from "@/lib/api/customers";
@@ -9,6 +9,7 @@ import { listLoadingPoints } from "@/lib/api/loading-points";
 import { listLocations } from "@/lib/api/locations";
 import { listMaterialModels } from "@/lib/api/material-models";
 import { listProcessLines } from "@/lib/api/process-lines";
+import { listProcessSteps } from "@/lib/api/process-steps";
 import { listProductModels } from "@/lib/api/product-models";
 import { listProductTypes } from "@/lib/api/product-types";
 import { listRejectReasons } from "@/lib/api/reject-reasons";
@@ -171,6 +172,15 @@ export default async function MasterDataDashboardPage() {
       icon: GitBranch,
       permission: "PROCESS_LINE_VIEW",
       list: listProcessLines,
+    },
+    {
+      key: "process-steps",
+      name: "กระบวนการผลิต",
+      description: "ขั้นตอนกระบวนการผลิตที่ใช้กำหนด workflow ของสินค้า",
+      href: "/master-data/process-steps",
+      icon: Workflow,
+      permission: "PROCESS_STEP_VIEW",
+      list: listProcessSteps,
     },
   ] as const;
 

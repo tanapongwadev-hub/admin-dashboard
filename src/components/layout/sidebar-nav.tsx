@@ -13,6 +13,31 @@ function isActiveHref(pathname: string, href: string) {
   return href === "/dashboard" ? pathname === "/dashboard" : pathname === href || pathname.startsWith(href + "/");
 }
 
+// The single most specific menu node for the current route: the longest
+// matching href wins, and on a tie (e.g. a child that reuses its parent path)
+// the node the user just clicked (preferId) wins, otherwise the shallower/
+// earlier one. Prevents a parent and its child both
+// rendering as "active" (e.g. /products and /products/process-orders).
+function findActiveId(menus: ResolvedMenuNode[], pathname: string, preferId: string | null): string | null {
+  let best: { id: string; len: number } | null = null;
+  function walk(nodes: ResolvedMenuNode[]) {
+    for (const node of nodes) {
+      if (node.menuType !== "BUTTON" && node.path) {
+        const href = menuHref(node.path);
+        if (
+          isActiveHref(pathname, href) &&
+          (!best || href.length > best.len || (href.length === best.len && node.id === preferId))
+        ) {
+          best = { id: node.id, len: href.length };
+        }
+      }
+      walk(node.children);
+    }
+  }
+  walk(menus);
+  return (best as { id: string } | null)?.id ?? null;
+}
+
 // Ids of every node whose subtree contains the current route — used to
 // auto-expand the path to whatever page is active. Pure/derived, computed
 // fresh each render rather than stored in state.
@@ -72,7 +97,8 @@ function MenuTreeItem({
   node,
   depth,
   collapsed,
-  pathname,
+  activeId,
+  onSelect,
   autoOpenIds,
   overrides,
   onToggle,
@@ -81,7 +107,8 @@ function MenuTreeItem({
   node: ResolvedMenuNode;
   depth: number;
   collapsed?: boolean;
-  pathname: string;
+  activeId: string | null;
+  onSelect: (id: string) => void;
   autoOpenIds: Set<string>;
   overrides: Record<string, boolean>;
   onToggle: (id: string, wasOpen: boolean) => void;
@@ -93,7 +120,7 @@ function MenuTreeItem({
   const href = node.path ? menuHref(node.path) : undefined;
   const hasChildren = node.children.length > 0;
   const isOpen = overrides[node.id] ?? autoOpenIds.has(node.id);
-  const active = href ? isActiveHref(pathname, href) : false;
+  const active = node.id === activeId;
   const topLevel = depth === 0;
   const emphasized = active || (topLevel && hasChildren && isOpen);
 
@@ -126,7 +153,10 @@ function MenuTreeItem({
         {href ? (
           <Link
             href={href}
-            onClick={onNavigate}
+            onClick={() => {
+              onSelect(node.id);
+              onNavigate?.();
+            }}
             aria-label={collapsed ? node.name : undefined}
             title={collapsed ? node.name : undefined}
             className={rowClasses}
@@ -168,7 +198,8 @@ function MenuTreeItem({
               node={child}
               depth={depth + 1}
               collapsed={collapsed}
-              pathname={pathname}
+              activeId={activeId}
+              onSelect={onSelect}
               autoOpenIds={autoOpenIds}
               overrides={overrides}
               onToggle={onToggle}
@@ -192,6 +223,10 @@ export function SidebarNav({
 }) {
   const pathname = usePathname();
   const resolved = React.useMemo(() => resolveMenuIcons(menus), [menus]);
+  // Last clicked row — only breaks ties between rows that share one href
+  // (e.g. a child menu that points at its parent path).
+  const [clickedId, setClickedId] = React.useState<string | null>(null);
+  const activeId = React.useMemo(() => findActiveId(resolved, pathname, clickedId), [resolved, pathname, clickedId]);
   const autoOpenIds = React.useMemo(() => activeChainIds(resolved, pathname), [resolved, pathname]);
   // Only tracks nodes the user has manually clicked open/closed; auto-expand
   // for the active route is derived fresh each render instead (see
@@ -219,7 +254,8 @@ export function SidebarNav({
             node={item}
             depth={0}
             collapsed={collapsed}
-            pathname={pathname}
+            activeId={activeId}
+            onSelect={setClickedId}
             autoOpenIds={autoOpenIds}
             overrides={overrides}
             onToggle={toggle}

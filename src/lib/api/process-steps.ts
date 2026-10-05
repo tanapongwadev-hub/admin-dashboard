@@ -1,13 +1,11 @@
-import { apiFetch } from "./client";
+import { createResourceApi, type BaseListParams, type PaginatedResult } from "./create-resource-api";
 
-// Master data for Product Workflow steps (see product-workflows.ts) — added
-// 2026-09-06 so a workflow step can be picked from a dropdown instead of
-// typed as free text. Mirrors cps-api's real `/process-steps` module — see
-// cps-api/API_ENDPOINTS.md § 16 and
-// cps-api/src/modules/process-steps/{process-steps.controller,process-steps.service,dto/*}.ts.
-// Full CRUD exists on the backend (structurally a mirror of
-// /delivery-types), but this app only ever needs the read side for the
-// wizard's dropdown — no admin UI for managing this master data yet.
+// Master data "กระบวนการผลิต" (production process steps) used by Product
+// Workflow steps (see product-workflows.ts). Mirrors cps-api's real
+// `/process-steps` module — see cps-api/API_ENDPOINTS.md § 16 and
+// cps-api/src/modules/process-steps/. Shape A simple master (code/nameTh/
+// nameEn/description/isActive), soft delete + `updatedAt` optimistic
+// concurrency. Admin CRUD page: /master-data/process-steps.
 
 export interface ProcessStep {
   id: string;
@@ -22,31 +20,32 @@ export interface ProcessStep {
   updatedAt: string;
 }
 
-export interface ListProcessStepsParams {
-  page?: number;
-  limit?: number;
-  search?: string;
-  isActive?: boolean;
+export interface ListProcessStepsParams extends BaseListParams {
   sortBy?: "code" | "nameTh" | "isActive" | "createdAt" | "updatedAt";
-  sortOrder?: "asc" | "desc";
 }
 
-export interface PaginatedProcessSteps {
-  items: ProcessStep[];
-  meta: { page: number; limit: number; totalItems: number; totalPages: number };
+export type PaginatedProcessSteps = PaginatedResult<ProcessStep>;
+
+export interface ProcessStepPayload {
+  code: string;
+  nameTh: string;
+  nameEn?: string | null;
+  description?: string | null;
+  isActive?: boolean;
 }
 
-export function listProcessSteps(accessToken: string, params: ListProcessStepsParams = {}) {
-  const query = new URLSearchParams();
-  if (params.page) query.set("page", String(params.page));
-  if (params.limit) query.set("limit", String(params.limit));
-  if (params.search) query.set("search", params.search);
-  if (params.isActive !== undefined) query.set("isActive", String(params.isActive));
-  if (params.sortBy) query.set("sortBy", params.sortBy);
-  if (params.sortOrder) query.set("sortOrder", params.sortOrder);
-
-  const qs = query.toString();
-  return apiFetch<PaginatedProcessSteps>(`/process-steps${qs ? `?${qs}` : ""}`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
+export interface UpdateProcessStepPayload extends Partial<ProcessStepPayload> {
+  // Required by cps-api's update DTO for optimistic concurrency.
+  updatedAt: string;
 }
+
+const api = createResourceApi<ProcessStep, ProcessStepPayload, UpdateProcessStepPayload, ListProcessStepsParams>(
+  "/process-steps"
+);
+
+export const listProcessSteps = api.list;
+export const getProcessStep = api.get;
+export const createProcessStep = api.create;
+export const updateProcessStep = api.update;
+export const deactivateProcessStep = api.deactivate;
+export const restoreProcessStep = api.restore;

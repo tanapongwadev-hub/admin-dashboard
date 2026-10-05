@@ -12,6 +12,7 @@ import { productModelResource } from "./product-model";
 import { customerResource } from "./customer";
 import { locationResource } from "./location";
 import { processLineResource } from "./process-line";
+import { processStepResource } from "./process-step";
 import type { MasterDataResourceConfig } from "@/lib/master-data/types";
 
 // Registry keyed by `resource.key`. Exists ONLY so client components can
@@ -45,4 +46,5 @@ export const masterDataResources: Record<string, MasterDataResourceConfig<any>> 
   [customerResource.key]: customerResource,
   [locationResource.key]: locationResource,
   [processLineResource.key]: processLineResource,
+  [processStepResource.key]: processStepResource,
 };

@@ -30,6 +30,7 @@ import {
   FileText,
   ClipboardList,
   ClipboardCheck,
+  Workflow,
   Circle,
   type LucideIcon,
 } from "lucide-react";
@@ -64,6 +65,7 @@ const MENU_ICONS: Record<string, LucideIcon> = {
   "user-cog": UserCog,
   car: Car,
   "git-branch": GitBranch,
+  workflow: Workflow,
   database: Database,
   gauge: Gauge,
   "book-open": BookOpen,
