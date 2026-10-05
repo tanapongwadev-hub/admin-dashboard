@@ -8,7 +8,7 @@ import { ProductionOrderDetail } from "@/components/production-orders/production
 import { Badge } from "@/components/ui/badge";
 import { ApiError } from "@/lib/api/client";
 import { getProductionOrder } from "@/lib/api/production-orders";
-import { getLineBoard } from "@/lib/api/production-lots";
+import { getLineBoard, getLineReconciliation } from "@/lib/api/production-lots";
 import { listRejectReasons } from "@/lib/api/reject-reasons";
 import { getCurrentSession } from "@/lib/session";
 
@@ -53,14 +53,17 @@ export default async function ProductionOrderPage({
   );
 
   if (order.trackingModel === "LOT") {
-    const [boards, rejectReasons] = await Promise.all([
+    const [boards, rejectReasons, checks] = await Promise.all([
       Promise.all(order.lines.map((line) => getLineBoard(accessToken, line.id))),
       can("REJECT_REASON_VIEW")
         ? listRejectReasons(accessToken, { limit: 100, isActive: true })
             .then((res) => res.items.map((r) => ({ id: r.id, code: r.code, nameTh: r.nameTh })))
             .catch(() => [])
         : Promise.resolve([]),
+      // A failed check must not block the board — it just isn't shown.
+      Promise.all(order.lines.map((line) => getLineReconciliation(accessToken, line.id).catch(() => null))),
     ]);
+    const reconciliations = Object.fromEntries(order.lines.map((line, i) => [line.id, checks[i]]));
     return (
       <div className="flex flex-col gap-4">
         {backLink}
@@ -74,6 +77,7 @@ export default async function ProductionOrderPage({
           initialBoards={boards}
           rejectReasons={rejectReasons}
           canAct={can("PRODUCTION_ORDER_ADVANCE")}
+          reconciliations={reconciliations}
         />
       </div>
     );

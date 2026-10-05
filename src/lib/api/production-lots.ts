@@ -184,6 +184,40 @@ export interface AllocationPreview {
 
 const auth = (accessToken: string) => ({ Authorization: `Bearer ${accessToken}` });
 
+export interface ReverseResult {
+  replayed: boolean;
+  reversedRequestId: string;
+  movements: Array<{ type: string; stepIndex: number; qty: number; lotNo: string | null }>;
+}
+
+export interface LineReconciliation {
+  lineId: string;
+  checkedAt: string;
+  checks: number;
+  ok: boolean;
+  issues: Array<{ check: string; ref: string; expected: number; actual: number }>;
+}
+
+/** Take back a produce/transfer request (V10) — `requestId` is the reversal's own key. */
+export function reverseLotRequest(
+  accessToken: string,
+  lineId: string,
+  targetRequestId: string,
+  payload: { requestId: string; reason: string },
+) {
+  return apiFetch<ReverseResult>(`/production/lines/${lineId}/requests/${targetRequestId}/reverse`, {
+    method: "POST",
+    headers: auth(accessToken),
+    body: JSON.stringify(payload),
+  });
+}
+
+export function getLineReconciliation(accessToken: string, lineId: string) {
+  return apiFetch<LineReconciliation>(`/production/lines/${lineId}/reconciliation`, {
+    headers: auth(accessToken),
+  });
+}
+
 export function getAllocationPreview(accessToken: string, lineId: string, stepIndex: number) {
   return apiFetch<AllocationPreview>(`/production/lines/${lineId}/steps/${stepIndex}/allocation-preview`, {
     headers: auth(accessToken),

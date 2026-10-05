@@ -21,6 +21,7 @@ import {
   getLineBoard,
   listLotPackages,
   produceAtStep,
+  reverseLotRequest,
   transferFromStep,
   type AllocationPreview,
   type LineBoard,
@@ -210,6 +211,14 @@ export async function generatePackagesAction(
   payload: { requestId: string; fgLotId: string; qty?: number; packSize?: number },
 ) {
   return withBoard(lineId, (token) => generatePackages(token, payload));
+}
+
+export async function reverseLotRequestAction(
+  lineId: string,
+  targetRequestId: string,
+  payload: { requestId: string; reason: string },
+) {
+  return withBoard(lineId, (token) => reverseLotRequest(token, lineId, targetRequestId, payload));
 }
 
 export async function getAllocationPreviewAction(

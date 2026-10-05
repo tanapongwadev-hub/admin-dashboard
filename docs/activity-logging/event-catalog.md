@@ -57,7 +57,7 @@ All IAM events retain immutable actor and target snapshots. Permission-related c
 | `production_plan.*` | `created`, `imported`, `updated`, `approved`, `cancelled`, `deleted`, `expired`, `reservation_created`, `reservation_released` | critical_atomic | cancel/delete/manual override |
 | `material_job_order.*` | `created`, `printed`, `picked`, `issued`, `completed`, `cancelled` | critical_atomic for stock/lifecycle; durable_async for print | cancel/manual override |
 | `production_order.*` | `created`, `step_advanced`, `output_recorded`, `remaining_closed`, `packet_split` (legacy PACKET model) | critical_atomic | remaining_closed |
-| `production.lot.*` | `produced` (Phase 2), `transferred`, `rejected`, `fg_received`, `reversed`, `output_closed` (later phases) | critical_atomic — same transaction as the lot/WIP/ledger writes; payload = lot no, step, qty, production date/shift, origin breakdown | rejected/reversed |
+| `production.lot.*` | `produced` (Phase 2), `transferred` (Phase 5), `rejected` (Phase 3), `reversed` (Phase 9 — payload adds reversed requestId, required reason, original movements), `fg_received`, `output_closed` (later) | critical_atomic — same transaction as the lot/WIP/ledger writes; payload = lot no, step, qty, production date/shift, origin breakdown | rejected/reversed |
 | `production.package.*` | `generated`, `printed`, `voided` (later phases) | critical_atomic when state changes; durable_async for print | voided |
 | `inventory.stock.*` | `received`, `issued`, `adjusted`, `reconciled`, `mismatch_detected` | critical_atomic | adjustment/mismatch resolution |
 | `inventory.qr.*` | `generated`, `printed`, `scanned`, `invalid_scan` | critical_atomic when state changes; durable_async otherwise | no |

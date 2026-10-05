@@ -19,6 +19,7 @@ import type { BoardStep, LineBoard } from "@/lib/api/production-lots";
 import { currentProductionDay, formatThaiDate, type Shift } from "@/lib/production-day";
 import { cn } from "@/lib/utils";
 import { DayShiftFields } from "./day-shift-fields";
+import type { ReverseTarget } from "./reverse-dialog";
 
 /** FIFO preview: same rule as the API (oldest lot first). */
 function fifoPreview(lots: BoardStep["lots"], qty: number) {
@@ -40,12 +41,14 @@ export function TransferDialog({
   next,
   onClose,
   onDone,
+  onUndo,
 }: {
   lineId: string;
   step: BoardStep;
   next: BoardStep;
   onClose: () => void;
   onDone: (board: LineBoard) => void;
+  onUndo: (target: ReverseTarget) => void;
 }) {
   const [requestId] = useState(() => crypto.randomUUID());
   const ready = step.lots
@@ -87,9 +90,11 @@ export function TransferDialog({
       toast.error(result.message);
       return;
     }
-    toast.success(
-      `ส่ง ${total} ชิ้น ${step.code} → ${next.code} (${result.result.transfers.map((t) => `${t.lotNo} ${t.qty}`).join(", ")})`,
-    );
+    const message = `ส่ง ${total} ชิ้น ${step.code} → ${next.code} (${result.result.transfers.map((t) => `${t.lotNo} ${t.qty}`).join(", ")})`;
+    toast.success(message, {
+      duration: 10000,
+      action: { label: "กลับรายการ", onClick: () => onUndo({ lineId, requestId, label: message }) },
+    });
     onDone(result.board);
   }
 

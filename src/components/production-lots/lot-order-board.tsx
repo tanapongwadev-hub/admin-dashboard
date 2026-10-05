@@ -1,24 +1,36 @@
 "use client";
 
-import { ArrowRight, Boxes, ClipboardPen, Loader2, PackageCheck, Printer, Search } from "lucide-react";
+import {
+  ArrowRight,
+  Boxes,
+  ClipboardPen,
+  Loader2,
+  PackageCheck,
+  Printer,
+  Search,
+  ShieldAlert,
+  ShieldCheck,
+} from "lucide-react";
 import Link from "next/link";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { listLotPackagesAction } from "@/app/(dashboard)/products/process-orders/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { BoardLot, BoardStep, LineBoard, PackageView } from "@/lib/api/production-lots";
+import type { BoardLot, BoardStep, LineBoard, LineReconciliation, PackageView } from "@/lib/api/production-lots";
 import { formatThaiDate } from "@/lib/production-day";
 import { cn } from "@/lib/utils";
 import { PackDialog } from "./pack-dialog";
 import { PackageLabelSheet, type LabelContext } from "./package-label-sheet";
 import { ProduceDialog, type RejectReasonOption } from "./produce-dialog";
+import { ReverseDialog, type ReverseTarget } from "./reverse-dialog";
 import { TransferDialog } from "./transfer-dialog";
 
 type Pending =
   | { kind: "produce"; lineId: string; step: BoardStep; session: number }
   | { kind: "transfer"; lineId: string; step: BoardStep; next: BoardStep; session: number }
-  | { kind: "pack"; lineId: string; lot: BoardLot; session: number };
+  | { kind: "pack"; lineId: string; lot: BoardLot; session: number }
+  | { kind: "reverse"; target: ReverseTarget; session: number };
 
 const fmt = (n: number) => n.toLocaleString("th-TH");
 
@@ -32,11 +44,14 @@ export function LotOrderBoard({
   initialBoards,
   rejectReasons,
   canAct,
+  reconciliations = {},
 }: {
   orderCode: string;
   initialBoards: LineBoard[];
   rejectReasons: RejectReasonOption[];
   canAct: boolean;
+  /** Per line id, checked when the page loaded (null = check unavailable). */
+  reconciliations?: Record<string, LineReconciliation | null>;
 }) {
   const [boards, setBoards] = useState(initialBoards);
   const [pending, setPending] = useState<Pending | null>(null);
@@ -104,6 +119,7 @@ export function LotOrderBoard({
             <div className="h-1.5 overflow-hidden rounded-full bg-surface-2" aria-label={`รับเข้าแล้ว ${pct}%`}>
               <div className="h-full rounded-full bg-success" style={{ width: `${pct}%` }} />
             </div>
+            <ReconciliationNote result={reconciliations[line.id]} />
 
             <div className="grid gap-3 @container sm:grid-cols-2 xl:grid-cols-4">
               {board.steps.map((step, i) => {
@@ -238,6 +254,18 @@ export function LotOrderBoard({
             applyBoard(b);
             setPending(null);
           }}
+          onUndo={(target) => open({ kind: "reverse", target })}
+        />
+      )}
+      {pending?.kind === "reverse" && (
+        <ReverseDialog
+          key={pending.session}
+          target={pending.target}
+          onClose={() => setPending(null)}
+          onDone={(b) => {
+            applyBoard(b);
+            setPending(null);
+          }}
         />
       )}
       {pending?.kind === "transfer" && (
@@ -251,6 +279,7 @@ export function LotOrderBoard({
             applyBoard(b);
             setPending(null);
           }}
+          onUndo={(target) => open({ kind: "reverse", target })}
         />
       )}
       {pending?.kind === "pack" && (
@@ -267,6 +296,33 @@ export function LotOrderBoard({
         />
       )}
       <PackageLabelSheet packages={labels?.packages ?? null} context={labels?.context ?? null} onDone={clearLabels} />
+    </div>
+  );
+}
+
+/** Result of the server-side consistency check (state vs ledger vs origins). */
+function ReconciliationNote({ result }: { result: LineReconciliation | null | undefined }) {
+  if (!result) return null;
+  const at = new Date(result.checkedAt).toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" });
+  if (result.ok) {
+    return (
+      <p className="flex items-center gap-1.5 text-xs text-success-fg">
+        <ShieldCheck className="size-3.5" aria-hidden /> ยอดทุกขั้นตรงกับประวัติการบันทึก ({result.checks} รายการตรวจ · {at})
+      </p>
+    );
+  }
+  return (
+    <div role="alert" className="rounded-md border border-danger/40 bg-danger-soft px-3 py-2 text-xs text-danger-fg">
+      <p className="flex items-center gap-1.5 font-semibold">
+        <ShieldAlert className="size-3.5" aria-hidden /> ยอดไม่ตรงกัน {result.issues.length} จุด — แจ้งผู้ดูแลระบบ ({at})
+      </p>
+      <ul className="mt-1 list-disc pl-5">
+        {result.issues.slice(0, 5).map((i, n) => (
+          <li key={n}>
+            {i.check}: {i.ref} ควรเป็น {i.expected} แต่เป็น {i.actual}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

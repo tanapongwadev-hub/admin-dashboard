@@ -19,6 +19,7 @@ import type { AllocationPreview, BoardStep, LineBoard } from "@/lib/api/producti
 import { currentProductionDay, formatThaiDate, type Shift } from "@/lib/production-day";
 import { cn } from "@/lib/utils";
 import { DayShiftFields } from "./day-shift-fields";
+import type { ReverseTarget } from "./reverse-dialog";
 
 /** FIFO split of `qty` across source lots (already oldest first). */
 function splitFifo(sources: AllocationPreview["sources"], qty: number): number[] {
@@ -48,12 +49,14 @@ export function ProduceDialog({
   rejectReasons,
   onClose,
   onDone,
+  onUndo,
 }: {
   lineId: string;
   step: BoardStep;
   rejectReasons: RejectReasonOption[];
   onClose: () => void;
   onDone: (board: LineBoard) => void;
+  onUndo: (target: ReverseTarget) => void;
 }) {
   const [requestId] = useState(() => crypto.randomUUID());
   const initialDay = currentProductionDay();
@@ -129,11 +132,13 @@ export function ProduceDialog({
       return;
     }
     const lot = result.result.lot;
-    toast.success(
-      lot
-        ? `${isReceiving ? "รับเข้า" : "บันทึกผลิต"} ${goodQty} ชิ้น → ${lot.lotNo}${lot.isNew ? " (Lot ใหม่)" : ""}${rejectTotal ? ` · ของเสีย ${rejectTotal}` : ""}`
-        : `บันทึกของเสีย ${rejectTotal} ชิ้น`,
-    );
+    const message = lot
+      ? `${isReceiving ? "รับเข้า" : "บันทึกผลิต"} ${goodQty} ชิ้น → ${lot.lotNo}${lot.isNew ? " (Lot ใหม่)" : ""}${rejectTotal ? ` · ของเสีย ${rejectTotal}` : ""}`
+      : `บันทึกของเสีย ${rejectTotal} ชิ้น`;
+    toast.success(message, {
+      duration: 10000,
+      action: { label: "กลับรายการ", onClick: () => onUndo({ lineId, requestId, label: message }) },
+    });
     onDone(result.board);
   }
 

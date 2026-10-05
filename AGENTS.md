@@ -959,6 +959,15 @@ Before writing any new route, component, data-layer file, or Server Action, chec
 
 ## Recent Changes
 
+### 2026-10-05 — Production Lot traceability Phase 9 (reversal, reconciliation, concurrency)
+
+- cps-api migration `1790600000010-ProductionLotReversal` (applied to `cps_db`): lots may sit at produced 0 only with status REVERSED; lot origin rows may reach qty 0; lineage edges accept negative qty. Still no UPDATE on ledger/lineage and no DELETE anywhere — a reversal only appends.
+- `POST /production/lines/:lineId/requests/:requestId/reverse {requestId, reason}` (`ReversalService`, ADVANCE permission): takes back one produce (good + rejects) or transfer request by appending REVERSAL rows (negative qty, `reverses_transaction_id`, negative transaction origins, negative lineage edge). Allowed only while pieces haven't moved on — produce: the target lot still holds every reversed piece per origin; transfer: the next step's WIP row is untouched. Restores WIP + WIP origins, lot + lot origins, line counters; a lot reversed to 0 becomes REVERSED and its shift bucket is closed (next output gets a new lot no). Idempotent on the new requestId; a second reversal → 409. Audit `production.lot.reversed`.
+- `GET /production/lines/:lineId/reconciliation` (`ReconciliationService`): 9 checks — lot vs origins, lot vs ledger (produced, remaining = produced − transferred − packed, net of reversals), WIP vs origins and vs ledger (used/rejected), package vs package sources, line counters vs lots/WIP. Board's input/closed/transferred now net reversed transfers; trace hides net-0 edges and 0-qty origins.
+- Dashboard: produce/transfer success toasts carry a "กลับรายการ" action (10 s) → `ReverseDialog` (reason required, `reverseLotRequestAction` returns the fresh board). The LOT order page runs reconciliation per line on load and shows "ยอดทุกขั้นตรงกัน…" or a red list of mismatches.
+- **Test DB**: `cps_db_test` (same local PostgreSQL 18, a `pg_dump` copy of `cps_db`) is for tests that must commit (concurrency). Run scripts with `docker exec -e DB_DATABASE=cps_db_test cps-api-api-1 …`; drop/recreate it to reset. Phase 9 check on it (real commits): reversals of produce/rejects/transfer, both refusals, replay, bucket reopening, two concurrent produces (one 409), concurrent duplicate requestId (one replayed), concurrent transfers and reversals (one 409 each), reconciliation OK before/after, DELETE/UPDATE/CHECK guards fire.
+- Not done: reversing packing (void boxes), a per-request history list in the UI (undo is only offered right after an action), dedicated REVERSE permission (uses ADVANCE).
+
 ### 2026-10-05 — Production Lot traceability Phase 4 (MANUAL source lots at produce)
 
 - cps-api: `produce` takes `allocationMode: 'MANUAL'` + `allocations: [{lotId, qty}]` (lotId = a source lot of the previous step waiting at this step; must sum to `goodQty`). Pure `allocateBySource()` (domain/allocation.ts, +4 jest tests) validates per-lot totals and draws FIFO within each picked lot's own WIP rows; rejects stay FIFO; ledger `allocation_mode` records MANUAL. MANUAL is rejected (400) at the first step and with 0 good pieces.
