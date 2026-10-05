@@ -959,6 +959,21 @@ Before writing any new route, component, data-layer file, or Server Action, chec
 
 ## Recent Changes
 
+### 2026-10-05 — Production Lot traceability Phase 2 (WE origin lots, API only)
+
+- Shifts are confirmed by the user: **A 08:00–16:59, B 17:00–07:59**. Before 08:00 belongs to the previous day's shift B. Back-dating is allowed up to 2 production days; future days/shifts are rejected. Pure functions (with jest spec `domain.spec.ts`, 21 tests) live in `cps-api/src/modules/production/domain/`:
+  - `production-day.ts`: `productionDayOf`, `validateProductionDay`
+  - `lot-number.ts`: `WE-691001-001` (B.E. year), prefix FG/ST for receiving steps
+  - `allocation.ts`: `allocateFifo`
+- `POST /production-orders` accepts `trackingModel: 'LOT'` (the default stays PACKET until the lot UI ships). A LOT order releases each line's plan quantity as WIP at the first step (`PLAN_RELEASE`).
+- `POST /production/lines/:lineId/steps/:stepIndex/produce` takes `{requestId, goodQty, productionDate?+shift?, remark?}` and is first step only for now.
+  - Locks the line, then draws WIP FIFO into the open ORIGIN lot of that day/shift (one lot per shift; output adds up).
+  - Writes PROCESS_OUTPUT ledger rows with origin breakdown, the line `produced_qty` counter, and the `production.lot.produced` audit event, all in one transaction.
+  - The same `requestId` replays the first result.
+- `GET /production/lines/:lineId/lots` lists a line's lots. Legacy packet endpoints reject LOT orders (409).
+- Event catalog: added `production_order.*`, `production.lot.*` and `production.package.*` to `docs/activity-logging/event-catalog.md`.
+- Live-verified with the real compiled services inside one rolled-back DB transaction on order PO-20261005-0004. Release 500 → produce 350 → replay → +100 into the same lot → over-WIP 409 → back-dated 50 into WE-691004-001 → step 2 409 → legacy endpoint 409. Lots, origins = produced, ledger, WIP and the counter were all correct; nothing remained after rollback. tsc and lint are clean.
+
 ### 2026-10-05 — Production Lot traceability Phase 1 (database + entities)
 
 - Team summary + UI mockups published: https://claude.ai/artifact/T6iFuQBeCQVQyvTHn1nhcB. Decisions are recorded at the top of the plan doc: the §0 defaults are accepted, except C8 is now **one lot per line / step / production date / shift** (output merges into the open lot; `output_closed_at` closes it). C13 keeps legacy orders as `tracking_model='PACKET'`, with no deletes.
