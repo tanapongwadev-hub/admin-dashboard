@@ -959,6 +959,23 @@ Before writing any new route, component, data-layer file, or Server Action, chec
 
 ## Recent Changes
 
+### 2026-10-05 — Production Lot traceability Phase 3 (every step + rejects, API only)
+
+- `produce` now works at every step. `{goodQty, rejects?: [{reasonId, qty}]}`, with at least 1 piece in total.
+  - Good pieces then rejects are drawn FIFO from the step's WIP rows.
+  - Each WIP row gives up its origins oldest first (`WipService.lockOrigins/takeOrigins`, origin lot production_date, id).
+  - Good pieces go into the shift's open lot: PROCESS, or FG/STORE at a receiving step. Origins are added to `production_lot_origins` and a lineage edge to `production_lot_sources` per source lot.
+  - Rejects are scrapped with an active `master.reject_reasons` id and their origin breakdown.
+  - Ledger type is PROCESS_OUTPUT, FG_RECEIVE (receiving step) or REJECT. Line counters: `produced_qty` (first step), `received_qty` (receiving step), `rejected_qty`.
+  - Idempotent on `requestId`, whatever movement types the request wrote.
+- Migration `1790600000009` adds `reject_reason_id` to the idempotency unique index (several reject reasons per WIP row in one request).
+- Live-verified with the 500-piece scenario on line 4 inside one rolled-back transaction (transfers simulated in SQL until Phase 5):
+  - PS WIP split by source WE-691004-001 250 / WE-691005-001 150. Good 200 + reject 10 → FIFO all from the old lot; replay returned the same result.
+  - +50 spanned both sources → PS-691005-001 = WE-691004-001 240 + WE-691005-001 10 (origins and lineage agree).
+  - Over-WIP, an unknown reason and a zero quantity were rejected. INCOME-FG receive produced FG-691005-001 (FG, received_qty 100).
+  - All invariant queries (lot origins = produced/remaining, WIP origins = WIP remaining) returned no rows; nothing remained after rollback.
+- Next: Phase 5 (transfer between steps), then Phase 6 (packages + QR).
+
 ### 2026-10-05 — Production Lot traceability Phase 2 (WE origin lots, API only)
 
 - Shifts are confirmed by the user: **A 08:00–16:59, B 17:00–07:59**. Before 08:00 belongs to the previous day's shift B. Back-dating is allowed up to 2 production days; future days/shifts are rejected. Pure functions (with jest spec `domain.spec.ts`, 21 tests) live in `cps-api/src/modules/production/domain/`:
