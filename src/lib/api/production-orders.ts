@@ -22,6 +22,8 @@ export interface ProductionOrderSummary {
   productionPlanId: string;
   planCode: string | null;
   status: ProductionOrderStatus;
+  /** PACKET = legacy per-step boxes; LOT = lot traceability (production-lots.ts). */
+  trackingModel: "PACKET" | "LOT";
   createdAt: string;
   completedAt: string | null;
   packetCount: number;
@@ -177,11 +179,12 @@ export function getProductionOrder(accessToken: string, id: string) {
 export function createProductionOrder(
   accessToken: string,
   productionPlanId: string,
+  trackingModel: "PACKET" | "LOT" = "PACKET",
 ) {
   return apiFetch<ProductionOrderDetail>("/production-orders", {
     method: "POST",
     headers: auth(accessToken),
-    body: JSON.stringify({ productionPlanId }),
+    body: JSON.stringify({ productionPlanId, trackingModel }),
   });
 }
 

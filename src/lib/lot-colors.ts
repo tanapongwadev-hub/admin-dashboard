@@ -26,6 +26,13 @@ const LOT_COLORS: LotColor[] = [
   { bar: "bg-lot-8", soft: "bg-lot-8-soft", text: "text-lot-8", border: "border-l-lot-8" },
 ];
 
+/** Color by position — for views listing a known set of lots (e.g. the
+ * origin lots of one trace), where sequence-based colors could collide
+ * (WE-691004-001 and WE-691005-001 share a sequence). */
+export function lotColorAt(index: number): LotColor {
+  return LOT_COLORS[((index % LOT_COLORS.length) + LOT_COLORS.length) % LOT_COLORS.length];
+}
+
 // Colors are keyed off the lot's running sequence (the trailing -NNN of
 // "CCI-26J26-003") so consecutive lots of the same day always differ; lot
 // numbers without that suffix fall back to a string hash.

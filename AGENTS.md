@@ -959,6 +959,15 @@ Before writing any new route, component, data-layer file, or Server Action, chec
 
 ## Recent Changes
 
+### 2026-10-05 — Lot traceability Phase 8: UI (Process Board, packing + labels, trace page)
+
+- "สั่งผลิต" now opens a dialog to choose the tracking model per order (`LOT` trial default / `PACKET`); cps-api summary returns `trackingModel`.
+- `/products/process-orders/[id]` branches: LOT orders render `components/production-lots/lot-order-board.tsx` (per line: KPIs + one card per workflow step with waiting/ready, lots linking to trace, actions). Dialogs `produce-dialog.tsx` (good + rejects with reason, day/shift), `transfer-dialog.tsx` (FIFO preview or MANUAL per lot), `pack-dialog.tsx` (receiving step: qty/pack size → boxes + QR). Each is remounted per open (`key`) so its `requestId` idempotency key is fresh; plain controlled state (dynamic rows). Actions return the fresh line board, which replaces local state (no page refetch).
+- `package-label-sheet.tsx`: 60×40 mm label per page, portal + `print:block`, `@page` rule only while mounted; reprint via `listLotPackagesAction`.
+- `lib/production-day.ts` mirrors the backend shift rule (A 08–17, B 17–08 → previous day) and 2-day back-date.
+- New `/production/traceability` (PRODUCTION_ORDER_VIEW): GET form `?q=` (scanner-friendly, no client JS) → `scanTrace`; shows box/lot context, origin composition bar, backward lineage tree. Origin colors use new `lotColorAt(index)` (sequence colors collide across days).
+- Not done: menu entry/permission for the trace page (reachable from the board link), browser test on a real LOT order (no issued plan without an order in dev DB; rendered with sample data instead).
+
 ### 2026-10-05 — Production Lot traceability Phase 7 (traceability API)
 
 - `production/traceability/traceability.service.ts` + controller (all `PRODUCTION_ORDER_VIEW`):

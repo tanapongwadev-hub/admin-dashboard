@@ -16,6 +16,17 @@ import {
   type RecordOutputResult,
 } from "@/lib/api/production-orders";
 import {
+  generatePackages,
+  getLineBoard,
+  listLotPackages,
+  produceAtStep,
+  transferFromStep,
+  type LineBoard,
+  type PackageView,
+  type ProducePayload,
+  type TransferPayload,
+} from "@/lib/api/production-lots";
+import {
   redirectIfSessionExpired,
   redirectMissingSession,
 } from "@/lib/session-expiry";
@@ -49,9 +60,10 @@ function revalidateOrderPaths() {
 export async function performCreateProductionOrder(
   accessToken: string,
   productionPlanId: string,
+  trackingModel: "PACKET" | "LOT" = "PACKET",
 ): Promise<ProductionOrderActionResult> {
   try {
-    const order = await createProductionOrder(accessToken, productionPlanId);
+    const order = await createProductionOrder(accessToken, productionPlanId, trackingModel);
     revalidateOrderPaths();
     return { status: "success", order };
   } catch (err) {
@@ -151,10 +163,63 @@ export async function performGetProductionOrder(
   }
 }
 
-export async function createProductionOrderAction(productionPlanId: string) {
+export async function createProductionOrderAction(
+  productionPlanId: string,
+  trackingModel: "PACKET" | "LOT" = "PACKET",
+) {
   const token = await requireAccessToken();
   if (!token) return redirectMissingSession();
-  return performCreateProductionOrder(token, productionPlanId);
+  return performCreateProductionOrder(token, productionPlanId, trackingModel);
+}
+
+// ---------------------------------------------------------------- lot model
+// Each mutation returns the fresh Process Board of the line so the page can
+// swap one line's board in place (no full-page revalidate, same reasoning as
+// packet advance above).
+
+export type LotActionResult<T> =
+  | { status: "success"; result: T; board: LineBoard }
+  | { status: "error"; message: string };
+
+async function withBoard<T>(
+  lineId: string,
+  run: (token: string) => Promise<T>,
+): Promise<LotActionResult<T>> {
+  const token = await requireAccessToken();
+  if (!token) return redirectMissingSession();
+  try {
+    const result = await run(token);
+    return { status: "success", result, board: await getLineBoard(token, lineId) };
+  } catch (err) {
+    return errorResult(err);
+  }
+}
+
+export async function produceLotAction(lineId: string, stepIndex: number, payload: ProducePayload) {
+  return withBoard(lineId, (token) => produceAtStep(token, lineId, stepIndex, payload));
+}
+
+export async function transferLotAction(lineId: string, stepIndex: number, payload: TransferPayload) {
+  return withBoard(lineId, (token) => transferFromStep(token, lineId, stepIndex, payload));
+}
+
+export async function generatePackagesAction(
+  lineId: string,
+  payload: { requestId: string; fgLotId: string; qty?: number; packSize?: number },
+) {
+  return withBoard(lineId, (token) => generatePackages(token, payload));
+}
+
+export async function listLotPackagesAction(
+  lotId: string,
+): Promise<{ status: "success"; packages: PackageView[] } | { status: "error"; message: string }> {
+  const token = await requireAccessToken();
+  if (!token) return redirectMissingSession();
+  try {
+    return { status: "success", packages: await listLotPackages(token, lotId) };
+  } catch (err) {
+    return errorResult(err);
+  }
 }
 
 export async function advanceProductionOrderPacketAction(

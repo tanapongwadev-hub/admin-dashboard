@@ -1,0 +1,194 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { cookies } from "next/headers";
+import { QrCode, Search, ShieldAlert } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ApiError } from "@/lib/api/client";
+import { scanTrace, type OriginShare, type ScanResult, type TraceNode } from "@/lib/api/production-lots";
+import { lotColorAt, type LotColor } from "@/lib/lot-colors";
+import { formatThaiDate } from "@/lib/production-day";
+import { apiErrorMessage } from "@/lib/user-error";
+import { getCurrentSession } from "@/lib/session";
+import { cn } from "@/lib/utils";
+
+export const metadata: Metadata = { title: "สอบกลับการผลิต" };
+
+const fmt = (n: number) => n.toLocaleString("th-TH");
+
+// Scan a box QR (QR-…-BOX001) or type a lot number; a plain GET form so a
+// keyboard-wedge scanner (types + Enter) works with no client JS. The result
+// is the backward lineage: box → FG lot → … → origin lots at the first step.
+export default async function TraceabilityPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+  const session = await getCurrentSession();
+  const allowed =
+    !!session && (session.user.isSuperAdmin || session.permissions.includes("PRODUCTION_ORDER_VIEW"));
+  if (!allowed) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border py-24 text-center">
+        <ShieldAlert className="size-8 text-fg-muted" />
+        <p className="text-lg font-semibold text-fg">คุณไม่มีสิทธิ์สอบกลับการผลิต</p>
+        <p className="max-w-sm text-sm text-fg-muted">กรุณาติดต่อผู้ดูแลระบบเพื่อขอสิทธิ์ Production Order View</p>
+      </div>
+    );
+  }
+
+  const q = ((await searchParams).q ?? "").trim();
+  let result: ScanResult | null = null;
+  let error: string | null = null;
+  if (q) {
+    const accessToken = (await cookies()).get("accessToken")!.value;
+    try {
+      result = await scanTrace(accessToken, q);
+    } catch (err) {
+      if (err instanceof ApiError) error = err.status === 404 ? `ไม่พบ QR หรือ Lot "${q}"` : apiErrorMessage(err);
+      else throw err;
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-5">
+      <div>
+        <h1 className="text-2xl font-semibold text-fg">สอบกลับการผลิต</h1>
+        <p className="text-sm text-fg-secondary">สแกน QR กล่อง หรือพิมพ์เลข Lot เพื่อดูว่ามาจาก Lot ไหน ผลิตวันไหน กะไหน</p>
+      </div>
+      <form method="get" className="flex max-w-xl gap-2" role="search">
+        <div className="relative flex-1">
+          <QrCode className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-fg-muted" aria-hidden />
+          <label htmlFor="trace-q" className="sr-only">
+            QR กล่อง หรือ เลข Lot
+          </label>
+          <Input
+            id="trace-q"
+            name="q"
+            defaultValue={q}
+            placeholder="QR-FG-691005-001-BOX001 หรือ WE-691004-001"
+            className="h-10 pl-9 font-mono"
+            autoFocus
+            autoComplete="off"
+          />
+        </div>
+        <Button type="submit" className="h-10">
+          <Search className="size-4" /> สอบกลับ
+        </Button>
+      </form>
+
+      {error && (
+        <p role="alert" className="rounded-md border border-danger/40 bg-danger-soft px-4 py-3 text-sm text-danger-fg">
+          {error}
+        </p>
+      )}
+      {result && <TraceResult result={result} />}
+    </div>
+  );
+}
+
+function collectOrigins(node: TraceNode, into = new Map<string, OriginShare>()) {
+  for (const o of node.origins) if (!into.has(o.lotNo)) into.set(o.lotNo, o);
+  node.links.forEach((child) => collectOrigins(child, into));
+  return into;
+}
+
+function TraceResult({ result }: { result: ScanResult }) {
+  const origins = result.kind === "PACKAGE" ? result.origins : result.lineage.origins;
+  // Colors by position across every origin lot that appears in the tree.
+  const palette = new Map<string, LotColor>();
+  [...collectOrigins(result.lineage).keys()].sort().forEach((lotNo, i) => palette.set(lotNo, lotColorAt(i)));
+  const total = origins.reduce((sum, o) => sum + o.qty, 0);
+
+  return (
+    <div className="flex flex-col gap-4">
+      <section className="rounded-md border border-border bg-surface p-4 shadow-sm">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-medium text-fg-muted">{result.kind === "PACKAGE" ? "กล่อง FG" : "Lot"}</p>
+            <p className="font-mono text-lg font-semibold text-fg">
+              {result.kind === "PACKAGE" ? result.qrCode : result.lineage.lotNo}
+            </p>
+            <p className="text-sm text-fg-secondary">
+              <span className="font-mono text-primary">{result.product.code}</span> {result.product.name}
+            </p>
+          </div>
+          <dl className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
+            <dt className="text-fg-muted">ใบสั่งผลิต</dt>
+            <dd>
+              <Link href={`/products/process-orders/${result.productionOrder.id}`} className="font-mono text-primary hover:underline">
+                {result.productionOrder.code}
+              </Link>
+            </dd>
+            <dt className="text-fg-muted">แผนผลิต</dt>
+            <dd className="font-mono text-fg">{result.productionPlan ?? "—"}</dd>
+            {result.kind === "PACKAGE" && (
+              <>
+                <dt className="text-fg-muted">จำนวนในกล่อง</dt>
+                <dd className="text-fg">
+                  {fmt(result.qty)} ชิ้น {result.unitType === "PARTIAL" && <Badge variant="warning">เศษ</Badge>}
+                </dd>
+                <dt className="text-fg-muted">รับเข้า</dt>
+                <dd className="text-fg">{formatThaiDate(result.receivedDate)}</dd>
+              </>
+            )}
+          </dl>
+        </div>
+
+        <h2 className="mt-4 text-sm font-semibold text-fg">ผลิตจาก Lot ต้นทาง</h2>
+        <div className="mt-2 flex h-3 overflow-hidden rounded-full bg-surface-2" aria-hidden>
+          {origins.map((o) => (
+            <div key={o.lotNo} className={palette.get(o.lotNo)?.bar} style={{ width: `${total ? (o.qty / total) * 100 : 0}%` }} />
+          ))}
+        </div>
+        <ul className="mt-2 flex flex-wrap gap-2">
+          {origins.map((o) => (
+            <li key={o.lotNo} className={cn("rounded px-2 py-1 text-xs", palette.get(o.lotNo)?.soft)}>
+              <span className={cn("font-mono font-semibold", palette.get(o.lotNo)?.text)}>{o.lotNo}</span>
+              <span className="ml-1.5 text-fg-secondary">
+                {formatThaiDate(o.productionDate)} กะ {o.shift} · {fmt(o.qty)} ชิ้น
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="rounded-md border border-border bg-surface p-4 shadow-sm" aria-labelledby="lineage-title">
+        <h2 id="lineage-title" className="text-sm font-semibold text-fg">
+          เส้นทางการผลิต (ย้อนกลับ)
+        </h2>
+        <ol className="mt-3">
+          <LineageNode node={result.lineage} palette={palette} />
+        </ol>
+      </section>
+    </div>
+  );
+}
+
+function LineageNode({ node, palette }: { node: TraceNode; palette: Map<string, LotColor> }) {
+  return (
+    <li className="relative">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md border border-border px-3 py-2">
+        <Badge variant={node.lotType === "ORIGIN" ? "warning" : node.lotType === "FG" || node.lotType === "STORE" ? "success" : "neutral"}>
+          {node.processCode}
+        </Badge>
+        <Link
+          href={`/production/traceability?q=${encodeURIComponent(node.lotNo)}`}
+          className={cn("font-mono text-sm font-semibold hover:underline", palette.get(node.lotNo)?.text ?? "text-fg")}
+        >
+          {node.lotNo}
+        </Link>
+        <span className="text-xs text-fg-secondary">
+          ผลิต {formatThaiDate(node.productionDate)} กะ {node.shift} · {fmt(node.producedQty)} ชิ้น
+        </span>
+        {node.edgeQty !== null && (
+          <span className="ml-auto text-xs font-medium text-primary">ส่งมา {fmt(node.edgeQty)} ชิ้น</span>
+        )}
+      </div>
+      {node.links.length > 0 && (
+        <ol className="ml-4 mt-2 flex flex-col gap-2 border-l-2 border-border pl-4">
+          {node.links.map((child) => (
+            <LineageNode key={child.lotId} node={child} palette={palette} />
+          ))}
+        </ol>
+      )}
+    </li>
+  );
+}
