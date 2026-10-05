@@ -959,6 +959,13 @@ Before writing any new route, component, data-layer file, or Server Action, chec
 
 ## Recent Changes
 
+### 2026-10-05 — Production Lot traceability Phase 4 (MANUAL source lots at produce)
+
+- cps-api: `produce` takes `allocationMode: 'MANUAL'` + `allocations: [{lotId, qty}]` (lotId = a source lot of the previous step waiting at this step; must sum to `goodQty`). Pure `allocateBySource()` (domain/allocation.ts, +4 jest tests) validates per-lot totals and draws FIFO within each picked lot's own WIP rows; rejects stay FIFO; ledger `allocation_mode` records MANUAL. MANUAL is rejected (400) at the first step and with 0 good pieces.
+- New read-only `GET /production/lines/:lineId/steps/:stepIndex/allocation-preview?qty=` → source lots waiting at the step (oldest first, with origin pieces) + FIFO split of `qty` (or `fifoError`).
+- Dashboard: `ProduceDialog` (steps after the first) loads the preview on open, shows the waiting source lots with an estimated FIFO split, and a "เลือก Lot ต้นทางเอง" mode with per-lot quantity inputs (good qty = their sum). `getAllocationPreviewAction` in `process-orders/actions.ts`, `getAllocationPreview`/`AllocationPreview` in `lib/api/production-lots.ts`.
+- Live-verified in one rolled-back transaction on line 4: Case 3 merge (PS-691005-001 = WE-691005-001 150 + WE-691004-001 50), Case 4 split (WE-691004-001 → two PS lots), all validation errors in Thai, lineage + invariants clean, nothing persisted. Dialog not click-tested (no LOT order in the dev DB).
+
 ### 2026-10-05 — Lot traceability Phase 8: UI (Process Board, packing + labels, trace page)
 
 - "สั่งผลิต" now opens a dialog to choose the tracking model per order (`LOT` trial default / `PACKET`); cps-api summary returns `trackingModel`.

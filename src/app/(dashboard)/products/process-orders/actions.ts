@@ -17,10 +17,12 @@ import {
 } from "@/lib/api/production-orders";
 import {
   generatePackages,
+  getAllocationPreview,
   getLineBoard,
   listLotPackages,
   produceAtStep,
   transferFromStep,
+  type AllocationPreview,
   type LineBoard,
   type PackageView,
   type ProducePayload,
@@ -208,6 +210,19 @@ export async function generatePackagesAction(
   payload: { requestId: string; fgLotId: string; qty?: number; packSize?: number },
 ) {
   return withBoard(lineId, (token) => generatePackages(token, payload));
+}
+
+export async function getAllocationPreviewAction(
+  lineId: string,
+  stepIndex: number,
+): Promise<{ status: "success"; preview: AllocationPreview } | { status: "error"; message: string }> {
+  const token = await requireAccessToken();
+  if (!token) return redirectMissingSession();
+  try {
+    return { status: "success", preview: await getAllocationPreview(token, lineId, stepIndex) };
+  } catch (err) {
+    return errorResult(err);
+  }
 }
 
 export async function listLotPackagesAction(

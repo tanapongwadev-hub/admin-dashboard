@@ -54,6 +54,9 @@ export interface ProducePayload {
   requestId: string;
   goodQty: number;
   rejects?: Array<{ reasonId: string; qty: number }>;
+  /** MANUAL: good pieces drawn from the named source lots (prev. step). */
+  allocationMode?: "FIFO" | "MANUAL";
+  allocations?: Array<{ lotId: string; qty: number }>;
   productionDate?: string;
   shift?: Shift;
   remark?: string;
@@ -161,7 +164,31 @@ export type ScanResult =
 
 export type LotTrace = TraceContext & { direction: "backward" | "forward"; lineage: TraceNode };
 
+/** Source lots waiting at a step (oldest first) + FIFO split of `qty`. */
+export interface AllocationPreview {
+  stepIndex: number;
+  waitingQty: number;
+  /** Pieces released from the plan (first step) — no source lot. */
+  planQty: number;
+  sources: Array<{
+    lotId: string;
+    lotNo: string;
+    productionDate: string;
+    shift: string;
+    waitingQty: number;
+    origins: Array<{ lotNo: string; productionDate: string; shift: string; qty: number }>;
+  }>;
+  fifo: Array<{ lotId: string; qty: number }> | null;
+  fifoError: string | null;
+}
+
 const auth = (accessToken: string) => ({ Authorization: `Bearer ${accessToken}` });
+
+export function getAllocationPreview(accessToken: string, lineId: string, stepIndex: number) {
+  return apiFetch<AllocationPreview>(`/production/lines/${lineId}/steps/${stepIndex}/allocation-preview`, {
+    headers: auth(accessToken),
+  });
+}
 
 export function getLineBoard(accessToken: string, lineId: string) {
   return apiFetch<LineBoard>(`/production/lines/${lineId}/board`, { headers: auth(accessToken) });
