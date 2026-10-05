@@ -959,6 +959,19 @@ Before writing any new route, component, data-layer file, or Server Action, chec
 
 ## Recent Changes
 
+### 2026-10-05 — Production Lot traceability Phase 7 (traceability API)
+
+- `production/traceability/traceability.service.ts` + controller (all `PRODUCTION_ORDER_VIEW`):
+  - `GET /production/traceability/scan?q=`: a box QR (`QR-…`, case-insensitive) or a lot number.
+  - `GET /production/packages/:qrCode/traceability`: box → FG lot → … → first-step lots, plus product, production order and plan, received date, and box origins with production date/shift.
+  - `GET /production/lots/:lotId/traceability?direction=backward|forward`: forward includes the boxes of FG/STORE lots.
+  - `GET /production/orders/:orderId/traceability`: forward from every ORIGIN lot of every line.
+- Lineage always stays inside one order line, so the service loads the line's lots, aggregated `production_lot_sources` edges and `production_lot_origins` once and builds the tree in memory, with a cycle guard.
+- Each node has `edgeQty` (pieces that flowed along that lot-to-lot edge) and the lot's exact `origins`. Lineage is a DAG: a lot reached by two paths appears under both. **Per-piece origin quantities come from the materialized compositions** (`origins` of the box/lot), not from edge quantities. `edgeQty` is lot-level flow, e.g. PS-691005-001 → CHECK via 300, of which only 50 are WE-691005-001.
+- Live-verified on the packed Phase 6 scenario (rolled back):
+  - Scanning BOX001 → FG-691005-001 → CHECK-691005-001 → PS-691004-001/PS-691005-001 → WE-691004-001/WE-691005-001, order PO-20261005-0004, plan PP-202610-0004; box origins WE-691004-001 100 (sum = box qty).
+  - Lower-case `box006` resolves to WE-691005-001 50. Forward from WE-691005-001 reaches FG with all 6 boxes and their origins. A lot-number scan, the order trace, and an unknown QR (404) also behaved correctly.
+
 ### 2026-10-05 — Production Lot traceability Phase 6 (FG packages + QR, API only)
 
 - `POST /production/packages/generate` takes `{requestId, fgLotId, qty? (default: all unpacked), packSize? (default: line packing qty)}` (`production-package/package.service.ts`).
