@@ -20,11 +20,13 @@ import {
   generatePackages,
   getAllocationPreview,
   getLineBoard,
+  getLineHistory,
   listLotPackages,
   produceAtStep,
   reverseLotRequest,
   transferFromStep,
   type AllocationPreview,
+  type HistoryEntry,
   type LineBoard,
   type PackageView,
   type ProducePayload,
@@ -212,6 +214,18 @@ export async function generatePackagesAction(
   payload: { requestId: string; fgLotId: string; qty?: number; packSize?: number },
 ) {
   return withBoard(lineId, (token) => generatePackages(token, payload));
+}
+
+export async function getLineHistoryAction(
+  lineId: string,
+): Promise<{ status: "success"; history: HistoryEntry[] } | { status: "error"; message: string }> {
+  const token = await requireAccessToken();
+  if (!token) return redirectMissingSession();
+  try {
+    return { status: "success", history: await getLineHistory(token, lineId) };
+  } catch (err) {
+    return errorResult(err);
+  }
 }
 
 export async function closeRemainingLotAction(

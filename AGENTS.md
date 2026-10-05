@@ -959,6 +959,12 @@ Before writing any new route, component, data-layer file, or Server Action, chec
 
 ## Recent Changes
 
+### 2026-10-05 — LOT orders: request history with retroactive reversal
+
+- cps-api `GET /production/lines/:lineId/history` (`HistoryService`, VIEW): every produce / FG receive / transfer / close request of a line, grouped by requestId, newest first — kind, step, good/reject/closed/transferred qty, lot nos, production day/shift, operator, time, `reversed`, and a best-effort `reversible` (transfer: next-step WIP row untouched; produce: target lot still holds the pieces). The reverse endpoint stays the authority (per-origin check). Packing and plan release are not listed.
+- Dashboard: "ประวัติการบันทึก" button per line (next to the reconciliation note) → `HistoryDialog` (loads on open; reversed rows struck through; "กลับรายการ" disabled with a tooltip when not reversible) → hands over to the existing `ReverseDialog`. Hidden once the order is completed.
+- e2e: history test (flags before/after a reversal, receive/transfer entries) — 16/16.
+
 ### 2026-10-05 — LOT orders: close remaining + automatic completion (plan Case 13)
 
 - cps-api `POST /production/lines/:lineId/steps/:stepIndex/close-remaining {requestId, qty?, reason}` (`CloseService`, ADVANCE): closes WIP waiting at a step (default all), oldest first, with origins on a SHORT_CLOSE ledger row; adds to the line's `short_closed_quantity` (+ reason/at/by); audit `production_order.remaining_closed`. Idempotent; reversible through the existing reverse endpoint (SHORT_CLOSE added to `ReversalService`).

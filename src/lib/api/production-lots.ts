@@ -192,6 +192,30 @@ export interface ReverseResult {
   movements: Array<{ type: string; stepIndex: number; qty: number; lotNo: string | null }>;
 }
 
+export interface HistoryEntry {
+  requestId: string;
+  kind: "PRODUCE" | "RECEIVE" | "TRANSFER" | "CLOSE";
+  stepIndex: number;
+  stepCode: string;
+  goodQty: number;
+  rejectQty: number;
+  closedQty: number;
+  transferredQty: number;
+  lotNos: string[];
+  productionDate: string;
+  shift: string;
+  remark: string | null;
+  operatorName: string | null;
+  createdAt: string;
+  reversed: boolean;
+  /** Best-effort; the server re-checks when it is reversed. */
+  reversible: boolean;
+}
+
+export function getLineHistory(accessToken: string, lineId: string) {
+  return apiFetch<HistoryEntry[]>(`/production/lines/${lineId}/history`, { headers: auth(accessToken) });
+}
+
 export interface LineReconciliation {
   lineId: string;
   checkedAt: string;

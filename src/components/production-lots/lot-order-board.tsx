@@ -5,6 +5,7 @@ import {
   Ban,
   Boxes,
   CircleCheck,
+  History,
   ClipboardPen,
   Loader2,
   PackageCheck,
@@ -26,6 +27,7 @@ import { PackDialog } from "./pack-dialog";
 import { PackageLabelSheet, type LabelContext } from "./package-label-sheet";
 import { ProduceDialog, type RejectReasonOption } from "./produce-dialog";
 import { CloseRemainingDialog } from "./close-remaining-dialog";
+import { HistoryDialog } from "./history-dialog";
 import { ReverseDialog, type ReverseTarget } from "./reverse-dialog";
 import { TransferDialog } from "./transfer-dialog";
 
@@ -34,7 +36,8 @@ type Pending =
   | { kind: "transfer"; lineId: string; step: BoardStep; next: BoardStep; session: number }
   | { kind: "pack"; lineId: string; lot: BoardLot; session: number }
   | { kind: "reverse"; target: ReverseTarget; session: number }
-  | { kind: "close"; lineId: string; step: BoardStep; session: number };
+  | { kind: "close"; lineId: string; step: BoardStep; session: number }
+  | { kind: "history"; lineId: string; session: number };
 
 const fmt = (n: number) => n.toLocaleString("th-TH");
 
@@ -130,7 +133,17 @@ export function LotOrderBoard({
                 <CircleCheck className="size-4" aria-hidden /> ใบสั่งผลิตเสร็จสิ้น — ทุกชิ้นรับเข้าและแพ็กแล้ว เป็นของเสีย หรือปิดยอดแล้ว
               </p>
             )}
-            <ReconciliationNote result={reconciliations[line.id]} />
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+              <ReconciliationNote result={reconciliations[line.id]} />
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 px-2"
+                onClick={() => open({ kind: "history", lineId: line.id })}
+              >
+                <History className="size-3.5" /> ประวัติการบันทึก
+              </Button>
+            </div>
 
             <div className="grid gap-3 @container sm:grid-cols-2 xl:grid-cols-4">
               {board.steps.map((step, i) => {
@@ -278,6 +291,15 @@ export function LotOrderBoard({
             setPending(null);
           }}
           onUndo={(target) => open({ kind: "reverse", target })}
+        />
+      )}
+      {pending?.kind === "history" && (
+        <HistoryDialog
+          key={pending.session}
+          lineId={pending.lineId}
+          canAct={canAct && boards.find((b) => b.line.id === pending.lineId)?.line.orderStatus !== "COMPLETED"}
+          onClose={() => setPending(null)}
+          onReverse={(target) => open({ kind: "reverse", target })}
         />
       )}
       {pending?.kind === "close" && (
