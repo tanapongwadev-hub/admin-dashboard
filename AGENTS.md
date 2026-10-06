@@ -959,6 +959,11 @@ Before writing any new route, component, data-layer file, or Server Action, chec
 
 ## Recent Changes
 
+### 2026-10-06 — Dedicated reverse permission for LOT orders
+
+- cps-api migration `1790600000012-AddProductionOrderReversePermission` (run on dev DB; also in `seed.ts`/`permission-registry.ts`): new action `REVERSE` and permission `PRODUCTION_ORDER_REVERSE` (menu `PRODUCT_PROCESS_ORDERS`). `POST /production/lines/:lineId/requests/:requestId/reverse` now requires it instead of `PRODUCTION_ORDER_ADVANCE`. The migration copies it to every department that already holds ADVANCE so current behaviour is unchanged until someone is taken off.
+- Dashboard: `LotOrderBoard` takes `canReverse` (`can("PRODUCTION_ORDER_REVERSE")` from the order page). Without it the produce/transfer/close toasts have no undo action (`onUndo` optional) and the history dialog hides every "กลับรายการ". Grant the permission to roles via IAM. tsc/eslint clean; not click-tested.
+
 ### 2026-10-06 — LOT orders: void packed boxes (reverse packing)
 
 - cps-api `ReversalService` now accepts a PACKING request id (same `POST /production/lines/:lineId/requests/:requestId/reverse`). `reversePacking`: every box of the request must still be PACKED with current = initial, else 409; boxes become `VOID` (current 0; box number and QR stay taken), pieces return to the FG/STORE lot (`remaining_qty` + origin `qty_remaining`, lot back to OPEN), REVERSAL ledger rows (negative qty/origins, `package_id` kept) net the PACKING rows; audit `production.package.voided`. A COMPLETED order may still have packing voided and is reopened (IN_PROGRESS, `completed_at` null) — `lockLotModelLine(manager, lineId, allowCompleted)`; any other reversal on a completed order stays 409.

@@ -48,7 +48,8 @@ export function TransferDialog({
   next: BoardStep;
   onClose: () => void;
   onDone: (board: LineBoard) => void;
-  onUndo: (target: ReverseTarget) => void;
+  /** Omitted when the user may not reverse: the toast then has no undo. */
+  onUndo?: (target: ReverseTarget) => void;
 }) {
   const [requestId] = useState(() => crypto.randomUUID());
   const ready = step.lots
@@ -93,7 +94,9 @@ export function TransferDialog({
     const message = `ส่ง ${total} ชิ้น ${step.code} → ${next.code} (${result.result.transfers.map((t) => `${t.lotNo} ${t.qty}`).join(", ")})`;
     toast.success(message, {
       duration: 10000,
-      action: { label: "กลับรายการ", onClick: () => onUndo({ lineId, requestId, label: message }) },
+      action: onUndo
+        ? { label: "กลับรายการ", onClick: () => onUndo({ lineId, requestId, label: message }) }
+        : undefined,
     });
     onDone(result.board);
   }

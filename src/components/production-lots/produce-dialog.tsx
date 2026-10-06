@@ -56,7 +56,8 @@ export function ProduceDialog({
   rejectReasons: RejectReasonOption[];
   onClose: () => void;
   onDone: (board: LineBoard) => void;
-  onUndo: (target: ReverseTarget) => void;
+  /** Omitted when the user may not reverse: the toast then has no undo. */
+  onUndo?: (target: ReverseTarget) => void;
 }) {
   const [requestId] = useState(() => crypto.randomUUID());
   const initialDay = currentProductionDay();
@@ -137,7 +138,9 @@ export function ProduceDialog({
       : `บันทึกของเสีย ${rejectTotal} ชิ้น`;
     toast.success(message, {
       duration: 10000,
-      action: { label: "กลับรายการ", onClick: () => onUndo({ lineId, requestId, label: message }) },
+      action: onUndo
+        ? { label: "กลับรายการ", onClick: () => onUndo({ lineId, requestId, label: message }) }
+        : undefined,
     });
     onDone(result.board);
   }

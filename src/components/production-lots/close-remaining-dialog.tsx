@@ -35,7 +35,7 @@ export function CloseRemainingDialog({
   step: BoardStep;
   onClose: () => void;
   onDone: (board: LineBoard) => void;
-  onUndo: (target: ReverseTarget) => void;
+  onUndo?: (target: ReverseTarget) => void;
 }) {
   const [requestId] = useState(() => crypto.randomUUID());
   const [qty, setQty] = useState(String(step.waitingQty));
@@ -62,7 +62,7 @@ export function CloseRemainingDialog({
     const message = `ปิดยอดค้าง ${qtyNum} ชิ้นที่ ${step.code}${result.result.orderCompleted ? " · ใบสั่งผลิตเสร็จสิ้น" : ""}`;
     toast.success(message, {
       duration: 10000,
-      action: result.result.orderCompleted
+      action: result.result.orderCompleted || !onUndo
         ? undefined
         : { label: "กลับรายการ", onClick: () => onUndo({ lineId, requestId, label: message }) },
     });

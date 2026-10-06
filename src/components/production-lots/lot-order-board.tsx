@@ -63,12 +63,15 @@ export function LotOrderBoard({
   initialBoards,
   rejectReasons,
   canAct,
+  canReverse,
   reconciliations = {},
 }: {
   orderCode: string;
   initialBoards: LineBoard[];
   rejectReasons: RejectReasonOption[];
   canAct: boolean;
+  /** PRODUCTION_ORDER_REVERSE — undo toasts and the history "กลับรายการ". */
+  canReverse: boolean;
   /** Per line id, checked when the page loaded (null = check unavailable). */
   reconciliations?: Record<string, LineReconciliation | null>;
 }) {
@@ -415,14 +418,14 @@ export function LotOrderBoard({
             applyBoard(b);
             setPending(null);
           }}
-          onUndo={(target) => open({ kind: "reverse", target })}
+          onUndo={canReverse ? (target) => open({ kind: "reverse", target }) : undefined}
         />
       )}
       {pending?.kind === "history" && (
         <HistoryDialog
           key={pending.session}
           lineId={pending.lineId}
-          canAct={canAct}
+          canAct={canReverse}
           orderCompleted={
             boards.find((b) => b.line.id === pending.lineId)?.line
               .orderStatus === "COMPLETED"
@@ -441,7 +444,7 @@ export function LotOrderBoard({
             applyBoard(b);
             setPending(null);
           }}
-          onUndo={(target) => open({ kind: "reverse", target })}
+          onUndo={canReverse ? (target) => open({ kind: "reverse", target }) : undefined}
         />
       )}
       {pending?.kind === "reverse" && (
@@ -466,7 +469,7 @@ export function LotOrderBoard({
             applyBoard(b);
             setPending(null);
           }}
-          onUndo={(target) => open({ kind: "reverse", target })}
+          onUndo={canReverse ? (target) => open({ kind: "reverse", target }) : undefined}
         />
       )}
       {pending?.kind === "pack" && (

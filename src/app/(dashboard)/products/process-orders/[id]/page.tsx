@@ -77,6 +77,7 @@ export default async function ProductionOrderPage({
           initialBoards={boards}
           rejectReasons={rejectReasons}
           canAct={can("PRODUCTION_ORDER_ADVANCE")}
+          canReverse={can("PRODUCTION_ORDER_REVERSE")}
           reconciliations={reconciliations}
         />
       </div>
