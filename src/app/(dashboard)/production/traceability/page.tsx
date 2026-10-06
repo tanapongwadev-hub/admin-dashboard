@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ApiError } from "@/lib/api/client";
-import { scanTrace, type OriginShare, type ScanResult, type TraceNode } from "@/lib/api/production-lots";
+import { scanTrace, type OriginShare, type ScanResult, type TraceNode, type TransferTagTrace } from "@/lib/api/production-lots";
 import { lotColorAt, type LotColor } from "@/lib/lot-colors";
 import { formatThaiDate } from "@/lib/production-day";
 import { apiErrorMessage } from "@/lib/user-error";
@@ -91,7 +91,7 @@ function collectOrigins(node: TraceNode, into = new Map<string, OriginShare>()) 
 }
 
 function TraceResult({ result }: { result: ScanResult }) {
-  const origins = result.kind === "PACKAGE" ? result.origins : result.lineage.origins;
+  const origins = result.kind === "PACKAGE" || result.kind === "TRANSFER" ? result.origins : result.lineage.origins;
   // Colors by position across every origin lot that appears in the tree.
   const palette = new Map<string, LotColor>();
   [...collectOrigins(result.lineage).keys()].sort().forEach((lotNo, i) => palette.set(lotNo, lotColorAt(i)));
@@ -102,9 +102,9 @@ function TraceResult({ result }: { result: ScanResult }) {
       <section className="rounded-md border border-border bg-surface p-4 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p className="text-xs font-medium text-fg-muted">{result.kind === "PACKAGE" ? "กล่อง FG" : "Lot"}</p>
+            <p className="text-xs font-medium text-fg-muted">{result.kind === "PACKAGE" ? "กล่อง FG" : result.kind === "TRANSFER" ? "QR ส่งต่อ" : "Lot"}</p>
             <p className="font-mono text-lg font-semibold text-fg">
-              {result.kind === "PACKAGE" ? result.qrCode : result.lineage.lotNo}
+              {result.kind === "PACKAGE" || result.kind === "TRANSFER" ? result.qrCode : result.lineage.lotNo}
             </p>
             {result.kind === "PACKAGE" && result.status === "VOID" && (
               <Badge variant="danger" className="mt-1">
@@ -124,6 +124,18 @@ function TraceResult({ result }: { result: ScanResult }) {
             </dd>
             <dt className="text-fg-muted">แผนผลิต</dt>
             <dd className="font-mono text-fg">{result.productionPlan ?? "—"}</dd>
+            {result.kind === "TRANSFER" && (
+              <>
+                <dt className="text-fg-muted">ส่งต่อ</dt>
+                <dd className="text-fg">
+                  {result.fromStep.code} → {result.toStep.code} {result.toStep.name}
+                </dd>
+                <dt className="text-fg-muted">Lot ที่ส่ง</dt>
+                <dd className="font-mono text-fg">{result.sourceLotNo}</dd>
+                <dt className="text-fg-muted">จำนวนที่ส่ง</dt>
+                <dd className="text-fg">{fmt(result.qty)} ชิ้น</dd>
+              </>
+            )}
             {result.kind === "PACKAGE" && (
               <>
                 <dt className="text-fg-muted">จำนวนในกล่อง</dt>
@@ -136,6 +148,8 @@ function TraceResult({ result }: { result: ScanResult }) {
             )}
           </dl>
         </div>
+
+        {result.kind === "TRANSFER" && <TransferWhere result={result} />}
 
         <h2 className="mt-4 text-sm font-semibold text-fg">ผลิตจาก Lot ต้นทาง</h2>
         <div className="mt-2 flex h-3 overflow-hidden rounded-full bg-surface-2" aria-hidden>
@@ -163,6 +177,51 @@ function TraceResult({ result }: { result: ScanResult }) {
           <LineageNode node={result.lineage} palette={palette} />
         </ol>
       </section>
+    </div>
+  );
+}
+
+/** Where a transfer batch is now: waiting, produced into which lots, scrapped, closed. */
+function TransferWhere({ result }: { result: TransferTagTrace }) {
+  return (
+    <div className="mt-4 rounded-md border border-border bg-surface-2/50 p-3">
+      <h2 className="text-sm font-semibold text-fg">ตอนนี้งานชุดนี้อยู่ที่ไหน</h2>
+      <ul className="mt-2 flex flex-col gap-1.5 text-sm">
+        {result.waitingQty > 0 && (
+          <li className="flex flex-wrap items-center gap-2">
+            <Badge variant="warning">รอผลิต</Badge>
+            <span className="font-mono font-semibold">{result.toStep.code}</span>
+            <span className="text-fg-secondary">{fmt(result.waitingQty)} ชิ้น ยังรอผลิตที่ {result.toStep.name}</span>
+          </li>
+        )}
+        {result.producedInto.map((p) => (
+          <li key={p.lotNo} className="flex flex-wrap items-center gap-2">
+            <Badge variant={p.lotRemainingQty > 0 ? "primary" : "neutral"}>ผลิตแล้ว</Badge>
+            <Link
+              href={`/production/traceability?q=${encodeURIComponent(p.lotNo)}`}
+              className="font-mono font-semibold text-primary hover:underline"
+            >
+              {p.lotNo}
+            </Link>
+            <span className="text-fg-secondary">
+              {p.stepCode} · {fmt(p.qty)} ชิ้น
+              {p.lotRemainingQty > 0 ? ` (Lot นี้ยังเหลือ ${fmt(p.lotRemainingQty)} ชิ้นที่ ${p.stepCode})` : " (ส่งต่อ/แพ็กไปแล้ว)"}
+            </span>
+          </li>
+        ))}
+        {result.rejectedQty > 0 && (
+          <li className="flex items-center gap-2">
+            <Badge variant="danger">ของเสีย</Badge>
+            <span className="text-fg-secondary">{fmt(result.rejectedQty)} ชิ้น</span>
+          </li>
+        )}
+        {result.closedQty > 0 && (
+          <li className="flex items-center gap-2">
+            <Badge variant="neutral">ปิดยอด</Badge>
+            <span className="text-fg-secondary">{fmt(result.closedQty)} ชิ้น</span>
+          </li>
+        )}
+      </ul>
     </div>
   );
 }

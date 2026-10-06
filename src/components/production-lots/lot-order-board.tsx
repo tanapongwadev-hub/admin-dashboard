@@ -10,6 +10,7 @@ import {
   Loader2,
   PackageCheck,
   Printer,
+  QrCode,
   Search,
   ShieldAlert,
   ShieldCheck,
@@ -27,6 +28,7 @@ import type {
   LineBoard,
   LineReconciliation,
   PackageView,
+  StepTag,
 } from "@/lib/api/production-lots";
 import { formatThaiDate } from "@/lib/production-day";
 import { cn } from "@/lib/utils";
@@ -37,6 +39,7 @@ import { CloseRemainingDialog } from "./close-remaining-dialog";
 import { HistoryDialog } from "./history-dialog";
 import { ReverseDialog, type ReverseTarget } from "./reverse-dialog";
 import { TransferDialog } from "./transfer-dialog";
+import { TransferTagsDialog } from "./transfer-tags-dialog";
 
 type Pending =
   | { kind: "produce"; lineId: string; step: BoardStep; session: number }
@@ -50,7 +53,16 @@ type Pending =
   | { kind: "pack"; lineId: string; lot: BoardLot; session: number }
   | { kind: "reverse"; target: ReverseTarget; session: number }
   | { kind: "close"; lineId: string; step: BoardStep; session: number }
-  | { kind: "history"; lineId: string; session: number };
+  | { kind: "history"; lineId: string; session: number }
+  | {
+      kind: "tags";
+      lineId: string;
+      /** Step the work was sent into. */
+      step: BoardStep;
+      /** Present right after a transfer; absent = load for reprint. */
+      tags?: StepTag[];
+      session: number;
+    };
 
 const fmt = (n: number) => n.toLocaleString("th-TH");
 
@@ -238,8 +250,20 @@ export function LotOrderBoard({
                       <span className="truncate text-sm text-fg-secondary">
                         {step.name}
                       </span>
+                      {i > 0 && (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="ml-auto size-7"
+                          title={`QR ส่งต่อที่เข้า ${step.code}`}
+                          aria-label={`QR ส่งต่อที่เข้า ${step.code}`}
+                          onClick={() => open({ kind: "tags", lineId: line.id, step })}
+                        >
+                          <QrCode className="size-4" />
+                        </Button>
+                      )}
                       {isReceiving && (
-                        <Badge variant="success" className="ml-auto">
+                        <Badge variant="success" className={i > 0 ? "" : "ml-auto"}>
                           {step.receivingType}
                         </Badge>
                       )}
@@ -473,11 +497,31 @@ export function LotOrderBoard({
           step={pending.step}
           next={pending.next}
           onClose={() => setPending(null)}
-          onDone={(b) => {
+          onDone={(b, tags) => {
             applyBoard(b);
-            setPending(null);
+            if (tags.length) {
+              open({ kind: "tags", lineId: pending.lineId, step: pending.next, tags });
+            } else {
+              setPending(null);
+            }
           }}
           onUndo={canReverse ? (target) => open({ kind: "reverse", target }) : undefined}
+        />
+      )}
+      {pending?.kind === "tags" && (
+        <TransferTagsDialog
+          key={pending.session}
+          lineId={pending.lineId}
+          stepIndex={pending.step.stepIndex}
+          title={`QR ส่งต่อ → ${pending.step.code} ${pending.step.name}`}
+          context={{
+            productCode: boards.find((b) => b.line.id === pending.lineId)?.line.product?.code ?? "",
+            productName: boards.find((b) => b.line.id === pending.lineId)?.line.product?.name ?? "",
+            orderCode,
+            toStep: `${pending.step.code} ${pending.step.name}`,
+          }}
+          initialTags={pending.tags}
+          onClose={() => setPending(null)}
         />
       )}
       {pending?.kind === "pack" && (

@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { BoardStep, LineBoard } from "@/lib/api/production-lots";
+import type { BoardStep, LineBoard, StepTag } from "@/lib/api/production-lots";
 import { currentProductionDay, formatThaiDate, type Shift } from "@/lib/production-day";
 import { cn } from "@/lib/utils";
 import { DayShiftFields } from "./day-shift-fields";
@@ -47,7 +47,8 @@ export function TransferDialog({
   step: BoardStep;
   next: BoardStep;
   onClose: () => void;
-  onDone: (board: LineBoard) => void;
+  /** `tags`: the QR tags this transfer created (empty on legacy replays). */
+  onDone: (board: LineBoard, tags: StepTag[]) => void;
   /** Omitted when the user may not reverse: the toast then has no undo. */
   onUndo?: (target: ReverseTarget) => void;
 }) {
@@ -98,7 +99,24 @@ export function TransferDialog({
         ? { label: "กลับรายการ", onClick: () => onUndo({ lineId, requestId, label: message }) }
         : undefined,
     });
-    onDone(result.board);
+    onDone(
+      result.board,
+      result.result.transfers.flatMap((t) =>
+        t.qrCode && t.qrImage
+          ? [
+              {
+                qrCode: t.qrCode,
+                qrImage: t.qrImage,
+                sourceLotNo: t.lotNo,
+                qty: t.qty,
+                waitingQty: t.qty,
+                sentAt: new Date().toISOString(),
+                origins: t.origins,
+              },
+            ]
+          : [],
+      ),
+    );
   }
 
   return (

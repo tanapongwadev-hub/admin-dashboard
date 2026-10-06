@@ -97,6 +97,9 @@ export interface TransferResult {
   transfers: Array<{
     lotNo: string;
     qty: number;
+    /** QR made for this batch at the next step (null on legacy rows). */
+    qrCode: string | null;
+    qrImage: string | null;
     origins: Array<{ lotNo: string; qty: number }>;
   }>;
 }
@@ -163,7 +166,43 @@ interface TraceContext {
   plannedQty: number;
 }
 
+/** Transfer tag: a batch sent into a step, with a QR to track where it is. */
+export interface StepTag {
+  qrCode: string;
+  /** data: URL (SVG) */
+  qrImage: string;
+  sourceLotNo: string;
+  qty: number;
+  waitingQty: number;
+  sentAt: string;
+  origins: Array<{ lotNo: string; qty: number }>;
+}
+
+export interface TransferTagTrace extends TraceContext {
+  kind: "TRANSFER";
+  qrCode: string;
+  fromStep: { stepIndex: number; code: string };
+  toStep: { stepIndex: number; code: string; name: string };
+  sourceLotNo: string;
+  sentAt: string;
+  qty: number;
+  waitingQty: number;
+  producedQty: number;
+  rejectedQty: number;
+  closedQty: number;
+  producedInto: Array<{
+    lotNo: string;
+    lotType: string;
+    stepCode: string;
+    qty: number;
+    lotRemainingQty: number;
+  }>;
+  origins: OriginShare[];
+  lineage: TraceNode;
+}
+
 export type ScanResult =
+  | TransferTagTrace
   | (TraceContext & {
       kind: "PACKAGE";
       qrCode: string;
@@ -328,6 +367,12 @@ export function getAllocationPreview(
       headers: auth(accessToken),
     },
   );
+}
+
+export function getStepTags(accessToken: string, lineId: string, stepIndex: number) {
+  return apiFetch<StepTag[]>(`/production/lines/${lineId}/steps/${stepIndex}/tags`, {
+    headers: auth(accessToken),
+  });
 }
 
 export function getLineBoard(accessToken: string, lineId: string) {

@@ -959,6 +959,13 @@ Before writing any new route, component, data-layer file, or Server Action, chec
 
 ## Recent Changes
 
+### 2026-10-06 — Transfer QR: every transfer to the next step gets a QR to track the batch
+
+- User request: when work is sent to the next process a QR must be generated immediately so the job can be tracked by step. cps-api migration `1790600000013-AddTransferQrToProcessWip` (run on dev + test DBs) adds `process_wip.qr_code` (unique): each WIP row a transfer creates at the next step (one per source lot per transfer) gets `TQ-{source lot}-S{to step no}-{nn}`; existing transfer rows backfilled. `TransferResult.transfers[]` now carries `qrCode`/`qrImage`.
+- `GET /production/lines/:lineId/steps/:stepIndex/tags` lists the tags of a step (reprint). `TraceabilityService.scan` resolves `TQ-…` (`kind: TRANSFER`): from→to step, source lot, qty sent, and where it is now (waiting qty, lots produced into with their remaining, rejected, closed) + origins + backward lineage. e2e: new test (18/18).
+- Dashboard: after a transfer `TransferDialog.onDone(board, tags)` opens `TransferTagsDialog` (list, print one/all; 60×40 mm `TransferTagSheet`, same print pattern as box labels); each step card from step 2 has a QR icon to reprint its tags; the trace page shows a TRANSFER result with "ตอนนี้งานชุดนี้อยู่ที่ไหน". Verified on the test DB (reprint dialog + scan of a backfilled tag: 350 = 100 + 240 + 10 rejected); the live transfer→dialog click path itself was not exercised (no in-progress LOT order), only the pieces.
+- Not done: tag scan to advance a step (scanning only shows status), tag for the plan release at step 1.
+
 ### 2026-10-06 — LOT UI click-through on the test DB + fixes
 
 - Walked the real UI against `cps_db_test` (stopped the dev API container, ran `node dist/main.js` with `PORT=3001 DB_DATABASE=cps_db_test`, dashboard on :3000, then restored the container). Order TPO-MUVYNRB8 (completed, 3 box requests): board, history dialog, void packing (order reopened, FG shows 280 unpacked, toast, board refreshed), re-pack (BOX009–011, voided numbers stay taken) and the new "ยกเลิกการแพ็กนี้" button, trace of a voided box all behave. Technique: a copy of the dashboard with a junction node_modules does not run (Turbopack rejects the junction, webpack fails on fonts) — swap the API behind :3000 instead.

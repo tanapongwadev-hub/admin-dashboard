@@ -21,6 +21,7 @@ import {
   getAllocationPreview,
   getLineBoard,
   getLineHistory,
+  getStepTags,
   listLotPackages,
   produceAtStep,
   reverseLotRequest,
@@ -29,6 +30,7 @@ import {
   type HistoryEntry,
   type LineBoard,
   type PackageView,
+  type StepTag,
   type ProducePayload,
   type TransferPayload,
 } from "@/lib/api/production-lots";
@@ -223,6 +225,19 @@ export async function getLineHistoryAction(
   if (!token) return redirectMissingSession();
   try {
     return { status: "success", history: await getLineHistory(token, lineId) };
+  } catch (err) {
+    return errorResult(err);
+  }
+}
+
+export async function listStepTagsAction(
+  lineId: string,
+  stepIndex: number,
+): Promise<{ status: "success"; tags: StepTag[] } | { status: "error"; message: string }> {
+  const token = await requireAccessToken();
+  if (!token) return redirectMissingSession();
+  try {
+    return { status: "success", tags: await getStepTags(token, lineId, stepIndex) };
   } catch (err) {
     return errorResult(err);
   }
