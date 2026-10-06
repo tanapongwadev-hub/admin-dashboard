@@ -207,7 +207,7 @@ function TransferWhere({ result }: { result: TransferTagTrace }) {
           <Badge
             variant={result.box.status === "DONE" ? "success" : result.box.status === "PARTIAL" ? "primary" : "warning"}
           >
-            {result.box.status === "DONE" ? "ผลิตครบแล้ว" : result.box.status === "PARTIAL" ? "กำลังผลิต" : "รอผลิต"}
+            {result.box.status === "DONE" ? "ผลิตครบแล้ว" : result.box.status === "PARTIAL" ? "กำลังผลิต" : result.box.status === "CLOSED" ? "ปิดแล้ว" : "รอผลิต"}
           </Badge>
           <span className="text-fg-secondary">
             กล่องนี้ {result.toStep.code}: ผลิตแล้ว {fmt(result.box.doneQty)} / {fmt(result.box.qty)} ชิ้น

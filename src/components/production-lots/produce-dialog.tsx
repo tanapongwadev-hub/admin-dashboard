@@ -3,7 +3,7 @@
 import { Loader2, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { getAllocationPreviewAction, produceLotAction } from "@/app/(dashboard)/products/process-orders/actions";
+import { checkStepBoxAction, getAllocationPreviewAction, produceLotAction } from "@/app/(dashboard)/products/process-orders/actions";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { AllocationPreview, BoardStep, LineBoard } from "@/lib/api/production-lots";
+import type { AllocationPreview, BoardStep, BoxCheck, LineBoard } from "@/lib/api/production-lots";
 import { currentProductionDay, formatThaiDate, type Shift } from "@/lib/production-day";
 import { cn } from "@/lib/utils";
 import { DayShiftFields } from "./day-shift-fields";
@@ -62,7 +62,10 @@ export function ProduceDialog({
   const [requestId] = useState(() => crypto.randomUUID());
   const initialDay = currentProductionDay();
   const canPick = step.stepIndex > 0;
-  const [mode, setMode] = useState<"FIFO" | "MANUAL">("FIFO");
+  const [mode, setMode] = useState<"FIFO" | "MANUAL" | "BOXES">("FIFO");
+  const [scanned, setScanned] = useState<BoxCheck[]>([]);
+  const [scanCode, setScanCode] = useState("");
+  const [scanning, setScanning] = useState(false);
   const [picks, setPicks] = useState<Record<string, string>>({});
   // null = loading; fetched once per open (the dialog remounts per open).
   const [preview, setPreview] = useState<AllocationPreview | null>(null);
@@ -90,6 +93,8 @@ export function ProduceDialog({
   const pickRows = sources.map((s) => ({ source: s, qty: Number(picks[s.lotId] ?? 0) || 0 }));
   const pickOver = pickRows.some((r) => r.qty < 0 || r.qty > r.source.waitingQty || !Number.isInteger(r.qty));
   const manual = mode === "MANUAL";
+  const byBoxes = mode === "BOXES";
+  const boxesLeft = scanned.reduce((sum, b) => sum + b.left, 0);
   const goodQty = manual ? pickRows.reduce((sum, r) => sum + r.qty, 0) : Number(good) || 0;
   // FIFO split of the good pieces across source lots, for display only — the
   // server draws the real split (rejects come after good pieces).
@@ -97,7 +102,7 @@ export function ProduceDialog({
   const rejectRows = rejects.map((r) => ({ reasonId: r.reasonId, qty: Number(r.qty) || 0 }));
   const rejectTotal = rejectRows.reduce((sum, r) => sum + r.qty, 0);
   const total = goodQty + rejectTotal;
-  const over = total > step.waitingQty;
+  const over = total > (byBoxes ? boxesLeft : step.waitingQty);
   const rejectsValid = rejectRows.every((r) => r.reasonId && Number.isInteger(r.qty) && r.qty > 0);
   const valid =
     Number.isInteger(goodQty) &&
@@ -105,9 +110,43 @@ export function ProduceDialog({
     total >= 1 &&
     !over &&
     rejectsValid &&
-    (!manual || (goodQty >= 1 && !pickOver));
+    (!manual || (goodQty >= 1 && !pickOver)) &&
+    (!byBoxes || scanned.length > 0);
   const isFirst = step.stepIndex === 0;
   const isReceiving = step.receivingType !== "NONE";
+
+  function setGoodFor(boxes: BoxCheck[]) {
+    // Default: produce everything in the scanned boxes, minus the scrap.
+    const left = boxes.reduce((sum, b) => sum + b.left, 0);
+    setGood(String(Math.max(0, left - rejectTotal)));
+  }
+
+  async function addBox() {
+    const code = scanCode.trim();
+    if (!code || scanning) return;
+    if (scanned.some((b) => b.qrCode === code.toUpperCase())) {
+      toast.error("สแกนกล่องนี้แล้ว");
+      setScanCode("");
+      return;
+    }
+    setScanning(true);
+    const r = await checkStepBoxAction(lineId, step.stepIndex, code);
+    setScanning(false);
+    setScanCode("");
+    if (r.status === "error") {
+      toast.error(r.message);
+      return;
+    }
+    const next = [...scanned, r.box];
+    setScanned(next);
+    setGoodFor(next);
+  }
+
+  function removeBox(qrCode: string) {
+    const next = scanned.filter((b) => b.qrCode !== qrCode);
+    setScanned(next);
+    setGoodFor(next);
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -117,6 +156,7 @@ export function ProduceDialog({
       requestId,
       goodQty,
       rejects: rejectRows.length ? rejectRows : undefined,
+      ...(byBoxes ? { boxes: scanned.map((b) => b.qrCode) } : {}),
       ...(manual
         ? {
             allocationMode: "MANUAL" as const,
@@ -161,7 +201,7 @@ export function ProduceDialog({
           <div className="flex max-h-[60vh] flex-col gap-3 overflow-y-auto px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {canPick && (
               <div role="group" aria-label="วิธีเลือก Lot ต้นทาง" className="inline-flex w-fit rounded-md border border-border-strong p-0.5">
-                {(["FIFO", "MANUAL"] as const).map((m) => (
+                {(["FIFO", "MANUAL", "BOXES"] as const).map((m) => (
                   <button
                     key={m}
                     type="button"
@@ -172,7 +212,7 @@ export function ProduceDialog({
                       mode === m ? "bg-primary-soft text-primary" : "text-fg-secondary hover:bg-surface-2",
                     )}
                   >
-                    {m === "FIFO" ? "Lot เก่าก่อน (FIFO)" : "เลือก Lot ต้นทางเอง"}
+                    {m === "FIFO" ? "Lot เก่าก่อน (FIFO)" : m === "MANUAL" ? "เลือก Lot ต้นทางเอง" : "สแกนกล่อง"}
                   </button>
                 ))}
               </div>
@@ -197,7 +237,56 @@ export function ProduceDialog({
                 />
               </div>
             )}
-            {canPick && (
+            {byBoxes && (
+              <div className="flex flex-col gap-2 rounded-md border border-border p-3">
+                <Label htmlFor="pd-scan">สแกน QR กล่องที่จะผลิต</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="pd-scan"
+                    value={scanCode}
+                    placeholder="TQ-…-B001"
+                    autoComplete="off"
+                    onChange={(e) => setScanCode(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        void addBox();
+                      }
+                    }}
+                  />
+                  <Button type="button" variant="outline" onClick={() => void addBox()} disabled={scanning || !scanCode.trim()}>
+                    {scanning ? <Loader2 className="size-4 animate-spin" /> : "เพิ่ม"}
+                  </Button>
+                </div>
+                {scanned.length === 0 ? (
+                  <p className="text-xs text-fg-muted">ยังไม่ได้สแกนกล่อง — ใช้เครื่องสแกนยิงที่ช่องนี้ หรือพิมพ์รหัสแล้วกด Enter</p>
+                ) : (
+                  <ul className="flex flex-col gap-1">
+                    {scanned.map((b) => (
+                      <li key={b.qrCode} className="flex items-center gap-2 rounded border border-border px-2 py-1 text-xs">
+                        <span className="min-w-0 flex-1 truncate font-mono">{b.qrCode}</span>
+                        <span className="text-fg-secondary">
+                          กล่อง {b.boxNo}/{b.boxCount} · เหลือ {b.left}/{b.qty}
+                        </span>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 px-1.5"
+                          onClick={() => removeBox(b.qrCode)}
+                        >
+                          เอาออก
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <p className="text-xs text-fg-secondary">
+                  ชิ้นงานในกล่องที่สแกน {boxesLeft} ชิ้น — จำนวนดี + ของเสียต้องไม่เกินนี้
+                </p>
+              </div>
+            )}
+            {canPick && !byBoxes && (
               <div className="overflow-hidden rounded-md border border-border">
                 <table className="w-full text-sm">
                   <caption className="sr-only">Lot ต้นทางที่รอผลิตที่ {step.code}</caption>

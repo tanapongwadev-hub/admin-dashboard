@@ -58,6 +58,8 @@ export interface ProducePayload {
   requestId: string;
   goodQty: number;
   rejects?: Array<{ reasonId: string; qty: number }>;
+  /** Box QR codes scanned at this step: pieces come from exactly these boxes. */
+  boxes?: string[];
   /** MANUAL: good pieces drawn from the named source lots (prev. step). */
   allocationMode?: "FIFO" | "MANUAL";
   allocations?: Array<{ lotId: string; qty: number }>;
@@ -184,7 +186,7 @@ export interface StepTag {
   qty: number;
   /** Pieces of this box already produced/scrapped/closed at the step. */
   doneQty: number;
-  status: "WAITING" | "PARTIAL" | "DONE";
+  status: "WAITING" | "PARTIAL" | "DONE" | "CLOSED";
   origins: Array<{ lotNo: string; qty: number }>;
 }
 
@@ -202,7 +204,7 @@ export interface TransferTagTrace extends TraceContext {
     boxCount: number;
     qty: number;
     doneQty: number;
-    status: "WAITING" | "PARTIAL" | "DONE";
+    status: "WAITING" | "PARTIAL" | "DONE" | "CLOSED";
     origins: OriginShare[];
   } | null;
   boxes: Array<{
@@ -210,7 +212,7 @@ export interface TransferTagTrace extends TraceContext {
     boxNo: number;
     qty: number;
     doneQty: number;
-    status: "WAITING" | "PARTIAL" | "DONE";
+    status: "WAITING" | "PARTIAL" | "DONE" | "CLOSED";
   }>;
   qty: number;
   waitingQty: number;
@@ -393,6 +395,24 @@ export function getAllocationPreview(
     {
       headers: auth(accessToken),
     },
+  );
+}
+
+/** A scanned box at a step: checked, with the pieces it still holds. */
+export interface BoxCheck {
+  qrCode: string;
+  boxNo: number;
+  boxCount: number;
+  qty: number;
+  left: number;
+  sourceLotNo: string;
+  origins: Array<{ lotNo: string; qty: number }>;
+}
+
+export function checkStepBox(accessToken: string, lineId: string, stepIndex: number, code: string) {
+  return apiFetch<BoxCheck>(
+    `/production/lines/${lineId}/steps/${stepIndex}/boxes?code=${encodeURIComponent(code)}`,
+    { headers: auth(accessToken) },
   );
 }
 

@@ -20,6 +20,7 @@ import {
   generatePackages,
   getAllocationPreview,
   getLineBoard,
+  checkStepBox,
   getLineHistory,
   getStepTags,
   listLotPackages,
@@ -27,6 +28,7 @@ import {
   reverseLotRequest,
   transferFromStep,
   type AllocationPreview,
+  type BoxCheck,
   type HistoryEntry,
   type LineBoard,
   type PackageView,
@@ -238,6 +240,20 @@ export async function listStepTagsAction(
   if (!token) return redirectMissingSession();
   try {
     return { status: "success", tags: await getStepTags(token, lineId, stepIndex) };
+  } catch (err) {
+    return errorResult(err);
+  }
+}
+
+export async function checkStepBoxAction(
+  lineId: string,
+  stepIndex: number,
+  code: string,
+): Promise<{ status: "success"; box: BoxCheck } | { status: "error"; message: string }> {
+  const token = await requireAccessToken();
+  if (!token) return redirectMissingSession();
+  try {
+    return { status: "success", box: await checkStepBox(token, lineId, stepIndex, code) };
   } catch (err) {
     return errorResult(err);
   }

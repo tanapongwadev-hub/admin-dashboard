@@ -98,7 +98,9 @@ export function TransferTagsDialog({
                           ? " · ผลิตครบแล้ว"
                           : tag.status === "PARTIAL"
                             ? ` · ผลิตแล้ว ${tag.doneQty}/${tag.qty}`
-                            : " · รอผลิต"}
+                            : tag.status === "CLOSED"
+                              ? " · ปิดแล้ว"
+                              : " · รอผลิต"}
                       </p>
                       <p className="text-xs text-fg-secondary">
                         จาก {tag.sourceLotNo}

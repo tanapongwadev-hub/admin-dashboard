@@ -959,6 +959,13 @@ Before writing any new route, component, data-layer file, or Server Action, chec
 
 ## Recent Changes
 
+### 2026-10-06 — Scan boxes when recording production (exact per-box tracking)
+
+- Requested follow-up to per-box transfer QR: at a step after the first, the produce dialog has a third mode "สแกนกล่อง" — scan box QRs (`TQ-…-Bnnn`, scanner or typed + Enter; each checked by `GET /production/lines/:lineId/steps/:stepIndex/boxes?code=`), good + rejects are drawn from exactly those boxes in scan order (`ProduceDto.boxes`; ledger `allocation_mode` MANUAL). Good defaults to the boxes' remaining minus scrap.
+- cps-api migration `1790600000015-CreateProductionTransactionBoxes` (dev + test DBs): append-only `production_transaction_boxes(transaction_id, wip_id, box_no, qty)` (UPDATE/DELETE forbidden like the ledger). A box's done qty = SUM over its rows; reversals (produce, close) mirror the rows negative (`mirrorBoxRows`). Boxes stay computed (`wip-boxes.ts`): split of qty_in/pack_size, origins dealt oldest-first, done from box rows; consumption that predates box rows (old orders) is applied first-box-first; a batch whose transfer was reversed shows its unfinished boxes as CLOSED. Supersedes the "FIFO progress per box" approximation noted in the previous entry for new records.
+- Every consumption of a transferred batch (plain produce, rejects, close remaining, box mode) now goes through `consumeFromBoxes`: pieces and **origins** come out box by box with the boxes' own nominal origins, the WIP row's origin pool is reduced to match. Rows without a QR (plan release at step 1) keep the old path. New pure helpers `allocateToBoxes`/`dealOrigins`/`sliceOrigins` (unit tests, 38 in domain spec). e2e: new "box mode" test (picks a non-first box, others untouched, used-up/unknown box refused, reversal restores) — 19/19.
+- Verified: backend tests + the legacy fallback on the test DB (trace of box 2/4 still DONE). The scan-boxes UI itself is type/lint-checked only — no in-progress LOT order existed to click through.
+
 ### 2026-10-06 — Transfer QR is per box (pack), not per batch
 
 - User request: the QR made when work goes to the next process must be one per box of pieces, to check each box. cps-api migration `1790600000014-AddPackSizeToProcessWip` (dev + test DBs) adds `process_wip.pack_size` (backfilled from the line packing quantity). A transferred batch (WIP row, batch QR `TQ-…-S{n}-{nn}`) is split into boxes of `pack_size` (default = line packing qty, editable in the transfer dialog and sent as `packSize`); each box QR is `{batch QR}-B{nnn}`.
