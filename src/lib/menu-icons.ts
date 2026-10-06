@@ -31,6 +31,7 @@ import {
   ClipboardList,
   ClipboardCheck,
   Workflow,
+  ScanSearch,
   Circle,
   type LucideIcon,
 } from "lucide-react";
@@ -66,6 +67,7 @@ const MENU_ICONS: Record<string, LucideIcon> = {
   car: Car,
   "git-branch": GitBranch,
   workflow: Workflow,
+  "scan-search": ScanSearch,
   database: Database,
   gauge: Gauge,
   "book-open": BookOpen,

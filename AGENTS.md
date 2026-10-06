@@ -959,6 +959,10 @@ Before writing any new route, component, data-layer file, or Server Action, chec
 
 ## Recent Changes
 
+### 2026-10-06 — Menu entry for the production traceability page
+
+- cps-api migration `1790600000011-AddProductionTraceabilityMenu` (run on dev DB; also in `seed.ts`) adds menu `PRODUCTION_TRACEABILITY` ("สอบกลับการผลิต", SUB under `PRODUCTS_LIST`, path `/production/traceability`, icon `scan-search`, appended after live siblings). No new permission: `permission-registry.ts` maps its READ to `PRODUCTION_ORDER_VIEW` (what the page already checks), so roles that can see process orders see it. Dashboard: `scan-search` added to `lib/menu-icons.ts`. tsc clean; not click-tested in the sidebar.
+
 ### 2026-10-05 — LOT orders: request history with retroactive reversal
 
 - cps-api `GET /production/lines/:lineId/history` (`HistoryService`, VIEW): every produce / FG receive / transfer / close request of a line, grouped by requestId, newest first — kind, step, good/reject/closed/transferred qty, lot nos, production day/shift, operator, time, `reversed`, and a best-effort `reversible` (transfer: next-step WIP row untouched; produce: target lot still holds the pieces). The reverse endpoint stays the authority (per-origin check). Packing and plan release are not listed.
