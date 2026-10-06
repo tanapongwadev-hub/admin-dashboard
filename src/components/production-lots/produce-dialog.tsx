@@ -1,7 +1,7 @@
 "use client";
 
 import { Loader2, Plus, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ENABLED_PRODUCE_MODES, type ProduceMode } from "@/lib/production-flags";
 import { toast } from "sonner";
 import { checkStepBoxAction, getAllocationPreviewAction, nextStepBoxAction, produceLotAction } from "@/app/(dashboard)/products/process-orders/actions";
@@ -70,6 +70,9 @@ export function ProduceDialog({
   const [scanned, setScanned] = useState<BoxCheck[]>([]);
   const [scanCode, setScanCode] = useState("");
   const [scanning, setScanning] = useState(false);
+  // Not recording the whole box: good pieces become editable, the rest stays in the box.
+  const [partial, setPartial] = useState(false);
+  const scanRef = useRef<HTMLInputElement>(null);
   const [expected, setExpected] = useState<BoxCheck | null | undefined>(undefined);
   const [picks, setPicks] = useState<Record<string, string>>({});
   // null = loading; fetched once per open (the dialog remounts per open).
@@ -112,7 +115,13 @@ export function ProduceDialog({
   const manual = mode === "MANUAL";
   const byBoxes = mode === "BOXES";
   const boxesLeft = scanned.reduce((sum, b) => sum + b.left, 0);
-  const goodQty = manual ? pickRows.reduce((sum, r) => sum + r.qty, 0) : Number(good) || 0;
+  const byBoxesFull = byBoxes && !partial;
+  const rejectSum = rejects.reduce((sum, r) => sum + (Number(r.qty) || 0), 0);
+  const goodQty = manual
+    ? pickRows.reduce((sum, r) => sum + r.qty, 0)
+    : byBoxesFull
+      ? Math.max(0, boxesLeft - rejectSum)
+      : Number(good) || 0;
   // FIFO split of the good pieces across source lots, for display only — the
   // server draws the real split (rejects come after good pieces).
   const fifoSplit = splitFifo(sources, goodQty);
@@ -128,9 +137,14 @@ export function ProduceDialog({
     !over &&
     rejectsValid &&
     (!manual || (goodQty >= 1 && !pickOver)) &&
-    (!byBoxes || scanned.length > 0);
+    (!byBoxes || (scanned.length > 0 && (partial || total === boxesLeft)));
   const isFirst = step.stepIndex === 0;
   const isReceiving = step.receivingType !== "NONE";
+
+  function focusScan() {
+    // After React re-rendered, so the field is ready for the next scan.
+    setTimeout(() => scanRef.current?.focus(), 0);
+  }
 
   function setGoodFor(boxes: BoxCheck[]) {
     // Default: produce everything in the scanned boxes, minus the scrap.
@@ -157,12 +171,14 @@ export function ProduceDialog({
     setScanCode("");
     if (r.status === "error") {
       toast.error(r.message);
+      focusScan();
       return;
     }
     const next = [...scanned, r.box];
     setScanned(next);
     setGoodFor(next);
     void loadExpected(next);
+    focusScan();
   }
 
   async function loadExpected(boxes: BoxCheck[]) {
@@ -175,11 +191,13 @@ export function ProduceDialog({
   }
 
   function removeBox(qrCode: string) {
-    // FIFO: only the last scanned box can be taken back.
-    const next = scanned.filter((b) => b.qrCode !== qrCode);
+    // FIFO has no gaps: taking a box back also takes back the ones scanned after it.
+    const at = scanned.findIndex((b) => b.qrCode === qrCode);
+    const next = at < 0 ? scanned : scanned.slice(0, at);
     setScanned(next);
     setGoodFor(next);
     void loadExpected(next);
+    focusScan();
   }
 
   async function submit(e: React.FormEvent) {
@@ -254,32 +272,14 @@ export function ProduceDialog({
                 ))}
               </div>
             )}
-            {manual ? (
-              <p className="text-sm text-fg-secondary">
-                จำนวนดี <span className="font-semibold tabular-nums text-fg">{goodQty}</span> ชิ้น (รวมจากที่เลือกด้านล่าง)
-              </p>
-            ) : (
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="pd-good">จำนวนดี (ชิ้น)</Label>
-                <Input
-                  id="pd-good"
-                  type="number"
-                  inputMode="numeric"
-                  min={0}
-                  max={step.waitingQty}
-                  value={good}
-                  onChange={(e) => setGood(e.target.value)}
-                  aria-describedby="pd-hint"
-                  autoFocus
-                />
-              </div>
-            )}
             {byBoxes && (
               <div className="flex flex-col gap-2 rounded-md border border-border p-3">
                 <Label htmlFor="pd-scan">สแกน QR กล่องที่จะผลิต</Label>
                 <div className="flex gap-2">
                   <Input
                     id="pd-scan"
+                    ref={scanRef}
+                    autoFocus
                     value={scanCode}
                     placeholder="TQ-…-B001"
                     autoComplete="off"
@@ -318,6 +318,25 @@ export function ProduceDialog({
                     ))}
                   </ul>
                 )}
+                <label className="flex items-start gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5 size-4"
+                    checked={partial}
+                    disabled={scanned.length === 0}
+                    onChange={(e) => {
+                      setPartial(e.target.checked);
+                      // Start from the full amount; the user lowers it.
+                      if (e.target.checked) setGood(String(goodQty));
+                    }}
+                  />
+                  <span>
+                    บันทึกไม่เต็มกล่อง (แบ่งกล่อง)
+                    <span className="block text-xs text-fg-muted">
+                      กรอกจำนวนดีเอง — ชิ้นที่เหลืออยู่ในกล่องเดิมและจะได้ QR ใหม่ให้พิมพ์ติดกล่อง
+                    </span>
+                  </span>
+                </label>
                 {expected === null ? (
                   <p className="text-xs text-fg-muted">ไม่มีกล่องถัดไปที่รอผลิต</p>
                 ) : expected ? (
@@ -328,6 +347,33 @@ export function ProduceDialog({
                 <p className="text-xs text-fg-secondary">
                   ชิ้นงานในกล่องที่สแกน {boxesLeft} ชิ้น — จำนวนดี + ของเสียต้องไม่เกินนี้
                 </p>
+              </div>
+            )}
+            {manual ? (
+              <p className="text-sm text-fg-secondary">
+                จำนวนดี <span className="font-semibold tabular-nums text-fg">{goodQty}</span> ชิ้น (รวมจากที่เลือกด้านล่าง)
+              </p>
+            ) : (
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="pd-good">จำนวนดี (ชิ้น)</Label>
+                <Input
+                  id="pd-good"
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  max={step.waitingQty}
+                  value={byBoxesFull ? String(goodQty) : good}
+                  onChange={(e) => setGood(e.target.value)}
+                  readOnly={byBoxesFull}
+                  className={byBoxesFull ? "bg-surface-2" : undefined}
+                  aria-describedby="pd-hint"
+                  autoFocus={!byBoxes}
+                />
+                {byBoxesFull && (
+                  <p className="text-xs text-fg-muted">
+                    เต็มจำนวนกล่องที่สแกน (หักของเสียแล้ว) — ถ้าไม่ผลิตเต็มกล่อง ให้ติ๊ก “บันทึกไม่เต็มกล่อง”
+                  </p>
+                )}
               </div>
             )}
             {canPick && !byBoxes && (

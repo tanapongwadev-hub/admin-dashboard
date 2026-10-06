@@ -959,6 +959,11 @@ Before writing any new route, component, data-layer file, or Server Action, chec
 
 ## Recent Changes
 
+### 2026-10-06 — Scan dialog: focus on the scan field, partial-box option, read-only good qty
+
+- `ProduceDialog` (scan mode): the scan field comes first and has focus on open and again after every scan / removal / failed check (`scanRef` + `focusScan`); removing a scanned box also removes the ones scanned after it (FIFO has no gaps). New checkbox **“บันทึกไม่เต็มกล่อง (แบ่งกล่อง)”**: off (default) → "จำนวนดี (ชิ้น)" is read-only, computed as the scanned boxes' remaining minus scrap, and the record must use every piece (`total === boxesLeft`); on → good qty editable (starts at the full amount), the rest stays in the box and the new-QR dialog follows.
+- Verified in the browser on the test DB with an in-progress order made by running the first e2e cases only (`jest -t "Case (1|12|2|3|4|10|9|8|5) —"`): focus ring on the scan field, scan of the FIFO box, read-only 100, tick → editable, 60 saved → "QR ใหม่ของกล่องที่แบ่ง" with `…-B001-R1`, 40/100 left.
+
 ### 2026-10-06 — Produce after step 1 is scan-only (other ways switched off for now)
 
 - Request: keep only QR scanning; disable the other ways until they are re-enabled. Dashboard: `lib/production-flags.ts#PRODUCE_MODES` (`FIFO:false, MANUAL:false, BOXES:true`); `ProduceDialog` offers only enabled modes after the first step, so it opens straight in "สแกนกล่อง" with the first FIFO box shown (mode selector hidden when one mode is left). Step 1 (plan release, no boxes) is unchanged. To re-enable a way: flip its flag here **and** set `PRODUCTION_REQUIRE_BOX_SCAN=false` on the API.
