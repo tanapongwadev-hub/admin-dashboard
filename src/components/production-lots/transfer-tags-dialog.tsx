@@ -94,6 +94,7 @@ export function TransferTagsDialog({
                       <p className="truncate font-mono text-xs text-fg">{tag.qrCode}</p>
                       <p className="text-xs font-medium text-fg">
                         กล่อง {tag.boxNo}/{tag.boxCount}
+                        {tag.revision > 0 && ` · แบ่งแล้ว (เหลือ ${tag.left}/${tag.qty})`}
                         {tag.status === "DONE"
                           ? " · ผลิตครบแล้ว"
                           : tag.status === "PARTIAL"
@@ -109,7 +110,7 @@ export function TransferTagsDialog({
                       </p>
                     </div>
                     <div className="flex flex-col items-end gap-1">
-                      <span className="text-sm font-semibold tabular-nums text-fg">{tag.qty}</span>
+                      <span className="text-sm font-semibold tabular-nums text-fg">{tag.revision > 0 ? tag.left : tag.qty}</span>
                       <Button size="sm" variant="ghost" className="h-6 px-1.5" onClick={() => setPrinting([tag])}>
                         <Printer className="size-3.5" /> พิมพ์
                       </Button>

@@ -3,7 +3,7 @@
 import { Loader2, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { checkStepBoxAction, getAllocationPreviewAction, produceLotAction } from "@/app/(dashboard)/products/process-orders/actions";
+import { checkStepBoxAction, getAllocationPreviewAction, nextStepBoxAction, produceLotAction } from "@/app/(dashboard)/products/process-orders/actions";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { AllocationPreview, BoardStep, BoxCheck, LineBoard } from "@/lib/api/production-lots";
+import type { AllocationPreview, BoardStep, BoxCheck, LineBoard, StepTag } from "@/lib/api/production-lots";
 import { currentProductionDay, formatThaiDate, type Shift } from "@/lib/production-day";
 import { cn } from "@/lib/utils";
 import { DayShiftFields } from "./day-shift-fields";
@@ -55,7 +55,8 @@ export function ProduceDialog({
   step: BoardStep;
   rejectReasons: RejectReasonOption[];
   onClose: () => void;
-  onDone: (board: LineBoard) => void;
+  /** `splits`: boxes this record split — their new QR labels to print. */
+  onDone: (board: LineBoard, splits: StepTag[]) => void;
   /** Omitted when the user may not reverse: the toast then has no undo. */
   onUndo?: (target: ReverseTarget) => void;
 }) {
@@ -66,6 +67,7 @@ export function ProduceDialog({
   const [scanned, setScanned] = useState<BoxCheck[]>([]);
   const [scanCode, setScanCode] = useState("");
   const [scanning, setScanning] = useState(false);
+  const [expected, setExpected] = useState<BoxCheck | null | undefined>(undefined);
   const [picks, setPicks] = useState<Record<string, string>>({});
   // null = loading; fetched once per open (the dialog remounts per open).
   const [preview, setPreview] = useState<AllocationPreview | null>(null);
@@ -130,7 +132,12 @@ export function ProduceDialog({
       return;
     }
     setScanning(true);
-    const r = await checkStepBoxAction(lineId, step.stepIndex, code);
+    const r = await checkStepBoxAction(
+      lineId,
+      step.stepIndex,
+      code,
+      scanned.map((b) => b.qrCode),
+    );
     setScanning(false);
     setScanCode("");
     if (r.status === "error") {
@@ -140,12 +147,24 @@ export function ProduceDialog({
     const next = [...scanned, r.box];
     setScanned(next);
     setGoodFor(next);
+    void loadExpected(next);
+  }
+
+  async function loadExpected(boxes: BoxCheck[]) {
+    const r = await nextStepBoxAction(
+      lineId,
+      step.stepIndex,
+      boxes.map((b) => b.qrCode),
+    );
+    setExpected(r.status === "success" ? r.box : undefined);
   }
 
   function removeBox(qrCode: string) {
+    // FIFO: only the last scanned box can be taken back.
     const next = scanned.filter((b) => b.qrCode !== qrCode);
     setScanned(next);
     setGoodFor(next);
+    void loadExpected(next);
   }
 
   async function submit(e: React.FormEvent) {
@@ -182,7 +201,7 @@ export function ProduceDialog({
         ? { label: "กลับรายการ", onClick: () => onUndo({ lineId, requestId, label: message }) }
         : undefined,
     });
-    onDone(result.board);
+    onDone(result.board, result.result.splits ?? []);
   }
 
   return (
@@ -206,7 +225,10 @@ export function ProduceDialog({
                     key={m}
                     type="button"
                     aria-pressed={mode === m}
-                    onClick={() => setMode(m)}
+                    onClick={() => {
+                      setMode(m);
+                      if (m === "BOXES") void loadExpected(scanned);
+                    }}
                     className={cn(
                       "rounded px-3 py-1 text-sm font-medium",
                       mode === m ? "bg-primary-soft text-primary" : "text-fg-secondary hover:bg-surface-2",
@@ -281,6 +303,13 @@ export function ProduceDialog({
                     ))}
                   </ul>
                 )}
+                {expected === null ? (
+                  <p className="text-xs text-fg-muted">ไม่มีกล่องถัดไปที่รอผลิต</p>
+                ) : expected ? (
+                  <p className="text-xs text-primary">
+                    กล่องถัดไป (FIFO): <span className="font-mono font-semibold">{expected.qrCode}</span> · เหลือ {expected.left} ชิ้น
+                  </p>
+                ) : null}
                 <p className="text-xs text-fg-secondary">
                   ชิ้นงานในกล่องที่สแกน {boxesLeft} ชิ้น — จำนวนดี + ของเสียต้องไม่เกินนี้
                 </p>

@@ -61,6 +61,7 @@ type Pending =
       step: BoardStep;
       /** Present right after a transfer; absent = load for reprint. */
       tags?: StepTag[];
+      title?: string;
       session: number;
     };
 
@@ -446,9 +447,19 @@ export function LotOrderBoard({
           step={pending.step}
           rejectReasons={rejectReasons}
           onClose={() => setPending(null)}
-          onDone={(b) => {
+          onDone={(b, splits) => {
             applyBoard(b);
-            setPending(null);
+            if (splits.length) {
+              open({
+                kind: "tags",
+                lineId: pending.lineId,
+                step: pending.step,
+                tags: splits,
+                title: `QR ใหม่ของกล่องที่แบ่ง · ${pending.step.code}`,
+              });
+            } else {
+              setPending(null);
+            }
           }}
           onUndo={canReverse ? (target) => open({ kind: "reverse", target }) : undefined}
         />
@@ -514,7 +525,7 @@ export function LotOrderBoard({
           key={pending.session}
           lineId={pending.lineId}
           stepIndex={pending.step.stepIndex}
-          title={`QR ส่งต่อ → ${pending.step.code} ${pending.step.name}`}
+          title={pending.title ?? `QR ส่งต่อ → ${pending.step.code} ${pending.step.name}`}
           context={{
             productCode: boards.find((b) => b.line.id === pending.lineId)?.line.product?.code ?? "",
             productName: boards.find((b) => b.line.id === pending.lineId)?.line.product?.name ?? "",

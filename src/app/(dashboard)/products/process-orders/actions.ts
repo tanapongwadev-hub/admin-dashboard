@@ -23,6 +23,7 @@ import {
   checkStepBox,
   getLineHistory,
   getStepTags,
+  nextStepBox,
   listLotPackages,
   produceAtStep,
   reverseLotRequest,
@@ -245,15 +246,30 @@ export async function listStepTagsAction(
   }
 }
 
+export async function nextStepBoxAction(
+  lineId: string,
+  stepIndex: number,
+  scanned: string[],
+): Promise<{ status: "success"; box: BoxCheck | null } | { status: "error"; message: string }> {
+  const token = await requireAccessToken();
+  if (!token) return redirectMissingSession();
+  try {
+    return { status: "success", box: await nextStepBox(token, lineId, stepIndex, scanned) };
+  } catch (err) {
+    return errorResult(err);
+  }
+}
+
 export async function checkStepBoxAction(
   lineId: string,
   stepIndex: number,
   code: string,
+  scanned: string[] = [],
 ): Promise<{ status: "success"; box: BoxCheck } | { status: "error"; message: string }> {
   const token = await requireAccessToken();
   if (!token) return redirectMissingSession();
   try {
-    return { status: "success", box: await checkStepBox(token, lineId, stepIndex, code) };
+    return { status: "success", box: await checkStepBox(token, lineId, stepIndex, code, scanned) };
   } catch (err) {
     return errorResult(err);
   }

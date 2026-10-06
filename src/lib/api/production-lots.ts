@@ -82,6 +82,8 @@ export interface ProduceResult {
     origins: Array<{ lotNo: string; qty: number; qtyRemaining: number }>;
   } | null;
   step: { stepIndex: number; code: string; name: string; waitingQty: number };
+  /** Boxes this record split: pieces left, new QR to print. */
+  splits?: StepTag[];
 }
 
 export interface TransferPayload {
@@ -175,8 +177,13 @@ interface TraceContext {
 
 /** One box of a batch sent into a step — its own QR, to check each box. */
 export interface StepTag {
-  /** {batch QR}-B{nnn} */
+  /** Current QR: {batch QR}-B{nnn}, plus -R{n} after the box was split. */
   qrCode: string;
+  /** {batch QR}-B{nnn} — as first labelled. */
+  baseCode: string;
+  revision: number;
+  /** Pieces still in the box. */
+  left: number;
   /** data: URL (SVG) */
   qrImage: string;
   batchQr: string;
@@ -202,8 +209,12 @@ export interface TransferTagTrace extends TraceContext {
     qrCode: string;
     boxNo: number;
     boxCount: number;
+    revision: number;
+    /** Set when the scanned label is an old one of a split box. */
+    supersededBy: string | null;
     qty: number;
     doneQty: number;
+    left: number;
     status: "WAITING" | "PARTIAL" | "DONE" | "CLOSED";
     origins: OriginShare[];
   } | null;
@@ -405,13 +416,27 @@ export interface BoxCheck {
   boxCount: number;
   qty: number;
   left: number;
+  revision: number;
   sourceLotNo: string;
   origins: Array<{ lotNo: string; qty: number }>;
 }
 
-export function checkStepBox(accessToken: string, lineId: string, stepIndex: number, code: string) {
+export function checkStepBox(
+  accessToken: string,
+  lineId: string,
+  stepIndex: number,
+  code: string,
+  scanned: string[] = [],
+) {
   return apiFetch<BoxCheck>(
-    `/production/lines/${lineId}/steps/${stepIndex}/boxes?code=${encodeURIComponent(code)}`,
+    `/production/lines/${lineId}/steps/${stepIndex}/boxes?code=${encodeURIComponent(code)}&scanned=${encodeURIComponent(scanned.join(","))}`,
+    { headers: auth(accessToken) },
+  );
+}
+
+export function nextStepBox(accessToken: string, lineId: string, stepIndex: number, scanned: string[] = []) {
+  return apiFetch<BoxCheck | null>(
+    `/production/lines/${lineId}/steps/${stepIndex}/boxes/next?scanned=${encodeURIComponent(scanned.join(","))}`,
     { headers: auth(accessToken) },
   );
 }

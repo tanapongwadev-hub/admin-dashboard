@@ -959,6 +959,12 @@ Before writing any new route, component, data-layer file, or Server Action, chec
 
 ## Recent Changes
 
+### 2026-10-06 — Box scans follow FIFO; a split box gets a new QR
+
+- **FIFO scan** (server-enforced): `fifoBoxes()` orders the boxes still holding pieces at a step — batches by arrival (`received_at, id`), boxes of a batch by number. `produce` with `boxes` must be a gap-free prefix of that list (`assertFifoScan`), else 409 "ต้องสแกนตามลำดับ FIFO — กล่องที่ต้องใช้ก่อนคือ …". `GET …/steps/:stepIndex/boxes?code=&scanned=a,b` checks the next scan; new `GET …/boxes/next?scanned=` returns the box to take next (the produce dialog shows it: "กล่องถัดไป (FIFO)"; the last scanned can be taken back).
+- **Split design**: pieces taken out of a box (produced, scrapped, closed) leave the rest in the same physical box, so its label changes. Revision = number of net consuming transactions on the box (`production_transaction_boxes` rows, reversal rows count back down). Active QR = `{batch}-B{nnn}` at revision 0, `…-B{nnn}-R{n}` after (`transferBoxCode(batch, boxNo, revision)`; parse accepts the suffix). The old label is refused at scan with the new code (`resolveBoxes`); the trace page shows "QR นี้เป็นป้ายเก่า … ใช้ป้ายใหม่" (`box.supersededBy`). Reversing the consumption brings the old QR back. Boxes touched by a produce that end PARTIAL come back as `ProduceResult.splits` and the dashboard opens the QR dialog titled "QR ใหม่ของกล่องที่แบ่ง" (label says remaining pieces and "แบ่งจาก {qty}"); the same labels are in the reprint list.
+- `TransferBox` gained `baseCode`, `revision`, `left`. e2e box-mode test rewritten (FIFO skip refused, half taken → -R1 label, old label refused, next-in-FIFO is the new label, finish, reverse both → original label) — 19/19; domain tests cover revision codes. UI (scan hint, split labels) type/lint-checked only: no in-progress LOT order to click through.
+
 ### 2026-10-06 — Scan boxes when recording production (exact per-box tracking)
 
 - Requested follow-up to per-box transfer QR: at a step after the first, the produce dialog has a third mode "สแกนกล่อง" — scan box QRs (`TQ-…-Bnnn`, scanner or typed + Enter; each checked by `GET /production/lines/:lineId/steps/:stepIndex/boxes?code=`), good + rejects are drawn from exactly those boxes in scan order (`ProduceDto.boxes`; ledger `allocation_mode` MANUAL). Good defaults to the boxes' remaining minus scrap.

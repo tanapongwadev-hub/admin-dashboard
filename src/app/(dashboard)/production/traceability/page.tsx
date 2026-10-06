@@ -202,6 +202,18 @@ function TraceResult({ result }: { result: ScanResult }) {
 function TransferWhere({ result }: { result: TransferTagTrace }) {
   return (
     <div className="mt-4 rounded-md border border-border bg-surface-2/50 p-3">
+      {result.box?.supersededBy && (
+        <p role="alert" className="mb-2 rounded-md border border-warning/50 bg-warning-soft px-3 py-2 text-sm text-warning-fg">
+          QR นี้เป็นป้ายเก่า — กล่องถูกแบ่งแล้ว ใช้ป้ายใหม่{" "}
+          <Link
+            href={`/production/traceability?q=${encodeURIComponent(result.box.supersededBy)}`}
+            className="font-mono font-semibold underline"
+          >
+            {result.box.supersededBy}
+          </Link>{" "}
+          (เหลือ {fmt(result.box.left)} ชิ้น)
+        </p>
+      )}
       {result.box && (
         <p className="mb-2 flex flex-wrap items-center gap-2 text-sm">
           <Badge
