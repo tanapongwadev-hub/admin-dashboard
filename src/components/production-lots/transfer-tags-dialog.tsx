@@ -65,7 +65,7 @@ export function TransferTagsDialog({
               <QrCode className="size-5" aria-hidden /> {title}
             </DialogTitle>
             <DialogDescription>
-              พิมพ์ QR แล้วติดที่งานที่ส่งไปขั้นตอนถัดไป — สแกนเพื่อดูว่างานชุดนี้อยู่ขั้นตอนไหน
+              หนึ่ง QR ต่อกล่อง — พิมพ์แล้วติดที่กล่องชิ้นงานที่ส่งไปขั้นตอนถัดไป สแกนเพื่อตรวจแต่ละกล่อง
             </DialogDescription>
           </DialogHeader>
           <div className="px-6 pb-2">
@@ -92,6 +92,14 @@ export function TransferTagsDialog({
                     <img src={tag.qrImage} alt="" className="size-12 shrink-0 rounded bg-white p-0.5" />
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-mono text-xs text-fg">{tag.qrCode}</p>
+                      <p className="text-xs font-medium text-fg">
+                        กล่อง {tag.boxNo}/{tag.boxCount}
+                        {tag.status === "DONE"
+                          ? " · ผลิตครบแล้ว"
+                          : tag.status === "PARTIAL"
+                            ? ` · ผลิตแล้ว ${tag.doneQty}/${tag.qty}`
+                            : " · รอผลิต"}
+                      </p>
                       <p className="text-xs text-fg-secondary">
                         จาก {tag.sourceLotNo}
                         {tag.origins.length > 0 &&

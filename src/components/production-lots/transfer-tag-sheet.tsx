@@ -56,7 +56,9 @@ export function TransferTagSheet({
             <div>
               <p className="font-bold">ส่งไป {context.toStep}</p>
               <p className="font-mono">{tag.sourceLotNo}</p>
-              <p>{tag.qty} ชิ้น</p>
+              <p>
+                กล่อง {tag.boxNo}/{tag.boxCount} · {tag.qty} ชิ้น
+              </p>
               {tag.origins.length > 0 && (
                 <p className="truncate">
                   ต้นทาง{" "}

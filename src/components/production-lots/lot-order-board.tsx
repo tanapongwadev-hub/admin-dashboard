@@ -496,6 +496,7 @@ export function LotOrderBoard({
           lineId={pending.lineId}
           step={pending.step}
           next={pending.next}
+          defaultPackSize={boards.find((b) => b.line.id === pending.lineId)?.line.packingQty ?? 100}
           onClose={() => setPending(null)}
           onDone={(b, tags) => {
             applyBoard(b);

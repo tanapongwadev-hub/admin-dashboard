@@ -44,6 +44,8 @@ export interface LineBoard {
     orderStatus: string | null;
     product: { id: string; code: string; name: string } | null;
     plannedQty: number;
+    /** Default pieces per box (order line packing quantity). */
+    packingQty: number;
     producedQty: number;
     receivedQty: number;
     rejectedQty: number;
@@ -83,6 +85,8 @@ export interface ProduceResult {
 export interface TransferPayload {
   requestId: string;
   qty: number;
+  /** Pieces per box (default: the line packing quantity). */
+  packSize?: number;
   allocationMode?: "FIFO" | "MANUAL";
   allocations?: Array<{ lotId: string; qty: number }>;
   transferDate?: string;
@@ -97,9 +101,10 @@ export interface TransferResult {
   transfers: Array<{
     lotNo: string;
     qty: number;
-    /** QR made for this batch at the next step (null on legacy rows). */
+    /** Batch QR of the work received at the next step. */
     qrCode: string | null;
-    qrImage: string | null;
+    /** One box (one QR each) per pack of the batch. */
+    boxes: StepTag[];
     origins: Array<{ lotNo: string; qty: number }>;
   }>;
 }
@@ -166,15 +171,20 @@ interface TraceContext {
   plannedQty: number;
 }
 
-/** Transfer tag: a batch sent into a step, with a QR to track where it is. */
+/** One box of a batch sent into a step — its own QR, to check each box. */
 export interface StepTag {
+  /** {batch QR}-B{nnn} */
   qrCode: string;
   /** data: URL (SVG) */
   qrImage: string;
+  batchQr: string;
   sourceLotNo: string;
+  boxNo: number;
+  boxCount: number;
   qty: number;
-  waitingQty: number;
-  sentAt: string;
+  /** Pieces of this box already produced/scrapped/closed at the step. */
+  doneQty: number;
+  status: "WAITING" | "PARTIAL" | "DONE";
   origins: Array<{ lotNo: string; qty: number }>;
 }
 
@@ -185,6 +195,23 @@ export interface TransferTagTrace extends TraceContext {
   toStep: { stepIndex: number; code: string; name: string };
   sourceLotNo: string;
   sentAt: string;
+  /** Set when a box QR was scanned. */
+  box: {
+    qrCode: string;
+    boxNo: number;
+    boxCount: number;
+    qty: number;
+    doneQty: number;
+    status: "WAITING" | "PARTIAL" | "DONE";
+    origins: OriginShare[];
+  } | null;
+  boxes: Array<{
+    qrCode: string;
+    boxNo: number;
+    qty: number;
+    doneQty: number;
+    status: "WAITING" | "PARTIAL" | "DONE";
+  }>;
   qty: number;
   waitingQty: number;
   producedQty: number;

@@ -91,7 +91,12 @@ function collectOrigins(node: TraceNode, into = new Map<string, OriginShare>()) 
 }
 
 function TraceResult({ result }: { result: ScanResult }) {
-  const origins = result.kind === "PACKAGE" || result.kind === "TRANSFER" ? result.origins : result.lineage.origins;
+  const origins =
+    result.kind === "TRANSFER" && result.box
+      ? result.box.origins
+      : result.kind === "PACKAGE" || result.kind === "TRANSFER"
+        ? result.origins
+        : result.lineage.origins;
   // Colors by position across every origin lot that appears in the tree.
   const palette = new Map<string, LotColor>();
   [...collectOrigins(result.lineage).keys()].sort().forEach((lotNo, i) => palette.set(lotNo, lotColorAt(i)));
@@ -102,9 +107,13 @@ function TraceResult({ result }: { result: ScanResult }) {
       <section className="rounded-md border border-border bg-surface p-4 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p className="text-xs font-medium text-fg-muted">{result.kind === "PACKAGE" ? "กล่อง FG" : result.kind === "TRANSFER" ? "QR ส่งต่อ" : "Lot"}</p>
+            <p className="text-xs font-medium text-fg-muted">{result.kind === "PACKAGE" ? "กล่อง FG" : result.kind === "TRANSFER" ? (result.box ? "QR กล่องส่งต่อ" : "QR ส่งต่อ (ทั้งชุด)") : "Lot"}</p>
             <p className="font-mono text-lg font-semibold text-fg">
-              {result.kind === "PACKAGE" || result.kind === "TRANSFER" ? result.qrCode : result.lineage.lotNo}
+              {result.kind === "TRANSFER" && result.box
+                ? result.box.qrCode
+                : result.kind === "PACKAGE" || result.kind === "TRANSFER"
+                  ? result.qrCode
+                  : result.lineage.lotNo}
             </p>
             {result.kind === "PACKAGE" && result.status === "VOID" && (
               <Badge variant="danger" className="mt-1">
@@ -132,7 +141,15 @@ function TraceResult({ result }: { result: ScanResult }) {
                 </dd>
                 <dt className="text-fg-muted">Lot ที่ส่ง</dt>
                 <dd className="font-mono text-fg">{result.sourceLotNo}</dd>
-                <dt className="text-fg-muted">จำนวนที่ส่ง</dt>
+                {result.box && (
+                  <>
+                    <dt className="text-fg-muted">กล่อง</dt>
+                    <dd className="text-fg">
+                      {result.box.boxNo} / {result.box.boxCount} · {fmt(result.box.qty)} ชิ้น
+                    </dd>
+                  </>
+                )}
+                <dt className="text-fg-muted">จำนวนที่ส่ง (ทั้งชุด)</dt>
                 <dd className="text-fg">{fmt(result.qty)} ชิ้น</dd>
               </>
             )}
@@ -185,6 +202,18 @@ function TraceResult({ result }: { result: ScanResult }) {
 function TransferWhere({ result }: { result: TransferTagTrace }) {
   return (
     <div className="mt-4 rounded-md border border-border bg-surface-2/50 p-3">
+      {result.box && (
+        <p className="mb-2 flex flex-wrap items-center gap-2 text-sm">
+          <Badge
+            variant={result.box.status === "DONE" ? "success" : result.box.status === "PARTIAL" ? "primary" : "warning"}
+          >
+            {result.box.status === "DONE" ? "ผลิตครบแล้ว" : result.box.status === "PARTIAL" ? "กำลังผลิต" : "รอผลิต"}
+          </Badge>
+          <span className="text-fg-secondary">
+            กล่องนี้ {result.toStep.code}: ผลิตแล้ว {fmt(result.box.doneQty)} / {fmt(result.box.qty)} ชิ้น
+          </span>
+        </p>
+      )}
       <h2 className="text-sm font-semibold text-fg">ตอนนี้งานชุดนี้อยู่ที่ไหน</h2>
       <ul className="mt-2 flex flex-col gap-1.5 text-sm">
         {result.waitingQty > 0 && (
@@ -213,6 +242,27 @@ function TransferWhere({ result }: { result: TransferTagTrace }) {
           <li className="flex items-center gap-2">
             <Badge variant="danger">ของเสีย</Badge>
             <span className="text-fg-secondary">{fmt(result.rejectedQty)} ชิ้น</span>
+          </li>
+        )}
+        {result.boxes.length > 1 && (
+          <li className="flex flex-wrap items-center gap-1.5 pt-1">
+            <span className="text-xs text-fg-muted">กล่องในชุดนี้:</span>
+            {result.boxes.map((b) => (
+              <Link
+                key={b.qrCode}
+                href={`/production/traceability?q=${encodeURIComponent(b.qrCode)}`}
+                className={cn(
+                  "rounded border px-1.5 py-0.5 text-xs",
+                  b.status === "DONE"
+                    ? "border-success/40 bg-success-soft text-success-fg"
+                    : b.status === "PARTIAL"
+                      ? "border-primary/40 bg-primary-soft text-primary"
+                      : "border-border text-fg-secondary",
+                )}
+              >
+                {b.boxNo} · {b.qty}
+              </Link>
+            ))}
           </li>
         )}
         {result.closedQty > 0 && (

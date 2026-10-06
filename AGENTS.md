@@ -959,6 +959,13 @@ Before writing any new route, component, data-layer file, or Server Action, chec
 
 ## Recent Changes
 
+### 2026-10-06 — Transfer QR is per box (pack), not per batch
+
+- User request: the QR made when work goes to the next process must be one per box of pieces, to check each box. cps-api migration `1790600000014-AddPackSizeToProcessWip` (dev + test DBs) adds `process_wip.pack_size` (backfilled from the line packing quantity). A transferred batch (WIP row, batch QR `TQ-…-S{n}-{nn}`) is split into boxes of `pack_size` (default = line packing qty, editable in the transfer dialog and sent as `packSize`); each box QR is `{batch QR}-B{nnn}`.
+- Boxes are **computed, not stored** (domain `wipBoxes`, `production-process/wip-boxes.ts#loadWipBoxes`): split of `qty_in`, origins dealt oldest-first, progress = used+rejected+closed applied from box 1 on (the row hands pieces out FIFO), so reversals need no bookkeeping. Per-box progress is therefore a FIFO convention, exact at batch level.
+- `TransferResult.transfers[].boxes`, `GET …/steps/:stepIndex/tags` return boxes; scan of `TQ-…-B001` → `kind: TRANSFER` with `box` (boxNo/boxCount/qty/doneQty/status/origins) + `boxes` overview; the batch code still resolves. Board line has `packingQty`. Unit tests for `wipBoxes` + e2e updated (18/18).
+- Dashboard: transfer dialog has "ชิ้นต่อกล่อง"; the QR dialog/labels are per box ("กล่อง n/N · qty ชิ้น", progress); trace page shows the box, its progress and sibling boxes. Verified on the test DB (box 2/4 of a 350-piece batch).
+
 ### 2026-10-06 — Transfer QR: every transfer to the next step gets a QR to track the batch
 
 - User request: when work is sent to the next process a QR must be generated immediately so the job can be tracked by step. cps-api migration `1790600000013-AddTransferQrToProcessWip` (run on dev + test DBs) adds `process_wip.qr_code` (unique): each WIP row a transfer creates at the next step (one per source lot per transfer) gets `TQ-{source lot}-S{to step no}-{nn}`; existing transfer rows backfilled. `TransferResult.transfers[]` now carries `qrCode`/`qrImage`.

@@ -39,11 +39,14 @@ export function TransferDialog({
   lineId,
   step,
   next,
+  defaultPackSize,
   onClose,
   onDone,
   onUndo,
 }: {
   lineId: string;
+  /** Pieces per box, from the order line (editable here). */
+  defaultPackSize: number;
   step: BoardStep;
   next: BoardStep;
   onClose: () => void;
@@ -59,6 +62,7 @@ export function TransferDialog({
   const initialDay = currentProductionDay();
   const [mode, setMode] = useState<"FIFO" | "MANUAL">("FIFO");
   const [qty, setQty] = useState(String(step.readyQty));
+  const [packSize, setPackSize] = useState(String(defaultPackSize));
   const [manual, setManual] = useState<Record<string, string>>({});
   const [date, setDate] = useState(initialDay.productionDate);
   const [shift, setShift] = useState<Shift>(initialDay.shift);
@@ -70,7 +74,9 @@ export function TransferDialog({
   const preview = mode === "FIFO" ? fifoPreview(ready, total) : manualRows.map((r) => r.qty);
   const overLot = manualRows.some((r) => r.qty > r.lot.remainingQty || r.qty < 0);
   const over = total > step.readyQty;
-  const valid = Number.isInteger(total) && total >= 1 && !over && (mode === "FIFO" || !overLot);
+  const packNum = Number(packSize) || 0;
+  const valid =
+    Number.isInteger(total) && total >= 1 && !over && (mode === "FIFO" || !overLot) && Number.isInteger(packNum) && packNum >= 1;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -79,6 +85,7 @@ export function TransferDialog({
     const result = await transferLotAction(lineId, step.stepIndex, {
       requestId,
       qty: total,
+      packSize: packNum,
       allocationMode: mode,
       allocations:
         mode === "MANUAL"
@@ -101,21 +108,7 @@ export function TransferDialog({
     });
     onDone(
       result.board,
-      result.result.transfers.flatMap((t) =>
-        t.qrCode && t.qrImage
-          ? [
-              {
-                qrCode: t.qrCode,
-                qrImage: t.qrImage,
-                sourceLotNo: t.lotNo,
-                qty: t.qty,
-                waitingQty: t.qty,
-                sentAt: new Date().toISOString(),
-                origins: t.origins,
-              },
-            ]
-          : [],
-      ),
+      result.result.transfers.flatMap((t) => t.boxes),
     );
   }
 
@@ -201,6 +194,22 @@ export function TransferDialog({
                   ))}
                 </tbody>
               </table>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="tf-pack">ชิ้นต่อกล่อง (สร้าง QR ต่อกล่อง)</Label>
+              <Input
+                id="tf-pack"
+                type="number"
+                inputMode="numeric"
+                min={1}
+                value={packSize}
+                onChange={(e) => setPackSize(e.target.value)}
+              />
+              <p className="text-xs text-fg-secondary">
+                {total > 0 && packNum > 0
+                  ? `ส่ง ${total} ชิ้น → ประมาณ ${Math.ceil(total / packNum)} กล่อง ต่อ Lot ที่ส่ง (แยกตาม Lot ต้นทาง)`
+                  : "กรอกจำนวนที่ส่ง"}
+              </p>
             </div>
             <DayShiftFields idPrefix="tf" date={date} shift={shift} onDate={setDate} onShift={setShift} />
             <p role={over || overLot ? "alert" : undefined} className={over || overLot ? "text-xs text-danger" : "text-xs text-fg-secondary"}>
