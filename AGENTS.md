@@ -959,6 +959,13 @@ Before writing any new route, component, data-layer file, or Server Action, chec
 
 ## Recent Changes
 
+### 2026-10-06 — LOT orders: void packed boxes (reverse packing)
+
+- cps-api `ReversalService` now accepts a PACKING request id (same `POST /production/lines/:lineId/requests/:requestId/reverse`). `reversePacking`: every box of the request must still be PACKED with current = initial, else 409; boxes become `VOID` (current 0; box number and QR stay taken), pieces return to the FG/STORE lot (`remaining_qty` + origin `qty_remaining`, lot back to OPEN), REVERSAL ledger rows (negative qty/origins, `package_id` kept) net the PACKING rows; audit `production.package.voided`. A COMPLETED order may still have packing voided and is reopened (IN_PROGRESS, `completed_at` null) — `lockLotModelLine(manager, lineId, allowCompleted)`; any other reversal on a completed order stays 409.
+- History (`HistoryService`) lists packing requests (kind `PACK`, `packedQty`, `boxCount`, reversible = all boxes untouched). Dashboard `HistoryDialog` shows "แพ็กกล่อง"; on a completed order only PACK entries offer "กลับรายการ" (new `orderCompleted` prop), and the history button stays available there.
+- e2e: new "void packing" test (voids the last packing request of the completed order: boxes VOID, FG remaining restored, order reopens, replay + second reversal refused, repack completes it again, reconciliation clean) — 17/17 pass.
+- Not done: undo toast right after packing, dedicated REVERSE permission.
+
 ### 2026-10-06 — Menu entry for the production traceability page
 
 - cps-api migration `1790600000011-AddProductionTraceabilityMenu` (run on dev DB; also in `seed.ts`) adds menu `PRODUCTION_TRACEABILITY` ("สอบกลับการผลิต", SUB under `PRODUCTS_LIST`, path `/production/traceability`, icon `scan-search`, appended after live siblings). No new permission: `permission-registry.ts` maps its READ to `PRODUCTION_ORDER_VIEW` (what the page already checks), so roles that can see process orders see it. Dashboard: `scan-search` added to `lib/menu-icons.ts`. tsc clean; not click-tested in the sidebar.

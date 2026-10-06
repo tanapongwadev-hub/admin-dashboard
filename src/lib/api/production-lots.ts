@@ -94,7 +94,11 @@ export interface TransferResult {
   replayed: boolean;
   fromStep: { stepIndex: number; code: string; readyQty: number };
   toStep: { stepIndex: number; code: string; waitingQty: number };
-  transfers: Array<{ lotNo: string; qty: number; origins: Array<{ lotNo: string; qty: number }> }>;
+  transfers: Array<{
+    lotNo: string;
+    qty: number;
+    origins: Array<{ lotNo: string; qty: number }>;
+  }>;
 }
 
 export interface OriginShare {
@@ -119,7 +123,12 @@ export interface PackageView {
 
 export interface GeneratePackagesResult {
   replayed: boolean;
-  fgLot: { id: string; lotNo: string; producedQty: number; remainingQty: number };
+  fgLot: {
+    id: string;
+    lotNo: string;
+    producedQty: number;
+    remainingQty: number;
+  };
   packages: PackageView[];
 }
 
@@ -137,7 +146,13 @@ export interface TraceNode {
   edgeQty: number | null;
   origins: Array<OriginShare & { qtyRemaining: number }>;
   links: TraceNode[];
-  packages?: Array<{ qrCode: string; boxNo: number; qty: number; status: string; origins: OriginShare[] }>;
+  packages?: Array<{
+    qrCode: string;
+    boxNo: number;
+    qty: number;
+    status: string;
+    origins: OriginShare[];
+  }>;
 }
 
 interface TraceContext {
@@ -162,9 +177,16 @@ export type ScanResult =
       origins: OriginShare[];
       lineage: TraceNode;
     })
-  | (TraceContext & { kind: "LOT"; direction: "backward" | "forward"; lineage: TraceNode });
+  | (TraceContext & {
+      kind: "LOT";
+      direction: "backward" | "forward";
+      lineage: TraceNode;
+    });
 
-export type LotTrace = TraceContext & { direction: "backward" | "forward"; lineage: TraceNode };
+export type LotTrace = TraceContext & {
+  direction: "backward" | "forward";
+  lineage: TraceNode;
+};
 
 /** Source lots waiting at a step (oldest first) + FIFO split of `qty`. */
 export interface AllocationPreview {
@@ -178,29 +200,43 @@ export interface AllocationPreview {
     productionDate: string;
     shift: string;
     waitingQty: number;
-    origins: Array<{ lotNo: string; productionDate: string; shift: string; qty: number }>;
+    origins: Array<{
+      lotNo: string;
+      productionDate: string;
+      shift: string;
+      qty: number;
+    }>;
   }>;
   fifo: Array<{ lotId: string; qty: number }> | null;
   fifoError: string | null;
 }
 
-const auth = (accessToken: string) => ({ Authorization: `Bearer ${accessToken}` });
+const auth = (accessToken: string) => ({
+  Authorization: `Bearer ${accessToken}`,
+});
 
 export interface ReverseResult {
   replayed: boolean;
   reversedRequestId: string;
-  movements: Array<{ type: string; stepIndex: number; qty: number; lotNo: string | null }>;
+  movements: Array<{
+    type: string;
+    stepIndex: number;
+    qty: number;
+    lotNo: string | null;
+  }>;
 }
 
 export interface HistoryEntry {
   requestId: string;
-  kind: "PRODUCE" | "RECEIVE" | "TRANSFER" | "CLOSE";
+  kind: "PRODUCE" | "RECEIVE" | "TRANSFER" | "CLOSE" | "PACK";
   stepIndex: number;
   stepCode: string;
   goodQty: number;
   rejectQty: number;
   closedQty: number;
   transferredQty: number;
+  packedQty: number;
+  boxCount: number;
   lotNos: string[];
   productionDate: string;
   shift: string;
@@ -213,7 +249,9 @@ export interface HistoryEntry {
 }
 
 export function getLineHistory(accessToken: string, lineId: string) {
-  return apiFetch<HistoryEntry[]>(`/production/lines/${lineId}/history`, { headers: auth(accessToken) });
+  return apiFetch<HistoryEntry[]>(`/production/lines/${lineId}/history`, {
+    headers: auth(accessToken),
+  });
 }
 
 export interface LineReconciliation {
@@ -221,7 +259,12 @@ export interface LineReconciliation {
   checkedAt: string;
   checks: number;
   ok: boolean;
-  issues: Array<{ check: string; ref: string; expected: number; actual: number }>;
+  issues: Array<{
+    check: string;
+    ref: string;
+    expected: number;
+    actual: number;
+  }>;
 }
 
 /** Take back a produce/transfer request (V10) — `requestId` is the reversal's own key. */
@@ -231,11 +274,14 @@ export function reverseLotRequest(
   targetRequestId: string,
   payload: { requestId: string; reason: string },
 ) {
-  return apiFetch<ReverseResult>(`/production/lines/${lineId}/requests/${targetRequestId}/reverse`, {
-    method: "POST",
-    headers: auth(accessToken),
-    body: JSON.stringify(payload),
-  });
+  return apiFetch<ReverseResult>(
+    `/production/lines/${lineId}/requests/${targetRequestId}/reverse`,
+    {
+      method: "POST",
+      headers: auth(accessToken),
+      body: JSON.stringify(payload),
+    },
+  );
 }
 
 export interface CloseRemainingResult {
@@ -252,48 +298,84 @@ export function closeRemainingAtStep(
   stepIndex: number,
   payload: { requestId: string; qty?: number; reason: string },
 ) {
-  return apiFetch<CloseRemainingResult>(`/production/lines/${lineId}/steps/${stepIndex}/close-remaining`, {
-    method: "POST",
-    headers: auth(accessToken),
-    body: JSON.stringify(payload),
-  });
+  return apiFetch<CloseRemainingResult>(
+    `/production/lines/${lineId}/steps/${stepIndex}/close-remaining`,
+    {
+      method: "POST",
+      headers: auth(accessToken),
+      body: JSON.stringify(payload),
+    },
+  );
 }
 
 export function getLineReconciliation(accessToken: string, lineId: string) {
-  return apiFetch<LineReconciliation>(`/production/lines/${lineId}/reconciliation`, {
-    headers: auth(accessToken),
-  });
+  return apiFetch<LineReconciliation>(
+    `/production/lines/${lineId}/reconciliation`,
+    {
+      headers: auth(accessToken),
+    },
+  );
 }
 
-export function getAllocationPreview(accessToken: string, lineId: string, stepIndex: number) {
-  return apiFetch<AllocationPreview>(`/production/lines/${lineId}/steps/${stepIndex}/allocation-preview`, {
-    headers: auth(accessToken),
-  });
+export function getAllocationPreview(
+  accessToken: string,
+  lineId: string,
+  stepIndex: number,
+) {
+  return apiFetch<AllocationPreview>(
+    `/production/lines/${lineId}/steps/${stepIndex}/allocation-preview`,
+    {
+      headers: auth(accessToken),
+    },
+  );
 }
 
 export function getLineBoard(accessToken: string, lineId: string) {
-  return apiFetch<LineBoard>(`/production/lines/${lineId}/board`, { headers: auth(accessToken) });
-}
-
-export function produceAtStep(accessToken: string, lineId: string, stepIndex: number, payload: ProducePayload) {
-  return apiFetch<ProduceResult>(`/production/lines/${lineId}/steps/${stepIndex}/produce`, {
-    method: "POST",
+  return apiFetch<LineBoard>(`/production/lines/${lineId}/board`, {
     headers: auth(accessToken),
-    body: JSON.stringify(payload),
   });
 }
 
-export function transferFromStep(accessToken: string, lineId: string, stepIndex: number, payload: TransferPayload) {
-  return apiFetch<TransferResult>(`/production/lines/${lineId}/steps/${stepIndex}/transfer`, {
-    method: "POST",
-    headers: auth(accessToken),
-    body: JSON.stringify(payload),
-  });
+export function produceAtStep(
+  accessToken: string,
+  lineId: string,
+  stepIndex: number,
+  payload: ProducePayload,
+) {
+  return apiFetch<ProduceResult>(
+    `/production/lines/${lineId}/steps/${stepIndex}/produce`,
+    {
+      method: "POST",
+      headers: auth(accessToken),
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
+export function transferFromStep(
+  accessToken: string,
+  lineId: string,
+  stepIndex: number,
+  payload: TransferPayload,
+) {
+  return apiFetch<TransferResult>(
+    `/production/lines/${lineId}/steps/${stepIndex}/transfer`,
+    {
+      method: "POST",
+      headers: auth(accessToken),
+      body: JSON.stringify(payload),
+    },
+  );
 }
 
 export function generatePackages(
   accessToken: string,
-  payload: { requestId: string; fgLotId: string; qty?: number; packSize?: number },
+  payload: {
+    requestId: string;
+    fgLotId: string;
+    qty?: number;
+    packSize?: number;
+  },
 ) {
   return apiFetch<GeneratePackagesResult>("/production/packages/generate", {
     method: "POST",
@@ -303,17 +385,29 @@ export function generatePackages(
 }
 
 export function listLotPackages(accessToken: string, lotId: string) {
-  return apiFetch<PackageView[]>(`/production/lots/${lotId}/packages`, { headers: auth(accessToken) });
+  return apiFetch<PackageView[]>(`/production/lots/${lotId}/packages`, {
+    headers: auth(accessToken),
+  });
 }
 
 export function scanTrace(accessToken: string, code: string) {
-  return apiFetch<ScanResult>(`/production/traceability/scan?q=${encodeURIComponent(code)}`, {
-    headers: auth(accessToken),
-  });
+  return apiFetch<ScanResult>(
+    `/production/traceability/scan?q=${encodeURIComponent(code)}`,
+    {
+      headers: auth(accessToken),
+    },
+  );
 }
 
-export function traceLot(accessToken: string, lotId: string, direction: "backward" | "forward") {
-  return apiFetch<LotTrace>(`/production/lots/${lotId}/traceability?direction=${direction}`, {
-    headers: auth(accessToken),
-  });
+export function traceLot(
+  accessToken: string,
+  lotId: string,
+  direction: "backward" | "forward",
+) {
+  return apiFetch<LotTrace>(
+    `/production/lots/${lotId}/traceability?direction=${direction}`,
+    {
+      headers: auth(accessToken),
+    },
+  );
 }

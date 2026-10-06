@@ -21,11 +21,13 @@ const KIND_LABEL: Record<HistoryEntry["kind"], string> = {
   RECEIVE: "รับเข้า",
   TRANSFER: "ส่งต่อ",
   CLOSE: "ปิดยอดค้าง",
+  PACK: "แพ็กกล่อง",
 };
 
 function summary(e: HistoryEntry): string {
   const parts: string[] = [];
   if (e.kind === "TRANSFER") parts.push(`${e.transferredQty} ชิ้น`);
+  if (e.kind === "PACK") parts.push(`${e.boxCount} กล่อง ${e.packedQty} ชิ้น`);
   if (e.goodQty) parts.push(`ดี ${e.goodQty} ชิ้น`);
   if (e.rejectQty) parts.push(`เสีย ${e.rejectQty} ชิ้น`);
   if (e.closedQty) parts.push(`ปิด ${e.closedQty} ชิ้น`);
@@ -41,11 +43,14 @@ function summary(e: HistoryEntry): string {
 export function HistoryDialog({
   lineId,
   canAct,
+  orderCompleted = false,
   onClose,
   onReverse,
 }: {
   lineId: string;
   canAct: boolean;
+  /** A completed order only lets packing be voided (it reopens the order). */
+  orderCompleted?: boolean;
   onClose: () => void;
   onReverse: (target: ReverseTarget) => void;
 }) {
@@ -72,7 +77,9 @@ export function HistoryDialog({
             <History className="size-5" aria-hidden /> ประวัติการบันทึก
           </DialogTitle>
           <DialogDescription>
-            ทุกครั้งที่บันทึกผลิต ส่งต่อ หรือปิดยอด — กลับรายการได้เมื่อชิ้นงานชุดนั้นยังไม่ถูกส่งต่อหรือแพ็ก
+            ทุกครั้งที่บันทึกผลิต ส่งต่อ ปิดยอด หรือแพ็กกล่อง —
+            กลับรายการได้เมื่อชิ้นงานชุดนั้นยังไม่ถูกส่งต่อหรือแพ็ก
+            (กล่องที่ยกเลิกจะกลับเข้า Lot และ QR เดิมใช้ไม่ได้)
           </DialogDescription>
         </DialogHeader>
         <div className="max-h-[60vh] overflow-y-auto px-6 pb-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -87,26 +94,61 @@ export function HistoryDialog({
             </p>
           )}
           {entries && entries.length === 0 && (
-            <p className="py-10 text-center text-sm text-fg-muted">ยังไม่มีการบันทึก</p>
+            <p className="py-10 text-center text-sm text-fg-muted">
+              ยังไม่มีการบันทึก
+            </p>
           )}
           {entries && entries.length > 0 && (
             <ul className="divide-y divide-border rounded-md border border-border">
               {entries.map((e) => (
-                <li key={e.requestId} className={e.reversed ? "bg-surface-2/60 px-3 py-2.5" : "px-3 py-2.5"}>
+                <li
+                  key={e.requestId}
+                  className={
+                    e.reversed ? "bg-surface-2/60 px-3 py-2.5" : "px-3 py-2.5"
+                  }
+                >
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant={e.kind === "TRANSFER" ? "info" : e.kind === "CLOSE" ? "warning" : "primary"}>
+                    <Badge
+                      variant={
+                        e.kind === "TRANSFER" || e.kind === "PACK"
+                          ? "info"
+                          : e.kind === "CLOSE"
+                            ? "warning"
+                            : "primary"
+                      }
+                    >
                       {KIND_LABEL[e.kind]}
                     </Badge>
-                    <span className="font-mono text-sm font-semibold text-fg">{e.stepCode}</span>
-                    <span className={e.reversed ? "text-sm text-fg-muted line-through" : "text-sm text-fg"}>{summary(e)}</span>
-                    {e.reversed && <Badge variant="neutral">กลับรายการแล้ว</Badge>}
+                    <span className="font-mono text-sm font-semibold text-fg">
+                      {e.stepCode}
+                    </span>
+                    <span
+                      className={
+                        e.reversed
+                          ? "text-sm text-fg-muted line-through"
+                          : "text-sm text-fg"
+                      }
+                    >
+                      {summary(e)}
+                    </span>
+                    {e.reversed && (
+                      <Badge variant="neutral">กลับรายการแล้ว</Badge>
+                    )}
                     {canAct && !e.reversed && (
                       <Button
                         size="sm"
                         variant="ghost"
                         className="ml-auto h-7"
-                        disabled={!e.reversible}
-                        title={e.reversible ? undefined : "ชิ้นงานชุดนี้ถูกส่งต่อ แพ็ก หรือใช้ต่อแล้ว"}
+                        disabled={
+                          !e.reversible || (orderCompleted && e.kind !== "PACK")
+                        }
+                        title={
+                          !e.reversible
+                            ? "ชิ้นงานชุดนี้ถูกส่งต่อ แพ็ก หรือใช้ต่อแล้ว"
+                            : orderCompleted && e.kind !== "PACK"
+                              ? "ใบสั่งผลิตเสร็จสิ้นแล้ว ยกเลิกได้เฉพาะการแพ็ก"
+                              : undefined
+                        }
                         onClick={() =>
                           onReverse({
                             lineId,
@@ -120,9 +162,16 @@ export function HistoryDialog({
                     )}
                   </div>
                   <p className="mt-1 text-xs text-fg-muted">
-                    {e.lotNos.length > 0 && <span className="font-mono">{e.lotNos.join(", ")} · </span>}
+                    {e.lotNos.length > 0 && (
+                      <span className="font-mono">
+                        {e.lotNos.join(", ")} ·{" "}
+                      </span>
+                    )}
                     {formatThaiDate(e.productionDate)} กะ {e.shift} ·{" "}
-                    {new Date(e.createdAt.replace(" ", "T")).toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" })}
+                    {new Date(e.createdAt.replace(" ", "T")).toLocaleTimeString(
+                      "th-TH",
+                      { hour: "2-digit", minute: "2-digit" },
+                    )}
                     {e.operatorName ? ` · ${e.operatorName}` : ""}
                     {e.remark ? ` · ${e.remark}` : ""}
                   </p>
