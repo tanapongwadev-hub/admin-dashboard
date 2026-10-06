@@ -15,6 +15,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { listLotPackagesAction } from "@/app/(dashboard)/products/process-orders/actions";
@@ -75,6 +76,7 @@ export function LotOrderBoard({
   /** Per line id, checked when the page loaded (null = check unavailable). */
   reconciliations?: Record<string, LineReconciliation | null>;
 }) {
+  const router = useRouter();
   const [boards, setBoards] = useState(initialBoards);
   const [pending, setPending] = useState<Pending | null>(null);
   const [session, setSession] = useState(0);
@@ -95,6 +97,12 @@ export function LotOrderBoard({
     setPending({ ...p, session: session + 1 } as Pending);
   };
   const applyBoard = (board: LineBoard) => {
+    // The header badge ("เสร็จสิ้น") is server-rendered: refresh when the order
+    // completes or reopens.
+    const before = boards.find((b) => b.line.id === board.line.id);
+    if (before && before.line.orderStatus !== board.line.orderStatus) {
+      router.refresh();
+    }
     setBoards((list) =>
       list.map((b) => (b.line.id === board.line.id ? board : b)),
     );
@@ -479,6 +487,7 @@ export function LotOrderBoard({
           lot={pending.lot}
           onClose={() => setPending(null)}
           onDone={applyBoard}
+          onUndo={canReverse ? (target) => open({ kind: "reverse", target }) : undefined}
           onPrint={(packages, fgLotNo) => {
             const board = boards.find((b) => b.line.id === pending.lineId);
             if (board) printLabels(board, packages, fgLotNo);

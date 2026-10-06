@@ -959,6 +959,12 @@ Before writing any new route, component, data-layer file, or Server Action, chec
 
 ## Recent Changes
 
+### 2026-10-06 — LOT UI click-through on the test DB + fixes
+
+- Walked the real UI against `cps_db_test` (stopped the dev API container, ran `node dist/main.js` with `PORT=3001 DB_DATABASE=cps_db_test`, dashboard on :3000, then restored the container). Order TPO-MUVYNRB8 (completed, 3 box requests): board, history dialog, void packing (order reopened, FG shows 280 unpacked, toast, board refreshed), re-pack (BOX009–011, voided numbers stay taken) and the new "ยกเลิกการแพ็กนี้" button, trace of a voided box all behave. Technique: a copy of the dashboard with a junction node_modules does not run (Turbopack rejects the junction, webpack fails on fonts) — swap the API behind :3000 instead.
+- Fixes found there: history times showed "Invalid Date" (Postgres `+07` offset needs `:00`; `timeOf()`); header badge stayed "เสร็จสิ้น" after a reopen (`LotOrderBoard.applyBoard` calls `router.refresh()` when the order status changes); the trace page now shows a red "กล่องนี้ถูกยกเลิกแล้ว" badge for VOID boxes.
+- New: `PackDialog` result view has "ยกเลิกการแพ็กนี้" (needs `canReverse`) opening the reverse dialog right after packing.
+
 ### 2026-10-06 — Dedicated reverse permission for LOT orders
 
 - cps-api migration `1790600000012-AddProductionOrderReversePermission` (run on dev DB; also in `seed.ts`/`permission-registry.ts`): new action `REVERSE` and permission `PRODUCTION_ORDER_REVERSE` (menu `PRODUCT_PROCESS_ORDERS`). `POST /production/lines/:lineId/requests/:requestId/reverse` now requires it instead of `PRODUCTION_ORDER_ADVANCE`. The migration copies it to every department that already holds ADVANCE so current behaviour is unchanged until someone is taken off.

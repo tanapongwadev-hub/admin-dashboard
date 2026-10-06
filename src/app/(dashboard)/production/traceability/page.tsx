@@ -106,6 +106,11 @@ function TraceResult({ result }: { result: ScanResult }) {
             <p className="font-mono text-lg font-semibold text-fg">
               {result.kind === "PACKAGE" ? result.qrCode : result.lineage.lotNo}
             </p>
+            {result.kind === "PACKAGE" && result.status === "VOID" && (
+              <Badge variant="danger" className="mt-1">
+                กล่องนี้ถูกยกเลิกแล้ว — ชิ้นงานกลับเข้า Lot และ QR นี้ใช้ไม่ได้
+              </Badge>
+            )}
             <p className="text-sm text-fg-secondary">
               <span className="font-mono text-primary">{result.product.code}</span> {result.product.name}
             </p>

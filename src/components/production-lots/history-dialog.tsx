@@ -24,6 +24,15 @@ const KIND_LABEL: Record<HistoryEntry["kind"], string> = {
   PACK: "แพ็กกล่อง",
 };
 
+/** Postgres text timestamptz ("2026-10-06 08:03:12+07") → HH:mm; "+07" needs ":00" to parse. */
+function timeOf(value: string): string {
+  const iso = value.replace(" ", "T").replace(/([+-]\d{2})$/, "$1:00");
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime())
+    ? ""
+    : d.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" });
+}
+
 function summary(e: HistoryEntry): string {
   const parts: string[] = [];
   if (e.kind === "TRANSFER") parts.push(`${e.transferredQty} ชิ้น`);
@@ -168,10 +177,7 @@ export function HistoryDialog({
                       </span>
                     )}
                     {formatThaiDate(e.productionDate)} กะ {e.shift} ·{" "}
-                    {new Date(e.createdAt.replace(" ", "T")).toLocaleTimeString(
-                      "th-TH",
-                      { hour: "2-digit", minute: "2-digit" },
-                    )}
+                    {timeOf(e.createdAt)}
                     {e.operatorName ? ` · ${e.operatorName}` : ""}
                     {e.remark ? ` · ${e.remark}` : ""}
                   </p>

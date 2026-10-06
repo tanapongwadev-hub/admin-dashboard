@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, Printer } from "lucide-react";
+import { Loader2, Printer, Undo2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { generatePackagesAction } from "@/app/(dashboard)/products/process-orders/actions";
@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { BoardLot, LineBoard, PackageView } from "@/lib/api/production-lots";
 import { formatThaiDate } from "@/lib/production-day";
+import type { ReverseTarget } from "./reverse-dialog";
 
 const DEFAULT_PACK_SIZE = 100;
 
@@ -40,12 +41,15 @@ export function PackDialog({
   onClose,
   onDone,
   onPrint,
+  onUndo,
 }: {
   lineId: string;
   lot: BoardLot;
   onClose: () => void;
   onDone: (board: LineBoard) => void;
   onPrint: (packages: PackageView[], fgLotNo: string) => void;
+  /** Omitted without the reverse permission: no "ยกเลิกการแพ็กนี้". */
+  onUndo?: (target: ReverseTarget) => void;
 }) {
   const [requestId] = useState(() => crypto.randomUUID());
   const [qty, setQty] = useState(String(lot.remainingQty));
@@ -104,6 +108,21 @@ export function PackDialog({
               ))}
             </ul>
             <DialogFooter>
+              {onUndo && (
+                <Button
+                  variant="ghost"
+                  className="mr-auto"
+                  onClick={() =>
+                    onUndo({
+                      lineId,
+                      requestId,
+                      label: `แพ็กกล่อง ${lot.lotNo} ${created.length} กล่อง`,
+                    })
+                  }
+                >
+                  <Undo2 className="size-4" /> ยกเลิกการแพ็กนี้
+                </Button>
+              )}
               <Button variant="ghost" onClick={onClose}>
                 ปิด
               </Button>
