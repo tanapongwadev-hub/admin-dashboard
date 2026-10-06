@@ -2,6 +2,7 @@
 
 import { Loader2, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { ENABLED_PRODUCE_MODES, type ProduceMode } from "@/lib/production-flags";
 import { toast } from "sonner";
 import { checkStepBoxAction, getAllocationPreviewAction, nextStepBoxAction, produceLotAction } from "@/app/(dashboard)/products/process-orders/actions";
 import { Button } from "@/components/ui/button";
@@ -63,7 +64,9 @@ export function ProduceDialog({
   const [requestId] = useState(() => crypto.randomUUID());
   const initialDay = currentProductionDay();
   const canPick = step.stepIndex > 0;
-  const [mode, setMode] = useState<"FIFO" | "MANUAL" | "BOXES">("FIFO");
+  // After the first step only the enabled ways are offered (see production-flags).
+  const modes = canPick ? ENABLED_PRODUCE_MODES : (["FIFO"] as ProduceMode[]);
+  const [mode, setMode] = useState<ProduceMode>(modes[0]);
   const [scanned, setScanned] = useState<BoxCheck[]>([]);
   const [scanCode, setScanCode] = useState("");
   const [scanning, setScanning] = useState(false);
@@ -72,6 +75,18 @@ export function ProduceDialog({
   // null = loading; fetched once per open (the dialog remounts per open).
   const [preview, setPreview] = useState<AllocationPreview | null>(null);
   const [previewError, setPreviewError] = useState<string | null>(null);
+  // Scan-only: show the first box to take (FIFO) as soon as the dialog opens.
+  useEffect(() => {
+    if (mode !== "BOXES") return;
+    let alive = true;
+    nextStepBoxAction(lineId, step.stepIndex, []).then((r) => {
+      if (alive) setExpected(r.status === "success" ? r.box : undefined);
+    });
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per open
+  }, []);
   useEffect(() => {
     if (!canPick) return;
     let alive = true;
@@ -218,9 +233,9 @@ export function ProduceDialog({
             </DialogDescription>
           </DialogHeader>
           <div className="flex max-h-[60vh] flex-col gap-3 overflow-y-auto px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {canPick && (
+            {canPick && modes.length > 1 && (
               <div role="group" aria-label="วิธีเลือก Lot ต้นทาง" className="inline-flex w-fit rounded-md border border-border-strong p-0.5">
-                {(["FIFO", "MANUAL", "BOXES"] as const).map((m) => (
+                {modes.map((m) => (
                   <button
                     key={m}
                     type="button"

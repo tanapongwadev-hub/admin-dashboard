@@ -959,6 +959,12 @@ Before writing any new route, component, data-layer file, or Server Action, chec
 
 ## Recent Changes
 
+### 2026-10-06 — Produce after step 1 is scan-only (other ways switched off for now)
+
+- Request: keep only QR scanning; disable the other ways until they are re-enabled. Dashboard: `lib/production-flags.ts#PRODUCE_MODES` (`FIFO:false, MANUAL:false, BOXES:true`); `ProduceDialog` offers only enabled modes after the first step, so it opens straight in "สแกนกล่อง" with the first FIFO box shown (mode selector hidden when one mode is left). Step 1 (plan release, no boxes) is unchanged. To re-enable a way: flip its flag here **and** set `PRODUCTION_REQUIRE_BOX_SCAN=false` on the API.
+- cps-api: `ProcessService.produce` refuses step > 1 records without `boxes` (409 "ขั้นตอนนี้ต้องสแกน QR กล่อง…") unless `PRODUCTION_REQUIRE_BOX_SCAN === 'false'`; the code of FIFO / pick-a-lot stays. The e2e suite sets the variable to false in `setup-env.ts` and has a test that the switch on refuses an unscanned record (20/20).
+- Not switched off (say if wanted): transfer dialog's pick-a-lot mode, close-remaining.
+
 ### 2026-10-06 — Box scans follow FIFO; a split box gets a new QR
 
 - **FIFO scan** (server-enforced): `fifoBoxes()` orders the boxes still holding pieces at a step — batches by arrival (`received_at, id`), boxes of a batch by number. `produce` with `boxes` must be a gap-free prefix of that list (`assertFifoScan`), else 409 "ต้องสแกนตามลำดับ FIFO — กล่องที่ต้องใช้ก่อนคือ …". `GET …/steps/:stepIndex/boxes?code=&scanned=a,b` checks the next scan; new `GET …/boxes/next?scanned=` returns the box to take next (the produce dialog shows it: "กล่องถัดไป (FIFO)"; the last scanned can be taken back).
