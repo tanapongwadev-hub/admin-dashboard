@@ -1,9 +1,10 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { toast } from "sonner";
-import { Plus } from "lucide-react";
+import { Plus, Scissors } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ViewToggle } from "@/components/ui/view-toggle";
 import { useViewMode } from "@/hooks/use-view-mode";
@@ -30,6 +31,7 @@ export function MaterialsReceivingClient({
   canConfirm,
   canCancel,
   canDelete,
+  canViewProcessing,
   initialMaterialCode,
 }: {
   receivings: MaterialReceiving[];
@@ -41,6 +43,7 @@ export function MaterialsReceivingClient({
   canConfirm: boolean;
   canCancel: boolean;
   canDelete: boolean;
+  canViewProcessing: boolean;
   // Set by /materials/pc's "รับเข้า" row action (a URL query param resolved
   // to a real material by page.tsx) — pre-selects and auto-opens the create
   // dialog for that material on first load. See materials-pc-client.tsx.
@@ -128,6 +131,13 @@ export function MaterialsReceivingClient({
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-end gap-2">
         <ViewToggle value={view} onChange={setView} modes={["table", "card", "list"]} />
+        {canViewProcessing && (
+          <Button asChild variant="outline" className="shrink-0">
+            <Link href="/material-processing">
+              <Scissors className="h-4 w-4" aria-hidden="true" /> แปรรูป Pipe / Sheet / Coil
+            </Link>
+          </Button>
+        )}
         {canReceive && (
           <Button
             onClick={() => {
@@ -158,6 +168,9 @@ export function MaterialsReceivingClient({
         onCancel={(receiving) => setCancelTarget(receiving)}
         onDelete={handleDelete}
         onPrint={(receiving) => setPrintTarget(receiving)}
+        onProcess={canViewProcessing ? (receiving) => {
+          router.push(`/material-processing?search=${encodeURIComponent(receiving.internalLotNo)}`);
+        } : undefined}
       />
 
       <MaterialsReceivingDetailsDialog

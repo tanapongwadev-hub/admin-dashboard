@@ -14,6 +14,7 @@ import type { ProductWorkflow, ProductWorkflowStatus } from "@/lib/api/product-w
 import type { Material } from "@/lib/api/materials";
 import { listBomsByProductAction, listProductWorkflowsByProductAction } from "@/app/(dashboard)/products/actions";
 import { ProductBomDiagram } from "@/components/products/products-bom-diagram";
+import { ProductStockBalance } from "@/components/products/product-stock-balance";
 import {
   productTypeLabel,
   locationLabel,
@@ -73,6 +74,7 @@ function formatDateTime(iso: string): string {
 // Row actions for the same limitation and how existing tests handle it).
 export function ProductsDetailsView({
   product,
+  stockQuantity,
   canEdit = false,
   canViewBom = false,
   canViewWorkflow = false,
@@ -81,6 +83,7 @@ export function ProductsDetailsView({
   onClose,
 }: {
   product: Product;
+  stockQuantity?: string;
   canEdit?: boolean;
   // Omitted (false) means the BOM section doesn't render at all, same as
   // Materials PC's stock section when the viewer lacks its own view
@@ -220,28 +223,25 @@ export function ProductsDetailsView({
               <Badge variant="info">{productTypeLabel(product)}</Badge>
             </div>
 
-            {/* Safety/min stock — same 2-column divide-x stat grid as
-                ProductEditorialCard (not a plain border-t row anymore), so
-                the numbers a user just saw on the card look identical here:
-                Safety Stock in text-primary, Min Stock in text-fg-secondary. */}
-            <div className="mt-2 grid grid-cols-2 divide-x divide-border border-t border-border pt-3">
+            <div className="mt-3"><ProductStockBalance product={product} quantity={stockQuantity} /></div>
+            <div className="mt-3 grid grid-cols-2 divide-x divide-border border-t border-border pt-3">
               <div className="min-w-0 pr-4">
-                <span className="text-[10px] font-semibold uppercase leading-none tracking-[0.08em] text-primary">
-                  Safety Stock
+                <span className="text-xs text-fg-muted">
+                  เกณฑ์ Safety Stock
                 </span>
                 <div className="mt-1.5">
-                  <span className="text-2xl font-bold leading-none tracking-[-0.02em] tabular-nums text-fg">
+                  <span className="text-sm font-medium tabular-nums text-fg-secondary">
                     {formatNumber(product.safetyStock)}
                   </span>
                   {unit !== "—" && <span className="ml-1.5 text-xs font-medium text-fg-secondary">{unit}</span>}
                 </div>
               </div>
               <div className="min-w-0 pl-4">
-                <span className="text-[10px] font-semibold uppercase leading-none tracking-[0.08em] text-fg-secondary">
-                  Min Stock
+                <span className="text-xs text-fg-muted">
+                  เกณฑ์สต็อกขั้นต่ำ
                 </span>
                 <div className="mt-1.5">
-                  <span className="text-2xl font-bold leading-none tracking-[-0.02em] tabular-nums text-fg">
+                  <span className="text-sm font-medium tabular-nums text-fg-secondary">
                     {formatNumber(product.minStock)}
                   </span>
                   {unit !== "—" && <span className="ml-1.5 text-xs font-medium text-fg-secondary">{unit}</span>}
@@ -500,6 +500,7 @@ export function ProductsDetailsView({
 
 export function ProductsDetailsDialog({
   product,
+  stockQuantity,
   canEdit = false,
   canViewBom = false,
   canViewWorkflow = false,
@@ -508,6 +509,7 @@ export function ProductsDetailsDialog({
   onOpenChange,
 }: {
   product: Product | null;
+  stockQuantity?: string;
   canEdit?: boolean;
   canViewBom?: boolean;
   canViewWorkflow?: boolean;
@@ -522,6 +524,7 @@ export function ProductsDetailsDialog({
       <DialogContent fullScreenOnMobile size="xl" className="p-0">
         <ProductsDetailsView
           product={product}
+          stockQuantity={stockQuantity}
           canEdit={canEdit}
           canViewBom={canViewBom}
           canViewWorkflow={canViewWorkflow}

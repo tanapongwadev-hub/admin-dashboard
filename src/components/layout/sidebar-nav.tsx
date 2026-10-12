@@ -118,7 +118,7 @@ function MenuTreeItem({
 
   const Icon = node.Icon;
   const href = node.path ? menuHref(node.path) : undefined;
-  const hasChildren = node.children.length > 0;
+  const hasChildren = node.children.some((child) => child.menuType !== "BUTTON");
   const isOpen = overrides[node.id] ?? autoOpenIds.has(node.id);
   const active = node.id === activeId;
   const topLevel = depth === 0;

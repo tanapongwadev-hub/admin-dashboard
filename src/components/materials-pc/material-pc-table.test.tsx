@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { renderToStaticMarkup } from "react-dom/server";
 import { MaterialPcCollection, getMaterialRowActions, getStockHealthLabel, getStockTone } from "./material-pc-table";
 import type { Material, StockBalance } from "@/lib/api/materials";
+import { groupMaterials } from "@/lib/material-groups";
 
 const material: Material = {
   id: "material-1",
@@ -90,13 +91,53 @@ test("compact card prioritizes stock, minimum, operations and primary receive ac
   assert.doesNotMatch(html, /ข้อมูลจำเพาะ/);
 });
 
-test("card grid scales from one through five columns", () => {
+test("standalone card retains its normal grid without group decoration", () => {
   const html = render("card");
   assert.match(html, /grid-cols-1/);
   assert.match(html, /@min-\[36rem\]:grid-cols-2/);
-  assert.match(html, /@min-\[60rem\]:grid-cols-3/);
-  assert.match(html, /@min-\[82rem\]:grid-cols-4/);
-  assert.match(html, /@min-\[100rem\]:grid-cols-5/);
+  assert.doesNotMatch(html, /aria-label="กลุ่มวัสดุ /);
+  assert.doesNotMatch(html, /Material main/);
+  assert.doesNotMatch(html, /Material sub/);
+});
+
+test("matching only a sub material includes its main and deduplicates the pair", () => {
+  const main = { ...material, id: "main", processingMaterialId: "sub" };
+  const sub = { ...material, id: "sub", code: "CUT-001", processingMaterialId: null };
+  const groups = groupMaterials([sub, main, sub], [main, sub]);
+  assert.equal(groups.length, 1);
+  assert.deepEqual(groups[0].members.map((entry) => entry.id), ["main", "sub"]);
+  assert.equal(groupMaterials([sub], [main, sub])[0].main.id, "main");
+});
+
+test("group pagination never separates a main and sub across page boundaries", () => {
+  const main = { ...material, id: "main", processingMaterialId: "sub" };
+  const sub = { ...material, id: "sub", processingMaterialId: null };
+  const standalone = { ...material, id: "single", processingMaterialId: null };
+  const groups = groupMaterials([standalone, sub, main], [main, standalone, sub]);
+  assert.deepEqual(groups.slice(1, 2).flatMap((group) => group.members.map((entry) => entry.id)), ["main", "sub"]);
+});
+
+test("card and list render main and sub inside one family", () => {
+  const main = { ...material, id: "main", processingMaterialId: "sub" };
+  const sub = { ...material, id: "sub", code: "CUT-001", processingMaterialId: null };
+  for (const view of ["card", "list"] as const) {
+    const html = renderToStaticMarkup(<MaterialPcCollection materials={[main, sub]} view={view} canEdit canDelete stockByMaterialId={null} {...handlers} />);
+    assert.equal((html.match(/aria-label="กลุ่มวัสดุ /g) ?? []).length, 1);
+    assert.match(html, /Material main/);
+    assert.match(html, /Material sub/);
+    assert.match(html, /CUT-001/);
+  }
+});
+
+test("normal and BOM views can render related materials as ordinary independent records", () => {
+  const main = { ...material, id: "main", processingMaterialId: "sub" };
+  const sub = { ...material, id: "sub", code: "CUT-001", processingMaterialId: null };
+  for (const view of ["card", "list"] as const) {
+    const html = renderToStaticMarkup(<MaterialPcCollection materials={[main, sub]} groupRelated={false} view={view} canEdit canDelete stockByMaterialId={null} {...handlers} />);
+    assert.match(html, /CUT-001/);
+    assert.match(html, /Laser-cut bracket/);
+    assert.doesNotMatch(html, /aria-label="กลุ่มวัสดุ |Material main|Material sub/);
+  }
 });
 
 test("card uses the real low-stock label and keeps edit/status in Meatballs", () => {

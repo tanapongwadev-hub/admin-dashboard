@@ -77,6 +77,7 @@ function errorResult(err: unknown): ProductActionFailure {
 function revalidateProductPaths() {
   revalidatePath("/products");
   revalidatePath("/products/list");
+  revalidatePath("/bom-workflow/products");
 }
 
 // `perform*` helpers — the testable inner functions. The public `*Action`

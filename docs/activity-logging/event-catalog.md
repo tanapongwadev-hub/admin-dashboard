@@ -21,6 +21,10 @@ No password, token, secret, cookie, session credential, raw file, unrestricted r
 
 ## Audit event families
 
+### Material permanent deletion
+
+`material.permanently_deleted`: produced by cps-api MaterialsService, schema version 1, `critical_atomic` Audit delivery with existing Audit retention. SUCCESS only; actor and MATERIAL target id required. Before properties: id/code/name/locationType (plain business master data); no unrestricted request payload, confirmation text or credentials. Exact-code confirmation is required by the endpoint; an additional free-text reason is not required. Deletion and Audit insertion share one transaction; referenced Materials are rejected. Producer guards are covered by `materials-delete.spec.ts`; execution and broader authorization/reconciliation verification remain pending under R0.
+
 `P0` must ship first, `P1` is the remainder of authoritative mutation coverage, and `P2` is sensitive access/administration. `critical_atomic` means the business transaction must also create the Audit record or outbox record.
 
 ### Authentication and session security — P0
@@ -145,6 +149,14 @@ Analytics properties are allowlisted per event and use pseudonymous actor/sessio
 Raw clicks, mouse movement, keystrokes, DOM events, form values, search text, and response payloads are outside this catalog.
 
 ## Coverage matrix
+
+### Material processing — 2026-10-07
+
+| Event | Owner / producer | Schema and fields | Delivery | Coverage |
+| --- | --- | --- | --- | --- |
+| `material_processing.completed` | cps-api `MaterialProcessingService.process` | v1 Audit envelope; primary target `MATERIAL_PROCESSING`; allowlisted after-data: code, sourceReceivingId, outputReceivingId, sourceMaterialId, targetMaterialId, sourceQuantity, outputQuantity, scrapQuantity, packageCount. Business identifiers and counts are plain; free-text remarks are omitted. Actor is inherited from authenticated request. | `critical_atomic`, no sampling, same transaction as both stock changes; existing Audit retention policy applies | Implemented; service regression assertions written, not executed under AGENTS.md R0 |
+
+Ordinary `material_receiving.created` / `material_receiving.approved` events remain attached to the new output receipt. Inventory movements reference the source/output MAIN and SUB QR ids. Frontend interactions do not emit authoritative processing success events.
 
 Implementation must generate a machine-checkable matrix with one row per concrete catalog event and these states:
 

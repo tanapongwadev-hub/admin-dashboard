@@ -98,6 +98,11 @@ export function MaterialsReceivingDetailsDialog({
                 </DialogDescription>
               </div>
             </DialogHeader>
+            {receiving.sourceLotNo && (
+              <p className="rounded-lg border border-border bg-surface-2 p-3 text-sm text-fg-secondary">
+                รับเข้าจากการแปรรูป · ล็อตต้นทาง <span className="font-mono font-semibold text-fg">{receiving.sourceLotNo}</span>
+              </p>
+            )}
 
             <div className="flex-1 overflow-y-auto px-1 py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {/* ยอดคงเหลือ is the number a warehouse user actually came here

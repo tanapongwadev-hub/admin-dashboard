@@ -59,6 +59,10 @@ export interface MaterialReceiving {
   organizationId: string;
   supplierId: string;
   materialId: string;
+  sourceReceivingId?: string | null;
+  sourceLotNo?: string | null;
+  processedQuantity?: string;
+  processingStatus?: "WAITING" | "PARTIAL" | "PROCESSED" | null;
   unitId: string;
   receiveQuantity: string;
   convertedQuantity?: string;
@@ -92,6 +96,7 @@ export interface MaterialReceiving {
 }
 
 export interface MaterialReceivingLookupMaterial {
+  processingMaterialId?: string | null;
   id: string;
   code: string;
   name: string;

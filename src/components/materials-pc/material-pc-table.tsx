@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import Image from "next/image";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import {
@@ -16,6 +16,8 @@ import {
   ArrowDownToLine,
   ArrowUpFromLine,
   Network,
+  Trash2,
+  CornerDownRight,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,9 +29,20 @@ import { MaterialPcImagePreview } from "@/components/materials-pc/material-pc-im
 import type { ViewMode } from "@/hooks/use-view-mode";
 import type { Material, PaginatedResult, StockBalance } from "@/lib/api/materials";
 import { cn, formatNumber } from "@/lib/utils";
+import { groupMaterials, type MaterialGroup } from "@/lib/material-groups";
+
+function MaterialGroupHeading({ group }: { group: MaterialGroup }) {
+  return <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3">
+    <Network className="size-4 shrink-0 text-primary" aria-hidden="true" />
+    <span className="break-all text-sm font-semibold text-fg">{group.main.code}</span>
+    <span className="text-xs text-fg-secondary">{group.members.length > 1 ? `Material main + sub · ${group.members.length} รายการ` : "Material"}</span>
+  </div>;
+}
 
 interface MaterialCollectionProps {
   materials: Material[];
+  groupRelated?: boolean;
+  collectionHeader?: ReactNode;
   view: ViewMode;
   canEdit: boolean;
   canDelete: boolean;
@@ -58,6 +71,7 @@ interface MaterialCollectionProps {
   onViewDisbursementHistory: (material: Material) => void;
   // Opens MaterialBomUsageDialog — which BOM/Product uses this material.
   onViewBomUsage: (material: Material) => void;
+  onDeletePermanent?: (material: Material) => void;
 }
 
 // Props for a single-row renderer (Editorial card or List item) — same
@@ -68,6 +82,12 @@ type MaterialRowProps = Omit<MaterialCollectionProps, "materials" | "view"> & {
   material: Material;
   onPreview: (material: Material) => void;
 };
+
+function locationTypeLabel(material: Material): string {
+  if (material.locationType === "internal") return "Internal (ภายใน)";
+  if (material.locationType === "external") return "External (ภายนอก)";
+  return "—";
+}
 
 function MaterialStatus({ material }: { material: Material }) {
   return (
@@ -224,6 +244,7 @@ export function getMaterialRowActions(
     onViewReceivingHistory?: (material: Material) => void;
     onViewDisbursementHistory?: (material: Material) => void;
     onViewBomUsage?: (material: Material) => void;
+    onDeletePermanent?: (material: Material) => void;
   }
 ): RowAction[] {
   const actions: RowAction[] = [];
@@ -282,6 +303,9 @@ export function getMaterialRowActions(
         : { label: "เปิดใช้งาน", icon: RotateCcw, onSelect: () => handlers.onToggleStatus(material), variant: "default" }
     );
   }
+  if (canDelete && handlers.onDeletePermanent) {
+    actions.push({ label: "ลบถาวร", icon: Trash2, onSelect: () => handlers.onDeletePermanent?.(material), variant: "danger" });
+  }
   return actions;
 }
 
@@ -296,6 +320,7 @@ function MaterialActions({
   onViewReceivingHistory,
   onViewDisbursementHistory,
   onViewBomUsage,
+  onDeletePermanent,
 }: Omit<MaterialCollectionProps, "materials" | "view" | "stockByMaterialId"> & { material: Material }) {
   return (
     <RowActionsMenu
@@ -308,6 +333,7 @@ function MaterialActions({
         onViewReceivingHistory,
         onViewDisbursementHistory,
         onViewBomUsage,
+        onDeletePermanent,
       })}
     />
   );
@@ -380,6 +406,7 @@ function MaterialEditorialCard({
   onViewReceivingHistory,
   onViewDisbursementHistory,
   onViewBomUsage,
+  onDeletePermanent,
   onPreview,
 }: MaterialRowProps) {
   const balance = stockByMaterialId?.[material.id];
@@ -409,6 +436,7 @@ function MaterialEditorialCard({
               onViewReceivingHistory,
               onViewDisbursementHistory,
               onViewBomUsage,
+              onDeletePermanent,
             })}
           />
         </div>
@@ -423,6 +451,7 @@ function MaterialEditorialCard({
           {material.materialType}
           {material.ratio ? ` · ${material.ratio}` : ""}
         </p>
+        <p className="mt-1 text-xs text-fg-secondary">Location Type: {locationTypeLabel(material)}</p>
 
       </div>
 
@@ -556,6 +585,7 @@ function MaterialListItem({
   onViewReceivingHistory,
   onViewDisbursementHistory,
   onViewBomUsage,
+  onDeletePermanent,
   onPreview,
 }: MaterialRowProps) {
   const balance = stockByMaterialId?.[material.id];
@@ -592,6 +622,7 @@ function MaterialListItem({
         <h2 className="mb-1 truncate text-sm font-semibold leading-tight text-fg" title={material.name}>
           {material.name}
         </h2>
+        <p className="mb-1 text-xs text-fg-secondary">Location Type: {locationTypeLabel(material)}</p>
         <div className="flex items-center gap-2 truncate text-xs leading-tight text-fg-secondary sm:gap-2.5">
           <span className="truncate">{shapeLabel(material)}</span>
           <span aria-hidden="true" className="text-border-strong">·</span>
@@ -628,6 +659,7 @@ function MaterialListItem({
             onViewReceivingHistory,
             onViewDisbursementHistory,
             onViewBomUsage,
+            onDeletePermanent,
           })}
         />
       </div>
@@ -646,6 +678,8 @@ function MaterialListItem({
 // =====================================================================
 function MaterialPcSelectableTable({
   materials,
+  groupRelated = true,
+  collectionHeader,
   stockByMaterialId,
   canEdit,
   canDelete,
@@ -656,8 +690,11 @@ function MaterialPcSelectableTable({
   onViewReceivingHistory,
   onViewDisbursementHistory,
   onViewBomUsage,
+  onDeletePermanent,
   onPreview,
 }: Omit<MaterialCollectionProps, "view"> & { onPreview: (material: Material) => void }) {
+  const groups = groupRelated ? groupMaterials(materials) : materials.map((main) => ({ id: main.id, main, members: [main] }));
+  const groupByMemberId = new Map(groups.flatMap((group) => group.members.map((member) => [member.id, group] as const)));
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const allSelected = materials.length > 0 && selected.size === materials.length;
   const someSelected = selected.size > 0 && !allSelected;
@@ -684,66 +721,73 @@ function MaterialPcSelectableTable({
           </Button>
         </div>
       )}
-      <div className="max-h-[68vh] overflow-auto rounded-md border border-border bg-surface">
-        <Table>
-          <TableHeader className="sticky top-0 z-20 bg-surface shadow-[0_1px_0_0_var(--border)]">
+      {collectionHeader}
+      <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm [&>div:last-child]:max-h-[68vh] [&>div:last-child]:overflow-auto [&>div:last-child]:[scrollbar-width:none] [&>div:last-child::-webkit-scrollbar]:hidden">
+        <Table className="min-w-[1080px]">
+          <TableHeader className="sticky top-0 z-20 bg-surface-2 shadow-[0_1px_0_0_var(--border)] [&_th]:h-12">
             <TableRow>
-              <TableHead>
+              <TableHead className="w-11 min-w-11 bg-surface-2 sm:sticky sm:left-0 sm:z-30">
                 <Checkbox
                   checked={allSelected ? true : someSelected ? "indeterminate" : false}
                   onCheckedChange={(checked) => toggleAll(checked === true)}
                   aria-label="เลือกวัสดุทั้งหมดในหน้านี้"
                 />
               </TableHead>
-              <TableHead>
-                <span className="sr-only">รูปภาพ</span>
+              <TableHead className="min-w-72 bg-surface-2 sm:sticky sm:left-11 sm:z-30">
+                <div className="flex items-center gap-3"><SortableButton label="รหัสวัสดุ" field="code" /><span className="text-border-strong" aria-hidden="true">/</span><SortableButton label="ชื่อวัสดุ" field="name" /></div>
               </TableHead>
-              <SortableHead label="รหัส" field="code" />
-              <TableHead>ประเภท</TableHead>
-              <SortableHead label="ชื่อวัสดุ" field="name" />
+              <TableHead>ประเภท / ชนิด</TableHead>
+              <TableHead>Location Type</TableHead>
               {stockByMaterialId && <SortableHead label="คงเหลือ" field="currentStock" />}
-              {stockByMaterialId && <TableHead>ขั้นต่ำ</TableHead>}
-              {stockByMaterialId && <TableHead>สถานะสต็อก</TableHead>}
               <TableHead>ซัพพลายเออร์</TableHead>
-              <TableHead>จุดขึ้นสินค้า</TableHead>
-              <TableHead>สายการผลิต</TableHead>
+              <TableHead>ข้อมูลปฏิบัติงาน</TableHead>
               <TableHead>การใช้งาน</TableHead>
               {stockByMaterialId && <SortableHead label="รับเข้าล่าสุด" field="lastReceivedAt" />}
               <TableHead className="text-right">การจัดการ</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {materials.map((material) => {
+            {groups.flatMap((group) => group.members).map((material) => {
+              const group = groupByMemberId.get(material.id)!;
               const balance = stockByMaterialId?.[material.id];
               const quantity = balance ? Number(balance.quantity) : 0;
               const stockHealth = getStockHealthLabel(getStockTone(quantity, Number(material.minimumStock)));
               const isSelected = selected.has(material.id);
+              const isMain = group.members.length > 1 && material.id === group.main.id;
+              const isSub = group.members.length > 1 && material.id !== group.main.id;
+              const rowSurface = isSelected ? "bg-primary-soft" : isMain ? "bg-primary-soft/40 group-hover:bg-primary-soft" : "bg-surface group-hover:bg-surface-2";
               return (
-                <TableRow key={material.id} data-state={isSelected ? "selected" : undefined}>
-                  <TableCell>
+                <TableRow key={material.id} data-state={isSelected ? "selected" : undefined} className={cn("group hover:bg-surface-2/70", isMain && "bg-primary-soft/40 hover:bg-primary-soft")}>
+                  <TableCell className={cn("w-11 min-w-11 sm:sticky sm:left-0 sm:z-10", rowSurface)}>
                     <Checkbox
                       checked={isSelected}
                       onCheckedChange={(checked) => toggleOne(material.id, checked === true)}
                       aria-label={`เลือกวัสดุ ${material.name}`}
                     />
                   </TableCell>
-                  <TableCell>
-                    <MaterialThumbnail material={material} onPreview={onPreview} />
+                  <TableCell className={cn("min-w-72 max-w-96 sm:sticky sm:left-11 sm:z-10", rowSurface)}>
+                    <div className={cn("flex items-center gap-3", isSub && "pl-6")}>
+                      {isSub && <CornerDownRight className="size-4 shrink-0 text-primary/60" aria-hidden="true" />}
+                      <MaterialThumbnail material={material} onPreview={onPreview} />
+                      <div className="min-w-0 space-y-1">
+                        <div className="flex flex-wrap items-center gap-2"><button type="button" onClick={() => onViewDetails(material)} className="break-all text-left font-mono text-xs font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label={`ดูรายละเอียดวัสดุ ${material.code}`}>{material.code}</button>{group.members.length > 1 && <Badge variant={material.id === group.main.id ? "primary" : "info"} className="text-[10px]">{material.id === group.main.id ? "Main" : "Sub"}</Badge>}</div>
+                        <p className="max-w-64 truncate text-sm font-medium text-fg" title={material.name}>{material.name}</p>
+                        <p className="max-w-64 truncate text-xs text-fg-muted" title={modelLabel(material)}>รุ่น: {modelLabel(material)}</p>
+                        {isSub && <span className="sr-only">Material sub ของ {group.main.code}</span>}
+                      </div>
+                    </div>
                   </TableCell>
-                  <TableCell className="font-medium text-fg">{material.code}</TableCell>
-                  <TableCell><MaterialTypeTag material={material} /></TableCell>
-                  <TableCell className="text-fg-secondary">{material.name}</TableCell>
+                  <TableCell><div className="space-y-1.5"><MaterialTypeTag material={material} /><p className="text-xs text-fg-secondary">{shapeLabel(material)}</p></div></TableCell>
+                  <TableCell className="whitespace-nowrap"><Badge variant={material.locationType === "internal" ? "primary" : "neutral"}>{locationTypeLabel(material)}</Badge></TableCell>
                   {stockByMaterialId && (
-                    <TableCell className="font-semibold text-fg tabular-nums">
-                      {formatNumber(quantity)}
-                      {unitLabel(material) !== "—" && ` ${unitLabel(material)}`}
+                    <TableCell className="min-w-36">
+                      <p className="text-right text-lg font-semibold tabular-nums text-fg">{formatNumber(quantity)} <span className="text-xs font-normal text-fg-muted">{unitLabel(material) !== "—" ? unitLabel(material) : ""}</span></p>
+                      <p className="mt-0.5 text-right text-[11px] text-fg-muted">ขั้นต่ำ {formatNumber(Number(material.minimumStock))}</p>
+                      <div className="mt-1.5 flex justify-end"><Badge variant={stockHealth.variant} dot>{stockHealth.label}</Badge></div>
                     </TableCell>
                   )}
-                  {stockByMaterialId && <TableCell className="text-fg-muted tabular-nums">{formatNumber(Number(material.minimumStock))}</TableCell>}
-                  {stockByMaterialId && <TableCell><Badge variant={stockHealth.variant} dot>{stockHealth.label}</Badge></TableCell>}
-                  <TableCell className="max-w-48 text-fg-muted">{supplierNames(material)}</TableCell>
-                  <TableCell className="text-fg-muted">{loadingPointLabel(material)}</TableCell>
-                  <TableCell className="text-fg-muted">{processLineLabel(material)}</TableCell>
+                  <TableCell className="max-w-44"><p className="line-clamp-2 text-xs leading-relaxed text-fg-secondary" title={supplierNames(material)}>{supplierNames(material)}</p></TableCell>
+                  <TableCell className="min-w-40 text-xs"><p className="text-fg-secondary"><span className="text-fg-muted">จุดขึ้น: </span>{loadingPointLabel(material)}</p><p className="mt-1.5 text-fg-secondary"><span className="text-fg-muted">สายผลิต: </span>{processLineLabel(material)}</p></TableCell>
                   <TableCell>
                     <MaterialStatus material={material} />
                   </TableCell>
@@ -760,6 +804,7 @@ function MaterialPcSelectableTable({
                       onViewReceivingHistory={onViewReceivingHistory}
                       onViewDisbursementHistory={onViewDisbursementHistory}
                       onViewBomUsage={onViewBomUsage}
+                      onDeletePermanent={onDeletePermanent}
                     />
                   </TableCell>
                 </TableRow>
@@ -778,6 +823,8 @@ function MaterialPcSelectableTable({
 // =====================================================================
 export function MaterialPcCollection({
   materials,
+  groupRelated = true,
+  collectionHeader,
   view,
   canEdit,
   canDelete,
@@ -789,8 +836,10 @@ export function MaterialPcCollection({
   onViewReceivingHistory,
   onViewDisbursementHistory,
   onViewBomUsage,
+  onDeletePermanent,
 }: MaterialCollectionProps) {
   const [previewTarget, setPreviewTarget] = useState<Material | null>(null);
+  const groups = groupRelated ? groupMaterials(materials) : materials.map((main) => ({ id: main.id, main, members: [main] }));
 
   const commonProps = {
     canEdit,
@@ -803,6 +852,7 @@ export function MaterialPcCollection({
     onViewReceivingHistory,
     onViewDisbursementHistory,
     onViewBomUsage,
+    onDeletePermanent,
     onPreview: setPreviewTarget,
   };
 
@@ -817,6 +867,8 @@ export function MaterialPcCollection({
         <MaterialPcSelectableTable
           key={materials.map((m) => m.id).join("|")}
           materials={materials}
+          groupRelated={groupRelated}
+          collectionHeader={collectionHeader}
           stockByMaterialId={stockByMaterialId}
           canEdit={canEdit}
           canDelete={canDelete}
@@ -827,27 +879,25 @@ export function MaterialPcCollection({
           onViewReceivingHistory={onViewReceivingHistory}
           onViewDisbursementHistory={onViewDisbursementHistory}
           onViewBomUsage={onViewBomUsage}
+          onDeletePermanent={onDeletePermanent}
           onPreview={setPreviewTarget}
         />
-      ) : view === "list" ? (
-        <ul className="flex flex-col gap-2" aria-label="รายการวัสดุแบบแถว">
-          {materials.map((material) => (
-            <li key={material.id}>
-              <MaterialListItem material={material} {...commonProps} />
-            </li>
-          ))}
-        </ul>
       ) : (
-        <ul
-          className="grid grid-cols-1 gap-3 @min-[36rem]:grid-cols-2 @min-[60rem]:grid-cols-3 @min-[82rem]:grid-cols-4 @min-[100rem]:grid-cols-5"
-          aria-label="รายการวัสดุแบบการ์ด"
-        >
-          {materials.map((material) => (
-            <li key={material.id} className="min-w-0">
-              <MaterialEditorialCard material={material} {...commonProps} />
-            </li>
-          ))}
-        </ul>
+        <div aria-label={view === "list" ? "รายการวัสดุแบบแถว" : "รายการวัสดุแบบการ์ด"} className={view === "list" ? "space-y-3" : "grid grid-cols-1 items-start gap-3 @min-[36rem]:grid-cols-2 @min-[60rem]:grid-cols-3 @min-[82rem]:grid-cols-4 @min-[100rem]:grid-cols-5"}>
+          {groups.map((group) => group.members.length === 1 ? (
+            <div key={group.id} className="min-w-0 h-full">
+              {view === "list" ? <MaterialListItem material={group.main} {...commonProps} /> : <MaterialEditorialCard material={group.main} {...commonProps} />}
+            </div>
+          ) : <section key={group.id} aria-label={`กลุ่มวัสดุ ${group.main.code}`} className={cn("min-w-0 overflow-hidden rounded-xl border border-border bg-surface-2/40", view === "card" && "@min-[36rem]:col-span-2")}>
+            <div className="border-b border-border bg-primary-soft/40"><MaterialGroupHeading group={group} /></div>
+            <ul className={view === "list" ? "space-y-3 p-3" : "grid grid-cols-1 gap-3 p-3 @min-[36rem]:grid-cols-2"}>
+              {group.members.map((material) => <li key={material.id} className="flex min-w-0 flex-col gap-2">
+                {group.members.length > 1 && <div className="flex items-center gap-2 px-1"><Badge variant={material.id === group.main.id ? "primary" : "info"}>{material.id === group.main.id ? "Material main" : "Material sub"}</Badge><span className="text-xs text-fg-muted">{material.id === group.main.id ? "วัตถุดิบต้นทาง" : "วัสดุหลังแปรรูป"}</span></div>}
+                {view === "list" ? <MaterialListItem material={material} {...commonProps} /> : <MaterialEditorialCard material={material} {...commonProps} />}
+              </li>)}
+            </ul>
+          </section>)}
+        </div>
       )}
 
       <MaterialPcImagePreview material={previewTarget} onOpenChange={(open) => !open && setPreviewTarget(null)} />
@@ -855,17 +905,22 @@ export function MaterialPcCollection({
   );
 }
 
-function SortableHead({ label, field }: { label: string; field: "code" | "name" | "currentStock" | "lastReceivedAt" }) {
+type MaterialSortField = "code" | "name" | "currentStock" | "lastReceivedAt";
+
+function SortableHead({ label, field }: { label: string; field: MaterialSortField }) {
+  return <TableHead><SortableButton label={label} field={field} /></TableHead>;
+}
+
+function SortableButton({ label, field }: { label: string; field: MaterialSortField }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const active = (searchParams.get("sortBy") ?? "code") === field;
   const direction = searchParams.get("sortOrder") === "desc" ? "desc" : "asc";
   return (
-    <TableHead>
       <button
         type="button"
-        className="inline-flex items-center gap-1 whitespace-nowrap font-medium hover:text-fg"
+        className="inline-flex items-center gap-1 whitespace-nowrap rounded-sm font-medium hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         onClick={() => {
           const params = new URLSearchParams(searchParams.toString());
           params.set("sortBy", field);
@@ -876,7 +931,6 @@ function SortableHead({ label, field }: { label: string; field: "code" | "name" 
       >
         {label}<ArrowUpDown className={cn("size-3.5", active ? "text-primary" : "text-fg-muted")} />
       </button>
-    </TableHead>
   );
 }
 
@@ -887,6 +941,8 @@ function formatDate(value?: string | null): string {
 
 export function MaterialPcTable({
   materials,
+  groupRelated = true,
+  collectionHeader,
   meta,
   view,
   canEdit,
@@ -899,8 +955,11 @@ export function MaterialPcTable({
   onViewReceivingHistory,
   onViewDisbursementHistory,
   onViewBomUsage,
+  onDeletePermanent,
 }: {
   materials: Material[];
+  groupRelated?: boolean;
+  collectionHeader?: ReactNode;
   meta: PaginatedResult<Material>["meta"];
   view: ViewMode;
   canEdit: boolean;
@@ -913,6 +972,7 @@ export function MaterialPcTable({
   onViewReceivingHistory: (material: Material) => void;
   onViewDisbursementHistory: (material: Material) => void;
   onViewBomUsage: (material: Material) => void;
+  onDeletePermanent?: (material: Material) => void;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -933,17 +993,23 @@ export function MaterialPcTable({
 
   if (materials.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-border py-16 text-center">
-        <p className="text-sm font-medium text-fg">ไม่พบวัสดุ</p>
-        <p className="text-sm text-fg-muted">ลองเปลี่ยนคำค้นหาหรือตัวกรองสถานะ</p>
+      <div className="flex flex-col gap-3">
+        {collectionHeader}
+        <div className="flex flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-border py-16 text-center">
+          <p className="text-sm font-medium text-fg">ไม่พบวัสดุ</p>
+          <p className="text-sm text-fg-muted">ลองเปลี่ยนคำค้นหาหรือตัวกรองสถานะ</p>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="flex flex-col gap-3">
+      {view !== "table" && collectionHeader}
       <MaterialPcCollection
         materials={materials}
+        groupRelated={groupRelated}
+        collectionHeader={collectionHeader}
         view={view}
         canEdit={canEdit}
         canDelete={canDelete}
@@ -955,15 +1021,16 @@ export function MaterialPcTable({
         onViewReceivingHistory={onViewReceivingHistory}
         onViewDisbursementHistory={onViewDisbursementHistory}
         onViewBomUsage={onViewBomUsage}
+        onDeletePermanent={onDeletePermanent}
       />
 
       <div className="flex flex-col gap-2 text-sm text-fg-muted sm:flex-row sm:items-center sm:justify-between">
         <p>
-          หน้า {meta.page} จาก {Math.max(1, meta.totalPages)} · ทั้งหมด {meta.totalItems} รายการ
+          หน้า {meta.page} จาก {Math.max(1, meta.totalPages)} · ทั้งหมด {meta.totalItems} {groupRelated ? "กลุ่ม" : "รายการ"}
         </p>
         <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
           <div className="col-span-2 flex items-center gap-2 sm:col-span-1">
-            <span className="whitespace-nowrap text-xs">แสดงต่อหน้า</span>
+            <span className="whitespace-nowrap text-xs">{groupRelated ? "กลุ่ม" : "รายการ"}ต่อหน้า</span>
             <Select value={String(meta.limit)} onValueChange={changePageSize}>
               <SelectTrigger className="h-8 w-20"><SelectValue /></SelectTrigger>
               <SelectContent>

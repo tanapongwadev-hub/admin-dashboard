@@ -12,7 +12,9 @@ import {
 import { Button } from "@/components/ui/button";
 import type { Material } from "@/lib/api/materials";
 
-function fileNameFor(material: Material) {
+type MaterialImageRecord = Pick<Material, "code" | "name" | "imagePath">;
+
+function fileNameFor(material: MaterialImageRecord) {
   const ext = material.imagePath?.split(".").pop() || "jpg";
   return `${material.code}.${ext}`;
 }
@@ -21,7 +23,7 @@ export function MaterialPcImagePreview({
   material,
   onOpenChange,
 }: {
-  material: Material | null;
+  material: MaterialImageRecord | null;
   onOpenChange: (open: boolean) => void;
 }) {
   if (!material || !material.imagePath) return null;

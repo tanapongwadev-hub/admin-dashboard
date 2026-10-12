@@ -3,6 +3,7 @@
 import * as React from "react";
 import { createPortal } from "react-dom";
 import type { StepTag } from "@/lib/api/production-lots";
+import { ProductionQrLabel, ProductionQrPrintLayout } from "./production-qr-print-layout";
 
 export interface TagLabelContext {
   productCode: string;
@@ -13,7 +14,7 @@ export interface TagLabelContext {
 }
 
 /**
- * Transfer-tag labels, one 60×40 mm label per page — same "print the current
+ * Transfer-tag labels, ten labels per A4 page — same "print the current
  * document, no popup" pattern as package-label-sheet.tsx.
  */
 export function TransferTagSheet({
@@ -39,42 +40,25 @@ export function TransferTagSheet({
   if (!tags?.length) return null;
 
   return createPortal(
-    <div className="hidden print:block">
-      <style>{"@page { size: 60mm 40mm; margin: 0; }"}</style>
-      {tags.map((tag) => (
-        <div
+    <ProductionQrPrintLayout
+      title={`QR ส่งต่อ · ${context.orderCode}`}
+      labels={tags.map((tag) => (
+        <ProductionQrLabel
           key={tag.qrCode}
-          className="flex h-[40mm] w-[60mm] gap-[2mm] overflow-hidden p-[2mm] text-black [break-after:page] [break-inside:avoid]"
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element -- data: URL SVG, printed */}
-          <img src={tag.qrImage} alt="" className="size-[26mm] shrink-0" />
-          <div className="flex min-w-0 flex-col justify-between text-[2.6mm] leading-tight">
-            <div>
-              <p className="truncate font-bold">{context.productCode}</p>
-              <p className="line-clamp-2">{context.productName}</p>
-            </div>
-            <div>
-              <p className="font-bold">ส่งไป {context.toStep}</p>
-              <p className="font-mono">{tag.sourceLotNo}</p>
-              <p>
-                กล่อง {tag.boxNo}/{tag.boxCount} · {tag.revision > 0 ? tag.left : tag.qty} ชิ้น
-                {tag.revision > 0 ? ` (แบ่งจาก ${tag.qty})` : ""}
-              </p>
-              {tag.origins.length > 0 && (
-                <p className="truncate">
-                  ต้นทาง{" "}
-                  {tag.origins
-                    .map((o) => `${o.lotNo}${tag.origins.length > 1 ? `×${o.qty}` : ""}`)
-                    .join(", ")}
-                </p>
-              )}
-              <p className="truncate font-mono text-[2.2mm]">{tag.qrCode}</p>
-              <p className="text-[2.2mm]">{context.orderCode}</p>
-            </div>
-          </div>
-        </div>
+          qrImage={tag.qrImage}
+          qrCode={tag.qrCode}
+          productCode={context.productCode}
+          productName={context.productName}
+          orderCode={context.orderCode}
+          quantity={tag.revision > 0 ? tag.left : tag.qty}
+          fields={[
+            { label: "ส่งไปขั้นตอน", value: context.toStep },
+            { label: "Lot ต้นทาง", value: tag.sourceLotNo },
+            { label: "กล่อง", value: `${tag.boxNo}/${tag.boxCount}${tag.revision > 0 ? ` · แบ่งจาก ${tag.qty} ชิ้น` : ""}` },
+          ]}
+        />
       ))}
-    </div>,
+    />,
     document.body,
   );
 }

@@ -1,5 +1,3 @@
-const CONVERTED_SHAPES = new Set(["PIPE", "SHEET", "COIL"]);
-
 export interface ReceivingPackagePreview {
   packageNo: number;
   quantity: number;
@@ -20,7 +18,6 @@ function roundQuantity(value: number): number {
 export function calculateReceivingPreview({
   receivedQuantity,
   materialShape,
-  ratio,
   packQuantity,
 }: {
   receivedQuantity: number;
@@ -28,12 +25,25 @@ export function calculateReceivingPreview({
   ratio: number | null | undefined;
   packQuantity: number | null | undefined;
 }): ReceivingCalculationPreview {
-  const requiresConversion = CONVERTED_SHAPES.has(materialShape ?? "");
-  const convertedQuantity = roundQuantity(
-    receivedQuantity * (requiresConversion ? (ratio ?? 0) : 1)
-  );
+  // Receive whole sheets/units first; ratio belongs to downstream cutting.
+  const requiresConversion = false;
+  const convertedQuantity = roundQuantity(receivedQuantity);
 
-  if (receivedQuantity <= 0 || convertedQuantity <= 0 || !packQuantity || packQuantity <= 0) {
+  if (receivedQuantity <= 0 || convertedQuantity <= 0) {
+    return { requiresConversion, convertedQuantity, packageCount: 0, packages: [] };
+  }
+
+  // Raw sheets are shown whole in the preview; packing follows processing.
+  if (["PIPE", "SHEET", "COIL"].includes(materialShape ?? "")) {
+    return {
+      requiresConversion,
+      convertedQuantity,
+      packageCount: 1,
+      packages: [{ packageNo: 1, quantity: convertedQuantity, isRemainder: false }],
+    };
+  }
+
+  if (!packQuantity || packQuantity <= 0) {
     return { requiresConversion, convertedQuantity, packageCount: 0, packages: [] };
   }
 

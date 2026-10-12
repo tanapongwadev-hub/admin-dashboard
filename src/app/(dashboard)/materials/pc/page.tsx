@@ -6,11 +6,17 @@ import {
   listMaterials,
   getMaterialLookups,
   listMaterialInventory,
+  listStockBalances,
   type MaterialStockStatus,
   type MaterialType,
   type StockBalance,
+  type ListMaterialInventoryParams,
+  type ListMaterialsParams,
 } from "@/lib/api/materials";
 import { MaterialPcClient } from "@/components/materials-pc/material-pc-client";
+import { loadProductMaterialCatalog } from "@/lib/product-materials";
+import { groupMaterials } from "@/lib/material-groups";
+import { listMaterialIdsWithBom } from "@/lib/api/engineering";
 
 const PAGE_SIZES = new Set([20, 40, 60]);
 
@@ -30,6 +36,7 @@ export default async function MaterialsPcPage({
     processLineName?: string;
     sortBy?: string;
     sortOrder?: string;
+    tab?: string;
   }>;
 }) {
   const session = await getCurrentSession();
@@ -48,6 +55,8 @@ export default async function MaterialsPcPage({
   }
 
   const params = await searchParams;
+  const canViewBom = session.user.isSuperAdmin || session.permissions.includes("MATERIAL_BOMS_VIEW");
+  const activeTab = params.tab === "raw" ? "raw" : params.tab === "bom" ? "bom" : "all";
   const page = Math.max(1, Number(params.page) || 1);
   const requestedLimit = Number(params.limit);
   const limit = PAGE_SIZES.has(requestedLimit) ? requestedLimit : 20;
@@ -77,14 +86,16 @@ export default async function MaterialsPcPage({
     : undefined;
   const inventorySorts = new Set(["code", "name", "currentStock", "lastReceivedAt"]);
   const sortBy = inventorySorts.has(params.sortBy ?? "") ? params.sortBy as "code" | "name" | "currentStock" | "lastReceivedAt" : "code";
-  const sortOrder = params.sortOrder === "desc" ? "desc" : "asc";
+  const sortOrder: "asc" | "desc" = params.sortOrder === "desc" ? "desc" : "asc";
 
-  const [lookups, inventory, materialList] = await Promise.all([
+  const inventoryQuery: ListMaterialInventoryParams = { search, isActive, type, stockStatus, supplierId: params.supplierId, modelId: params.modelId, loadingPointId: params.loadingPointId, processLineName: params.processLineName, sortBy, sortOrder };
+  const materialQuery: ListMaterialsParams = { search, isActive, type, supplierId: params.supplierId, modelId: params.modelId, loadingPointId: params.loadingPointId, sortBy: sortBy === "name" ? "name" : "code", sortOrder };
+  const [lookups, inventory, materialList, catalog, balances, bomMaterialIds] = await Promise.all([
     getMaterialLookups(accessToken),
     canViewStock
       ? listMaterialInventory(accessToken, {
-          page,
-          limit,
+          page: 1,
+          limit: 100,
           search,
           isActive,
           type,
@@ -99,8 +110,8 @@ export default async function MaterialsPcPage({
       : Promise.resolve(null),
     !canViewStock
       ? listMaterials(accessToken, {
-          page,
-          limit,
+          page: 1,
+          limit: 100,
           search,
           isActive,
           type,
@@ -111,24 +122,49 @@ export default async function MaterialsPcPage({
           sortOrder,
         })
       : Promise.resolve(null),
+    loadProductMaterialCatalog((catalogPage) => listMaterials(accessToken, { page: catalogPage, limit: 100, sortBy: "code", sortOrder: "asc" })),
+    canViewStock ? listStockBalances(accessToken) : Promise.resolve(null),
+    canViewBom ? listMaterialIdsWithBom(accessToken) : Promise.resolve([]),
   ]);
 
   const list = inventory ?? materialList!;
-  const stockByMaterialId = inventory
-    ? inventory.items.reduce<Record<string, StockBalance>>((map, material) => {
-        map[material.id] = {
-          materialId: material.id,
-          materialCode: material.code,
-          materialName: material.name,
-          quantity: material.currentStock,
-          unitCode: material.unit?.code ?? "",
-          unitNameTh: material.unit?.nameTh ?? "",
-          lastMovementAt: material.lastMovementAt,
-          lastReceivedAt: material.lastReceivedAt,
-        };
-        return map;
-      }, {})
+  const matches = [...list.items];
+  // Bound concurrent requests while collecting all matches, so a pair cannot
+  // be split by item pagination or by a filter matching only its sub material.
+  for (let nextPage = 2; nextPage <= list.meta.totalPages; nextPage += 4) {
+    const pages = await Promise.all(Array.from({ length: Math.min(4, list.meta.totalPages - nextPage + 1) }, (_, index) =>
+      canViewStock
+        ? listMaterialInventory(accessToken, { ...inventoryQuery, page: nextPage + index, limit: 100 })
+        : listMaterials(accessToken, { ...materialQuery, page: nextPage + index, limit: 100 })
+    ));
+    matches.push(...pages.flatMap((result) => result.items));
+  }
+  const rawGroups = groupMaterials(matches, catalog.diagramMaterials).filter((group) => ["PIPE", "SHEET", "COIL"].includes(group.main.materialType));
+  const bomIds = new Set(bomMaterialIds);
+  const bomMatches = matches.filter((material) => bomIds.has(material.id));
+  const tabRows = activeTab === "bom" ? bomMatches : matches;
+  const totalItems = activeTab === "raw" ? rawGroups.length : tabRows.length;
+  const totalPages = Math.ceil(totalItems / limit);
+  const currentPage = Math.min(page, Math.max(1, totalPages));
+  const displayedMaterials = activeTab === "raw"
+    ? rawGroups.slice((currentPage - 1) * limit, currentPage * limit).flatMap((group) => group.members)
+    : tabRows.slice((currentPage - 1) * limit, currentPage * limit);
+  const groupedMeta = { page: currentPage, limit, totalItems, totalPages };
+  const stockByMaterialId = balances
+    ? Object.fromEntries(balances.map((balance) => [balance.materialId, balance])) as Record<string, StockBalance>
     : null;
+  if (stockByMaterialId) {
+    for (const material of matches) {
+      if ("currentStock" in material && typeof material.currentStock === "string") {
+        stockByMaterialId[material.id] = {
+          materialId: material.id, materialCode: material.code, materialName: material.name,
+          quantity: material.currentStock, unitCode: material.unit?.code ?? "", unitNameTh: material.unit?.nameTh ?? "",
+          lastMovementAt: "lastMovementAt" in material && typeof material.lastMovementAt === "string" ? material.lastMovementAt : null,
+          lastReceivedAt: "lastReceivedAt" in material && typeof material.lastReceivedAt === "string" ? material.lastReceivedAt : null,
+        };
+      }
+    }
+  }
 
   const canEdit = session.user.isSuperAdmin || session.permissions.includes("MATERIAL_CREATE") || session.permissions.includes("MATERIAL_UPDATE");
   const canDelete = session.user.isSuperAdmin || session.permissions.includes("MATERIAL_DELETE");
@@ -141,14 +177,16 @@ export default async function MaterialsPcPage({
       </div>
 
       <MaterialPcClient
-        materials={list.items}
-        meta={list.meta}
+        materials={displayedMaterials}
+        meta={groupedMeta}
         lookups={lookups}
         canEdit={canEdit}
         canDelete={canDelete}
         stockByMaterialId={stockByMaterialId}
-        stockSummary={inventory?.summary ?? null}
         canViewStock={canViewStock}
+        activeTab={activeTab}
+        tabCounts={{ all: matches.length, raw: rawGroups.length, bom: bomMatches.length }}
+        canViewBom={canViewBom}
       />
     </div>
   );

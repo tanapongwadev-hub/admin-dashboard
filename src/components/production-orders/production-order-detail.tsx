@@ -18,6 +18,7 @@ import type {
   RecordOutputResult,
 } from "@/lib/api/production-orders";
 import { ProductionOrderLineHold } from "./production-order-line-hold";
+import { ProductionQrLabel, ProductionQrPrintLayout } from "@/components/production-lots/production-qr-print-layout";
 
 const PAGE_SIZE = 24;
 
@@ -60,7 +61,7 @@ function PacketTimeline({ packet, steps }: { packet: ProductionOrderPacket; step
   const finished = reached(steps.length);
 
   return (
-    <ol className="mt-2 flex flex-col">
+    <ol className="mt-3 flex flex-col rounded-md border border-border bg-surface-2/40 p-3">
       {steps.map((step, i) => {
         const started = i === 0 ? created : reached(i);
         const done = reached(i + 1);
@@ -70,16 +71,16 @@ function PacketTimeline({ packet, steps }: { packet: ProductionOrderPacket; step
             ? "current"
             : "waiting";
         return (
-          <li key={step.index} className="relative flex gap-3 pb-3 last:pb-0">
+          <li key={step.index} aria-current={state === "current" ? "step" : undefined} className="relative flex gap-3 pb-4 last:pb-0">
             {i < steps.length - 1 && (
               <span
                 aria-hidden
-                className={`absolute left-[7px] top-4 h-full w-px ${state === "done" ? "bg-success" : "bg-border"}`}
+                className={`absolute bottom-0 left-3 top-6 w-px ${state === "done" ? "bg-success" : "bg-border-strong"}`}
               />
             )}
             <span
               aria-hidden
-              className={`relative z-10 mt-0.5 flex size-[15px] shrink-0 items-center justify-center rounded-full border-2 ${
+              className={`relative z-10 flex size-6 shrink-0 items-center justify-center rounded-full border-2 text-[10px] font-semibold ${
                 state === "done"
                   ? "border-success bg-success text-white"
                   : state === "current"
@@ -87,15 +88,14 @@ function PacketTimeline({ packet, steps }: { packet: ProductionOrderPacket; step
                     : "border-border-strong bg-surface"
               }`}
             >
-              {state === "done" && <Check className="size-2.5" strokeWidth={3} />}
-              {state === "current" && <span className="size-1.5 rounded-full bg-primary" />}
+              {state === "done" ? <Check className="size-3" strokeWidth={3} /> : i + 1}
             </span>
-            <div className="min-w-0 text-xs">
+            <div className="min-w-0 flex-1 text-xs leading-relaxed">
               <p className={state === "waiting" ? "text-fg-muted" : "font-medium text-fg"}>
-                {i + 1}. {step.name}
-                <span className="sr-only">
-                  {state === "done" ? " (เสร็จแล้ว)" : state === "current" ? " (กำลังทำ)" : " (รอ)"}
-                </span>
+                {step.name}
+              </p>
+              <p className={state === "current" ? "font-medium text-primary" : state === "done" ? "text-success-fg" : "text-fg-muted"}>
+                {state === "done" ? "เสร็จแล้ว" : state === "current" ? "อยู่ที่ขั้นตอนนี้" : "รอขั้นตอนก่อนหน้า"}
               </p>
               {started && state !== "waiting" && (
                 <p className="text-fg-secondary">เริ่ม {formatWhen(started.performedAt)}</p>
@@ -583,29 +583,27 @@ function PrintSheet({
   include: (packet: ProductionOrderPacket) => boolean;
 }) {
   return createPortal(
-    <div className="hidden print:block">
-      <div className="grid grid-cols-3 gap-3 p-4">
-        {order.lines.flatMap((line) =>
-          line.packets.filter(include).map((packet) => (
-            <div
-              key={packet.id}
-              className="flex flex-col items-center gap-1 border border-black p-2 text-center text-xs text-black"
-              style={{ breakInside: "avoid" }}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={packet.qrImage} alt="" className="size-32" />
-              <p className="font-mono">{packet.qrCode}</p>
-              <p>
-                {line.product.code} · {line.product.name}
-              </p>
-              <p>
-                กล่อง {packet.packetNo} · {packet.quantity} ชิ้น{packet.unitType === "PARTIAL" ? " (เศษ)" : ""}
-              </p>
-            </div>
-          )),
-        )}
-      </div>
-    </div>,
+    <ProductionQrPrintLayout
+      title={`QR ใบสั่งผลิต · ${order.code}`}
+      labels={order.lines.flatMap((line) =>
+        line.packets.filter(include).map((packet) => (
+          <ProductionQrLabel
+            key={packet.id}
+            qrImage={packet.qrImage}
+            qrCode={packet.qrCode}
+            productCode={line.product.code}
+            productName={line.product.name}
+            orderCode={order.code}
+            quantity={packet.quantity}
+            fields={[
+              { label: "กล่อง", value: `${packet.packetNo}${packet.unitType === "PARTIAL" ? " · กล่องเศษ" : ""}` },
+              { label: "ขั้นตอนปัจจุบัน", value: packet.status === "COMPLETED" ? "ผลิตเสร็จแล้ว" : packet.currentStep?.name ?? "—" },
+              { label: "แผนการผลิต", value: order.planCode ?? "—" },
+            ]}
+          />
+        )),
+      )}
+    />,
     document.body,
   );
 }

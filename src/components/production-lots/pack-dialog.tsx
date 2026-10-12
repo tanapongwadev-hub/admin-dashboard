@@ -80,7 +80,7 @@ export function PackDialog({
 
   return (
     <Dialog open onOpenChange={(open) => !open && !saving && onClose()}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg print:hidden">
         {created ? (
           <div className="flex flex-col gap-4">
             <DialogHeader>

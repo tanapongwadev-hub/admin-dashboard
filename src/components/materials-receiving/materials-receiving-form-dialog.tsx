@@ -44,7 +44,7 @@ function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-const RATIO_REQUIRED_TYPES = new Set(["PIPE", "SHEET", "COIL"]);
+const SHEET_RECEIVING_TYPES = new Set(["PIPE", "SHEET", "COIL"]);
 
 // The "receiving ticket" — styled after the physical lot label this data
 // becomes once printed and stuck on a box. Punch-hole circles use bg-surface
@@ -105,11 +105,7 @@ export function MaterialsReceivingFormDialog({
   // (see AGENTS.md § Material Receiving), so every state variable's useState
   // initializer already runs fresh. That's the "derive, don't effect"
   // pattern this project's lint config enforces.
-  const initialMaterial = lookups.materials.find((material) => material.id === initialMaterialId);
   const [materialId, setMaterialId] = React.useState(initialMaterialId ?? "");
-  const [ratioInput, setRatioInput] = React.useState(() =>
-    initialMaterial?.ratio ? String(initialMaterial.ratio) : ""
-  );
   const [receiveQuantity, setReceiveQuantity] = React.useState("");
   const [supplierProductionDate, setSupplierProductionDate] = React.useState(todayIso());
   const [supplierId, setSupplierId] = React.useState("");
@@ -126,9 +122,7 @@ export function MaterialsReceivingFormDialog({
   >(null);
 
   function handleMaterialChange(nextMaterialId: string) {
-    const nextMaterial = lookups.materials.find((material) => material.id === nextMaterialId);
     setMaterialId(nextMaterialId);
-    setRatioInput(nextMaterial?.ratio ? String(nextMaterial.ratio) : "");
   }
 
   React.useEffect(() => {
@@ -160,12 +154,10 @@ export function MaterialsReceivingFormDialog({
   const selectedMaterial = lookups.materials.find((m) => m.id === materialId);
   const packingQuantity = selectedMaterial?.packingQuantity ?? null;
   const receiveQty = Number(receiveQuantity) || 0;
-  const ratioValue = ratioInput.trim() === "" ? null : Number(ratioInput);
-  const hasValidRatio = ratioValue !== null && Number.isInteger(ratioValue) && ratioValue > 0;
   const preview = calculateReceivingPreview({
     receivedQuantity: receiveQty,
     materialShape: selectedMaterial?.materialType,
-    ratio: hasValidRatio ? ratioValue : null,
+    ratio: null,
     packQuantity: packingQuantity,
   });
   const packagePreview = preview.packages;
@@ -178,18 +170,15 @@ export function MaterialsReceivingFormDialog({
   // which material is selected.
   const internalLotPreview = `CCI-${buildLotDatePart(receiveDate)}-XXX`;
   const supplierLotPreview = supplierProductionDate ? buildLotDatePart(supplierProductionDate) : "";
-  const needsRatio = selectedMaterial?.materialType ? RATIO_REQUIRED_TYPES.has(selectedMaterial.materialType) : false;
-  const missingRatio = needsRatio && !hasValidRatio;
+  const receivesSheets = SHEET_RECEIVING_TYPES.has(selectedMaterial?.materialType ?? "");
   const isFutureProductionDate = supplierProductionDate > receiveDate;
 
   const canSubmit =
     !!selectedMaterial &&
     receiveQty > 0 &&
-    !!packingQuantity &&
-    packingQuantity > 0 &&
+    (receivesSheets || (!!packingQuantity && packingQuantity > 0)) &&
     !!supplierProductionDate &&
     !isFutureProductionDate &&
-    !missingRatio &&
     (suppliers.length <= 1 || !!effectiveSupplierId) &&
     !isSubmitting;
 
@@ -201,7 +190,6 @@ export function MaterialsReceivingFormDialog({
       materialId: selectedMaterial.id,
       supplierId: effectiveSupplierId || undefined,
       receiveQuantity: String(receiveQty),
-      ratioOverride: needsRatio && ratioValue !== null ? ratioValue : undefined,
       supplierProductionDate,
       receiveDate,
     });
@@ -249,12 +237,12 @@ export function MaterialsReceivingFormDialog({
                   </SelectContent>
                 </Select>
               )}
-              {selectedMaterial && (
+              {selectedMaterial && !receivesSheets && (
                 <p className="text-xs text-fg-muted">
                   Packing: {packingQuantity ? `${formatNumber(packingQuantity)} / กล่อง` : "ยังไม่ได้ตั้งค่าจำนวนต่อแพ็ก"}
                 </p>
               )}
-              {selectedMaterial && !packingQuantity && (
+              {selectedMaterial && !receivesSheets && !packingQuantity && (
                 <p className="text-xs text-danger">
                   วัสดุนี้ยังไม่ได้ตั้งค่าจำนวนต่อแพ็ก (Packing Quantity) กรุณาตั้งค่าใน Material Master ก่อนรับเข้า
                 </p>
@@ -286,7 +274,7 @@ export function MaterialsReceivingFormDialog({
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="mr-receive-qty">จำนวนรับเข้า</Label>
+                <Label htmlFor="mr-receive-qty">{receivesSheets ? "จำนวนรับเข้า (แผ่น)" : "จำนวนรับเข้า"}</Label>
                 <Input
                   id="mr-receive-qty"
                   type="number"
@@ -297,24 +285,7 @@ export function MaterialsReceivingFormDialog({
                   placeholder="1200"
                 />
               </div>
-              {needsRatio ? (
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="mr-ratio">Ratio (อัตราส่วน)</Label>
-                  <Input
-                    id="mr-ratio"
-                    name="ratioOverride"
-                    type="number"
-                    inputMode="numeric"
-                    min="1"
-                    step="1"
-                    required
-                    value={ratioInput}
-                    onChange={(event) => setRatioInput(event.target.value)}
-                    aria-invalid={missingRatio || undefined}
-                    placeholder="เช่น 20"
-                  />
-                </div>
-              ) : null}
+
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="mr-supplier-production-date">วันที่ Supplier ผลิต</Label>
                 <Input
@@ -335,7 +306,7 @@ export function MaterialsReceivingFormDialog({
           <div className="flex flex-col gap-4 border-t border-border bg-surface-2/40 px-6 py-5 md:overflow-y-auto md:border-l md:border-t-0 md:[scrollbar-width:none] md:[&::-webkit-scrollbar]:hidden">
             <LotTicket internalLotPreview={internalLotPreview} supplierLotPreview={supplierLotPreview} />
 
-            {selectedMaterial && receiveQty > 0 && packingQuantity && !missingRatio ? (
+            {selectedMaterial && receiveQty > 0 && (receivesSheets || packingQuantity) ? (
               <div
                 className="rounded-xl border border-border bg-surface p-4"
                 aria-live="polite"
@@ -347,33 +318,28 @@ export function MaterialsReceivingFormDialog({
                       {selectedMaterial.code} · {selectedMaterial.materialType ?? "ทั่วไป"}
                     </p>
                   </div>
-                  <Badge variant="neutral">QR รวม {preview.packageCount + 1}</Badge>
+                  {!receivesSheets && <Badge variant="neutral">QR รวม {preview.packageCount + 1}</Badge>}
                 </div>
                 <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
                   <div>
                     <dt className="text-fg-muted">จำนวนรับเข้าจริง</dt>
                     <dd className="font-semibold tabular-nums text-fg">
-                      {formatNumber(receiveQty)} {selectedMaterial.unit}
+                      {formatNumber(receiveQty)} {receivesSheets ? "แผ่น" : selectedMaterial.unit}
                     </dd>
                   </div>
                   <div>
                     <dt className="text-fg-muted">รูปทรง</dt>
                     <dd className="font-semibold text-fg">{selectedMaterial.materialType ?? "—"}</dd>
                   </div>
-                  {preview.requiresConversion ? (
-                    <div>
-                      <dt className="text-fg-muted">อัตราส่วน</dt>
-                      <dd className="font-semibold tabular-nums text-fg">
-                        {formatNumber(ratioValue ?? 0)}
-                      </dd>
-                    </div>
-                  ) : null}
+
                   <div>
                     <dt className="text-fg-muted">จำนวนเข้าสต็อก</dt>
                     <dd className="font-semibold tabular-nums text-primary">
                       {formatNumber(preview.convertedQuantity)}
                     </dd>
                   </div>
+                  {!receivesSheets && (
+                    <>
                   <div>
                     <dt className="text-fg-muted">จำนวนต่อแพ็ก</dt>
                     <dd className="font-semibold tabular-nums text-fg">
@@ -386,11 +352,26 @@ export function MaterialsReceivingFormDialog({
                       MAIN 1 · SUB {preview.packageCount}
                     </dd>
                   </div>
+                    </>
+                  )}
                 </dl>
               </div>
             ) : null}
 
-            {packagePreview.length > 0 ? (
+            {receivesSheets && receiveQty > 0 ? (
+              <div className="rounded-xl border border-border bg-surface p-4" aria-live="polite">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-semibold text-fg">วัตถุดิบรับเข้าก่อนแปรรูป</p>
+                  <Badge variant="primary">เต็ม</Badge>
+                </div>
+                <p className="mt-4 text-3xl font-bold tabular-nums text-primary">
+                  {formatNumber(preview.convertedQuantity)} <span className="text-sm font-medium">แผ่น</span>
+                </p>
+                <p className="mt-3 text-xs text-fg-secondary">
+                  แสดงจำนวนรับเข้าเต็มทั้งหมด ต้องแปรรูปก่อนจึงแบ่งตามจำนวนบรรจุ
+                </p>
+              </div>
+            ) : packagePreview.length > 0 ? (
               // Card, not a bare bordered box — same header/body/footer shape
               // as every other data card in the app (see AGENTS.md § Theme):
               // a labeled header with a count badge, a scrollable tile grid

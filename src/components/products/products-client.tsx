@@ -13,6 +13,7 @@ import { ProductsWizardDialog } from "@/components/products/products-wizard-dial
 import { ProductsStatusDialog } from "@/components/products/products-status-dialog";
 import { ProductsDetailsDialog } from "@/components/products/products-details-dialog";
 import { ProductsCatalogSummary } from "@/components/products/products-catalog-summary";
+import { ProductStockDialog } from "@/components/products/product-stock-dialog";
 import { deactivateProductAction, restoreProductAction } from "@/app/(dashboard)/products/actions";
 import type { Product, ProductLookups } from "@/lib/api/products";
 import type { Material } from "@/lib/api/materials";
@@ -21,6 +22,8 @@ import type { ProcessStep } from "@/lib/api/process-steps";
 export function ProductsClient({
   products,
   totalItems,
+  stockByProductId,
+  canManageStock,
   lookups,
   materials,
   diagramMaterials,
@@ -35,6 +38,8 @@ export function ProductsClient({
 }: {
   products: Product[];
   totalItems: number;
+  stockByProductId: Record<string, string>;
+  canManageStock: boolean;
   lookups: ProductLookups;
   // BOM item component picker in the wizard's post-create BOM step — see
   // AGENTS.md § Products. Not gated behind canEdit since a BOM references
@@ -61,6 +66,7 @@ export function ProductsClient({
   openNew?: boolean;
 }) {
   const router = useRouter();
+  const [stockTarget, setStockTarget] = React.useState<Product | null>(null);
   // Match Materials PC: the image-led editorial card is the first view for
   // new users; the persisted preference still wins for returning users.
   const [view, setView] = useViewMode("products", "card");
@@ -92,24 +98,29 @@ export function ProductsClient({
 
   return (
     <div className="flex flex-col gap-4">
-      <ProductsCatalogSummary totalItems={totalItems} lookups={lookups} />
-      {/* ViewToggle + add-product button get their own right-aligned row
-          (see AGENTS.md § Materials PC advanced filter redesign's "Toolbar
-          layout changed" note) — the filter bar below needs its own
-          full-width row to fit the quick dropdowns + chips underneath. */}
-      <div className="flex items-center justify-end gap-2">
-        <ViewToggle value={view} onChange={setView} modes={["table", "card", "list"]} />
-        {canEdit && (
-          <Button onClick={() => setWizardTarget(null)} className="shrink-0">
-            <Plus className="h-4 w-4" /> เพิ่มสินค้า
-          </Button>
-        )}
+      <ProductsCatalogSummary totalItems={totalItems} products={products} />
+      {/* Keep view controls and creation together; filters get a full-width row. */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="text-sm font-semibold text-fg">รายการสินค้า</h2>
+          <p className="mt-0.5 text-xs text-fg-muted">ข้อมูลสินค้า การบรรจุ และล็อตผลิต</p>
+        </div>
+        <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+          <ViewToggle value={view} onChange={setView} modes={["table", "card", "list"]} />
+          {canEdit && (
+            <Button onClick={() => setWizardTarget(null)} className="shrink-0">
+              <Plus className="h-4 w-4" /> เพิ่มสินค้า
+            </Button>
+          )}
+        </div>
       </div>
       <ProductsFilters lookups={lookups} totalItems={totalItems} />
 
       <ProductsTable
         products={products}
         totalItems={totalItems}
+        stockByProductId={stockByProductId}
+        onViewStock={setStockTarget}
         view={view}
         canEdit={canEdit}
         canDelete={canDelete}
@@ -118,8 +129,11 @@ export function ProductsClient({
         onViewDetails={(product) => setDetailsTarget(product)}
       />
 
+      {stockTarget && <ProductStockDialog key={stockTarget.id} product={stockTarget} canManageStock={canManageStock} onClose={() => setStockTarget(null)} onSaved={handleSaved} />}
+
       <ProductsDetailsDialog
         product={detailsTarget}
+        stockQuantity={detailsTarget ? stockByProductId[detailsTarget.id] ?? "0" : undefined}
         canEdit={canEdit}
         canViewBom={canViewBom}
         canViewWorkflow={canViewWorkflow}

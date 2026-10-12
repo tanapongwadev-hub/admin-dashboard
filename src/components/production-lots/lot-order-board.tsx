@@ -168,7 +168,7 @@ export function LotOrderBoard({
         return (
           <section
             key={line.id}
-            className="flex flex-col gap-3"
+            className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4 sm:p-6"
             aria-labelledby={`line-${line.id}`}
           >
             <div className="flex flex-wrap items-end justify-between gap-3">
@@ -203,13 +203,18 @@ export function LotOrderBoard({
             </div>
             <div
               className="h-1.5 overflow-hidden rounded-full bg-surface-2"
-              aria-label={`รับเข้าแล้ว ${pct}%`}
+              role="progressbar"
+              aria-label="ความคืบหน้าการรับเข้าสินค้าสำเร็จรูป"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={pct}
             >
               <div
                 className="h-full rounded-full bg-success"
                 style={{ width: `${pct}%` }}
               />
             </div>
+            <p className="text-xs text-fg-muted">รับเข้าสินค้าสำเร็จรูปแล้ว {pct}% ของแผน</p>
             {completed && (
               <p className="flex items-center gap-1.5 rounded-md border border-success/40 bg-success-soft px-3 py-2 text-sm font-medium text-success-fg">
                 <CircleCheck className="size-4" aria-hidden />{" "}
@@ -229,205 +234,226 @@ export function LotOrderBoard({
               </Button>
             </div>
 
-            <div className="grid gap-3 @container sm:grid-cols-2 xl:grid-cols-4">
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
+              <h3 className="text-sm font-semibold text-fg">เส้นทางการผลิต</h3>
+              <p className="text-xs text-fg-muted">{board.steps.length} ขั้นตอน · ยอดในแต่ละขั้นแสดงเป็นชิ้น</p>
+            </div>
+            <ol className="flex flex-col" aria-label="ลำดับขั้นตอนการผลิต">
               {board.steps.map((step, i) => {
                 const next = board.steps[i + 1];
                 const isReceiving = step.receivingType !== "NONE";
                 const openLots = step.lots.filter(
                   (l) => l.status === "OPEN" && l.remainingQty > 0,
                 );
+                // A line can have work at several steps at once. A drained
+                // step is not necessarily finished: more work may arrive.
+                const active = step.waitingQty > 0 || step.readyQty > 0;
+                const seen = step.inputQty > 0 || step.producedQty > 0 || step.rejectedQty > 0 || step.closedQty > 0;
+                const status = active ? "มีงานค้าง" : seen ? "ไม่มีงานค้าง" : "ยังไม่มีงานเข้า";
                 return (
-                  <article
+                  <li
                     key={step.stepIndex}
-                    className="flex flex-col rounded-md border border-border bg-surface shadow-sm"
+                    className="relative grid grid-cols-[2rem_minmax(0,1fr)] gap-3 pb-5 last:pb-0 sm:grid-cols-[3rem_minmax(0,1fr)] sm:gap-5"
                   >
-                    <header className="flex items-center gap-2 border-b border-border px-3 py-2">
-                      <span className="flex size-6 items-center justify-center rounded-full bg-primary-soft text-xs font-semibold text-primary">
-                        {i + 1}
-                      </span>
-                      <span className="font-mono text-sm font-semibold text-fg">
-                        {step.code}
-                      </span>
-                      <span className="truncate text-sm text-fg-secondary">
-                        {step.name}
-                      </span>
-                      {i > 0 && (
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="ml-auto size-7"
-                          title={`QR ส่งต่อที่เข้า ${step.code}`}
-                          aria-label={`QR ส่งต่อที่เข้า ${step.code}`}
-                          onClick={() => open({ kind: "tags", lineId: line.id, step })}
-                        >
-                          <QrCode className="size-4" />
-                        </Button>
-                      )}
-                      {isReceiving && (
-                        <Badge variant="success" className={i > 0 ? "" : "ml-auto"}>
-                          {step.receivingType}
-                        </Badge>
-                      )}
-                    </header>
-                    <dl className="grid grid-cols-2 divide-x divide-border border-b border-border text-center">
-                      <div className="p-2">
-                        <dt className="text-xs text-fg-muted">
-                          {isReceiving ? "รอรับเข้า" : "รอผลิต"}
-                        </dt>
-                        <dd
-                          className={cn(
-                            "text-xl font-semibold tabular-nums",
-                            step.waitingQty
-                              ? "text-warning-fg"
-                              : "text-fg-muted",
-                          )}
-                        >
-                          {fmt(step.waitingQty)}
-                        </dd>
-                      </div>
-                      <div className="p-2">
-                        <dt className="text-xs text-fg-muted">
-                          {isReceiving ? "ยังไม่แพ็ก" : "รอส่งต่อ"}
-                        </dt>
-                        <dd
-                          className={cn(
-                            "text-xl font-semibold tabular-nums",
-                            step.readyQty ? "text-primary" : "text-fg-muted",
-                          )}
-                        >
-                          {fmt(step.readyQty)}
-                        </dd>
-                      </div>
-                    </dl>
-                    <p className="px-3 pt-2 text-xs text-fg-secondary">
-                      รับมา {fmt(step.inputQty)} · ผลิตได้{" "}
-                      {fmt(step.producedQty)}
-                      {step.transferredQty
-                        ? ` · ส่งต่อ ${fmt(step.transferredQty)}`
-                        : ""}
-                      {step.rejectedQty
-                        ? ` · เสีย ${fmt(step.rejectedQty)}`
-                        : ""}
-                    </p>
-                    <ul
-                      className="flex flex-1 flex-col gap-1 p-3"
-                      aria-label={`Lot ที่ ${step.code}`}
-                    >
-                      {step.lots.length === 0 && (
-                        <li className="text-xs text-fg-muted">ยังไม่มี Lot</li>
-                      )}
-                      {step.lots.map((lot) => (
-                        <li
-                          key={lot.id}
-                          className="flex items-center gap-2 rounded border border-border px-2 py-1"
-                        >
-                          <Link
-                            href={`/production/traceability?q=${encodeURIComponent(lot.lotNo)}`}
-                            className="font-mono text-xs font-medium text-primary hover:underline"
-                            title="สอบกลับ Lot นี้"
+                    {next && <span aria-hidden className="absolute bottom-0 left-4 top-10 w-px bg-border-strong sm:left-6 sm:top-12" />}
+                    <span aria-hidden className={cn("relative z-10 mt-1 flex size-8 items-center justify-center rounded-full border-2 text-sm font-semibold sm:size-12", active ? "border-primary bg-primary-soft text-primary" : "border-border-strong bg-surface text-fg-muted")}>
+                      {i + 1}
+                    </span>
+                    <article className={cn("min-w-0 rounded-xl border bg-surface shadow-sm", active ? "border-primary/40" : "border-border")}>
+                      <header className="flex flex-wrap items-center gap-2 rounded-t-xl border-b border-border bg-surface-2/50 px-4 py-3">
+                        <span className="sr-only">
+                          {i + 1}
+                        </span>
+                        <span className="font-mono text-sm font-semibold text-fg">
+                          {step.code}
+                        </span>
+                        <span className="min-w-0 break-words text-sm font-medium text-fg">
+                          {step.name}
+                        </span>
+                        <Badge variant={active ? "info" : "neutral"}>{status}</Badge>
+                        {i > 0 && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="ml-auto size-7"
+                            title={`QR ส่งต่อที่เข้า ${step.code}`}
+                            aria-label={`QR ส่งต่อที่เข้า ${step.code}`}
+                            onClick={() => open({ kind: "tags", lineId: line.id, step })}
                           >
-                            {lot.lotNo}
-                          </Link>
-                          <span className="text-[11px] text-fg-muted">
-                            {formatThaiDate(lot.productionDate)} {lot.shift}
-                          </span>
-                          <span className="ml-auto text-xs tabular-nums text-fg">
-                            {fmt(lot.remainingQty)}
-                            <span className="text-fg-muted">
-                              /{fmt(lot.producedQty)}
-                            </span>
-                          </span>
-                          {isReceiving && act && lot.remainingQty > 0 && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-6 px-1.5"
-                              aria-label={`แพ็กกล่อง ${lot.lotNo}`}
-                              onClick={() =>
-                                open({ kind: "pack", lineId: line.id, lot })
-                              }
+                            <QrCode className="size-4" />
+                          </Button>
+                        )}
+                        {isReceiving && (
+                          <Badge variant="success" className={i > 0 ? "" : "ml-auto"}>
+                            {step.receivingType}
+                          </Badge>
+                        )}
+                      </header>
+                      <div className="grid min-w-0 lg:grid-cols-[15rem_minmax(0,1fr)]">
+                      <div className="border-b border-border bg-surface-2/30 lg:border-b-0 lg:border-r">
+                      <dl className="grid grid-cols-2 divide-x divide-border text-center">
+                        <div className="p-2">
+                          <dt className="text-xs text-fg-muted">
+                            {isReceiving ? "รอรับเข้า" : "รอผลิต"}
+                          </dt>
+                          <dd
+                            className={cn(
+                              "text-xl font-semibold tabular-nums",
+                              step.waitingQty
+                                ? "text-warning-fg"
+                                : "text-fg-muted",
+                            )}
+                          >
+                            {fmt(step.waitingQty)}
+                          </dd>
+                        </div>
+                        <div className="p-2">
+                          <dt className="text-xs text-fg-muted">
+                            {isReceiving ? "ยังไม่แพ็ก" : "รอส่งต่อ"}
+                          </dt>
+                          <dd
+                            className={cn(
+                              "text-xl font-semibold tabular-nums",
+                              step.readyQty ? "text-primary" : "text-fg-muted",
+                            )}
+                          >
+                            {fmt(step.readyQty)}
+                          </dd>
+                        </div>
+                      </dl>
+                      <p className="px-4 pb-3 pt-2 text-xs leading-relaxed text-fg-secondary">
+                        รับมา {fmt(step.inputQty)} · ผลิตได้{" "}
+                        {fmt(step.producedQty)}
+                        {step.transferredQty
+                          ? ` · ส่งต่อ ${fmt(step.transferredQty)}`
+                          : ""}
+                        {step.rejectedQty
+                          ? ` · เสีย ${fmt(step.rejectedQty)}`
+                          : ""}
+                        {step.closedQty ? ` · ปิดยอด ${fmt(step.closedQty)}` : ""}
+                      </p>
+                      </div>
+                      <ul
+                        className="flex min-w-0 flex-col gap-2 p-4"
+                        aria-label={`Lot ที่ ${step.code}`}
+                      >
+                        {step.lots.length === 0 && (
+                          <li className="flex min-h-16 items-center justify-center rounded-lg border border-dashed border-border px-3 text-xs text-fg-muted">ยังไม่มี Lot ที่บันทึกในขั้นตอนนี้</li>
+                        )}
+                        {step.lots.map((lot) => (
+                          <li
+                            key={lot.id}
+                            className="flex min-w-0 flex-wrap items-center gap-2 rounded-lg border border-border px-3 py-2"
+                          >
+                            <Link
+                              href={`/production/traceability?q=${encodeURIComponent(lot.lotNo)}`}
+                              className="min-w-0 break-all font-mono text-xs font-medium text-primary hover:underline focus-visible:outline-2 focus-visible:outline-primary"
+                              title="สอบกลับ Lot นี้"
                             >
-                              <Boxes className="size-3.5" />
-                            </Button>
-                          )}
-                          {isReceiving &&
-                            lot.producedQty > lot.remainingQty && (
+                              {lot.lotNo}
+                            </Link>
+                            <span className="text-[11px] text-fg-muted">
+                              {formatThaiDate(lot.productionDate)} {lot.shift}
+                            </span>
+                            <span className="ml-auto text-xs tabular-nums text-fg">
+                              {fmt(lot.remainingQty)}
+                              <span className="text-fg-muted">
+                                /{fmt(lot.producedQty)}
+                              </span>
+                            </span>
+                            {isReceiving && act && lot.remainingQty > 0 && (
                               <Button
                                 size="sm"
                                 variant="ghost"
                                 className="h-6 px-1.5"
-                                aria-label={`พิมพ์ฉลากกล่องของ ${lot.lotNo}`}
-                                disabled={reprinting === lot.id}
-                                onClick={() => reprint(board, lot)}
+                                aria-label={`แพ็กกล่อง ${lot.lotNo}`}
+                                onClick={() =>
+                                  open({ kind: "pack", lineId: line.id, lot })
+                                }
                               >
-                                {reprinting === lot.id ? (
-                                  <Loader2 className="size-3.5 animate-spin" />
-                                ) : (
-                                  <Printer className="size-3.5" />
-                                )}
+                                <Boxes className="size-3.5" />
                               </Button>
                             )}
-                        </li>
-                      ))}
-                    </ul>
-                    {act && (
-                      <footer className="flex gap-2 border-t border-border p-2">
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          className="min-w-0 flex-1"
-                          disabled={!step.waitingQty}
-                          onClick={() =>
-                            open({ kind: "produce", lineId: line.id, step })
-                          }
-                        >
-                          {isReceiving ? (
-                            <PackageCheck className="size-4 shrink-0" />
-                          ) : (
-                            <ClipboardPen className="size-4 shrink-0" />
+                            {isReceiving &&
+                              lot.producedQty > lot.remainingQty && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-6 px-1.5"
+                                  aria-label={`พิมพ์ฉลากกล่องของ ${lot.lotNo}`}
+                                  disabled={reprinting === lot.id}
+                                  onClick={() => reprint(board, lot)}
+                                >
+                                  {reprinting === lot.id ? (
+                                    <Loader2 className="size-3.5 animate-spin" />
+                                  ) : (
+                                    <Printer className="size-3.5" />
+                                  )}
+                                </Button>
+                              )}
+                          </li>
+                        ))}
+                      </ul>
+                      </div>
+                      {act && (
+                        <footer className="flex flex-wrap gap-2 border-t border-border px-4 py-3 sm:justify-end">
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="min-w-0 flex-1 sm:flex-none"
+                            disabled={!step.waitingQty}
+                            onClick={() =>
+                              open({ kind: "produce", lineId: line.id, step })
+                            }
+                          >
+                            {isReceiving ? (
+                              <PackageCheck className="size-4 shrink-0" />
+                            ) : (
+                              <ClipboardPen className="size-4 shrink-0" />
+                            )}
+                            <span className="truncate">
+                              {isReceiving ? "รับเข้า" : "บันทึกผลิต"}
+                            </span>
+                          </Button>
+                          {next && (
+                            <Button
+                              size="sm"
+                              className="min-w-0 flex-1 sm:flex-none"
+                              disabled={!step.readyQty || !openLots.length}
+                              onClick={() =>
+                                open({
+                                  kind: "transfer",
+                                  lineId: line.id,
+                                  step,
+                                  next,
+                                })
+                              }
+                            >
+                              <span className="truncate">ส่ง {next.code}</span>
+                              <ArrowRight className="size-4 shrink-0" />
+                            </Button>
                           )}
-                          <span className="truncate">
-                            {isReceiving ? "รับเข้า" : "บันทึกผลิต"}
-                          </span>
-                        </Button>
-                        {next && (
-                          <Button
-                            size="sm"
-                            className="min-w-0 flex-1"
-                            disabled={!step.readyQty || !openLots.length}
-                            onClick={() =>
-                              open({
-                                kind: "transfer",
-                                lineId: line.id,
-                                step,
-                                next,
-                              })
-                            }
-                          >
-                            <span className="truncate">ส่ง {next.code}</span>
-                            <ArrowRight className="size-4 shrink-0" />
-                          </Button>
-                        )}
-                        {step.waitingQty > 0 && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="shrink-0 px-2"
-                            aria-label={`ปิดยอดค้างที่ ${step.code}`}
-                            title="ปิดยอดค้าง (ชิ้นงานที่จะไม่ผลิตต่อ)"
-                            onClick={() =>
-                              open({ kind: "close", lineId: line.id, step })
-                            }
-                          >
-                            <Ban className="size-4" />
-                          </Button>
-                        )}
-                      </footer>
-                    )}
+                          {step.waitingQty > 0 && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="shrink-0 px-2"
+                              aria-label={`ปิดยอดค้างที่ ${step.code}`}
+                              title="ปิดยอดค้าง (ชิ้นงานที่จะไม่ผลิตต่อ)"
+                              onClick={() =>
+                                open({ kind: "close", lineId: line.id, step })
+                              }
+                            >
+                              <Ban className="size-4" />
+                            </Button>
+                          )}
+                        </footer>
+                      )}
                   </article>
+                  </li>
                 );
               })}
-            </div>
+            </ol>
           </section>
         );
       })}

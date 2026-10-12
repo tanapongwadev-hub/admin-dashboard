@@ -12,6 +12,7 @@ import type { FilterDropdownOption } from "@/components/ui/filter-dropdown";
 // safely inside dialogs/sheets. Same value contract as FilterDropdown:
 // "" means "no filter". Options with a duplicate `value` are shown once.
 export function SearchableFilterSelect({
+  id,
   label,
   value,
   onChange,
@@ -21,6 +22,7 @@ export function SearchableFilterSelect({
   searchPlaceholder = "พิมพ์เพื่อค้นหา...",
   className,
 }: {
+  id?: string;
   label: string;
   value: string;
   onChange: (value: string) => void;
@@ -57,6 +59,7 @@ export function SearchableFilterSelect({
       <DropdownMenuPrimitive.Root open={open} onOpenChange={handleOpenChange}>
         <DropdownMenuPrimitive.Trigger asChild>
           <button
+            id={id}
             type="button"
             aria-label={label}
             className="flex h-9 w-full items-center gap-2 rounded-md border border-border-strong bg-surface px-3 text-sm text-fg outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary"

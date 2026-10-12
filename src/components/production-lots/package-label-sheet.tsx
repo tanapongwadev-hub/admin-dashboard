@@ -4,6 +4,7 @@ import * as React from "react";
 import { createPortal } from "react-dom";
 import type { PackageView } from "@/lib/api/production-lots";
 import { formatThaiDate } from "@/lib/production-day";
+import { ProductionQrLabel, ProductionQrPrintLayout } from "./production-qr-print-layout";
 
 export interface LabelContext {
   productCode: string;
@@ -13,7 +14,7 @@ export interface LabelContext {
 }
 
 /**
- * Box labels, one 60×40 mm label per printed page. Same "print the current
+ * Box labels, ten labels per A4 page. Same "print the current
  * document, no popup" pattern as materials-receiving-qr-print-sheet.tsx: the
  * sheet is portaled to <body>, hidden on screen, shown only under @media print
  * (the app shell is hidden by #dashboard-shell's print rule), and cleared on
@@ -42,41 +43,25 @@ export function PackageLabelSheet({
   if (!packages?.length || !context) return null;
 
   return createPortal(
-    <div className="hidden print:block">
-      <style>{"@page { size: 60mm 40mm; margin: 0; }"}</style>
-      {packages.map((pkg) => (
-        <div
+    <ProductionQrPrintLayout
+      title={`QR สินค้าสำเร็จรูป · ${context.orderCode}`}
+      labels={packages.map((pkg) => (
+        <ProductionQrLabel
           key={pkg.id}
-          className="flex h-[40mm] w-[60mm] gap-[2mm] overflow-hidden p-[2mm] text-black [break-after:page] [break-inside:avoid]"
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element -- data: URL SVG, printed */}
-          <img src={pkg.qrImage} alt="" className="size-[26mm] shrink-0" />
-          <div className="flex min-w-0 flex-col justify-between text-[2.6mm] leading-tight">
-            <div>
-              <p className="truncate font-bold">{context.productCode}</p>
-              <p className="line-clamp-2">{context.productName}</p>
-            </div>
-            <div>
-              <p className="font-mono font-bold">{context.fgLotNo}</p>
-              <p>
-                กล่อง {pkg.boxNo} · {pkg.initialQty} ชิ้น{pkg.unitType === "PARTIAL" ? " (เศษ)" : ""}
-              </p>
-              {pkg.origins.length > 0 && (
-                <p className="truncate">
-                  ต้นทาง{" "}
-                  {pkg.origins.map((o) => `${o.lotNo}${pkg.origins.length > 1 ? `×${o.qty}` : ""}`).join(", ")}
-                </p>
-              )}
-              <p className="truncate font-mono text-[2.2mm]">{pkg.qrCode}</p>
-              <p className="text-[2.2mm]">
-                {context.orderCode}
-                {pkg.origins[0] ? ` · ผลิต ${formatThaiDate(pkg.origins[0].productionDate)}` : ""}
-              </p>
-            </div>
-          </div>
-        </div>
+          qrImage={pkg.qrImage}
+          qrCode={pkg.qrCode}
+          productCode={context.productCode}
+          productName={context.productName}
+          orderCode={context.orderCode}
+          quantity={pkg.initialQty}
+          fields={[
+            { label: "Lot สินค้าสำเร็จรูป", value: context.fgLotNo },
+            { label: "กล่อง", value: `${pkg.boxNo}${pkg.unitType === "PARTIAL" ? " · กล่องเศษ" : ""}` },
+            { label: "วันผลิตต้นทางแรก / กะ", value: pkg.origins[0] ? `${formatThaiDate(pkg.origins[0].productionDate)} / ${pkg.origins[0].shift}` : "—" },
+          ]}
+        />
       ))}
-    </div>,
+    />,
     document.body,
   );
 }

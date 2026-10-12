@@ -133,7 +133,34 @@ export interface SubQrIssueHistoryEntry {
   reversedBy: string | null;
 }
 
+export interface MaterialProcessingTrace {
+  id: string;
+  code: string;
+  sourceReceivingId: string;
+  sourceLotNo: string;
+  sourceMaterialCode: string;
+  sourceMaterialName: string;
+  sourceShape: string | null;
+  sourceUnit: string | null;
+  outputReceivingId: string;
+  outputLotNo: string;
+  targetMaterialCode: string;
+  targetMaterialName: string;
+  outputUnit: string | null;
+  sourceQuantity: string;
+  piecesPerUnit: number;
+  scrapQuantity: number;
+  outputQuantity: string;
+  packingQuantity: number;
+  packageCount: number;
+  sourcePackages: { packageId: string; lotDetailNo: string | null; quantity: string }[];
+  remark: string | null;
+  createdAt: string;
+  performedBy: string;
+}
+
 export interface MainQrTrace {
+  processingHistory?: MaterialProcessingTrace[];
   qrLevel: "MAIN";
   receiving: {
     id: string;
@@ -143,6 +170,9 @@ export interface MainQrTrace {
     receiveDate: string;
     receiveQuantity: string;
     convertedQuantity: string;
+    materialShape?: string | null;
+    processedQuantity?: string;
+    sourceReceivingId?: string | null;
     status: string;
     material: { id: string; code: string; name: string } | null;
     supplier: { id: string; nameTh: string; nameEn: string | null } | null;
@@ -159,6 +189,7 @@ export interface MainQrTrace {
 }
 
 export interface SubQrTrace {
+  processingHistory?: MaterialProcessingTrace[];
   qrLevel: "SUB";
   package: MainQrPackage;
   parentMainQr: {
@@ -176,6 +207,7 @@ export interface SubQrTrace {
 export type QrTrace = MainQrTrace | SubQrTrace;
 
 export interface DisbursementFifoAllocation {
+  receivingId?: string | null;
   id: string;
   packageId: string;
   lotDetailNo: string | null;

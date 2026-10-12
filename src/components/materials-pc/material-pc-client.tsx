@@ -1,21 +1,23 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { Plus } from "lucide-react";
+import { FileText, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ViewToggle } from "@/components/ui/view-toggle";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useViewMode } from "@/hooks/use-view-mode";
 import { MaterialPcFilters } from "@/components/materials-pc/material-pc-filters";
 import { MaterialPcTable } from "@/components/materials-pc/material-pc-table";
 import { MaterialPcFormDialog } from "@/components/materials-pc/material-pc-form-dialog";
+import { MaterialPcDraftsDialog } from "@/components/materials-pc/material-pc-drafts-dialog";
 import { MaterialPcStatusDialog } from "@/components/materials-pc/material-pc-status-dialog";
+import { MaterialPcDeleteDialog } from "@/components/materials-pc/material-pc-delete-dialog";
 import { MaterialPcDetailsDialog } from "@/components/materials-pc/material-pc-details-dialog";
 import { MaterialBomUsageDialog } from "@/components/materials-pc/material-bom-usage-dialog";
-import { MaterialPcInventorySummary } from "@/components/materials-pc/material-pc-inventory-summary";
 import { deactivateMaterialPcAction, restoreMaterialPcAction } from "@/app/(dashboard)/materials/pc/actions";
-import type { Material, MaterialInventorySummary, MaterialLookups, PaginatedResult, StockBalance } from "@/lib/api/materials";
+import type { Material, MaterialDraftRecord, MaterialLookups, PaginatedResult, StockBalance } from "@/lib/api/materials";
 
 export function MaterialPcClient({
   materials,
@@ -24,8 +26,10 @@ export function MaterialPcClient({
   canEdit,
   canDelete,
   stockByMaterialId,
-  stockSummary,
   canViewStock,
+  activeTab,
+  tabCounts,
+  canViewBom,
 }: {
   materials: Material[];
   meta: PaginatedResult<Material>["meta"];
@@ -35,17 +39,31 @@ export function MaterialPcClient({
   // null when the current user lacks MATERIALS_RECEIVING_VIEW — the stock
   // section is omitted entirely in that case, not shown as zero/broken.
   stockByMaterialId: Record<string, StockBalance> | null;
-  stockSummary: MaterialInventorySummary | null;
   canViewStock: boolean;
+  activeTab: "all" | "raw" | "bom";
+  tabCounts: { all: number; raw: number; bom: number };
+  canViewBom: boolean;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  function changeTab(tab: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (tab === "all") params.delete("tab");
+    else params.set("tab", tab);
+    params.delete("page");
+    router.push(`${pathname}?${params.toString()}`);
+  }
   // Default to "card" (Editorial) so first-time visitors see the new image-led
   // design. Users can still switch to "table" or "list" via the ViewToggle,
   // and the choice is persisted in localStorage per the page key. See
   // AGENTS.md § Materials PC for why Editorial is the default.
   const [view, setView] = useViewMode("materials-pc", "card");
   const [formTarget, setFormTarget] = React.useState<Material | null | undefined>(undefined);
+  const [draftTarget, setDraftTarget] = React.useState<MaterialDraftRecord | null>(null);
+  const [draftsOpen, setDraftsOpen] = React.useState(false);
   const [statusTarget, setStatusTarget] = React.useState<Material | null>(null);
+  const [deleteTarget, setDeleteTarget] = React.useState<Material | null>(null);
   const [detailsTarget, setDetailsTarget] = React.useState<Material | null>(null);
   const [bomUsageTarget, setBomUsageTarget] = React.useState<Material | null>(null);
 
@@ -94,23 +112,38 @@ export function MaterialPcClient({
     toast.error(result.message);
   }
 
+  const collectionHeader = (
+    <div className="min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <TabsList aria-label="ประเภทรายการวัสดุ" className="h-auto min-w-max gap-1 p-1">
+          <TabsTrigger value="all" className="gap-2">รายการปกติ <span className="text-xs tabular-nums">{tabCounts.all.toLocaleString("th-TH")}</span></TabsTrigger>
+          <TabsTrigger value="raw" className="gap-2">Pipe / Sheet / Coil <span className="text-xs tabular-nums">{tabCounts.raw.toLocaleString("th-TH")}</span></TabsTrigger>
+          <TabsTrigger value="bom" disabled={!canViewBom} title={!canViewBom ? "ต้องมีสิทธิ์ดู Material BOM" : undefined} className="gap-2">รายการที่มี BOM {canViewBom && <span className="text-xs tabular-nums">{tabCounts.bom.toLocaleString("th-TH")}</span>}</TabsTrigger>
+        </TabsList>
+      {!canViewBom && <p className="mt-2 text-xs text-fg-muted">แท็บรายการที่มี BOM ต้องมีสิทธิ์ดู Material BOM</p>}
+    </div>
+  );
+
   return (
-    <div className="flex flex-col gap-4">
-      {stockSummary && <MaterialPcInventorySummary summary={stockSummary} />}
+    <Tabs value={activeTab} onValueChange={changeTab} activationMode="manual" className="flex flex-col gap-4">
+      <TabsContent value={activeTab} className="mt-0 flex flex-col gap-4">
+      {activeTab === "bom" && !canViewBom ? <>{collectionHeader}<p className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-fg-muted">คุณไม่มีสิทธิ์ดู Material BOM กรุณาติดต่อผู้ดูแลระบบ</p></> : <>
 
       <div className="flex flex-wrap items-center justify-end gap-2">
         <ViewToggle value={view} onChange={setView} modes={["table", "card", "list"]} />
+        {canEdit && <Button variant="outline" onClick={() => setDraftsOpen(true)}><FileText className="size-4" aria-hidden="true" />ร่างของฉัน</Button>}
         {canEdit && (
-          <Button onClick={() => setFormTarget(null)} className="shrink-0">
+          <Button onClick={() => { setDraftTarget(null); setFormTarget(null); }} className="shrink-0">
             <Plus className="h-4 w-4" /> เพิ่มวัสดุ
           </Button>
         )}
       </div>
 
-      <MaterialPcFilters lookups={lookups} canViewStock={canViewStock} totalItems={meta.totalItems} />
+      <MaterialPcFilters lookups={lookups} canViewStock={canViewStock} totalItems={meta.totalItems} countUnit={activeTab === "raw" ? "กลุ่ม" : "รายการ"} />
 
       <MaterialPcTable
         materials={materials}
+        collectionHeader={collectionHeader}
+        groupRelated={activeTab === "raw"}
         meta={meta}
         view={view}
         canEdit={canEdit}
@@ -123,11 +156,17 @@ export function MaterialPcClient({
         onViewReceivingHistory={handleViewReceivingHistory}
         onViewDisbursementHistory={handleViewDisbursementHistory}
         onViewBomUsage={(material) => setBomUsageTarget(material)}
+        onDeletePermanent={canDelete ? setDeleteTarget : undefined}
       />
+      </>}
+      </TabsContent>
 
       <MaterialPcDetailsDialog
         material={detailsTarget}
         stockByMaterialId={stockByMaterialId}
+        units={lookups.units}
+        models={lookups.models}
+        loadingPoints={lookups.loadingPoints}
         canEdit={canEdit}
         onEdit={(material) => setFormTarget(material)}
         onOpenChange={(open) => !open && setDetailsTarget(null)}
@@ -138,15 +177,18 @@ export function MaterialPcClient({
         onOpenChange={(open) => !open && setBomUsageTarget(null)}
       />
 
-      {canEdit && (
+      {canEdit && formTarget !== undefined && (
         <MaterialPcFormDialog
+          key={draftTarget ? `draft-${draftTarget.id}` : formTarget?.id ?? "create"}
           open={formTarget !== undefined}
-          onOpenChange={(open) => !open && setFormTarget(undefined)}
+          onOpenChange={(open) => { if (!open) { setFormTarget(undefined); setDraftTarget(null); } }}
           material={formTarget}
+          draft={draftTarget}
           lookups={lookups}
           onSaved={handleSaved}
         />
       )}
+      {canEdit && draftsOpen && <MaterialPcDraftsDialog onClose={() => setDraftsOpen(false)} onResume={(draft, material) => { setDraftsOpen(false); setDraftTarget(draft); setFormTarget(material); }} />}
 
       {canDelete && (
         <MaterialPcStatusDialog
@@ -155,6 +197,7 @@ export function MaterialPcClient({
           onConfirm={handleToggleStatus}
         />
       )}
-    </div>
+      {canDelete && deleteTarget && <MaterialPcDeleteDialog key={deleteTarget.id} material={deleteTarget} onClose={() => setDeleteTarget(null)} onDeleted={() => { setDeleteTarget(null); router.refresh(); }} onDeactivate={() => { setStatusTarget(deleteTarget); setDeleteTarget(null); }} />}
+    </Tabs>
   );
 }

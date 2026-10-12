@@ -4,6 +4,21 @@ Admin console for CPS (Chiewchan Industry) — manages materials, products, BOMs
 
 ## Language
 
+### Material Processing
+
+**Material Processing (แปรรูปวัตถุดิบ)**:
+An operation that consumes raw units from a receiving lot and produces good pieces of a distinct destination Material. Its history connects the consumed source units, scrap, and newly received output lot.
+_Avoid_: Production order — that is the separate downstream production workflow.
+
+**Processing Source (วัตถุดิบต้นทาง)**:
+The PIPE/SHEET/COIL Material and receiving lot whose physical units are consumed by processing.
+
+**Processing Destination (ชิ้นงานปลายทาง)**:
+A distinct Material representing the pieces obtained from processing, received in a new lot and packed into boxes.
+
+**Processing Status (สถานะแปรรูป)**:
+The source lot's progress through processing: waiting, partially processed, or fully processed, based on the number of its original units processed. It is separate from the receipt's draft/confirmed/cancelled status.
+
 ### Production Plan
 
 **Production Plan (แผนการผลิต)**:

@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { ShieldAlert } from "lucide-react";
 import { getCurrentSession } from "@/lib/session";
 import { listProducts, getProductLookups } from "@/lib/api/products";
+import { getProductStockBalances } from "@/lib/api/product-stock";
 import { listMaterials } from "@/lib/api/materials";
 import { listProcessSteps } from "@/lib/api/process-steps";
 import { loadProductMaterialCatalog } from "@/lib/product-materials";
@@ -49,6 +50,7 @@ export async function ProductsPageContent({
 
   const canEdit = session.user.isSuperAdmin || session.permissions.includes("PRODUCTS_CREATE") || session.permissions.includes("PRODUCTS_UPDATE");
   const canDelete = session.user.isSuperAdmin || session.permissions.includes("PRODUCTS_DELETE") || session.permissions.includes("PRODUCTS_RESTORE");
+  const canManageStock = session.user.isSuperAdmin || session.permissions.includes("PRODUCTS_UPDATE");
   const canCreateBom = session.user.isSuperAdmin || session.permissions.includes("BOMS_CREATE");
   // Separate permission from BOMS_CREATE — a viewer could have one without
   // the other (e.g. read-only staff who can see BOMs but not author them).
@@ -71,7 +73,7 @@ export async function ProductsPageContent({
   // non-SUPER_ADMIN role yet (same standing gap as PRODUCT_WORKFLOWS_* — see
   // API_ENDPOINTS.md § 16), so a viewer with PRODUCT_WORKFLOWS_CREATE but not
   // PROCESS_STEP_VIEW would otherwise 403 this whole page's data fetch.
-  const [list, lookups, materialCatalog, processStepsList] = await Promise.all([
+  const [list, lookups, materialCatalog, processStepsList, stockBalances] = await Promise.all([
     listProducts(accessToken, {
       search,
       isActive,
@@ -92,6 +94,7 @@ export async function ProductsPageContent({
           () => ({ items: [], meta: { page: 1, limit: 100, totalItems: 0, totalPages: 0 } })
         )
       : Promise.resolve({ items: [], meta: { page: 1, limit: 100, totalItems: 0, totalPages: 0 } }),
+    getProductStockBalances(accessToken),
   ]);
 
   return (
@@ -104,6 +107,8 @@ export async function ProductsPageContent({
       <ProductsClient
         products={list.items}
         totalItems={list.meta.totalItems}
+        stockByProductId={Object.fromEntries(stockBalances.map((stock) => [stock.productId, stock.quantity]))}
+        canManageStock={canManageStock}
         lookups={lookups}
         materials={materialCatalog.activeMaterials}
         diagramMaterials={materialCatalog.diagramMaterials}

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { ChevronLeft, ChevronRight, Eye, CheckCircle2, Ban, Trash2, ImageOff, Printer } from "lucide-react";
+import { ChevronLeft, ChevronRight, Eye, CheckCircle2, Ban, Trash2, ImageOff, Printer, Scissors } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
@@ -65,6 +65,14 @@ const STATUS_DISPLAY: Record<MaterialReceivingStatus, { label: string; variant: 
   cancelled: { label: "ยกเลิก", variant: "neutral" },
 };
 
+function getReceivingStatusDisplay(receiving: MaterialReceiving): { label: string; variant: "warning" | "success" | "neutral" | "info" } {
+  if (receiving.status === "confirmed" && receiving.sourceReceivingId) return { label: "รับเข้าหลังแปรรูป", variant: "success" };
+  if (receiving.processingStatus === "PROCESSED") return { label: "แปรรูปแล้ว", variant: "success" };
+  if (receiving.processingStatus === "PARTIAL") return { label: "แปรรูปบางส่วน", variant: "info" };
+  if (receiving.processingStatus === "WAITING") return { label: "รอแปรรูป", variant: "warning" };
+  return STATUS_DISPLAY[receiving.status];
+}
+
 // Ties color directly to status meaning (not decoration) — a soft gradient
 // wash + left accent bar per status, using only existing design tokens, so
 // a row/card's overall color mood is scannable before reading any text:
@@ -96,11 +104,20 @@ export function getMaterialsReceivingRowActions(
     onCancel: (receiving: MaterialReceiving) => void;
     onDelete: (receiving: MaterialReceiving) => void;
     onPrint: (receiving: MaterialReceiving) => void;
+    onProcess?: (receiving: MaterialReceiving) => void;
   }
 ): RowAction[] {
   const actions: RowAction[] = [
     { label: "ดูรายละเอียด", icon: Eye, onSelect: () => handlers.onViewDetails(receiving) },
   ];
+  if (
+    handlers.onProcess &&
+    receiving.status === "confirmed" &&
+    !receiving.sourceReceivingId &&
+    ["PIPE", "SHEET", "COIL"].includes(receiving.materialType?.toUpperCase() ?? "")
+  ) {
+    actions.push({ label: "แปรรูป", icon: Scissors, onSelect: () => handlers.onProcess?.(receiving) });
+  }
   // Every package already carries its own generated QR (a data: URI, part
   // of the same list response) regardless of the receiving's draft/
   // confirmed/cancelled status, so this is offered whenever there's at
@@ -119,7 +136,7 @@ export function getMaterialsReceivingRowActions(
   if (receiving.status === "draft" && canConfirm) {
     actions.push({ label: "ยืนยันการรับเข้า", icon: CheckCircle2, onSelect: () => handlers.onConfirm(receiving) });
   }
-  if (receiving.status !== "cancelled" && canCancel) {
+  if (receiving.status !== "cancelled" && !receiving.sourceReceivingId && Number(receiving.processedQuantity ?? 0) === 0 && canCancel) {
     actions.push({ label: "ยกเลิก", icon: Ban, onSelect: () => handlers.onCancel(receiving), variant: "danger" });
   }
   if (receiving.status === "draft" && canDelete) {
@@ -138,6 +155,7 @@ interface MaterialsReceivingRowProps {
   onCancel: (receiving: MaterialReceiving) => void;
   onDelete: (receiving: MaterialReceiving) => void;
   onPrint: (receiving: MaterialReceiving) => void;
+  onProcess?: (receiving: MaterialReceiving) => void;
 }
 
 function DataSheetRow({ label, value }: { label: string; value: string }) {
@@ -171,8 +189,9 @@ function MaterialsReceivingCard({
   onCancel,
   onDelete,
   onPrint,
+  onProcess,
 }: MaterialsReceivingRowProps) {
-  const statusDisplay = STATUS_DISPLAY[receiving.status];
+  const statusDisplay = getReceivingStatusDisplay(receiving);
   const accent = STATUS_ACCENT[receiving.status];
   const actions = getMaterialsReceivingRowActions(receiving, canConfirm, canCancel, canDelete, {
     onViewDetails,
@@ -180,6 +199,7 @@ function MaterialsReceivingCard({
     onCancel,
     onDelete,
     onPrint,
+    onProcess,
   });
 
   return (
@@ -288,8 +308,9 @@ function MaterialsReceivingListItem({
   onCancel,
   onDelete,
   onPrint,
+  onProcess,
 }: MaterialsReceivingRowProps) {
-  const statusDisplay = STATUS_DISPLAY[receiving.status];
+  const statusDisplay = getReceivingStatusDisplay(receiving);
   const accent = STATUS_ACCENT[receiving.status];
   const actions = getMaterialsReceivingRowActions(receiving, canConfirm, canCancel, canDelete, {
     onViewDetails,
@@ -297,6 +318,7 @@ function MaterialsReceivingListItem({
     onCancel,
     onDelete,
     onPrint,
+    onProcess,
   });
 
   return (
@@ -366,6 +388,7 @@ export function MaterialsReceivingCollection({
   onCancel,
   onDelete,
   onPrint,
+  onProcess,
 }: {
   receivings: MaterialReceiving[];
   view: ViewMode;
@@ -377,8 +400,9 @@ export function MaterialsReceivingCollection({
   onCancel: (receiving: MaterialReceiving) => void;
   onDelete: (receiving: MaterialReceiving) => void;
   onPrint: (receiving: MaterialReceiving) => void;
+  onProcess?: (receiving: MaterialReceiving) => void;
 }) {
-  const commonProps = { canConfirm, canCancel, canDelete, onViewDetails, onConfirm, onCancel, onDelete, onPrint };
+  const commonProps = { canConfirm, canCancel, canDelete, onViewDetails, onConfirm, onCancel, onDelete, onPrint, onProcess };
 
   if (view === "table") {
     return (
@@ -396,7 +420,7 @@ export function MaterialsReceivingCollection({
           </TableHeader>
           <TableBody>
             {receivings.map((receiving) => {
-              const statusDisplay = STATUS_DISPLAY[receiving.status];
+              const statusDisplay = getReceivingStatusDisplay(receiving);
               const accent = STATUS_ACCENT[receiving.status];
               const actions = getMaterialsReceivingRowActions(receiving, canConfirm, canCancel, canDelete, {
                 onViewDetails,
@@ -404,6 +428,7 @@ export function MaterialsReceivingCollection({
                 onCancel,
                 onDelete,
                 onPrint,
+                onProcess,
               });
               return (
                 <TableRow
@@ -505,6 +530,7 @@ export function MaterialsReceivingTable({
   onCancel,
   onDelete,
   onPrint,
+  onProcess,
 }: {
   receivings: MaterialReceiving[];
   totalItems: number;
@@ -519,6 +545,7 @@ export function MaterialsReceivingTable({
   onCancel: (receiving: MaterialReceiving) => void;
   onDelete: (receiving: MaterialReceiving) => void;
   onPrint: (receiving: MaterialReceiving) => void;
+  onProcess?: (receiving: MaterialReceiving) => void;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -552,6 +579,7 @@ export function MaterialsReceivingTable({
         onCancel={onCancel}
         onDelete={onDelete}
         onPrint={onPrint}
+        onProcess={onProcess}
       />
 
       <div className="flex flex-col gap-2 text-sm text-fg-muted sm:flex-row sm:items-center sm:justify-between">

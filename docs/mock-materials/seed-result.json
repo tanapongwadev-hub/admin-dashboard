@@ -1,0 +1,59 @@
+{
+  "marker": "MOCK-MATERIALS-3-PAIRS-20261011",
+  "pairs": [
+    {
+      "shape": "PIPE",
+      "main": {
+        "id": "25",
+        "code": "MOCK-MAIN-PIPE-001",
+        "imagePath": "/uploads/materials/0f0dd38d-bc81-462c-a558-43405f47764e.png"
+      },
+      "sub": {
+        "id": "24",
+        "code": "MOCK-SUB-PIPE-001",
+        "imagePath": "/uploads/materials/1d54c86c-4f55-407c-89db-b9d5cacfdc8e.png"
+      },
+      "bomId": "1",
+      "bomStatus": "ACTIVE",
+      "componentQuantity": 0.05,
+      "sourceUnitId": "4",
+      "yield": 20
+    },
+    {
+      "shape": "SHEET",
+      "main": {
+        "id": "27",
+        "code": "MOCK-MAIN-SHEET-001",
+        "imagePath": "/uploads/materials/9d74c4d5-ed38-4cc9-980d-1492852936f5.png"
+      },
+      "sub": {
+        "id": "26",
+        "code": "MOCK-SUB-SHEET-001",
+        "imagePath": "/uploads/materials/ec3fc0c9-a369-4527-b0aa-8c065d4fe71a.png"
+      },
+      "bomId": "2",
+      "bomStatus": "ACTIVE",
+      "componentQuantity": 0.125,
+      "sourceUnitId": "3",
+      "yield": 8
+    },
+    {
+      "shape": "COIL",
+      "main": {
+        "id": "29",
+        "code": "MOCK-MAIN-COIL-001",
+        "imagePath": "/uploads/materials/f5177ebd-86dd-4e96-83ce-41d4de21f787.png"
+      },
+      "sub": {
+        "id": "28",
+        "code": "MOCK-SUB-COIL-001",
+        "imagePath": "/uploads/materials/8d0344c1-6068-44c2-83e6-f698d4224cfb.png"
+      },
+      "bomId": "3",
+      "bomStatus": "ACTIVE",
+      "componentQuantity": 0.01,
+      "sourceUnitId": "2",
+      "yield": 100
+    }
+  ]
+}

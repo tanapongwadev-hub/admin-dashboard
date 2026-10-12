@@ -1,11 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Boxes, ChevronDown, History, Loader2, QrCode, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from "@/components/ui/dialog";
 import { MaterialTraceabilityTimeline } from "@/components/material-traceability/material-traceability-timeline";
+import { MaterialProcessingLineage } from "./material-processing-lineage";
 import {
   traceMainQrAction,
   traceSubQrAction,
@@ -23,12 +25,12 @@ export type DrillTarget =
 
 function formatDate(value: string | null): string {
   if (!value) return "—";
-  return new Intl.DateTimeFormat("th-TH", { dateStyle: "medium" }).format(new Date(value));
+  return new Intl.DateTimeFormat("th-TH", { dateStyle: "medium", timeZone: "Asia/Bangkok" }).format(new Date(value));
 }
 
 function formatDateTime(value: string | null): string {
   if (!value) return "—";
-  return new Intl.DateTimeFormat("th-TH", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
+  return new Intl.DateTimeFormat("th-TH", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Bangkok" }).format(new Date(value));
 }
 
 function formatQty(value: string): string {
@@ -104,7 +106,7 @@ export function MaterialTraceabilityDetailsDialog({
 }) {
   return (
     <Dialog open={!!target} onOpenChange={(open) => !open && onOpenChange(null)}>
-      <DialogContent size="xl" fullScreenOnMobile className="flex max-h-[85vh] flex-col">
+      <DialogContent size="xl" fullScreenOnMobile className="overflow-hidden p-0">
         {target && <DetailsDialogBody key={`${target.type}:${target.id}`} initialTarget={target} />}
       </DialogContent>
     </Dialog>
@@ -157,6 +159,7 @@ function DetailsDialogBody({ initialTarget }: { initialTarget: DrillTarget }) {
   const error = result?.key === key && result.status === "error" ? result.message : null;
 
   function navigate(next: DrillTarget) {
+    if (targetKey(next) === targetKey(current)) return;
     setHistory((prev) => [...prev, current]);
     setCurrent(next);
   }
@@ -172,7 +175,7 @@ function DetailsDialogBody({ initialTarget }: { initialTarget: DrillTarget }) {
 
   return (
     <>
-      <DialogHeader className="flex-row items-center justify-between gap-2 space-y-0">
+      <DialogHeader className="shrink-0 flex-row items-center justify-between gap-2 space-y-0 pr-12">
         <div className="flex items-center gap-2">
           {history.length > 0 && (
             <Button type="button" variant="ghost" size="icon" onClick={back} aria-label="ย้อนกลับ">
@@ -191,7 +194,7 @@ function DetailsDialogBody({ initialTarget }: { initialTarget: DrillTarget }) {
         </div>
       </DialogHeader>
 
-      <div className="min-h-0 flex-1 overflow-y-auto pr-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5 sm:px-6">
         {loading && (
           <div className="flex items-center justify-center gap-2 py-16 text-sm text-fg-muted">
             <Loader2 className="size-4 animate-spin" /> กำลังโหลดข้อมูล...
@@ -199,7 +202,7 @@ function DetailsDialogBody({ initialTarget }: { initialTarget: DrillTarget }) {
         )}
         {!loading && error && <p className="py-16 text-center text-sm text-danger">{error}</p>}
         {!loading && !error && data && (current.type === "main-qr" || current.type === "receiving") && (
-          <MainQrDetail trace={data as MainQrTrace} onNavigate={navigate} />
+          <MainQrDetail key={(data as MainQrTrace).receiving.id} trace={data as MainQrTrace} onNavigate={navigate} />
         )}
         {!loading && !error && data && current.type === "sub-qr" && (
           <SubQrDetail trace={data as SubQrTrace} onNavigate={navigate} />
@@ -208,6 +211,9 @@ function DetailsDialogBody({ initialTarget }: { initialTarget: DrillTarget }) {
           <DisbursementDetail trace={data as DisbursementTrace} onNavigate={navigate} />
         )}
       </div>
+      <footer className="flex shrink-0 justify-end border-t border-border bg-surface px-5 py-4 sm:px-6">
+        <DialogClose asChild><Button variant="outline">ปิดรายละเอียด</Button></DialogClose>
+      </footer>
     </>
   );
 }
@@ -222,6 +228,8 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
 }
 
 function MainQrDetail({ trace, onNavigate }: { trace: MainQrTrace; onNavigate: (t: DrillTarget) => void }) {
+  const [search, setSearch] = React.useState("");
+  const [packageFilter, setPackageFilter] = React.useState<"all" | "remaining" | "empty">("all");
   const r = trace.receiving;
   const color = lotColor(r.internalLotNo);
   const unit = r.unitSymbol ?? "";
@@ -230,19 +238,30 @@ function MainQrDetail({ trace, onNavigate }: { trace: MainQrTrace; onNavigate: (
   const issued = trace.issueHistory
     .filter((h) => !h.reversedAt)
     .reduce((s, h) => s + (Number(h.disbursedQuantity) || 0), 0);
-  const usedPct = received > 0 ? Math.min(100, Math.round(((received - remaining) / received) * 100)) : 0;
+  const processingHistory = trace.processingHistory ?? [];
+  const processed = r.processedQuantity ?? String(processingHistory
+    .filter((entry) => entry.sourceReceivingId === r.id)
+    .reduce((sum, entry) => sum + Number(entry.sourceQuantity), 0));
+  const isRawSource = !r.sourceReceivingId && ["PIPE", "SHEET", "COIL"].includes(r.materialShape ?? "");
+  const remainingPct = received > 0 ? Math.max(0, Math.min(100, Math.round(remaining / received * 100))) : 0;
+  const query = search.trim().toLowerCase();
+  const packages = trace.packages.filter((pkg) =>
+    (!query || `${pkg.packageNo} ${pkg.lotDetailNo ?? ""}`.toLowerCase().includes(query)) &&
+    (packageFilter === "all" || (packageFilter === "remaining" ? Number(pkg.currentQuantity) > 0 : Number(pkg.currentQuantity) <= 0))
+  );
 
   return (
     <div className="flex flex-col gap-5">
-      {/* Hero: lot number in its lot color, status, then headline numbers. */}
-      <section className={`overflow-hidden rounded-lg border border-border border-l-4 ${color.border}`}>
-        <div className={`flex flex-wrap items-start justify-between gap-3 px-4 py-3 ${color.soft}`}>
-          <div className="min-w-0">
-            <p className="text-[11px] uppercase tracking-wide text-fg-muted">Lot รับเข้า (MAIN QR)</p>
-            <p className={`font-mono text-xl font-semibold ${color.text}`}>{r.internalLotNo}</p>
-            <p className="mt-0.5 truncate text-xs text-fg-secondary">
-              {r.material ? `${r.material.code} · ${r.material.name}` : "—"}
-            </p>
+      <section aria-label="สรุปล็อตรับเข้า" className={`overflow-hidden rounded-xl border border-border border-t-4 ${color.border}`}>
+        <div className="flex flex-wrap items-start justify-between gap-4 p-4 sm:p-5">
+          <div className="flex min-w-0 flex-1 items-start gap-3">
+            <span className={`flex size-11 shrink-0 items-center justify-center rounded-lg ${color.soft} ${color.text}`}><QrCode className="size-6" aria-hidden="true" /></span>
+            <div className="min-w-0">
+              <p className="text-xs font-medium text-fg-muted">MAIN QR · ล็อตรับเข้า</p>
+              <h3 className={`mt-1 break-all text-lg font-semibold sm:text-xl ${color.text}`}>{r.internalLotNo}</h3>
+              <p className="mt-2 break-words text-sm font-medium text-fg">{r.material?.name ?? "ไม่ระบุวัสดุ"}</p>
+              {r.material && <p className="mt-1 break-all text-xs text-fg-secondary">รหัสวัสดุ {r.material.code}</p>}
+            </div>
           </div>
           <Badge variant={statusBadgeVariant(r.status)} dot>
             {STATUS_LABELS[r.status] ?? r.status}
@@ -250,27 +269,28 @@ function MainQrDetail({ trace, onNavigate }: { trace: MainQrTrace; onNavigate: (
         </div>
 
         <div className="p-4">
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <KpiCell label={`รับเข้า ${unit}`} value={formatQty(r.convertedQuantity)} />
             <KpiCell label="จ่ายออกแล้ว" value={formatQty(String(issued))} />
             <KpiCell label="คงเหลือ" value={formatQty(trace.currentRemaining)} tone="primary" />
-            <KpiCell label="จำนวนกล่อง" value={String(trace.packages.length)} />
+            <KpiCell label="SUB QR ทั้งหมด" value={`${trace.packages.length} รายการ`} />
           </div>
+          {Number(processed) > 0 && <p className="mt-3 rounded-md bg-primary-soft px-3 py-2 text-sm text-primary">ใช้แปรรูปแล้ว {formatQty(processed)} {unit} · แยกจากยอดจ่ายออกทั่วไป</p>}
 
           <div className="mt-3">
             <div className="mb-1 flex justify-between text-[11px] text-fg-muted">
-              <span>ใช้ไปแล้ว</span>
-              <span className="tabular-nums">{usedPct}%</span>
+              <span>สัดส่วนคงเหลือจากยอดรับเข้า</span>
+              <span className="tabular-nums">{remainingPct}%</span>
             </div>
-            <div className="h-1.5 overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-valuenow={usedPct} aria-valuemin={0} aria-valuemax={100}>
-              <div className={`h-full rounded-full ${color.bar}`} style={{ width: `${usedPct}%` }} />
+            <div className="h-2 overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-label="สัดส่วนคงเหลือจากยอดรับเข้า" aria-valuenow={remainingPct} aria-valuemin={0} aria-valuemax={100}>
+              <div className={`h-full rounded-full ${color.bar}`} style={{ width: `${remainingPct}%` }} />
             </div>
           </div>
 
           <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-border pt-4 sm:grid-cols-4">
             <MetaCell label="วันที่รับเข้า" value={formatDate(r.receiveDate)} />
-            <MetaCell label="Supplier Lot" value={r.supplierLotNo} />
-            <MetaCell label="Supplier" value={r.supplier ? (r.supplier.nameEn ?? r.supplier.nameTh) : null} />
+            <MetaCell label="ล็อตซัพพลายเออร์" value={r.supplierLotNo} />
+            <MetaCell label="ซัพพลายเออร์" value={r.supplier ? (r.supplier.nameTh || r.supplier.nameEn) : null} />
             <MetaCell label="จำนวนที่กรอก" value={`${formatQty(r.receiveQuantity)} ${unit}`} />
             <MetaCell label="ผู้ยืนยันรับเข้า" value={r.confirmedBy} />
             <MetaCell label="ยืนยันเมื่อ" value={r.confirmedAt ? formatDateTime(r.confirmedAt) : null} />
@@ -280,14 +300,32 @@ function MainQrDetail({ trace, onNavigate }: { trace: MainQrTrace; onNavigate: (
         </div>
       </section>
 
-      {/* MAIN → SUB: one tile per box with its own remaining-quantity bar. */}
-      <section>
-        <h3 className="mb-2 text-sm font-semibold text-fg">กล่อง / SUB QR ({trace.packages.length})</h3>
-        {trace.packages.length === 0 ? (
-          <p className="text-sm text-fg-muted">ยังไม่มี SUB QR</p>
+      <MaterialProcessingLineage entries={processingHistory} onNavigate={onNavigate} showEmpty={isRawSource} />
+
+      <section aria-label="รายการ SUB QR" className="rounded-xl border border-border p-4">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+          <h3 className="flex items-center gap-2 text-sm font-semibold text-fg"><Boxes className="size-4 text-primary" aria-hidden="true" />รายการ SUB QR</h3>
+          <span className="text-xs text-fg-muted">มีคงเหลือ {trace.packages.filter((pkg) => Number(pkg.currentQuantity) > 0).length} / {trace.packages.length} รายการ</span>
+        </div>
+        <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative min-w-0 flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-fg-muted" aria-hidden="true" />
+            <Input aria-label="ค้นหา SUB QR หรือเลขรายการ" placeholder="ค้นหา SUB QR หรือเลขรายการ..." value={search} onChange={(event) => setSearch(event.target.value)} className="pl-9" />
+          </div>
+          <div className="flex flex-wrap gap-1" role="group" aria-label="กรองจำนวนคงเหลือ">
+            {(["all", "remaining", "empty"] as const).map((filter) => <Button key={filter} size="sm" variant={packageFilter === filter ? "primary" : "outline"} aria-pressed={packageFilter === filter} onClick={() => setPackageFilter(filter)}>{filter === "all" ? "ทั้งหมด" : filter === "remaining" ? "มีคงเหลือ" : "หมดแล้ว"}</Button>)}
+          </div>
+        </div>
+        <p className="mb-3 text-xs text-fg-muted" role="status" aria-live="polite">แสดง {packages.length} จาก {trace.packages.length} รายการ · กดเพื่อดูรายละเอียด SUB QR</p>
+        {packages.length === 0 ? (
+          <div className="py-8 text-center">
+            <Boxes className="mx-auto mb-3 size-7 text-fg-muted" aria-hidden="true" />
+            <p className="text-sm text-fg-secondary">{trace.packages.length ? "ไม่พบ SUB QR ที่ตรงกับตัวกรอง" : "ยังไม่มี SUB QR ในล็อตนี้"}</p>
+            {trace.packages.length > 0 && <Button variant="ghost" size="sm" className="mt-2" onClick={() => { setSearch(""); setPackageFilter("all"); }}>ล้างตัวกรอง</Button>}
+          </div>
         ) : (
-          <div className="grid gap-2 sm:grid-cols-2">
-            {trace.packages.map((pkg) => {
+          <div className="grid gap-3 sm:grid-cols-2">
+            {packages.map((pkg) => {
               const initial = Number(pkg.initialQuantity) || 0;
               const current = Number(pkg.currentQuantity) || 0;
               const pct = initial > 0 ? Math.max(0, Math.min(100, Math.round((current / initial) * 100))) : 0;
@@ -296,20 +334,20 @@ function MainQrDetail({ trace, onNavigate }: { trace: MainQrTrace; onNavigate: (
                   key={pkg.id}
                   type="button"
                   onClick={() => onNavigate({ type: "sub-qr", id: pkg.id })}
-                  className="rounded-lg border border-border px-3 py-2 text-left transition-colors hover:bg-surface-2"
+                  className="group min-w-0 rounded-lg border border-border bg-surface p-3 text-left transition-colors hover:border-primary/40 hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="min-w-0 truncate font-mono text-sm text-primary">
-                      #{pkg.packageNo} · {pkg.lotDetailNo ?? pkg.id}
-                    </span>
+                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-xs text-fg-muted">SUB QR · #{pkg.packageNo}</span>
                     <Badge variant={statusBadgeVariant(pkg.status)}>{STATUS_LABELS[pkg.status] ?? pkg.status}</Badge>
                   </div>
-                  <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-2">
+                  <p className="break-all text-sm font-semibold text-primary">{pkg.lotDetailNo ?? pkg.id}</p>
+                  <div className="mt-3 flex items-end justify-between gap-2">
+                    <div><p className="text-xs text-fg-muted">คงเหลือ</p><p className="mt-1 text-lg font-semibold tabular-nums text-fg">{formatQty(pkg.currentQuantity)} <span className="text-xs font-normal text-fg-muted">/ {formatQty(pkg.initialQuantity)} {unit}</span></p></div>
+                    <ArrowRight className="size-4 shrink-0 text-fg-muted group-hover:text-primary" aria-hidden="true" />
+                  </div>
+                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-2" aria-hidden="true">
                     <div className={`h-full rounded-full ${color.bar}`} style={{ width: `${pct}%` }} />
                   </div>
-                  <p className="mt-1 text-xs text-fg-muted tabular-nums">
-                    คงเหลือ {formatQty(pkg.currentQuantity)} / {formatQty(pkg.initialQuantity)} {unit}
-                  </p>
                 </button>
               );
             })}
@@ -317,14 +355,14 @@ function MainQrDetail({ trace, onNavigate }: { trace: MainQrTrace; onNavigate: (
         )}
       </section>
 
-      <section>
-        <h3 className="mb-2 text-sm font-semibold text-fg">ประวัติการจ่ายออก (ทุกกล่องรวมกัน)</h3>
-        <IssueHistoryTable history={trace.issueHistory} onNavigate={onNavigate} />
+      <section aria-label="ประวัติการจ่ายออก" className="overflow-hidden rounded-xl border border-border">
+        <h3 className="flex items-center gap-2 border-b border-border px-4 py-3 text-sm font-semibold text-fg"><History className="size-4 text-primary" aria-hidden="true" />ประวัติการจ่ายออก · ทุก SUB QR</h3>
+        <div className="overflow-x-auto p-4"><IssueHistoryTable history={trace.issueHistory} onNavigate={onNavigate} /></div>
       </section>
 
-      <details className="group rounded-lg border border-border">
-        <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-fg [&::-webkit-details-marker]:hidden">
-          Timeline ({trace.movements.length})
+      <details className="group rounded-xl border border-border">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
+          ลำดับความเคลื่อนไหว ({trace.movements.length})<ChevronDown className="size-4 shrink-0 text-fg-muted group-open:rotate-180" aria-hidden="true" />
         </summary>
         <div className="border-t border-border p-4">
           <MaterialTraceabilityTimeline movements={trace.movements} />
@@ -367,6 +405,8 @@ function SubQrDetail({ trace, onNavigate }: { trace: SubQrTrace; onNavigate: (t:
         <h3 className="mb-2 text-sm font-semibold text-fg">Issue History</h3>
         <IssueHistoryTable history={trace.issueHistory} onNavigate={onNavigate} />
       </section>
+
+      <MaterialProcessingLineage entries={trace.processingHistory ?? []} onNavigate={onNavigate} />
 
       {trace.adjustmentHistory.length > 0 && (
         <section>
@@ -422,14 +462,14 @@ function MetaCell({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="min-w-0">
       <dt className="text-[11px] text-fg-muted">{label}</dt>
-      <dd className="truncate text-sm font-medium text-fg">{value || "—"}</dd>
+      <dd className="break-words text-sm font-medium leading-relaxed text-fg">{value || "—"}</dd>
     </div>
   );
 }
 
 function KpiCell({ label, value, tone }: { label: string; value: string; tone?: "primary" }) {
   return (
-    <div className="rounded-lg border border-border bg-surface-2 px-3 py-2">
+    <div className={`min-w-0 rounded-lg border px-3 py-3 ${tone === "primary" ? "border-primary/20 bg-primary-soft" : "border-border bg-surface-2"}`}>
       <p className="text-[11px] text-fg-muted">{label}</p>
       <p className={`text-lg font-semibold tabular-nums ${tone === "primary" ? "text-primary" : "text-fg"}`}>{value}</p>
     </div>
@@ -520,7 +560,9 @@ function DisbursementDetail({ trace, onNavigate }: { trace: DisbursementTrace; o
                   <div key={lot.lotNo} className={`rounded-md border border-l-4 border-border ${lotColor(lot.lotNo).border}`}>
                     <div className={`flex items-center justify-between gap-2 border-b border-border px-3 py-2 ${lotColor(lot.lotNo).soft}`}>
                       <div className="min-w-0">
-                        <span className={`font-mono text-sm font-semibold ${lotColor(lot.lotNo).text}`}>{lot.lotNo}</span>
+                        {lot.allocations[0]?.receivingId ? (
+                          <button type="button" className={`break-all text-left text-sm font-semibold underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${lotColor(lot.lotNo).text}`} onClick={() => onNavigate({ type: "main-qr", id: lot.allocations[0].receivingId! })}>{lot.lotNo}</button>
+                        ) : <span className={`text-sm font-semibold ${lotColor(lot.lotNo).text}`}>{lot.lotNo}</span>}
                         <span className="ml-2 text-xs text-fg-muted">รับเข้า {formatDate(lot.receiveDate)}</span>
                       </div>
                       <span className="shrink-0 text-sm font-semibold tabular-nums text-fg">{formatQty(String(active))}</span>

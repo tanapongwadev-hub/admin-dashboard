@@ -127,6 +127,7 @@ export default async function MaterialsReceivingPage({
         canConfirm={canConfirm}
         canCancel={canCancel}
         canDelete={canDelete}
+        canViewProcessing={session.user.isSuperAdmin || session.permissions.includes("MATERIAL_PROCESSING_VIEW")}
         initialMaterialCode={openCreate ? materialCode : undefined}
       />
     </div>

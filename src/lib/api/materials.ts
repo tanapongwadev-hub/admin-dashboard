@@ -9,6 +9,27 @@ import { apiFetch } from "./client";
 
 export type MaterialType = "PC" | "OF" | "OF_MAT";
 export type MaterialShape = "PCS" | "PIPE" | "SHEET" | "COIL";
+export type MaterialLocationType = "internal" | "external";
+
+export interface MaterialDeletionCheck {
+  material: { id: string; code: string; name: string; locationType?: MaterialLocationType };
+  canDelete: boolean;
+  blockers: string[];
+}
+
+export function checkMaterialDeletion(accessToken: string, id: string) {
+  return apiFetch<MaterialDeletionCheck>(`/materials/${encodeURIComponent(id)}/deletion-check`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+}
+
+export function deleteMaterialPermanently(accessToken: string, id: string, confirmationCode: string) {
+  return apiFetch<{ id: string; code: string; name: string }>(`/materials/${encodeURIComponent(id)}/permanent`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${accessToken}` },
+    body: JSON.stringify({ confirmationCode }),
+  });
+}
 
 export interface MaterialLookup {
   id: string;
@@ -26,7 +47,10 @@ export interface Material {
   name: string;
   type: MaterialType | null;
   materialType: MaterialShape;
+  locationType?: MaterialLocationType;
   ratio: number | null;
+  processingMaterialId?: string | null;
+  processingMaterial?: MaterialProcessingOutput | null;
   unitId: string;
   deliveryTypeId: string | null;
   // FK into /material-types (PC / OF / OF-MAT master data, 2026-09-16).
@@ -52,6 +76,38 @@ export interface Material {
   materialTypeMaster: MaterialLookup | null;
   loadingPoint: MaterialLookup | null;
   suppliers: MaterialLookup[];
+}
+
+export interface MaterialProcessingOutput {
+  modelId?: string | null;
+  loadingPointId?: string | null;
+  processLineName?: string | null;
+  scale?: string | null;
+  locationType?: MaterialLocationType;
+  imagePath?: string | null;
+  id: string;
+  code: string;
+  name: string;
+  unitId: string;
+  specification: string | null;
+  packingQuantity: number | null;
+  isActive: boolean;
+  updatedAt: string;
+}
+
+export interface MaterialProcessingOutputPayload {
+  modelId?: string | null;
+  loadingPointId?: string | null;
+  processLineName?: string | null;
+  scale?: string | null;
+  locationType?: MaterialLocationType;
+  imagePath?: string | null;
+  code: string;
+  name: string;
+  unitId: string;
+  specification?: string | null;
+  packingQuantity: number;
+  updatedAt?: string;
 }
 
 export interface MaterialLookups {
@@ -91,6 +147,10 @@ export interface ListMaterialsParams {
 }
 
 export interface MaterialPayload {
+  locationType?: MaterialLocationType;
+  draftId?: string;
+  draftUpdatedAt?: string;
+  processingOutput?: MaterialProcessingOutputPayload;
   code: string;
   name: string;
   type?: MaterialType | null;
@@ -110,6 +170,54 @@ export interface MaterialPayload {
   minimumStock?: number;
   supplierIds?: string[];
   isActive?: boolean;
+}
+
+export interface MaterialDraftSummary {
+  id: string;
+  materialId: string | null;
+  code: string | null;
+  name: string | null;
+  materialType: string | null;
+  step: number;
+  updatedAt: string;
+}
+
+export interface MaterialDraftRecord {
+  id: string;
+  materialId: string | null;
+  materialUpdatedAt: string | null;
+  outputUpdatedAt: string | null;
+  step: number;
+  data: Record<string, unknown>;
+  supplierIds: string[];
+  imagePath: string | null;
+  updatedAt: string;
+}
+
+export interface SaveMaterialDraftPayload {
+  outputImagePath?: string | null;
+  id?: string;
+  updatedAt?: string;
+  materialId: string | null;
+  materialUpdatedAt: string | null;
+  outputUpdatedAt: string | null;
+  step: number;
+  data: Record<string, unknown>;
+  supplierIds: string[];
+  imagePath: string | null;
+}
+
+export function listMaterialDrafts(token: string) {
+  return apiFetch<MaterialDraftSummary[]>("/materials/drafts", { headers: { Authorization: `Bearer ${token}` } });
+}
+export function getMaterialDraft(token: string, id: string) {
+  return apiFetch<MaterialDraftRecord>(`/materials/drafts/${encodeURIComponent(id)}`, { headers: { Authorization: `Bearer ${token}` } });
+}
+export function saveMaterialDraft(token: string, data: SaveMaterialDraftPayload) {
+  return apiFetch<MaterialDraftRecord>("/materials/drafts", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: JSON.stringify(data) });
+}
+export function deleteMaterialDraft(token: string, id: string) {
+  return apiFetch<{ success: boolean }>(`/materials/drafts/${encodeURIComponent(id)}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
 }
 
 export interface UpdateMaterialPayload extends Partial<MaterialPayload> {
@@ -199,6 +307,12 @@ export function listMaterials(accessToken: string, params: ListMaterialsParams =
 
 export function getMaterialLookups(accessToken: string) {
   return apiFetch<MaterialLookups>("/materials/lookups", {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+}
+
+export function checkMaterialCodeAvailability(accessToken: string, code: string, excludeId?: string) {
+  return apiFetch<{ available: boolean }>(`/materials/code-availability${buildQuery({ code, excludeId })}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
 }

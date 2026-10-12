@@ -1,20 +1,20 @@
-import { Building2, GitBranch, Package, Tags } from "lucide-react";
-import type { ProductLookups } from "@/lib/api/products";
+import { Building2, CircleCheck, CirclePause, Package } from "lucide-react";
+import type { Product } from "@/lib/api/products";
 import { cn } from "@/lib/utils";
 
 const cards = [
   { key: "products", label: "สินค้าในผลลัพธ์", icon: Package, tone: "bg-primary-soft text-primary" },
-  { key: "types", label: "ประเภทสินค้า", icon: Tags, tone: "bg-info-soft text-info" },
-  { key: "customers", label: "ลูกค้า", icon: Building2, tone: "bg-success-soft text-success" },
-  { key: "lines", label: "สายการผลิต", icon: GitBranch, tone: "bg-warning-soft text-warning" },
+  { key: "active", label: "ใช้งานในผลลัพธ์", icon: CircleCheck, tone: "bg-success-soft text-success" },
+  { key: "inactive", label: "ไม่ใช้งานในผลลัพธ์", icon: CirclePause, tone: "bg-warning-soft text-warning" },
+  { key: "customers", label: "ลูกค้าในผลลัพธ์", icon: Building2, tone: "bg-info-soft text-info" },
 ] as const;
 
-export function ProductsCatalogSummary({ totalItems, lookups }: { totalItems: number; lookups: ProductLookups }) {
+export function ProductsCatalogSummary({ totalItems, products }: { totalItems: number; products: Product[] }) {
   const values: Record<(typeof cards)[number]["key"], number> = {
     products: totalItems,
-    types: lookups.productTypes.length,
-    customers: lookups.customers.length,
-    lines: lookups.processLines.length,
+    active: products.filter((product) => product.isActive).length,
+    inactive: products.filter((product) => !product.isActive).length,
+    customers: new Set(products.map((product) => product.customerId)).size,
   };
 
   return (

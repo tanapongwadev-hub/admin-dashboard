@@ -36,10 +36,12 @@ export function MaterialPcFilters({
   lookups,
   canViewStock,
   totalItems,
+  countUnit = "รายการ",
 }: {
   lookups: MaterialLookups;
   canViewStock: boolean;
   totalItems: number;
+  countUnit?: "รายการ" | "กลุ่ม";
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -106,7 +108,7 @@ export function MaterialPcFilters({
             className="w-full sm:max-w-sm"
           />
           <span className="hidden shrink-0 whitespace-nowrap text-xs text-fg-muted sm:inline">
-            พบ {totalItems.toLocaleString("th-TH")} รายการ
+            พบ {totalItems.toLocaleString("th-TH")} {countUnit}
           </span>
         </div>
 

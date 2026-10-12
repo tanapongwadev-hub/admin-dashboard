@@ -4,6 +4,13 @@ import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import {
   createMaterial,
+  checkMaterialCodeAvailability,
+  listMaterialDrafts,
+  getMaterialDraft,
+  saveMaterialDraft,
+  deleteMaterialDraft,
+  getMaterial,
+  type SaveMaterialDraftPayload,
   updateMaterial,
   deactivateMaterial,
   restoreMaterial,
@@ -17,10 +24,40 @@ import { listBomUsageByMaterial, type BomUsageRow } from "@/lib/api/boms";
 import { ApiError } from "@/lib/api/client";
 import { redirectIfSessionExpired, redirectMissingSession } from "@/lib/session-expiry";
 import { apiErrorMessage, CONNECTION_ERROR_MESSAGE } from "@/lib/user-error";
+import { getCurrentSession } from "@/lib/session";
+import { checkMaterialDeletion, deleteMaterialPermanently, type MaterialDeletionCheck } from "@/lib/api/materials";
+
+export type MaterialDeletionResult = { status: "success"; check: MaterialDeletionCheck } | { status: "error"; message: string };
+
+export async function checkMaterialDeletionAction(id: string): Promise<MaterialDeletionResult> {
+  const session = await getCurrentSession();
+  if (!session) redirectMissingSession();
+  if (!session.user.isSuperAdmin && !session.permissions.includes("MATERIAL_DELETE")) return { status: "error", message: "คุณไม่มีสิทธิ์ลบวัสดุ" };
+  const token = await requireAccessToken();
+  if (!token) redirectMissingSession();
+  try { return { status: "success", check: await checkMaterialDeletion(token, id) }; }
+  catch (err) { redirectIfSessionExpired(err); return { status: "error", message: err instanceof ApiError ? apiErrorMessage(err) : CONNECTION_ERROR_MESSAGE }; }
+}
+
+export async function deleteMaterialPermanentlyAction(id: string, confirmationCode: string): Promise<{ status: "success" } | { status: "error"; message: string }> {
+  const session = await getCurrentSession();
+  if (!session) redirectMissingSession();
+  if (!session.user.isSuperAdmin && !session.permissions.includes("MATERIAL_DELETE")) return { status: "error", message: "คุณไม่มีสิทธิ์ลบวัสดุ" };
+  const token = await requireAccessToken();
+  if (!token) redirectMissingSession();
+  try { await deleteMaterialPermanently(token, id, confirmationCode); }
+  catch (err) { redirectIfSessionExpired(err); return { status: "error", message: err instanceof ApiError ? apiErrorMessage(err) : CONNECTION_ERROR_MESSAGE }; }
+  try { revalidatePath("/materials"); revalidatePath("/materials/pc"); revalidatePath("/bom-workflow/materials"); } catch { /* best-effort */ }
+  return { status: "success" };
+}
 
 export type MaterialActionResult =
   | { status: "success"; material: Material }
   | { status: "conflict"; message: string }
+  | { status: "error"; message: string };
+
+export type MaterialCodeCheckResult =
+  | { status: "success"; available: boolean }
   | { status: "error"; message: string };
 
 type MaterialActionFailure = Exclude<MaterialActionResult, { status: "success" }>;
@@ -44,6 +81,9 @@ function errorResult(err: unknown): MaterialActionFailure {
   redirectIfSessionExpired(err);
   if (err instanceof ApiError) {
     if (err.status === 409) {
+      if (/code already exists/i.test(apiErrorMessage(err))) {
+        return { status: "conflict", message: "รหัสวัสดุซ้ำ กรุณาตรวจรหัสต้นทางและรหัสหลังแปรรูป" };
+      }
       return {
         status: "conflict",
         message: "ข้อมูลวัสดุนี้ถูกอัปเดตจากที่อื่นแล้ว กรุณารีเฟรชแล้วลองอีกครั้ง",
@@ -206,4 +246,52 @@ export async function listBomUsageByMaterialAction(materialId: string): Promise<
   const accessToken = await requireAccessToken();
   if (!accessToken) redirectMissingSession();
   return performListBomUsageByMaterial(accessToken, materialId);
+}
+
+export async function performCheckMaterialCode(accessToken: string, code: string, excludeId?: string): Promise<MaterialCodeCheckResult> {
+  const normalized = code.trim();
+  if (!normalized || normalized.length > 50 || (excludeId !== undefined && !/^[1-9]\d*$/.test(excludeId))) {
+    return { status: "error", message: "กรอกรหัสวัสดุ 1–50 ตัวอักษร" };
+  }
+  try {
+    const result = await checkMaterialCodeAvailability(accessToken, normalized, excludeId);
+    return { status: "success", available: result.available };
+  } catch (error) {
+    return { status: "error", message: errorResult(error).message };
+  }
+}
+
+export async function checkMaterialCodeAction(code: string, excludeId?: string): Promise<MaterialCodeCheckResult> {
+  const accessToken = await requireAccessToken();
+  if (!accessToken) redirectMissingSession();
+  return performCheckMaterialCode(accessToken, code, excludeId);
+}
+
+async function withDraftSession<T>(request: (token: string) => Promise<T>) {
+  const token = await requireAccessToken();
+  if (!token) redirectMissingSession();
+  try { return { status: "success" as const, value: await request(token) }; }
+  catch (error) {
+    redirectIfSessionExpired(error);
+    return { status: "error" as const, message: error instanceof ApiError && error.status === 409 ? "ร่างถูกเปลี่ยนแปลงแล้ว กรุณาเปิดร่างอีกครั้ง" : errorResult(error).message };
+  }
+}
+
+export async function listMaterialDraftsAction() {
+  return withDraftSession(listMaterialDrafts);
+}
+export async function saveMaterialDraftAction(payload: SaveMaterialDraftPayload) {
+  return withDraftSession((token) => saveMaterialDraft(token, payload));
+}
+export async function deleteMaterialDraftAction(id: string) {
+  return withDraftSession((token) => deleteMaterialDraft(token, id));
+}
+export async function loadMaterialDraftAction(id: string) {
+  return withDraftSession(async (token) => {
+    const draft = await getMaterialDraft(token, id);
+    let material = draft.materialId ? await getMaterial(token, draft.materialId) : null;
+    if (material) material = { ...material, updatedAt: draft.materialUpdatedAt ?? material.updatedAt,
+      processingMaterial: material.processingMaterial ? { ...material.processingMaterial, updatedAt: draft.outputUpdatedAt ?? material.processingMaterial.updatedAt } : null };
+    return { draft, material };
+  });
 }

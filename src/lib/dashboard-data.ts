@@ -15,14 +15,18 @@ function seededRandom(seed: number) {
 
 const rand = seededRandom(7);
 
+// Mock fixtures must be identical in SSR and the browser, including at midnight.
+// Real timestamps belong in server-fetched data passed to the client as props.
+const MOCK_REFERENCE_DATE = "2026-10-08T00:00:00.000Z";
+
 function pick<T>(arr: T[]): T {
   return arr[Math.floor(rand() * arr.length)];
 }
 
 function daysAgo(n: number, hour = 8) {
-  const d = new Date();
-  d.setDate(d.getDate() - n);
-  d.setHours(hour, Math.floor(rand() * 60), 0, 0);
+  const d = new Date(MOCK_REFERENCE_DATE);
+  d.setUTCDate(d.getUTCDate() - n);
+  d.setUTCHours(hour - 7, Math.floor(rand() * 60), 0, 0);
   return d.toISOString();
 }
 
@@ -34,12 +38,12 @@ export interface StockMovementPoint {
 }
 
 export const stockMovementTrend: StockMovementPoint[] = Array.from({ length: 14 }).map((_, i) => {
-  const d = new Date();
-  d.setDate(d.getDate() - (13 - i));
+  const d = new Date(MOCK_REFERENCE_DATE);
+  d.setUTCDate(d.getUTCDate() - (13 - i));
   const received = Math.round(1800 + rand() * 1400);
   const disbursed = Math.round(1500 + rand() * 1500);
   return {
-    date: d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+    date: d.toLocaleDateString("en-US", { timeZone: "Asia/Bangkok", month: "short", day: "numeric" }),
     received,
     disbursed,
   };

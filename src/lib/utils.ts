@@ -37,6 +37,7 @@ export function formatWeight(kg: number) {
 export function formatDate(value: string | Date) {
   const d = typeof value === "string" ? new Date(value) : value;
   return new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Bangkok",
     month: "short",
     day: "numeric",
     year: "numeric",

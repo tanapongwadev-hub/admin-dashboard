@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Pencil, Ban, RotateCcw, Package, Eye } from "lucide-react";
+import { Pencil, Ban, RotateCcw, Package, Eye, Boxes } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { RowActionsMenu, type RowAction } from "@/components/ui/row-actions-menu";
 import { ProductsImagePreview } from "@/components/products/products-image-preview";
+import { ProductStockBalance, formatProductQuantity } from "./product-stock-balance";
 import type { ViewMode } from "@/hooks/use-view-mode";
 import type { Product } from "@/lib/api/products";
 import { cn, formatNumber } from "@/lib/utils";
@@ -18,6 +19,8 @@ import { cn, formatNumber } from "@/lib/utils";
 
 interface ProductsCollectionProps {
   products: Product[];
+  stockByProductId?: Record<string, string>;
+  onViewStock?: (product: Product) => void;
   view: ViewMode;
   canEdit: boolean;
   canDelete: boolean;
@@ -96,9 +99,13 @@ export function getProductRowActions(
     onEdit: (product: Product) => void;
     onToggleStatus: (product: Product) => void;
     onViewDetails?: (product: Product) => void;
+    onViewStock?: (product: Product) => void;
   }
 ): RowAction[] {
   const actions: RowAction[] = [];
+  if (handlers.onViewStock) {
+    actions.push({ label: "สต็อก / รับเข้า–จ่ายออก", icon: Boxes, onSelect: () => handlers.onViewStock!(product), variant: "default" });
+  }
   if (handlers.onViewDetails) {
     actions.push({
       label: "ดูรายละเอียด",
@@ -132,11 +139,12 @@ function ProductActions({
   onEdit,
   onToggleStatus,
   onViewDetails,
+  onViewStock,
 }: Omit<ProductsCollectionProps, "products" | "view"> & { product: Product }) {
   return (
     <RowActionsMenu
       itemLabel={product.name}
-      actions={getProductRowActions(product, canEdit, canDelete, { onEdit, onToggleStatus, onViewDetails })}
+      actions={getProductRowActions(product, canEdit, canDelete, { onEdit, onToggleStatus, onViewDetails, onViewStock })}
     />
   );
 }
@@ -148,8 +156,8 @@ function ProductActions({
 // =====================================================================
 function ProductThumbnail({ product, onPreview }: { product: Product; onPreview: (product: Product) => void }) {
   const imagePath = product.productImagePath?.trim() || null;
-  const [failed, setFailed] = useState(false);
-  const canShow = imagePath !== null && !failed;
+  const [failedPath, setFailedPath] = useState<string | null>(null);
+  const canShow = imagePath !== null && failedPath !== imagePath;
 
   if (!canShow) {
     return (
@@ -176,7 +184,7 @@ function ProductThumbnail({ product, onPreview }: { product: Product; onPreview:
         fill
         sizes="40px"
         className="object-cover"
-        onError={() => setFailed(true)}
+        onError={() => setFailedPath(imagePath)}
       />
     </button>
   );
@@ -188,8 +196,8 @@ function ProductThumbnail({ product, onPreview }: { product: Product; onPreview:
 
 function ProductEditorialPhoto({ product, onPreview }: { product: Product; onPreview: (product: Product) => void }) {
   const imagePath = product.productImagePath?.trim() || null;
-  const [failed, setFailed] = useState(false);
-  const canShow = imagePath !== null && !failed;
+  const [failedPath, setFailedPath] = useState<string | null>(null);
+  const canShow = imagePath !== null && failedPath !== imagePath;
 
   if (!canShow) {
     return (
@@ -214,9 +222,9 @@ function ProductEditorialPhoto({ product, onPreview }: { product: Product; onPre
         src={imagePath}
         alt={`Product image: ${product.name}`}
         fill
-        sizes="(min-width: 640px) 50vw, 100vw"
+        sizes="(min-width: 1536px) 20vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
         className="object-contain p-3"
-        onError={() => setFailed(true)}
+        onError={() => setFailedPath(imagePath)}
       />
     </button>
   );
@@ -241,6 +249,8 @@ function ProductEditorialCard({
   onToggleStatus,
   onViewDetails,
   onPreview,
+  stockByProductId,
+  onViewStock,
 }: ProductRowProps) {
   const unit = unitLabel(product);
 
@@ -263,29 +273,37 @@ function ProductEditorialCard({
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col px-4 pb-1 pt-4">
+      <div className="flex flex-1 flex-col px-4 pb-4 pt-4">
         <p className="mb-1.5 font-mono text-[11px] leading-none tracking-[0.05em] text-primary">{product.code}</p>
         <h2 className="mb-1 truncate text-base font-semibold leading-tight text-fg" title={product.name}>
           {product.name}
         </h2>
-        <p className="truncate text-[12.5px] leading-tight text-fg-secondary">{productTypeLabel(product)}</p>
+        <p className="truncate text-xs leading-tight text-fg-secondary" title={productTypeLabel(product)}>{productTypeLabel(product)}</p>
+        <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 text-xs">
+          <dt className="text-fg-muted">ลูกค้า</dt>
+          <dd className="min-w-0 truncate text-fg-secondary" title={customerLabel(product)}>{customerLabel(product)}</dd>
+          <dt className="text-fg-muted">รุ่น</dt>
+          <dd className="min-w-0 truncate text-fg-secondary" title={modelLabel(product)}>{modelLabel(product)}</dd>
+        </dl>
       </div>
+
+      <div className="px-4 pb-4"><ProductStockBalance product={product} quantity={stockByProductId ? stockByProductId[product.id] ?? "0" : undefined} /></div>
 
       <div className="grid grid-cols-2 divide-x divide-border px-4 pb-3">
         <div className="min-w-0 pr-3">
-          <span className="text-[10px] font-semibold uppercase leading-none tracking-[0.08em] text-primary">Safety Stock</span>
+          <span className="text-[10px] leading-none text-fg-muted">จำนวนบรรจุ</span>
           <div className="mt-1.5">
-            <span className="text-2xl font-bold leading-none tracking-[-0.02em] tabular-nums text-fg">
-              {formatNumber(product.safetyStock)}
+            <span className="text-sm font-medium tabular-nums text-fg-secondary">
+              {formatNumber(product.packing)}
             </span>
             {unit !== "—" && <span className="ml-1.5 text-xs font-medium text-fg-secondary">{unit}</span>}
           </div>
         </div>
         <div className="min-w-0 pl-3">
-          <span className="text-[10px] font-semibold uppercase leading-none tracking-[0.08em] text-fg-secondary">Min Stock</span>
+          <span className="text-[10px] leading-none text-fg-muted">ล็อตผลิต</span>
           <div className="mt-1.5">
-            <span className="text-2xl font-bold leading-none tracking-[-0.02em] tabular-nums text-fg">
-              {formatNumber(product.minStock)}
+            <span className="text-sm font-medium tabular-nums text-fg-secondary">
+              {formatNumber(product.lotSize)}
             </span>
             {unit !== "—" && <span className="ml-1.5 text-xs font-medium text-fg-secondary">{unit}</span>}
           </div>
@@ -293,13 +311,17 @@ function ProductEditorialCard({
       </div>
 
       <div className="grid grid-cols-3 border-t border-border bg-surface-2/40 text-xs">
-        <CardMeta label="ลูกค้า" value={customerLabel(product)} />
-        <CardMeta label="รุ่น" value={modelLabel(product)} />
+        <CardMeta label="เกณฑ์ขั้นต่ำ" value={`${formatNumber(product.minStock)} ${unit !== "—" ? unit : ""}`.trim()} />
+        <CardMeta label="เกณฑ์ Safety Stock" value={`${formatNumber(product.safetyStock)} ${unit !== "—" ? unit : ""}`.trim()} />
         <CardMeta label="สายการผลิต" value={processLineLabel(product)} />
       </div>
 
       <div className="flex gap-2 border-t border-border px-4 py-3">
-        {canEdit && (
+        {onViewStock ? (
+          <Button variant="primary" size="sm" className="min-w-0 flex-1 px-2" onClick={() => onViewStock(product)}>
+            <Boxes className="h-3.5 w-3.5 shrink-0" /><span className="min-w-0 truncate">สต็อกสินค้า</span>
+          </Button>
+        ) : canEdit && (
           <Button variant="primary" size="sm" className="min-w-0 flex-1 px-2" onClick={() => onEdit(product)}>
             <Pencil className="h-3.5 w-3.5 shrink-0" />
             <span className="min-w-0 truncate">แก้ไข</span>
@@ -320,8 +342,8 @@ function ProductEditorialCard({
 
 function ProductListPhoto({ product, onPreview }: { product: Product; onPreview: (product: Product) => void }) {
   const imagePath = product.productImagePath?.trim() || null;
-  const [failed, setFailed] = useState(false);
-  const canShow = imagePath !== null && !failed;
+  const [failedPath, setFailedPath] = useState<string | null>(null);
+  const canShow = imagePath !== null && failedPath !== imagePath;
 
   if (!canShow) {
     return (
@@ -348,7 +370,7 @@ function ProductListPhoto({ product, onPreview }: { product: Product; onPreview:
         fill
         sizes="56px"
         className="object-cover"
-        onError={() => setFailed(true)}
+        onError={() => setFailedPath(imagePath)}
       />
     </button>
   );
@@ -362,19 +384,21 @@ function ProductListItem({
   onToggleStatus,
   onViewDetails,
   onPreview,
+  stockByProductId,
+  onViewStock,
 }: ProductRowProps) {
   const unit = unitLabel(product);
 
   return (
     <article
       className={cn(
-        "group grid grid-cols-[44px_1fr_auto] items-center gap-3 rounded-xl border bg-surface px-3 py-2.5 transition-colors hover:border-border-strong sm:grid-cols-[56px_1fr_auto] sm:gap-4 sm:px-4 sm:py-3",
+        "group grid grid-cols-[44px_minmax(0,1fr)_auto] items-center gap-3 rounded-md border bg-surface px-3 py-2.5 transition-colors hover:border-border-strong @min-[36rem]:grid-cols-[56px_minmax(0,1fr)_auto] @min-[36rem]:gap-4 @min-[36rem]:px-4 @min-[36rem]:py-3",
         product.isActive ? "border-border" : "border-border opacity-70"
       )}
       role="group"
       aria-label={`รายการสินค้า ${product.name}`}
     >
-      <div className="h-11 w-11 overflow-hidden rounded-md border border-border sm:h-14 sm:w-14 sm:rounded-lg">
+      <div className="h-11 w-11 overflow-hidden rounded-md border border-border @min-[36rem]:h-14 @min-[36rem]:w-14">
         <ProductListPhoto product={product} onPreview={onPreview} />
       </div>
 
@@ -393,19 +417,20 @@ function ProductListItem({
           <span aria-hidden="true" className="hidden text-border-strong sm:inline">·</span>
           <span className="hidden truncate sm:inline">{customerLabel(product)}</span>
         </div>
+        <p className="mt-1.5 text-xs text-fg-secondary @min-[36rem]:hidden">คงเหลือ <span className="font-semibold tabular-nums text-fg">{stockByProductId ? formatProductQuantity(stockByProductId[product.id] ?? "0") : "—"}</span> {unit !== "—" ? unit : ""}</p>
       </div>
 
       <div className="flex items-center gap-3 sm:gap-4">
-        <div className="hidden text-right sm:block">
-          <p className="mb-0.5 text-[10px] uppercase leading-none tracking-[0.08em] text-fg-muted">Safety / Min</p>
+        <div className="hidden text-right @min-[36rem]:block">
+          <p className="mb-0.5 text-[10px] leading-none text-fg-muted">สินค้าคงเหลือ</p>
           <p className="text-sm font-bold leading-none tracking-[-0.01em] tabular-nums text-fg">
-            {formatNumber(product.safetyStock)} / {formatNumber(product.minStock)}
+            {stockByProductId ? formatProductQuantity(stockByProductId[product.id] ?? "0") : "—"}
             {unit !== "—" && <span className="ml-1 text-[11px] font-medium text-fg-muted">{unit}</span>}
           </p>
         </div>
         <RowActionsMenu
           itemLabel={product.name}
-          actions={getProductRowActions(product, canEdit, canDelete, { onEdit, onToggleStatus, onViewDetails })}
+          actions={getProductRowActions(product, canEdit, canDelete, { onEdit, onToggleStatus, onViewDetails, onViewStock })}
         />
       </div>
     </article>
@@ -418,6 +443,8 @@ function ProductListItem({
 // =====================================================================
 export function ProductsCollection({
   products,
+  stockByProductId,
+  onViewStock,
   view,
   canEdit,
   canDelete,
@@ -428,6 +455,8 @@ export function ProductsCollection({
   const [previewTarget, setPreviewTarget] = useState<Product | null>(null);
 
   const commonProps = {
+    stockByProductId,
+    onViewStock,
     canEdit,
     canDelete,
     onEdit,
@@ -451,6 +480,7 @@ export function ProductsCollection({
                 <TableHead>รุ่น</TableHead>
                 <TableHead>ลูกค้า</TableHead>
                 <TableHead>หน่วย</TableHead>
+                <TableHead className="text-right">สินค้าคงเหลือ</TableHead>
                 <TableHead>สต็อกขั้นต่ำ / ปลอดภัย</TableHead>
                 <TableHead>สถานะ</TableHead>
                 <TableHead className="text-right">การจัดการ</TableHead>
@@ -463,12 +493,22 @@ export function ProductsCollection({
                     <ProductThumbnail product={product} onPreview={setPreviewTarget} />
                   </TableCell>
                   <TableCell className="font-medium text-fg">{product.code}</TableCell>
-                  <TableCell className="text-fg-secondary">{product.name}</TableCell>
+                  <TableCell>
+                    <button type="button" onClick={() => onViewDetails(product)} className="rounded-sm text-left font-medium text-fg hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                      {product.name}
+                    </button>
+                    <p className="mt-0.5 text-xs text-fg-muted">{productTypeLabel(product)}</p>
+                  </TableCell>
                   <TableCell className="text-fg-muted">{modelLabel(product)}</TableCell>
                   <TableCell className="text-fg-muted">{customerLabel(product)}</TableCell>
                   <TableCell className="text-fg-muted">{unitLabel(product)}</TableCell>
+                  <TableCell className="text-right font-semibold tabular-nums text-fg">
+                    <button type="button" disabled={!onViewStock} onClick={() => onViewStock?.(product)} className="rounded-sm hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" aria-label={`ดูสต็อกสินค้า ${product.name}`}>
+                      {stockByProductId ? formatProductQuantity(stockByProductId[product.id] ?? "0") : "—"}
+                    </button>
+                  </TableCell>
                   <TableCell className="text-fg-muted tabular-nums">
-                    {product.minStock} / {product.safetyStock}
+                    {formatNumber(product.minStock)} / {formatNumber(product.safetyStock)}
                   </TableCell>
                   <TableCell>
                     <ProductStatus product={product} />
@@ -481,6 +521,7 @@ export function ProductsCollection({
                       onEdit={onEdit}
                       onToggleStatus={onToggleStatus}
                       onViewDetails={onViewDetails}
+                      onViewStock={onViewStock}
                     />
                   </TableCell>
                 </TableRow>
@@ -516,6 +557,8 @@ export function ProductsCollection({
 
 export function ProductsTable({
   products,
+  stockByProductId,
+  onViewStock,
   totalItems,
   view,
   canEdit,
@@ -525,6 +568,8 @@ export function ProductsTable({
   onViewDetails,
 }: {
   products: Product[];
+  stockByProductId?: Record<string, string>;
+  onViewStock?: (product: Product) => void;
   totalItems: number;
   view: ViewMode;
   canEdit: boolean;
@@ -535,7 +580,8 @@ export function ProductsTable({
 }) {
   if (products.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-border py-16 text-center">
+      <div className="flex flex-col items-center justify-center gap-1 rounded-md border border-dashed border-border bg-surface px-4 py-16 text-center">
+        <span className="mb-3 flex size-12 items-center justify-center rounded-md bg-primary-soft text-primary"><Package className="size-6" aria-hidden="true" /></span>
         <p className="text-sm font-medium text-fg">ไม่พบสินค้า</p>
         <p className="text-sm text-fg-muted">ลองเปลี่ยนคำค้นหาหรือตัวกรองสินค้า</p>
       </div>
@@ -546,6 +592,8 @@ export function ProductsTable({
     <div className="flex flex-col gap-3">
       <ProductsCollection
         products={products}
+        stockByProductId={stockByProductId}
+        onViewStock={onViewStock}
         view={view}
         canEdit={canEdit}
         canDelete={canDelete}
