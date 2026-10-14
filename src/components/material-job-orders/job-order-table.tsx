@@ -64,7 +64,7 @@ export function MaterialJobOrderTable({
           <TableRow>
             <TableHead>เลขใบจัดงาน</TableHead>
             <TableHead>เลขแผน</TableHead>
-            <TableHead>สินค้า</TableHead>
+            <TableHead>รายการผลิต</TableHead>
             <TableHead>จำนวนวัสดุ</TableHead>
             <TableHead>จำนวนกล่อง</TableHead>
             <TableHead>สถานะ</TableHead>

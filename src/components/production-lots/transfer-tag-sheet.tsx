@@ -14,17 +14,20 @@ export interface TagLabelContext {
 }
 
 /**
- * Transfer-tag labels, ten labels per A4 page — same "print the current
+ * Transfer-tag labels, eight labels per A4 page — same "print the current
  * document, no popup" pattern as package-label-sheet.tsx.
  */
 export function TransferTagSheet({
   tags,
   context,
   onDone,
+  remainingOnly = false,
 }: {
   tags: StepTag[] | null;
   context: TagLabelContext;
   onDone: () => void;
+  /** Reprint outstanding WIP with its current remaining quantity. */
+  remainingOnly?: boolean;
 }) {
   React.useEffect(() => {
     if (!tags?.length) return;
@@ -41,7 +44,7 @@ export function TransferTagSheet({
 
   return createPortal(
     <ProductionQrPrintLayout
-      title={`QR ส่งต่อ · ${context.orderCode}`}
+      title={`${remainingOnly ? "ป้ายงานค้างในกระบวนการ" : "QR ส่งต่อ"} · ${context.orderCode}`}
       labels={tags.map((tag) => (
         <ProductionQrLabel
           key={tag.qrCode}
@@ -50,9 +53,9 @@ export function TransferTagSheet({
           productCode={context.productCode}
           productName={context.productName}
           orderCode={context.orderCode}
-          quantity={tag.revision > 0 ? tag.left : tag.qty}
+          quantity={remainingOnly || tag.revision > 0 ? tag.left : tag.qty}
           fields={[
-            { label: "ส่งไปขั้นตอน", value: context.toStep },
+            { label: remainingOnly ? "กระบวนการปัจจุบัน" : "ส่งไปขั้นตอน", value: context.toStep },
             { label: "Lot ต้นทาง", value: tag.sourceLotNo },
             { label: "กล่อง", value: `${tag.boxNo}/${tag.boxCount}${tag.revision > 0 ? ` · แบ่งจาก ${tag.qty} ชิ้น` : ""}` },
           ]}

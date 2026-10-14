@@ -4,7 +4,7 @@ import * as React from "react";
 import { Loader2, QrCode, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { traceByQrCodeAction } from "@/app/(dashboard)/materials/materials-report/actions";
+import { traceByQrCodeAction } from "@/app/(dashboard)/reports/materials/actions";
 import type { DrillTarget } from "@/components/material-traceability/material-traceability-details";
 
 // §12 "Trace by QR" — scan/search a MAIN or SUB QR and jump straight into

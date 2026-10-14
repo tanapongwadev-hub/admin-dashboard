@@ -7,6 +7,7 @@ import { formatThaiDate } from "@/lib/production-day";
 import { ProductionQrLabel, ProductionQrPrintLayout } from "./production-qr-print-layout";
 
 export interface LabelContext {
+  targetType?: "product" | "material";
   productCode: string;
   productName: string;
   orderCode: string;
@@ -14,7 +15,7 @@ export interface LabelContext {
 }
 
 /**
- * Box labels, ten labels per A4 page. Same "print the current
+ * Box labels, eight labels per A4 page. Same "print the current
  * document, no popup" pattern as materials-receiving-qr-print-sheet.tsx: the
  * sheet is portaled to <body>, hidden on screen, shown only under @media print
  * (the app shell is hidden by #dashboard-shell's print rule), and cleared on
@@ -44,7 +45,7 @@ export function PackageLabelSheet({
 
   return createPortal(
     <ProductionQrPrintLayout
-      title={`QR สินค้าสำเร็จรูป · ${context.orderCode}`}
+      title={`ป้าย${context.targetType === "material" ? "วัสดุภายใน" : "สินค้าสำเร็จรูป"} · ${context.orderCode}`}
       labels={packages.map((pkg) => (
         <ProductionQrLabel
           key={pkg.id}
@@ -55,7 +56,7 @@ export function PackageLabelSheet({
           orderCode={context.orderCode}
           quantity={pkg.initialQty}
           fields={[
-            { label: "Lot สินค้าสำเร็จรูป", value: context.fgLotNo },
+            { label: context.targetType === "material" ? "ล็อตวัสดุภายใน" : "ล็อตสินค้าสำเร็จรูป", value: context.fgLotNo },
             { label: "กล่อง", value: `${pkg.boxNo}${pkg.unitType === "PARTIAL" ? " · กล่องเศษ" : ""}` },
             { label: "วันผลิตต้นทางแรก / กะ", value: pkg.origins[0] ? `${formatThaiDate(pkg.origins[0].productionDate)} / ${pkg.origins[0].shift}` : "—" },
           ]}

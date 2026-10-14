@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { checkMaterialDeletionAction, deleteMaterialPermanentlyAction, type MaterialDeletionResult } from "@/app/(dashboard)/materials/pc/actions";
+import { checkMaterialDeletionAction, deleteMaterialPermanentlyAction, type MaterialDeletionResult } from "@/app/(dashboard)/materials/catalog/actions";
 import type { Material } from "@/lib/api/materials";
 import { CONNECTION_ERROR_MESSAGE } from "@/lib/user-error";
 

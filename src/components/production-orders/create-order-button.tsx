@@ -4,7 +4,7 @@ import { Boxes, Factory, Layers, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { createProductionOrderAction } from "@/app/(dashboard)/products/process-orders/actions";
+import { createProductionOrderAction } from "@/app/(dashboard)/production/products/orders/actions";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -39,7 +39,7 @@ const MODELS: Array<{ value: Model; title: string; detail: string; icon: typeof 
  * the tracking model per order (plan Phase 8); the choice cannot be changed
  * after the order exists.
  */
-export function CreateOrderButton({ planId, planCode }: { planId: string; planCode: string }) {
+export function CreateOrderButton({ planId, planCode, targetType = "product" }: { planId: string; planCode: string; targetType?: "product" | "material" }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [model, setModel] = useState<Model>("LOT");
@@ -54,7 +54,7 @@ export function CreateOrderButton({ planId, planCode }: { planId: string; planCo
       }
       setOpen(false);
       toast.success(`สั่งผลิตแล้ว ${result.order.code}`);
-      router.push(`/products/process-orders/${result.order.id}`);
+      router.push(`${targetType === "material" ? "/production/internal-materials/orders" : "/production/products/orders"}/${result.order.id}`);
     });
   }
 
@@ -68,7 +68,10 @@ export function CreateOrderButton({ planId, planCode }: { planId: string; planCo
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>สั่งผลิตแผน {planCode}</DialogTitle>
-            <DialogDescription>เลือกวิธีติดตามงานของใบสั่งผลิตนี้ (เปลี่ยนภายหลังไม่ได้)</DialogDescription>
+            <DialogDescription>
+              เลือกวิธีติดตามงานของใบสั่งผลิตนี้ (เปลี่ยนภายหลังไม่ได้)
+              {targetType === "material" && " · ต้องมี Workflow ที่เปิดใช้งาน ระบบ Lot ต้องมีขั้นตอนรับเข้า FG/STORE เป็นขั้นตอนสุดท้าย"}
+            </DialogDescription>
           </DialogHeader>
           <div role="radiogroup" aria-label="วิธีติดตามงาน" className="flex flex-col gap-2 px-6">
             {MODELS.map((m) => {

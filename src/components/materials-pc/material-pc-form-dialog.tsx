@@ -33,7 +33,7 @@ import {
   uploadMaterialPcImageAction,
   checkMaterialCodeAction,
   saveMaterialDraftAction,
-} from "@/app/(dashboard)/materials/pc/actions";
+} from "@/app/(dashboard)/materials/catalog/actions";
 import type { Material, MaterialDraftRecord, MaterialLookups, MaterialShape } from "@/lib/api/materials";
 import { cn } from "@/lib/utils";
 import { useMaterialCodeAvailability, type MaterialCodeAvailability } from "@/hooks/use-material-code-availability";

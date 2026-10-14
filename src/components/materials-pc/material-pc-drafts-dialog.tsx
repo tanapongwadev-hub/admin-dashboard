@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { RowActionsMenu, type RowAction } from "@/components/ui/row-actions-menu";
-import { deleteMaterialDraftAction, listMaterialDraftsAction, loadMaterialDraftAction } from "@/app/(dashboard)/materials/pc/actions";
+import { deleteMaterialDraftAction, listMaterialDraftsAction, loadMaterialDraftAction } from "@/app/(dashboard)/materials/catalog/actions";
 import type { Material, MaterialDraftRecord, MaterialDraftSummary } from "@/lib/api/materials";
 import { CONNECTION_ERROR_MESSAGE } from "@/lib/user-error";
 

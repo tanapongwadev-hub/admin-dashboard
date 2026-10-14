@@ -214,12 +214,26 @@ body {
    issues in real browsers — see AGENTS.md § Material Receiving) — printing
    the current document via `window.print()` with a print-only stylesheet
    is the standard, popup-free pattern and works everywhere. `#dashboard-shell`
-   is the one root element every authenticated page renders inside (see
-   layout/dashboard-shell.tsx), so hiding just that one id is enough to hide
-   the whole app without needing per-page print CSS.
+   is the root of the authenticated workspace (see layout/dashboard-shell.tsx).
+   QR sheets additionally isolate their body portal because dialogs
+   and notifications render outside that workspace root.
 */
 @media print {
   #dashboard-shell {
+    display: none !important;
+  }
+
+  /* QR labels are a direct body portal. Dialogs, toasts and alerts
+     also live outside #dashboard-shell, so isolate the actual print sheet
+     rather than letting those screen-only portals leak into the PDF. */
+  body:has(> [data-qr-print-sheet]) {
+    overflow: visible !important;
+    height: auto !important;
+    min-height: 0 !important;
+    background: white !important;
+  }
+
+  body:has(> [data-qr-print-sheet]) > :not([data-qr-print-sheet]) {
     display: none !important;
   }
 }

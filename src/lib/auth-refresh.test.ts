@@ -169,5 +169,5 @@ test("cookies follow JWT lifetime, are HttpOnly, and return paths stay local", (
   for (const path of ["//evil.test", "/\\evil.test", "/api/auth/refresh", "/x/../api/auth/refresh", "/\t/evil.test", "https://evil.test"]) {
     assert.equal(safeReturnPath(path), "/dashboard");
   }
-  assert.equal(safeReturnPath("/products?page=2"), "/products?page=2");
+  assert.equal(safeReturnPath("/engineering/products?page=2"), "/engineering/products?page=2");
 });

@@ -78,7 +78,7 @@ export function ProductionPlanFilters({ totalItems }: { totalItems: number }) {
             id="production-plan-search"
             value={search}
             onChange={setSearch}
-            placeholder="ค้นหาเลขแผน ชื่อ หรือรหัสสินค้า..."
+            placeholder="ค้นหาเลขแผน ชื่อ หรือรหัสสินค้า/วัสดุ..."
             srLabel="ค้นหาแผนการผลิต"
             className="w-full sm:max-w-md"
           />

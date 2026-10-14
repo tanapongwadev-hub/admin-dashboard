@@ -20,7 +20,7 @@ import { MasterDataEmptyLink } from "@/components/ui/master-data-empty-link";
 import {
   createMaterialsDisbursementAction,
   updateMaterialsDisbursementAction,
-} from "@/app/(dashboard)/materials/materials-disbursement/actions";
+} from "@/app/(dashboard)/materials/disbursements/actions";
 import type {
   MaterialsDisbursement,
   MaterialsDisbursementLookups,
@@ -306,7 +306,7 @@ export function MaterialsDisbursementFormDialog({
                         <div className="space-y-1.5">
                           <Label>วัสดุ</Label>
                           {lookups.materials.length === 0 ? (
-                            <MasterDataEmptyLink href="/materials/pc" resourceLabel="วัสดุ" />
+                            <MasterDataEmptyLink href="/materials/catalog" resourceLabel="วัสดุ" />
                           ) : (
                             <Select
                               value={item.materialId}

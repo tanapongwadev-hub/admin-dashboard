@@ -30,7 +30,7 @@ import {
   createMenuAction,
   updateMenuAction,
   type MenuMutationResult,
-} from "@/app/(dashboard)/menus/actions";
+} from "@/app/(dashboard)/system/menus/actions";
 import { MAX_FLAT_DEPTH, type FlatMenuNode } from "@/lib/menu-tree";
 import type { MenuNodeType } from "@/lib/api/menus";
 

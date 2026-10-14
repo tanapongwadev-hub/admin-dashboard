@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { checkMaterialCodeAction } from "@/app/(dashboard)/materials/pc/actions";
+import { checkMaterialCodeAction } from "@/app/(dashboard)/materials/catalog/actions";
 import { CONNECTION_ERROR_MESSAGE } from "@/lib/user-error";
 
 export type MaterialCodeAvailability = {

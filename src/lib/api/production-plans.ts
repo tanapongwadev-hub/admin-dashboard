@@ -31,12 +31,16 @@ export interface ProductionPlanReservation {
 
 export interface ProductionPlanLine {
   id: string;
-  productId: string;
-  bomId: string;
+  productId: string | null;
+  bomId: string | null;
+  materialId?: string | null;
+  materialBomId?: string | null;
+  material?: ProductionPlanMaterial | null;
+  materialBom?: ProductionPlanLine["bom"];
   quantity: number;
   needByDate: string;
   remark: string | null;
-  product: ProductionPlanProduct;
+  product: ProductionPlanProduct | null;
   bom?: {
     id: string;
     version: string;
@@ -86,13 +90,15 @@ export interface ProductionPlan {
 }
 
 export interface ProductionPlanLookups {
+  materials?: Array<ProductionPlanMaterial & { activeBomId: string; activeBomVersion: string }>;
   products: Array<
     ProductionPlanProduct & { activeBomId: string; activeBomVersion: string }
   >;
 }
 
 export interface ProductionPlanLinePayload {
-  productId: string;
+  productId?: string;
+  materialId?: string;
   quantity: number;
   needByDate: string;
   remark?: string;
@@ -119,6 +125,7 @@ export interface PaginatedProductionPlans {
 }
 
 export interface ListProductionPlansParams {
+  targetType?: 'product' | 'material';
   page?: number;
   limit?: number;
   search?: string;

@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 
-/** Explicit groups keep the eleventh label on a new A4 page. */
+const LABELS_PER_PAGE = 8;
+
+/** Two columns × four rows: each cut-out label is 93.5 × 62 mm. */
 export function ProductionQrPrintLayout({
   title,
   labels,
@@ -8,30 +10,30 @@ export function ProductionQrPrintLayout({
   title: string;
   labels: ReactNode[];
 }) {
-  const pageCount = Math.ceil(labels.length / 10);
+  const pageCount = Math.ceil(labels.length / LABELS_PER_PAGE);
   return (
-    <div className="hidden print:block text-black">
+    <div data-qr-print-sheet className="hidden print:block text-black">
       <style>{`
         @page { size: A4 portrait; margin: 10mm; }
         @media print {
           html, body { margin: 0 !important; padding: 0 !important; }
           .production-qr-page { width: 190mm; break-after: page; break-inside: avoid; }
           .production-qr-page:last-child { break-after: auto; }
-          .production-qr-label { break-inside: avoid; }
+          .production-qr-label { break-inside: avoid; color: black; background: white; }
         }
       `}</style>
       {Array.from({ length: pageCount }, (_, page) => (
         <section key={page} className="production-qr-page">
-          <header className="flex h-[10mm] items-center justify-between gap-2 text-[9pt]">
+          <header className="flex h-[8mm] items-center justify-between gap-2 text-[9pt]">
             <h1 className="font-semibold">{title}</h1>
             <span className="shrink-0 text-[8pt]">หน้า {page + 1}/{pageCount}</span>
           </header>
-          <div className="grid grid-cols-2 auto-rows-[49mm] gap-[3mm]">
-            {labels.slice(page * 10, (page + 1) * 10)}
+          <div className="grid grid-cols-2 auto-rows-[62mm] gap-[3mm]">
+            {labels.slice(page * LABELS_PER_PAGE, (page + 1) * LABELS_PER_PAGE)}
           </div>
           <footer className="flex h-[5mm] items-end justify-between text-[7pt]">
-            <span>ตัดตามกรอบ แล้วติด QR ที่กล่องชิ้นงาน</span>
-            <span>{Math.min(10, labels.length - page * 10)} QR · A4 / ขนาดจริง 100%</span>
+            <span>ตัดตามกรอบ · ป้าย 93.5 × 62 มม.</span>
+            <span>{Math.min(LABELS_PER_PAGE, labels.length - page * LABELS_PER_PAGE)} ป้าย · A4 / ขนาดจริง 100%</span>
           </footer>
         </section>
       ))}
@@ -57,30 +59,40 @@ export function ProductionQrLabel({
   fields: Array<{ label: string; value: string }>;
 }) {
   return (
-    <article className="production-qr-label flex min-w-0 flex-col border border-black p-[2mm] text-[8pt] leading-tight">
-      <header className="flex min-w-0 items-start justify-between gap-[2mm] border-b border-black/30 pb-[1mm]">
-        <div className="min-w-0">
-          <p className="break-all font-mono text-[9pt] font-bold">{productCode}</p>
-          <p className="line-clamp-2">{productName}</p>
+    <article className="production-qr-label grid h-[62mm] min-w-0 grid-rows-[14mm_minmax(0,1fr)_7mm] gap-[1mm] border border-black bg-white p-[2mm] text-black text-[8pt] leading-tight">
+      <header className="flex min-w-0 items-start justify-between gap-[2mm] border-b border-black pb-[1mm]">
+        <div className="min-w-0 flex-1">
+          <p className={`break-all font-mono font-bold leading-tight ${productCode.length > 22 ? "text-[9pt]" : "text-[12pt]"}`}>{productCode || "—"}</p>
+          <p className={`text-[8.5pt] font-medium leading-tight ${productCode.length > 30 ? "line-clamp-1" : "line-clamp-2"}`}>{productName || "ไม่ระบุชื่อชิ้นงาน"}</p>
         </div>
-        <p className="shrink-0 text-right"><strong className="text-[12pt]">{quantity.toLocaleString("th-TH")}</strong><br />ชิ้น</p>
+        <div className="shrink-0 border-l border-black pl-[2mm] text-right">
+          <p className="text-[6.5pt]">จำนวน</p>
+          <p className={`font-bold leading-none tabular-nums ${quantity >= 100000 ? "text-[14pt]" : "text-[20pt]"}`}>{quantity.toLocaleString("th-TH")}</p>
+          <p className="mt-[0.5mm] text-[7pt] font-medium">ชิ้น</p>
+        </div>
       </header>
-      <div className="flex min-h-0 flex-1 items-center gap-[2mm] py-[1mm]">
-        {/* eslint-disable-next-line @next/next/no-img-element -- printable QR data URL */}
-        <img src={qrImage} alt={`QR ${qrCode}`} className="size-[28mm] shrink-0 bg-white" />
-        <dl className="min-w-0 flex-1 space-y-[0.6mm]">
+      <div className="flex min-h-0 items-center gap-[3mm]">
+        <div className="flex size-[34mm] shrink-0 items-center justify-center bg-white p-[2mm]">
+          {/* Keep a white quiet zone separate from borders and text. */}
+          {/* eslint-disable-next-line @next/next/no-img-element -- printable QR data URL */}
+          <img src={qrImage} alt={`QR ${qrCode}`} className="size-[30mm] object-contain" />
+        </div>
+        <dl className="min-w-0 flex-1 space-y-[1mm]">
           {fields.map(({ label, value }) => (
             <div key={label}>
               <dt className="text-[6.5pt]">{label}</dt>
-              <dd className="break-words font-semibold">{value}</dd>
+              <dd className="break-words text-[8pt] font-bold leading-tight">{value || "—"}</dd>
             </div>
           ))}
         </dl>
       </div>
-      <div className="border-t border-black/30 pt-[1mm] text-[6.5pt] leading-tight">
-        <p className="break-all font-mono">{qrCode}</p>
-        <p>ใบสั่งผลิต {orderCode}</p>
-      </div>
+      <footer className="min-w-0 border-t border-black pt-[0.8mm] leading-tight">
+        <div className="flex items-baseline justify-between gap-[2mm] text-[6.5pt]">
+          <span className="shrink-0">CPS · ใบสั่งผลิต</span>
+          <span className="break-all text-right font-mono font-semibold">{orderCode}</span>
+        </div>
+        <p className="mt-[0.5mm] break-all font-mono text-[6.5pt]">{qrCode}</p>
+      </footer>
     </article>
   );
 }

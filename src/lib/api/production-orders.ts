@@ -3,6 +3,8 @@ import { apiFetch } from "./client";
 export type ProductionOrderStatus = "IN_PROGRESS" | "COMPLETED";
 
 export interface ProductionOrderLineSummary {
+  targetType?: "product" | "material";
+  materialId?: string | null;
   id: string;
   lineNo: number;
   product: { id: string; code: string; name: string } | null;
@@ -17,6 +19,7 @@ export interface ProductionOrderLineSummary {
 }
 
 export interface ProductionOrderSummary {
+  targetType: "product" | "material";
   id: string;
   code: string;
   productionPlanId: string;
@@ -82,6 +85,8 @@ export interface ProductionOrderOutput {
 }
 
 export interface ProductionOrderDetailLine {
+  targetType?: "product" | "material";
+  materialId?: string | null;
   id: string;
   lineNo: number;
   product: { id: string; code: string; name: string };
@@ -143,6 +148,7 @@ export interface PaginatedProductionOrders {
 }
 
 export interface ListProductionOrdersParams {
+  targetType?: "product" | "material";
   page?: number;
   limit?: number;
   search?: string;
@@ -159,6 +165,7 @@ export function listProductionOrders(
   params: ListProductionOrdersParams = {},
 ) {
   const query = new URLSearchParams();
+  if (params.targetType) query.set("targetType", params.targetType);
   if (params.page) query.set("page", String(params.page));
   if (params.limit) query.set("limit", String(params.limit));
   if (params.search) query.set("search", params.search);

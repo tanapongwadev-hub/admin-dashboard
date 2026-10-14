@@ -16,19 +16,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SearchableFilterSelect } from "@/components/ui/searchable-filter-select";
 import { Textarea } from "@/components/ui/textarea";
 import { MasterDataEmptyLink } from "@/components/ui/master-data-empty-link";
 import {
   createProductionPlanAction,
   updateProductionPlanAction,
-} from "@/app/(dashboard)/production/plans/actions";
+} from "@/app/(dashboard)/production/products/plans/actions";
 import type {
   ProductionPlan,
   ProductionPlanLookups,
@@ -40,7 +34,7 @@ const schema = z.object({
   lines: z
     .array(
       z.object({
-        productId: z.string().min(1, "กรุณาเลือกสินค้า"),
+        targetId: z.string().min(1, "กรุณาเลือกรายการผลิต"),
         quantity: z.coerce
           .number()
           .int("ต้องเป็นจำนวนเต็ม")
@@ -53,7 +47,7 @@ const schema = z.object({
 });
 type Values = z.infer<typeof schema>;
 type FormInput = z.input<typeof schema>;
-const blank = { productId: "", quantity: 1, needByDate: "", remark: "" };
+const blank = { targetId: "", quantity: 1, needByDate: "", remark: "" };
 
 export function ProductionPlanFormDialog({
   open,
@@ -61,13 +55,19 @@ export function ProductionPlanFormDialog({
   plan,
   lookups,
   onSaved,
+  targetType = 'product',
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   plan: ProductionPlan | null;
   lookups: ProductionPlanLookups;
   onSaved: () => void;
+  targetType?: 'product' | 'material';
 }) {
+  const targetLabel = targetType === 'material' ? 'วัตถุดิบภายใน' : 'สินค้า';
+  const targetOptions = targetType === 'material'
+    ? (lookups.materials ?? []).map((material) => ({ value: `material:${material.id}`, label: `${material.code} · ${material.name} · BOM ${material.activeBomVersion}` }))
+    : lookups.products.map((product) => ({ value: `product:${product.id}`, label: `${product.code} · ${product.name} · BOM ${product.activeBomVersion}` }));
   const form = useForm<FormInput, unknown, Values>({
     resolver: zodResolver(schema),
     mode: "onChange",
@@ -75,7 +75,7 @@ export function ProductionPlanFormDialog({
       title: plan?.title ?? "",
       remark: plan?.remark ?? "",
       lines: plan?.lines.map((line) => ({
-        productId: line.productId,
+        targetId: line.materialId ? `material:${line.materialId}` : `product:${line.productId}`,
         quantity: line.quantity,
         needByDate: line.needByDate.slice(0, 10),
         remark: line.remark ?? "",
@@ -88,7 +88,8 @@ export function ProductionPlanFormDialog({
       title: values.title.trim() || undefined,
       remark: values.remark.trim() || undefined,
       lines: values.lines.map((line) => ({
-        ...line,
+        ...(line.targetId.startsWith('material:') ? { materialId: line.targetId.slice(9) } : { productId: line.targetId.slice(8) }),
+        quantity: line.quantity, needByDate: line.needByDate,
         remark: line.remark.trim() || undefined,
       })),
     };
@@ -107,13 +108,13 @@ export function ProductionPlanFormDialog({
   }
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent fullScreenOnMobile size="xl" className="flex flex-col">
-        <DialogHeader>
+      <DialogContent fullScreenOnMobile size="xl" className="flex flex-col overflow-hidden sm:h-[90dvh] sm:max-h-[90dvh]">
+        <DialogHeader className="shrink-0">
           <DialogTitle>
             {plan ? `แก้ไข ${plan.code}` : "สร้างแผนการผลิต"}
           </DialogTitle>
           <DialogDescription>
-            สินค้าแต่ละรายการจะผูกกับ ACTIVE BOM ปัจจุบันเมื่อบันทึก
+            {targetLabel}แต่ละรายการจะผูกกับ BOM ที่เปิดใช้งานเมื่อบันทึก
             และยังไม่กันสต็อกจนกว่าจะอนุมัติ
           </DialogDescription>
         </DialogHeader>
@@ -121,7 +122,7 @@ export function ProductionPlanFormDialog({
           onSubmit={form.handleSubmit(submit)}
           className="flex min-h-0 flex-1 flex-col"
         >
-          <div className="flex-1 space-y-5 overflow-y-auto px-6 py-5">
+          <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-6 py-5">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="plan-title">ชื่อแผน</Label>
@@ -138,9 +139,9 @@ export function ProductionPlanFormDialog({
             </div>
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-medium text-fg">รายการสินค้า</h3>
+                <h3 className="font-medium text-fg">รายการผลิต</h3>
                 <p className="text-xs text-fg-muted">
-                  เพิ่มสินค้าได้หลายรายการในหนึ่งแผน
+                  เลือก{targetLabel}ที่มี BOM เปิดใช้งานแล้ว
                 </p>
               </div>
               <Button
@@ -164,42 +165,33 @@ export function ProductionPlanFormDialog({
                   </legend>
                   <div className="grid gap-3 md:grid-cols-[minmax(0,1.6fr)_minmax(120px,.5fr)_minmax(160px,.7fr)_auto]">
                     <div className="space-y-1.5">
-                      <Label>สินค้า</Label>
-                      {lookups.products.length === 0 ? (
-                        <MasterDataEmptyLink href="/products/list" resourceLabel="สินค้า" />
+                      <Label htmlFor={`plan-target-${index}`}>{targetLabel} *</Label>
+                      {targetOptions.length === 0 ? (
+                        <MasterDataEmptyLink href={targetType === 'material' ? '/engineering/bom/materials' : '/engineering/bom/products'} resourceLabel={`${targetLabel}ที่มี BOM เปิดใช้งาน`} />
                       ) : (
                         <Controller
                           control={form.control}
-                          name={`lines.${index}.productId`}
+                          name={`lines.${index}.targetId`}
                           render={({ field: input }) => (
-                            <Select
-                              value={input.value}
-                              onValueChange={input.onChange}
-                            >
-                              <SelectTrigger
-                                aria-invalid={
-                                  !!form.formState.errors.lines?.[index]
-                                    ?.productId
-                                }
-                              >
-                                <SelectValue placeholder="เลือกสินค้า" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {lookups.products.map((product) => (
-                                  <SelectItem key={product.id} value={product.id}>
-                                    {product.code} · {product.name} · BOM{" "}
-                                    {product.activeBomVersion}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                            <SearchableFilterSelect
+                              id={`plan-target-${index}`}
+                              label={targetLabel}
+                              value={input.value} onChange={input.onChange}
+                              onBlur={input.onBlur} triggerRef={input.ref}
+                              disabled={form.formState.isSubmitting}
+                              invalid={!!form.formState.errors.lines?.[index]?.targetId}
+                              placeholder={`เลือก${targetLabel}`}
+                              allLabel={`เลือก${targetLabel}`}
+                              searchPlaceholder="ค้นหารหัสหรือชื่อ..."
+                              options={targetOptions}
+                            />
                           )}
                         />
                       )}
-                      {form.formState.errors.lines?.[index]?.productId && (
+                      {form.formState.errors.lines?.[index]?.targetId && (
                         <p className="text-xs text-danger">
                           {
-                            form.formState.errors.lines[index]?.productId
+                            form.formState.errors.lines[index]?.targetId
                               ?.message
                           }
                         </p>
@@ -257,7 +249,7 @@ export function ProductionPlanFormDialog({
               ))}
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="shrink-0">
             <Button
               type="button"
               variant="outline"

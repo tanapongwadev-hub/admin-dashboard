@@ -207,7 +207,7 @@ export function MaterialJobOrderDetailView({
           <p className="mt-1 text-sm text-fg-muted">
             แผนการผลิต{" "}
             <Link
-              href={`/production/plans`}
+              href={jobOrder.productionPlan.lines.some((line) => !!line.materialId) ? '/production/internal-materials/plans' : '/production/products/plans'}
               className="font-mono text-primary hover:underline"
             >
               {jobOrder.productionPlan.code}
@@ -253,7 +253,7 @@ export function MaterialJobOrderDetailView({
 
       <section className="rounded-xl border border-border bg-surface p-4">
         <h2 className="mb-3 text-sm font-medium text-fg-muted">
-          รายการสินค้าที่ผลิต
+          รายการที่ผลิต
         </h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {jobOrder.productionPlan.lines.map((line) => (
@@ -447,7 +447,7 @@ export function MaterialJobOrderDetailView({
             {jobOrder.disbursements.map((d) => (
               <li key={d.id} className="flex items-center gap-2">
                 <Link
-                  href="/materials/materials-disbursement"
+                  href="/materials/disbursements"
                   className="font-mono text-primary hover:underline"
                 >
                   {d.disbursementNo}

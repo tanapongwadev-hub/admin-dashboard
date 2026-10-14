@@ -26,7 +26,7 @@ export async function processMaterialAction(payload: ProcessingPayload) {
   if (!token) return { status: "error" as const, message: "คุณไม่มีสิทธิ์แปรรูปวัตถุดิบ" };
   try {
     const processing = await createMaterialProcessing(token, payload);
-    for (const path of ["/material-processing", "/materials/materials-receiving", "/materials/pc", "/materials/materials-report", "/materials"]) revalidatePath(path);
+    for (const path of ["/material-processing", "/materials/receiving", "/materials/catalog", "/reports/materials", "/materials"]) revalidatePath(path);
     return { status: "success" as const, processing };
   } catch (error) { return failure(error); }
 }

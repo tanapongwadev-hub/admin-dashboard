@@ -12,7 +12,7 @@ import type { Product } from "@/lib/api/products";
 import type { Bom, BomStatus } from "@/lib/api/boms";
 import type { ProductWorkflow, ProductWorkflowStatus } from "@/lib/api/product-workflows";
 import type { Material } from "@/lib/api/materials";
-import { listBomsByProductAction, listProductWorkflowsByProductAction } from "@/app/(dashboard)/products/actions";
+import { listBomsByProductAction, listProductWorkflowsByProductAction } from "@/app/(dashboard)/engineering/products/actions";
 import { ProductBomDiagram } from "@/components/products/products-bom-diagram";
 import { ProductStockBalance } from "@/components/products/product-stock-balance";
 import {

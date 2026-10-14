@@ -13,7 +13,7 @@ import {
   traceSubQrAction,
   traceReceivingAction,
   traceDisbursementAction,
-} from "@/app/(dashboard)/materials/materials-report/actions";
+} from "@/app/(dashboard)/reports/materials/actions";
 import { lotColor } from "@/lib/lot-colors";
 import type { DisbursementTrace, MainQrTrace, SubQrTrace } from "@/lib/api/material-traceability";
 

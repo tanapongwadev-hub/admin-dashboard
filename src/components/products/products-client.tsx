@@ -14,7 +14,7 @@ import { ProductsStatusDialog } from "@/components/products/products-status-dial
 import { ProductsDetailsDialog } from "@/components/products/products-details-dialog";
 import { ProductsCatalogSummary } from "@/components/products/products-catalog-summary";
 import { ProductStockDialog } from "@/components/products/product-stock-dialog";
-import { deactivateProductAction, restoreProductAction } from "@/app/(dashboard)/products/actions";
+import { deactivateProductAction, restoreProductAction } from "@/app/(dashboard)/engineering/products/actions";
 import type { Product, ProductLookups } from "@/lib/api/products";
 import type { Material } from "@/lib/api/materials";
 import type { ProcessStep } from "@/lib/api/process-steps";

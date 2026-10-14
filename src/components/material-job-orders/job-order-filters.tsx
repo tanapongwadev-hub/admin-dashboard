@@ -76,7 +76,7 @@ export function MaterialJobOrderFilters({ totalItems }: { totalItems: number }) 
             id="job-order-search"
             value={search}
             onChange={setSearch}
-            placeholder="ค้นหาเลขใบจัดงาน เลขแผน หรือรหัสสินค้า..."
+            placeholder="ค้นหาเลขใบจัดงาน เลขแผน หรือรหัสสินค้า/วัสดุ..."
             srLabel="ค้นหาใบจัดงาน"
             className="w-full sm:max-w-md"
           />

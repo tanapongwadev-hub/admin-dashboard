@@ -2,6 +2,7 @@
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { addDays, currentProductionDay, MAX_BACKDATE_DAYS, SHIFT_LABELS, type Shift } from "@/lib/production-day";
 
 /** Production day + shift, defaulting to the current shift; back-date ≤ 2 days. */
@@ -34,18 +35,14 @@ export function DayShiftFields({
       </div>
       <div className="flex flex-col gap-1.5">
         <Label htmlFor={`${idPrefix}-shift`}>กะ</Label>
-        <select
-          id={`${idPrefix}-shift`}
-          value={shift}
-          onChange={(e) => onShift(e.target.value as Shift)}
-          className="h-9 rounded-md border border-border-strong bg-surface px-2 text-sm text-fg"
-        >
-          {(Object.keys(SHIFT_LABELS) as Shift[]).map((s) => (
-            <option key={s} value={s}>
-              {SHIFT_LABELS[s]}
-            </option>
-          ))}
-        </select>
+        <Select value={shift} onValueChange={(value) => onShift(value as Shift)}>
+          <SelectTrigger id={`${idPrefix}-shift`}><SelectValue placeholder="เลือกกะ" /></SelectTrigger>
+          <SelectContent>
+            {(Object.keys(SHIFT_LABELS) as Shift[]).map((s) => (
+              <SelectItem key={s} value={s}>{SHIFT_LABELS[s]}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
     </div>
   );

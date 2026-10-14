@@ -180,7 +180,7 @@ export function ProductionPlanTable({
             <TableHead>ชื่อแผน</TableHead>
             <TableHead>สถานะ</TableHead>
             <TableHead>ใบจัดงาน</TableHead>
-            <TableHead>รายการสินค้า</TableHead>
+            <TableHead>รายการผลิต</TableHead>
             <TableHead>จำนวนรวม</TableHead>
             <TableHead>วันที่ต้องการใช้</TableHead>
             <TableHead className="w-14">

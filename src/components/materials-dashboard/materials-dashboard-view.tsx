@@ -151,7 +151,7 @@ function StockHealth({ summary, canViewMaterials }: { summary: MaterialInventory
           </div>
           {canViewMaterials && (
             <Button asChild variant="outline" className="mt-5 w-full justify-between">
-              <Link href="/materials/pc">
+              <Link href="/materials/catalog">
                 เปิดรายการสต็อก
                 <ArrowRight className="size-4" aria-hidden="true" />
               </Link>
@@ -204,7 +204,7 @@ function CriticalMaterialRow({ material, canOpen }: { material: MaterialInventor
 
   return (
     <Link
-      href={`/materials/pc?search=${encodeURIComponent(material.code)}`}
+      href={`/materials/catalog?search=${encodeURIComponent(material.code)}`}
       className={cn(
         rowClassName,
         "group transition-colors hover:bg-surface-2/60 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring"
@@ -233,7 +233,7 @@ function CriticalMaterials({
         </div>
         {canViewMaterials && (
           <Button asChild variant="link" size="sm">
-            <Link href="/materials/pc">ดูทั้งหมด</Link>
+            <Link href="/materials/catalog">ดูทั้งหมด</Link>
           </Button>
         )}
       </header>
@@ -262,7 +262,7 @@ function RecentReceiving({ items, total }: { items: MaterialReceiving[]; total: 
           <p className="mt-1 text-xs text-fg-muted">เอกสารและล็อตที่เคลื่อนไหวล่าสุด</p>
         </div>
         <Button asChild variant="link" size="sm">
-          <Link href="/materials/materials-receiving">ดูทั้งหมด</Link>
+          <Link href="/materials/receiving">ดูทั้งหมด</Link>
         </Button>
       </header>
 
@@ -275,7 +275,7 @@ function RecentReceiving({ items, total }: { items: MaterialReceiving[]; total: 
             return (
               <Link
                 key={receiving.id}
-                href={`/materials/materials-receiving?search=${encodeURIComponent(receiving.internalLotNo)}`}
+                href={`/materials/receiving?search=${encodeURIComponent(receiving.internalLotNo)}`}
                 className="group flex gap-3 px-5 py-3.5 transition-colors hover:bg-surface-2/60 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring"
               >
                 <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-md bg-primary-soft text-primary" aria-hidden="true">
@@ -349,7 +349,7 @@ export function MaterialsDashboardView({
         <div className="flex flex-wrap items-center gap-2">
           {canViewMaterials && (
             <Button asChild variant="outline">
-              <Link href="/materials/pc">
+              <Link href="/materials/catalog">
                 <Boxes className="size-4" aria-hidden="true" />
                 จัดการวัตถุดิบ
               </Link>
@@ -357,7 +357,7 @@ export function MaterialsDashboardView({
           )}
           {canCreateReceiving && (
             <Button asChild>
-              <Link href="/materials/materials-receiving">
+              <Link href="/materials/receiving">
                 <PackagePlus className="size-4" aria-hidden="true" />
                 รับเข้าวัตถุดิบ
               </Link>

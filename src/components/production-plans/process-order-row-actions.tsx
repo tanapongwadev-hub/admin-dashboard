@@ -7,7 +7,7 @@ import { RowActionsMenu, type RowAction } from "@/components/ui/row-actions-menu
 // Pure builder (R4: row actions are a get<Resource>RowActions function).
 // Permission flags mirror the destination pages' own gates.
 export function getProcessOrderRowActions(
-  plan: { code: string; jobOrderId: string | null },
+  plan: { code: string; jobOrderId: string | null; targetType?: "product" | "material" },
   permissions: { canViewJobOrder: boolean; canPrintJobOrder: boolean; canViewPlan: boolean },
   go: (href: string) => void,
 ): RowAction[] {
@@ -30,7 +30,7 @@ export function getProcessOrderRowActions(
     actions.push({
       label: "ดูแผนการผลิต",
       icon: ClipboardList,
-      onSelect: () => go(`/production/plans?search=${encodeURIComponent(plan.code)}`),
+      onSelect: () => go(`${plan.targetType === "material" ? "/production/internal-materials/plans" : "/production/products/plans"}?search=${encodeURIComponent(plan.code)}`),
     });
   }
   return actions;
@@ -40,7 +40,7 @@ export function ProcessOrderRowActions({
   plan,
   permissions,
 }: {
-  plan: { code: string; jobOrderId: string | null };
+  plan: { code: string; jobOrderId: string | null; targetType?: "product" | "material" };
   permissions: { canViewJobOrder: boolean; canPrintJobOrder: boolean; canViewPlan: boolean };
 }) {
   const router = useRouter();

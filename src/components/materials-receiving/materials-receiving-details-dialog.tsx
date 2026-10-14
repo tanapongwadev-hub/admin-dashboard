@@ -81,7 +81,7 @@ export function MaterialsReceivingDetailsDialog({
 
   return (
     <Dialog open={!!receiving} onOpenChange={onOpenChange}>
-      <DialogContent fullScreenOnMobile size="xl">
+      <DialogContent fullScreenOnMobile size="xl" className="print:hidden">
         {receiving && (
           <>
             <DialogHeader className="flex-row items-center gap-3 space-y-0">

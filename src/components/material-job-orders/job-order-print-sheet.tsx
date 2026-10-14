@@ -40,7 +40,7 @@ export function MaterialJobOrderPrintSheet({
       <div className="mt-2 text-sm text-black">
         {jobOrder.productionPlan.lines.map((line) => (
           <p key={line.id}>
-            สินค้า: {line.productCode} · {line.productName} — จำนวนผลิต{" "}
+            รายการผลิต: {line.productCode} · {line.productName} — จำนวนผลิต{" "}
             {line.quantity} · วันที่ต้องใช้ {line.needByDate}
           </p>
         ))}

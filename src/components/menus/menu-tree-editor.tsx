@@ -35,7 +35,7 @@ import {
   saveMenuOrderAction,
   refreshMenuTreeAction,
   type MenuMutationResult,
-} from "@/app/(dashboard)/menus/actions";
+} from "@/app/(dashboard)/system/menus/actions";
 import type { ManagementMenuNode } from "@/lib/api/menus";
 
 export function MenuTreeEditor({

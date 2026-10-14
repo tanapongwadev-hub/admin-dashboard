@@ -3,7 +3,7 @@
 import * as React from "react";
 import { FileSpreadsheet, Upload } from "lucide-react";
 import { toast } from "sonner";
-import { importProductionPlanAction } from "@/app/(dashboard)/production/plans/actions";
+import { importProductionPlanAction } from "@/app/(dashboard)/production/products/plans/actions";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

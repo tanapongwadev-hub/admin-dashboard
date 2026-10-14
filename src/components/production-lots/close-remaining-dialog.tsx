@@ -3,7 +3,7 @@
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { closeRemainingLotAction } from "@/app/(dashboard)/products/process-orders/actions";
+import { closeRemainingLotAction } from "@/app/(dashboard)/production/products/orders/actions";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

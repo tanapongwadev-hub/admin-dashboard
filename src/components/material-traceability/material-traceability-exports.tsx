@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Download, FileSpreadsheet, Loader2, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { fetchAllMovementsForExportAction } from "@/app/(dashboard)/materials/materials-report/actions";
+import { fetchAllMovementsForExportAction } from "@/app/(dashboard)/reports/materials/actions";
 import { TRANSACTION_TYPE_LABELS } from "@/lib/filters/material-traceability-filters";
 import type { ListMaterialTraceabilityParams, MaterialTraceabilityMovement, MaterialTraceabilitySummary } from "@/lib/api/material-traceability";
 

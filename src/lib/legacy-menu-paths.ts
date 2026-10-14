@@ -1,0 +1,25 @@
+// Longest/specific paths first: descendants must win over their old parent.
+// These are browser routes only; cps-api endpoint paths do not change.
+export const legacyMenuPaths: readonly (readonly [string, string])[] = [
+  ["/products/process-orders", "/production/products/orders"],
+  ["/materials/process-orders", "/production/internal-materials/orders"],
+  ["/production/material-plans", "/production/internal-materials/plans"],
+  ["/production/plans", "/production/products/plans"],
+  ["/production/traceability", "/reports/production"],
+  ["/materials/materials-report", "/reports/materials"],
+  ["/materials/materials-receiving", "/materials/receiving"],
+  ["/materials/materials-disbursement", "/materials/disbursements"],
+  ["/materials/pc", "/materials/catalog"],
+  ["/products/list", "/engineering/products"],
+  ["/products", "/engineering/products"],
+  ["/bom-workflow", "/engineering/bom"],
+  ["/audit-logs", "/reports/audit-logs"],
+  ["/analytics", "/reports/analytics"],
+  ["/menus", "/system/menus"],
+  ["/users", "/system/users"],
+  ["/settings", "/system/settings"],
+  ["/departments", "/system/departments"],
+  ["/roles", "/system/roles"],
+  ["/permissions", "/system/permissions"],
+  ["/sessions", "/system/sessions"],
+];

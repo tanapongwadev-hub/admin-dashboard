@@ -16,7 +16,8 @@ import type { MaterialReceiving } from "@/lib/api/materials-receiving";
 // instead — nothing ever opens, and the trigger stays in a stuck-pending
 // state. Printing the *current* document via a hidden-until-print overlay
 // sidesteps popup rules entirely; see globals.css's `@media print` rule
-// that hides the rest of the app (`#dashboard-shell`) while this is visible.
+// that isolates [data-qr-print-sheet], including hiding screen-only
+// dialog and toast portals that live outside #dashboard-shell.
 //
 // Rendered once near the top of materials-receiving-client.tsx and driven
 // by a single `printTarget` state — `onDone` (fired on the browser's own
@@ -59,7 +60,7 @@ export function MaterialsReceivingQrPrintSheet({
     : "ไม่ระบุวัสดุ";
 
   return createPortal(
-    <div className="hidden print:block">
+    <div data-qr-print-sheet className="hidden print:block">
       <h1 className="mb-3 text-sm font-semibold text-black">
         QR Code กล่อง — {receiving.internalLotNo} ({materialLabel})
       </h1>

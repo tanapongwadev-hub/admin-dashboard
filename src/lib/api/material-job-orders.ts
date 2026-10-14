@@ -74,7 +74,9 @@ export interface MaterialJobOrderDetail {
     approvedAt: string | null;
     lines: Array<{
       id: string;
-      productId: string;
+      productId: string | null;
+      materialId?: string | null;
+      targetType?: "material" | "product";
       productCode: string;
       productName: string;
       quantity: number;
@@ -99,6 +101,7 @@ export interface PaginatedMaterialJobOrders {
 }
 
 export interface ListMaterialJobOrdersParams {
+  targetType?: "product" | "material";
   page?: number;
   limit?: number;
   search?: string;

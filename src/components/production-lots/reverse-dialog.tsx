@@ -3,7 +3,7 @@
 import { Loader2, Undo2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { reverseLotRequestAction } from "@/app/(dashboard)/products/process-orders/actions";
+import { reverseLotRequestAction } from "@/app/(dashboard)/production/products/orders/actions";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

@@ -56,16 +56,16 @@ export function CommandPalette() {
 
           <Command.Group heading="นำทาง" className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-fg-muted">
             <Item icon={LayoutGrid} onSelect={() => go("/dashboard")}>ภาพรวม</Item>
-            <Item icon={LineChart} onSelect={() => go("/analytics")}>การวิเคราะห์</Item>
-            <Item icon={Users} onSelect={() => go("/users")}>ผู้ใช้งาน</Item>
-            <Item icon={Package} onSelect={() => go("/products")}>สินค้า</Item>
+            <Item icon={LineChart} onSelect={() => go("/reports/analytics")}>การวิเคราะห์</Item>
+            <Item icon={Users} onSelect={() => go("/system/users")}>ผู้ใช้งาน</Item>
+            <Item icon={Package} onSelect={() => go("/engineering/products")}>สินค้า</Item>
             <Item icon={ShoppingCart} onSelect={() => go("/orders")}>คำสั่งซื้อ</Item>
-            <Item icon={Settings} onSelect={() => go("/settings")}>ตั้งค่า</Item>
+            <Item icon={Settings} onSelect={() => go("/system/settings")}>ตั้งค่า</Item>
           </Command.Group>
 
           <Command.Group heading="การดำเนินการ" className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-fg-muted">
-            <Item icon={Plus} onSelect={() => go("/users?new=1")}>เชิญผู้ใช้งาน</Item>
-            <Item icon={Plus} onSelect={() => go("/products?new=1")}>เพิ่มสินค้า</Item>
+            <Item icon={Plus} onSelect={() => go("/system/users?new=1")}>เชิญผู้ใช้งาน</Item>
+            <Item icon={Plus} onSelect={() => go("/engineering/products?new=1")}>เพิ่มสินค้า</Item>
           </Command.Group>
         </Command.List>
       </Command.Dialog>

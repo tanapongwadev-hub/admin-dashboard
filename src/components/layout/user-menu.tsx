@@ -64,7 +64,7 @@ export function UserMenu({
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link href="/settings"><User className="h-4 w-4" /> บัญชีของฉัน</Link>
+          <Link href="/system/settings"><User className="h-4 w-4" /> บัญชีของฉัน</Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem destructive disabled={loggingOut} onSelect={handleLogout}>

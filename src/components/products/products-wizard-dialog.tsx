@@ -49,7 +49,7 @@ import {
   createProductWorkflowAction,
   activateProductWorkflowAction,
   listProductWorkflowsByProductAction,
-} from "@/app/(dashboard)/products/actions";
+} from "@/app/(dashboard)/engineering/products/actions";
 import {
   productSchema,
   toProductDefaultValues,
@@ -1127,7 +1127,7 @@ export function ProductsWizardView({
                   <div className="flex flex-col gap-1.5 sm:col-span-2">
                     <Label>วัตถุดิบ</Label>
                     {materials.length === 0 ? (
-                      <MasterDataEmptyLink href="/materials/pc" resourceLabel="วัตถุดิบ" />
+                      <MasterDataEmptyLink href="/materials/catalog" resourceLabel="วัตถุดิบ" />
                     ) : (
                       <Select value={item.materialId} onValueChange={(v) => handleBomMaterialChange(item.key, v)}>
                         <SelectTrigger><SelectValue placeholder="เลือกวัตถุดิบ" /></SelectTrigger>

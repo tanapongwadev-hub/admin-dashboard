@@ -19,7 +19,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
-import { listLotPackagesAction } from "@/app/(dashboard)/products/process-orders/actions";
+import { listLotPackagesAction, listStepTagsAction } from "@/app/(dashboard)/production/products/orders/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type {
@@ -40,6 +40,8 @@ import { HistoryDialog } from "./history-dialog";
 import { ReverseDialog, type ReverseTarget } from "./reverse-dialog";
 import { TransferDialog } from "./transfer-dialog";
 import { TransferTagsDialog } from "./transfer-tags-dialog";
+import { TransferTagSheet, type TagLabelContext } from "./transfer-tag-sheet";
+import { CONNECTION_ERROR_MESSAGE } from "@/lib/user-error";
 
 type Pending =
   | { kind: "produce"; lineId: string; step: BoardStep; session: number }
@@ -98,6 +100,12 @@ export function LotOrderBoard({
     context: LabelContext;
   } | null>(null);
   const [reprinting, setReprinting] = useState<string | null>(null);
+  const [printingStep, setPrintingStep] = useState<string | null>(null);
+  const [pendingLabels, setPendingLabels] = useState<{
+    tags: StepTag[];
+    context: TagLabelContext;
+  } | null>(null);
+  const clearPendingLabels = useCallback(() => setPendingLabels(null), []);
 
   const open = (
     p: Pending extends infer P
@@ -130,6 +138,7 @@ export function LotOrderBoard({
     setLabels({
       packages,
       context: {
+        targetType: board.line.targetType,
         productCode: board.line.product?.code ?? "",
         productName: board.line.product?.name ?? "",
         orderCode,
@@ -151,6 +160,39 @@ export function LotOrderBoard({
       return;
     }
     printLabels(board, result.packages, lot.lotNo);
+  }
+
+  async function printPendingWork(board: LineBoard, step: BoardStep) {
+    if (printingStep || pendingLabels) return;
+    setPrintingStep(`${board.line.id}:${step.stepIndex}`);
+    try {
+      const result = await listStepTagsAction(board.line.id, step.stepIndex);
+      if (result.status === "error") {
+        toast.error(result.message);
+        return;
+      }
+      // Fetch current box balances; the board may predate a production/split.
+      const tags = result.tags.filter((tag) =>
+        (tag.status === "WAITING" || tag.status === "PARTIAL") && tag.left > 0,
+      );
+      if (!tags.length) {
+        toast.info("ไม่มี QR ของกล่องงานค้างในกระบวนการนี้");
+        return;
+      }
+      setPendingLabels({
+        tags,
+        context: {
+          productCode: board.line.product?.code ?? "",
+          productName: board.line.product?.name ?? "",
+          orderCode,
+          toStep: `${step.code} ${step.name}`,
+        },
+      });
+    } catch {
+      toast.error(CONNECTION_ERROR_MESSAGE);
+    } finally {
+      setPrintingStep(null);
+    }
   }
 
   return (
@@ -204,7 +246,7 @@ export function LotOrderBoard({
             <div
               className="h-1.5 overflow-hidden rounded-full bg-surface-2"
               role="progressbar"
-              aria-label="ความคืบหน้าการรับเข้าสินค้าสำเร็จรูป"
+              aria-label={line.targetType === "material" ? "ความคืบหน้าการรับเข้าวัตถุดิบภายใน" : "ความคืบหน้าการรับเข้าสินค้าสำเร็จรูป"}
               aria-valuemin={0}
               aria-valuemax={100}
               aria-valuenow={pct}
@@ -214,7 +256,7 @@ export function LotOrderBoard({
                 style={{ width: `${pct}%` }}
               />
             </div>
-            <p className="text-xs text-fg-muted">รับเข้าสินค้าสำเร็จรูปแล้ว {pct}% ของแผน</p>
+            <p className="text-xs text-fg-muted">รับเข้า{line.targetType === "material" ? "วัตถุดิบภายใน" : "สินค้าสำเร็จรูป"}แล้ว {pct}% ของแผน</p>
             {completed && (
               <p className="flex items-center gap-1.5 rounded-md border border-success/40 bg-success-soft px-3 py-2 text-sm font-medium text-success-fg">
                 <CircleCheck className="size-4" aria-hidden />{" "}
@@ -271,6 +313,21 @@ export function LotOrderBoard({
                           {step.name}
                         </span>
                         <Badge variant={active ? "info" : "neutral"}>{status}</Badge>
+                        {i > 0 && step.waitingQty > 0 && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7"
+                            aria-label={`พิมพ์ QR งานค้าง ${step.code} ${step.name}`}
+                            disabled={printingStep !== null || pendingLabels !== null}
+                            onClick={() => printPendingWork(board, step)}
+                          >
+                            {printingStep === `${line.id}:${step.stepIndex}`
+                              ? <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                              : <Printer className="size-3.5" aria-hidden />}
+                            พิมพ์ QR งานค้าง
+                          </Button>
+                        )}
                         {i > 0 && (
                           <Button
                             size="icon"
@@ -346,7 +403,7 @@ export function LotOrderBoard({
                             className="flex min-w-0 flex-wrap items-center gap-2 rounded-lg border border-border px-3 py-2"
                           >
                             <Link
-                              href={`/production/traceability?q=${encodeURIComponent(lot.lotNo)}`}
+                              href={`/reports/production?q=${encodeURIComponent(lot.lotNo)}`}
                               className="min-w-0 break-all font-mono text-xs font-medium text-primary hover:underline focus-visible:outline-2 focus-visible:outline-primary"
                               title="สอบกลับ Lot นี้"
                             >
@@ -459,7 +516,7 @@ export function LotOrderBoard({
       })}
 
       <Link
-        href="/production/traceability"
+        href="/reports/production"
         className="inline-flex w-fit items-center gap-1.5 text-sm font-medium text-primary hover:underline"
       >
         <Search className="size-4" aria-hidden /> สแกน QR / ค้นหา Lot
@@ -581,6 +638,14 @@ export function LotOrderBoard({
         context={labels?.context ?? null}
         onDone={clearLabels}
       />
+      {pendingLabels && (
+        <TransferTagSheet
+          tags={pendingLabels.tags}
+          context={pendingLabels.context}
+          remainingOnly
+          onDone={clearPendingLabels}
+        />
+      )}
     </div>
   );
 }

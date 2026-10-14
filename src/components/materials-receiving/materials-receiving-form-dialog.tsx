@@ -20,7 +20,7 @@ import { MasterDataEmptyLink } from "@/components/ui/master-data-empty-link";
 import {
   receiveMaterialsReceivingAction,
   getSuppliersByMaterialAction,
-} from "@/app/(dashboard)/materials/materials-receiving/actions";
+} from "@/app/(dashboard)/materials/receiving/actions";
 import type { MaterialReceivingLookups, MaterialReceivingLookup } from "@/lib/api/materials-receiving";
 import { calculateReceivingPreview } from "@/lib/materials-receiving-calculation";
 import { formatNumber, cn } from "@/lib/utils";
@@ -224,7 +224,7 @@ export function MaterialsReceivingFormDialog({
             <div className="flex flex-col gap-1.5">
               <Label>วัสดุ</Label>
               {lookups.materials.length === 0 ? (
-                <MasterDataEmptyLink href="/materials/pc" resourceLabel="วัสดุ" />
+                <MasterDataEmptyLink href="/materials/catalog" resourceLabel="วัสดุ" />
               ) : (
                 <Select value={materialId} onValueChange={handleMaterialChange}>
                   <SelectTrigger><SelectValue placeholder="เลือกวัสดุ" /></SelectTrigger>
@@ -267,7 +267,7 @@ export function MaterialsReceivingFormDialog({
             )}
             {materialId && !isLoadingSuppliers && suppliers.length === 0 && (
               <MasterDataEmptyLink
-                href="/materials/pc"
+                href="/materials/catalog"
                 resourceLabel="ซัพพลายเออร์ของวัสดุนี้"
               />
             )}

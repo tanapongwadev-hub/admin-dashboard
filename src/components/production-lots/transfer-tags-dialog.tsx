@@ -2,7 +2,7 @@
 
 import { Loader2, Printer, QrCode } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { listStepTagsAction } from "@/app/(dashboard)/products/process-orders/actions";
+import { listStepTagsAction } from "@/app/(dashboard)/production/products/orders/actions";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -66,7 +66,7 @@ export function TransferTagsDialog({
               <QrCode className="size-5" aria-hidden /> {title}
             </DialogTitle>
             <DialogDescription>
-              หนึ่ง QR ต่อกล่อง · พิมพ์ A4 หน้าละ 10 ใบ (2 คอลัมน์ × 5 แถว) แล้วตัดตามกรอบเพื่อติดกล่องชิ้นงาน
+              หนึ่ง QR ต่อกล่อง · พิมพ์ A4 หน้าละ 8 ใบ (2 คอลัมน์ × 4 แถว) แล้วตัดตามกรอบเพื่อติดกล่องชิ้นงาน
             </DialogDescription>
           </DialogHeader>
           <div className="px-6 pb-2">

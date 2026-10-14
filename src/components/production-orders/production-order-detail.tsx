@@ -5,7 +5,7 @@ import * as React from "react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
-import { advanceProductionOrderPacketAction } from "@/app/(dashboard)/products/process-orders/actions";
+import { advanceProductionOrderPacketAction } from "@/app/(dashboard)/production/products/orders/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -174,7 +174,7 @@ function StepProgress({ line }: { line: ProductionOrderDetailLine }) {
 }
 
 /**
- * Client body of `/products/process-orders/[id]` (full page, not a dialog —
+ * Client body of `/production/products/orders/[id]` (full page, not a dialog —
  * meant to stay open on a shop-floor tablet). Server passes the order in;
  * advancing a packet swaps in the fresh order returned by the action.
  * Hundreds of packets: filter + incremental paging, and the search box

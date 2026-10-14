@@ -1,0 +1,96 @@
+import Link from "next/link";
+import { cookies } from "next/headers";
+import { notFound, redirect } from "next/navigation";
+import { ArrowLeft, ShieldAlert } from "lucide-react";
+import { LotOrderBoard } from "@/components/production-lots/lot-order-board";
+import { ProductionOrderDetail } from "@/components/production-orders/production-order-detail";
+import { Badge } from "@/components/ui/badge";
+import { ApiError } from "@/lib/api/client";
+import { getProductionOrder } from "@/lib/api/production-orders";
+import { getLineBoard, getLineReconciliation } from "@/lib/api/production-lots";
+import { listRejectReasons } from "@/lib/api/reject-reasons";
+import { getCurrentSession } from "@/lib/session";
+
+
+// Real route (not a dialog): deep-linkable and meant to stay open on a
+// shop-floor tablet while packets are scanned through their steps.
+export async function ProductionOrderPageContent({
+  params,
+  targetType,
+}: {
+  params: Promise<{ id: string }>;
+  targetType: "product" | "material";
+}) {
+  const session = await getCurrentSession();
+  const can = (permission: string) =>
+    !!session && (session.user.isSuperAdmin || session.permissions.includes(permission));
+
+  if (!can("PRODUCTION_ORDER_VIEW")) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border py-24 text-center">
+        <ShieldAlert className="size-8 text-fg-muted" />
+        <p className="text-lg font-semibold text-fg">คุณไม่มีสิทธิ์ดูใบสั่งผลิต</p>
+        <p className="max-w-sm text-sm text-fg-muted">กรุณาติดต่อผู้ดูแลระบบเพื่อขอสิทธิ์ Production Order View</p>
+      </div>
+    );
+  }
+
+  const { id } = await params;
+  if (!/^\d+$/.test(id)) notFound();
+  const accessToken = (await cookies()).get("accessToken")!.value;
+  const order = await getProductionOrder(accessToken, id).catch((err) => {
+    if (err instanceof ApiError && err.status === 404) notFound();
+    throw err;
+  });
+
+  const basePath = order.targetType === "material" ? "/production/internal-materials/orders" : "/production/products/orders";
+  if (order.targetType !== targetType) redirect(`${basePath}/${order.id}`);
+
+  const backLink = (
+    <Link
+      href={`${basePath}?tab=orders`}
+      className="inline-flex w-fit items-center gap-1.5 text-sm font-medium text-fg-secondary hover:text-fg"
+    >
+      <ArrowLeft className="size-4" aria-hidden /> กลับไปรายการสั่งผลิต
+    </Link>
+  );
+
+  if (order.trackingModel === "LOT") {
+    const [boards, rejectReasons, checks] = await Promise.all([
+      Promise.all(order.lines.map((line) => getLineBoard(accessToken, line.id))),
+      can("REJECT_REASON_VIEW")
+        ? listRejectReasons(accessToken, { limit: 100, isActive: true })
+            .then((res) => res.items.map((r) => ({ id: r.id, code: r.code, nameTh: r.nameTh })))
+            .catch(() => [])
+        : Promise.resolve([]),
+      // A failed check must not block the board — it just isn't shown.
+      Promise.all(order.lines.map((line) => getLineReconciliation(accessToken, line.id).catch(() => null))),
+    ]);
+    const reconciliations = Object.fromEntries(order.lines.map((line, i) => [line.id, checks[i]]));
+    return (
+      <div className="flex flex-col gap-4">
+        {backLink}
+        <div className="flex flex-wrap items-center gap-2">
+          <h1 className="font-mono text-xl font-semibold text-fg">{order.code}</h1>
+          <Badge variant="info">ระบบ Lot</Badge>
+          {order.status === "COMPLETED" && <Badge variant="success">เสร็จสิ้น</Badge>}
+        </div>
+        <LotOrderBoard
+          orderCode={order.code}
+          initialBoards={boards}
+          rejectReasons={rejectReasons}
+          canAct={can("PRODUCTION_ORDER_ADVANCE")}
+          canReverse={can("PRODUCTION_ORDER_REVERSE")}
+          reconciliations={reconciliations}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      {backLink}
+      <ProductionOrderDetail initialOrder={order} canAdvance={can("PRODUCTION_ORDER_ADVANCE")} />
+    </div>
+  );
+}

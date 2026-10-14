@@ -15,7 +15,7 @@ import {
   confirmMaterialsDisbursementAction,
   cancelMaterialsDisbursementAction,
   deleteMaterialsDisbursementAction,
-} from "@/app/(dashboard)/materials/materials-disbursement/actions";
+} from "@/app/(dashboard)/materials/disbursements/actions";
 import type { MaterialsDisbursement, MaterialsDisbursementLookups, PaginatedResult } from "@/lib/api/materials-disbursement";
 
 // Full CRUD orchestrator as of 2026-09-20 (previously List + Filter only,

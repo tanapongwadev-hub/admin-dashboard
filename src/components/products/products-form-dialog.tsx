@@ -23,7 +23,7 @@ import {
   createProductAction,
   updateProductAction,
   uploadProductImageAction,
-} from "@/app/(dashboard)/products/actions";
+} from "@/app/(dashboard)/engineering/products/actions";
 import type { Product, ProductLookups } from "@/lib/api/products";
 import { cn } from "@/lib/utils";
 

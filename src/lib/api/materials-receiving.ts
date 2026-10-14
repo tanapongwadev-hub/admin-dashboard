@@ -57,7 +57,8 @@ export interface MaterialReceiving {
   runNo: string | null;
   internalLotNo: string;
   organizationId: string;
-  supplierId: string;
+  supplierId: string | null;
+  productionOrderLineId?: string | null;
   materialId: string;
   sourceReceivingId?: string | null;
   sourceLotNo?: string | null;

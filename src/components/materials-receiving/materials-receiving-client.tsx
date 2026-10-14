@@ -18,7 +18,7 @@ import {
   confirmMaterialsReceivingAction,
   cancelMaterialsReceivingAction,
   deleteMaterialsReceivingAction,
-} from "@/app/(dashboard)/materials/materials-receiving/actions";
+} from "@/app/(dashboard)/materials/receiving/actions";
 import type { MaterialReceiving, MaterialReceivingLookups } from "@/lib/api/materials-receiving";
 
 export function MaterialsReceivingClient({
@@ -81,6 +81,7 @@ export function MaterialsReceivingClient({
   // component's own comment for why the popup-based approach got the
   // RowActionsMenu stuck open / appeared to hang the page).
   const [printTarget, setPrintTarget] = React.useState<MaterialReceiving | null>(null);
+  const handlePrintDone = React.useCallback(() => setPrintTarget(null), []);
 
   // Once the initial material has served its purpose (dialog opened), drop
   // ?materialCode= from the URL so a later refresh/revalidate doesn't carry
@@ -167,7 +168,7 @@ export function MaterialsReceivingClient({
         onConfirm={handleConfirm}
         onCancel={(receiving) => setCancelTarget(receiving)}
         onDelete={handleDelete}
-        onPrint={(receiving) => setPrintTarget(receiving)}
+        onPrint={setPrintTarget}
         onProcess={canViewProcessing ? (receiving) => {
           router.push(`/material-processing?search=${encodeURIComponent(receiving.internalLotNo)}`);
         } : undefined}
@@ -176,10 +177,10 @@ export function MaterialsReceivingClient({
       <MaterialsReceivingDetailsDialog
         receiving={detailsTarget}
         onOpenChange={(open) => !open && setDetailsTarget(null)}
-        onPrint={(receiving) => setPrintTarget(receiving)}
+        onPrint={setPrintTarget}
       />
 
-      <MaterialsReceivingQrPrintSheet receiving={printTarget} onDone={() => setPrintTarget(null)} />
+      <MaterialsReceivingQrPrintSheet receiving={printTarget} onDone={handlePrintDone} />
 
       {canCancel && (
         <MaterialsReceivingCancelDialog

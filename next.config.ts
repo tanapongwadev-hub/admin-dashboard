@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { legacyMenuPaths } from "./src/lib/legacy-menu-paths";
 
 const apiBaseUrl = process.env.API_BASE_URL ?? "http://localhost:3001/api/v1";
 const apiOrigin = apiBaseUrl.startsWith("http")
@@ -17,6 +18,13 @@ const nextConfig: NextConfig = {
   // default (see next/dist/docs/.../allowedDevOrigins.md) — without this,
   // loading the app itself through a tunnel like ngrok can fail or warn.
   allowedDevOrigins: ngrokDevOrigins,
+  async redirects() {
+    return legacyMenuPaths.map(([source, destination]) => ({
+      source: `${source}/:path*`,
+      destination: `${destination}/:path*`,
+      permanent: true,
+    }));
+  },
   experimental: {
     serverActions: {
       bodySizeLimit: "6mb",

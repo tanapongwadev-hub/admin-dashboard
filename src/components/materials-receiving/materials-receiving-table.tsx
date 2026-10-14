@@ -66,6 +66,7 @@ const STATUS_DISPLAY: Record<MaterialReceivingStatus, { label: string; variant: 
 };
 
 function getReceivingStatusDisplay(receiving: MaterialReceiving): { label: string; variant: "warning" | "success" | "neutral" | "info" } {
+  if (receiving.status === "confirmed" && receiving.productionOrderLineId) return { label: "รับเข้าจากการผลิต", variant: "success" };
   if (receiving.status === "confirmed" && receiving.sourceReceivingId) return { label: "รับเข้าหลังแปรรูป", variant: "success" };
   if (receiving.processingStatus === "PROCESSED") return { label: "แปรรูปแล้ว", variant: "success" };
   if (receiving.processingStatus === "PARTIAL") return { label: "แปรรูปบางส่วน", variant: "info" };
@@ -136,7 +137,7 @@ export function getMaterialsReceivingRowActions(
   if (receiving.status === "draft" && canConfirm) {
     actions.push({ label: "ยืนยันการรับเข้า", icon: CheckCircle2, onSelect: () => handlers.onConfirm(receiving) });
   }
-  if (receiving.status !== "cancelled" && !receiving.sourceReceivingId && Number(receiving.processedQuantity ?? 0) === 0 && canCancel) {
+  if (receiving.status !== "cancelled" && !receiving.sourceReceivingId && !receiving.productionOrderLineId && Number(receiving.processedQuantity ?? 0) === 0 && canCancel) {
     actions.push({ label: "ยกเลิก", icon: Ban, onSelect: () => handlers.onCancel(receiving), variant: "danger" });
   }
   if (receiving.status === "draft" && canDelete) {

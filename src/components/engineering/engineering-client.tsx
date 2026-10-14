@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SearchableFilterSelect } from '@/components/ui/searchable-filter-select';
 import { MasterDataEmptyLink } from '@/components/ui/master-data-empty-link';
-import { activateEngineeringAction, engineeringHistoryAction } from '@/app/(dashboard)/bom-workflow/actions';
+import { activateEngineeringAction, engineeringHistoryAction } from '@/app/(dashboard)/engineering/bom/actions';
 import type { EngineeringScope, EngineeringKind, EngineeringVersion } from '@/lib/api/engineering';
 import type { Material } from '@/lib/api/materials';
 import type { ProcessStep } from '@/lib/api/process-steps';
@@ -34,7 +34,7 @@ export function EngineeringClient(props: Props) {
     <section className={`grid gap-3 rounded-md border border-border bg-surface p-4 ${props.scope === 'products' ? 'sm:grid-cols-2' : ''}`} aria-label="เลือกข้อมูลปลายทาง">
       {props.scope === 'products' && <div className="space-y-1.5"><Label htmlFor="engineering-search">ค้นหารหัสหรือชื่อ</Label><Input id="engineering-search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="ค้นหาข้อมูลปลายทาง…" /></div>}
       <div className="space-y-1.5"><Label htmlFor="engineering-owner">{props.scope === 'materials' ? 'Material ปลายทาง' : 'Product ปลายทาง'}</Label>
-        {props.owners.length === 0 ? <MasterDataEmptyLink href={props.scope === 'materials' ? '/materials/pc' : '/products'} resourceLabel={props.scope === 'materials' ? 'วัสดุ' : 'สินค้า'} /> : props.scope === 'materials' ? (
+        {props.owners.length === 0 ? <MasterDataEmptyLink href={props.scope === 'materials' ? '/materials/catalog' : '/engineering/products'} resourceLabel={props.scope === 'materials' ? 'วัสดุ' : 'สินค้า'} /> : props.scope === 'materials' ? (
           <SearchableFilterSelect
             id="engineering-owner"
             label="Material ปลายทาง"

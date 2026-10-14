@@ -139,10 +139,13 @@ export function ProductionPlanDetailsDialog({
               </div>
               <section>
                 <h3 className="mb-2 font-medium text-fg">
-                  รายการสินค้าและ BOM ที่ตรึงไว้
+                  รายการผลิตและ BOM ที่ตรึงไว้
                 </h3>
                 <div className="space-y-3">
-                  {plan.lines.map((line, index) => (
+                  {plan.lines.map((line, index) => {
+                    const target = line.product ?? line.material;
+                    const bom = line.bom ?? line.materialBom;
+                    return (
                     <article
                       key={line.id}
                       className="rounded-lg border border-border p-4"
@@ -150,10 +153,10 @@ export function ProductionPlanDetailsDialog({
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
                           <p className="font-medium text-fg">
-                            {line.product.code} · {line.product.name}
+                            {target?.code ?? "—"} · {target?.name ?? "—"}
                           </p>
                           <p className="mt-1 text-xs text-fg-muted">
-                            BOM {line.bom?.version ?? "—"} · รายการที่{" "}
+                            BOM {bom?.version ?? "—"} · รายการที่{" "}
                             {index + 1}
                           </p>
                         </div>
@@ -167,9 +170,9 @@ export function ProductionPlanDetailsDialog({
                           </p>
                         </div>
                       </div>
-                      {line.bom?.items?.length ? (
+                      {bom?.items?.length ? (
                         <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                          {line.bom.items
+                          {bom.items
                             .filter((item) => !item.isScrap)
                             .map((item) => (
                               <div
@@ -194,7 +197,8 @@ export function ProductionPlanDetailsDialog({
                         </p>
                       )}
                     </article>
-                  ))}
+                    );
+                  })}
                 </div>
               </section>
               {reservations.length > 0 && (

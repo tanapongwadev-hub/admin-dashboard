@@ -9,7 +9,7 @@ import {
   cancelProductionPlanAction,
   deleteProductionPlanAction,
   getProductionPlanAction,
-} from "@/app/(dashboard)/production/plans/actions";
+} from "@/app/(dashboard)/production/products/plans/actions";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import type {
@@ -37,6 +37,7 @@ export function ProductionPlanClient({
   canCancel,
   canViewJobOrder,
   canPrintJobOrder,
+  targetType = 'product',
 }: {
   plans: ProductionPlan[];
   meta: PaginatedProductionPlans["meta"];
@@ -48,6 +49,7 @@ export function ProductionPlanClient({
   canCancel: boolean;
   canViewJobOrder: boolean;
   canPrintJobOrder: boolean;
+  targetType?: 'product' | 'material';
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -71,6 +73,10 @@ export function ProductionPlanClient({
   const [detail, setDetail] = React.useState<ProductionPlan | null>(null);
   const [detailLoading, setDetailLoading] = React.useState(false);
   const refresh = () => router.refresh();
+  const mixedForm = formTarget?.lines.some((line) => !!line.productId) && formTarget.lines.some((line) => !!line.materialId);
+  const formLookups = mixedForm ? lookups : targetType === 'material'
+    ? { products: [], materials: lookups.materials }
+    : { products: lookups.products, materials: [] };
   async function view(plan: ProductionPlan) {
     setDetailLoading(true);
     const result = await getProductionPlanAction(plan.id);
@@ -130,14 +136,14 @@ export function ProductionPlanClient({
       <div className="flex flex-wrap justify-end gap-2">
         {canCreate && (
           <>
-            <Button
+            {targetType === 'product' && <Button
               type="button"
               variant="outline"
               onClick={() => setImportOpen(true)}
             >
               <FileSpreadsheet className="size-4" />
               นำเข้า Excel
-            </Button>
+            </Button>}
             <Button
               type="button"
               onClick={() => {
@@ -209,12 +215,13 @@ export function ProductionPlanClient({
           key={formKey}
           open
           plan={formTarget}
-          lookups={lookups}
+          targetType={targetType}
+          lookups={formLookups}
           onOpenChange={(open) => !open && setFormTarget(undefined)}
           onSaved={refresh}
         />
       )}
-      {canCreate && (
+      {canCreate && targetType === 'product' && (
         <ProductionPlanImportDialog
           open={importOpen}
           onOpenChange={setImportOpen}

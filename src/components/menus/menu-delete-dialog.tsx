@@ -3,7 +3,7 @@
 import * as React from "react";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { deleteMenuAction, type MenuMutationResult } from "@/app/(dashboard)/menus/actions";
+import { deleteMenuAction, type MenuMutationResult } from "@/app/(dashboard)/system/menus/actions";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

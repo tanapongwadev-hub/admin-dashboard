@@ -6,7 +6,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatNumber } from "@/lib/utils";
-import { listBomUsageByMaterialAction } from "@/app/(dashboard)/materials/pc/actions";
+import { listBomUsageByMaterialAction } from "@/app/(dashboard)/materials/catalog/actions";
 import type { Material } from "@/lib/api/materials";
 import type { BomUsageRow, BomStatus } from "@/lib/api/boms";
 

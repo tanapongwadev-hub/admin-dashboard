@@ -4,8 +4,9 @@ import { Loader2, Plus, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { ENABLED_PRODUCE_MODES, type ProduceMode } from "@/lib/production-flags";
 import { toast } from "sonner";
-import { checkStepBoxAction, getAllocationPreviewAction, nextStepBoxAction, produceLotAction } from "@/app/(dashboard)/products/process-orders/actions";
+import { checkStepBoxAction, getAllocationPreviewAction, nextStepBoxAction, produceLotAction } from "@/app/(dashboard)/production/products/orders/actions";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -468,20 +469,19 @@ export function ProduceDialog({
                     <Label htmlFor={`pd-rr-${row.key}`} className="sr-only">
                       เหตุผลของเสีย {i + 1}
                     </Label>
-                    <select
-                      id={`pd-rr-${row.key}`}
+                    <Select
                       value={row.reasonId}
-                      onChange={(e) =>
-                        setRejects((rows) => rows.map((r) => (r.key === row.key ? { ...r, reasonId: e.target.value } : r)))
+                      onValueChange={(value) =>
+                        setRejects((rows) => rows.map((r) => (r.key === row.key ? { ...r, reasonId: value } : r)))
                       }
-                      className="h-9 rounded-md border border-border-strong bg-surface px-2 text-sm text-fg"
                     >
-                      {rejectReasons.map((reason) => (
-                        <option key={reason.id} value={reason.id}>
-                          {reason.code} · {reason.nameTh}
-                        </option>
-                      ))}
-                    </select>
+                      <SelectTrigger id={`pd-rr-${row.key}`}><SelectValue placeholder="เลือกเหตุผลของเสีย" /></SelectTrigger>
+                      <SelectContent>
+                        {rejectReasons.map((reason) => (
+                          <SelectItem key={reason.id} value={reason.id}>{reason.code} · {reason.nameTh}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <Input
                     aria-label={`จำนวนของเสีย ${i + 1}`}

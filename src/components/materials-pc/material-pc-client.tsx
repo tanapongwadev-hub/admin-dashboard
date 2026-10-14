@@ -16,7 +16,7 @@ import { MaterialPcStatusDialog } from "@/components/materials-pc/material-pc-st
 import { MaterialPcDeleteDialog } from "@/components/materials-pc/material-pc-delete-dialog";
 import { MaterialPcDetailsDialog } from "@/components/materials-pc/material-pc-details-dialog";
 import { MaterialBomUsageDialog } from "@/components/materials-pc/material-bom-usage-dialog";
-import { deactivateMaterialPcAction, restoreMaterialPcAction } from "@/app/(dashboard)/materials/pc/actions";
+import { deactivateMaterialPcAction, restoreMaterialPcAction } from "@/app/(dashboard)/materials/catalog/actions";
 import type { Material, MaterialDraftRecord, MaterialLookups, PaginatedResult, StockBalance } from "@/lib/api/materials";
 
 export function MaterialPcClient({
@@ -82,7 +82,7 @@ export function MaterialPcClient({
   // pop the create dialog.
   function handleReceive(material: Material) {
     router.push(
-      `/materials/materials-receiving?materialCode=${encodeURIComponent(material.code)}&open=create`
+      `/materials/receiving?materialCode=${encodeURIComponent(material.code)}&open=create`
     );
   }
 
@@ -90,11 +90,11 @@ export function MaterialPcClient({
   // filter only (no ?open=create), so refreshing/bookmarking/sharing the
   // URL keeps showing this material's receiving/disbursement documents.
   function handleViewReceivingHistory(material: Material) {
-    router.push(`/materials/materials-receiving?materialCode=${encodeURIComponent(material.code)}`);
+    router.push(`/materials/receiving?materialCode=${encodeURIComponent(material.code)}`);
   }
 
   function handleViewDisbursementHistory(material: Material) {
-    router.push(`/materials/materials-disbursement?materialCode=${encodeURIComponent(material.code)}`);
+    router.push(`/materials/disbursements?materialCode=${encodeURIComponent(material.code)}`);
   }
 
   async function handleToggleStatus(material: Material) {

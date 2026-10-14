@@ -22,11 +22,11 @@ The source lot's progress through processing: waiting, partially processed, or f
 ### Production Plan
 
 **Production Plan (แผนการผลิต)**:
-A document that reserves raw materials ahead of an actual production run, referencing one or more Products and their ACTIVE BOM. Created either by manual entry or by importing a single Excel file (one file → one Plan). Identified by a `PP-{YYYYMM}-{seq}` code.
+A document that reserves raw materials ahead of an actual production run, referencing Products or active internal non-raw Materials and their ACTIVE BOM. Manual entry supports both destination types in one Plan; Excel import supports Products (one file → one Plan). Identified by a `PP-{YYYYMM}-{seq}` code.
 _Avoid_: Production order, work order, manufacturing order — not yet distinct concepts in this system; "Production Plan" is the only term in use.
 
 **Plan Line**:
-One row within a Production Plan: a single Product + quantity to produce + a need-by date. A Plan can hold many lines (many products in one production run).
+One row within a Production Plan: exactly one Product or internal non-raw Material + integer quantity to produce + a need-by date. Saving pins the corresponding Product BOM or Material BOM version. A Plan can hold multiple lines with either destination type; both use the same FIFO Reservation and Job Order lifecycle.
 _Avoid_: Plan item, line item (reserve these for other documents, e.g. Disbursement items).
 
 **Reservation**:

@@ -2,7 +2,7 @@
 
 import { History, Loader2, Undo2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { getLineHistoryAction } from "@/app/(dashboard)/products/process-orders/actions";
+import { getLineHistoryAction } from "@/app/(dashboard)/production/products/orders/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {

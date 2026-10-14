@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import {
   closeProductionOrderRemainingAction,
   recordProductionOrderOutputAction,
-} from "@/app/(dashboard)/products/process-orders/actions";
+} from "@/app/(dashboard)/production/products/orders/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

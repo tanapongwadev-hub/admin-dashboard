@@ -36,6 +36,7 @@ export interface BoardStep {
 
 export interface LineBoard {
   line: {
+    targetType?: "product" | "material";
     id: string;
     lineNo: number;
     orderId: string;
