@@ -304,7 +304,6 @@ export function MaterialPcFormDialog({
   const stepHeadingRef = React.useRef<HTMLHeadingElement>(null);
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const [supplierIds, setSupplierIds] = React.useState<string[]>([]);
-  const [addSupplierId, setAddSupplierId] = React.useState("");
   const [imageFile, setImageFile] = React.useState<File | null>(null);
   const [imagePreview, setImagePreview] = React.useState<string | null>(null);
   const [imageError, setImageError] = React.useState<string | null>(null);
@@ -344,7 +343,6 @@ export function MaterialPcFormDialog({
     if (open) {
       reset(toDefaultValues(material, draft));
       setSupplierIds(draft?.supplierIds ?? material?.suppliers.map((s) => s.id) ?? []);
-      setAddSupplierId("");
       setImageFile(null);
       setImageError(null);
       setImagePreview((current) => {
@@ -826,49 +824,71 @@ export function MaterialPcFormDialog({
               {lookups.suppliers.length === 0 ? (
                 <MasterDataEmptyLink href="/master-data/suppliers" resourceLabel="ซัพพลายเออร์" />
               ) : (
-                <div className="flex gap-2">
-                  <Select value={addSupplierId} onValueChange={setAddSupplierId}>
-                    <SelectTrigger id="addSupplierId" className="flex-1"><SelectValue placeholder="เพิ่มซัพพลายเออร์..." /></SelectTrigger>
-                    <SelectContent>
+                <>
+                  {/* Picking an option adds it straight away — there is no separate
+                      "add" button to forget. The select always returns to its placeholder. */}
+                  <Select
+                    value=""
+                    onValueChange={(id) => {
+                      if (id) setSupplierIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
+                    }}
+                    disabled={availableSuppliers.length === 0}
+                  >
+                    <SelectTrigger id="addSupplierId" aria-describedby="supplier-hint">
+                      <SelectValue
+                        placeholder={availableSuppliers.length === 0 ? "เลือกครบทุกรายแล้ว" : "เลือกซัพพลายเออร์เพื่อเพิ่มเข้ารายการ..."}
+                      />
+                    </SelectTrigger>
+                    <SelectContent searchPlaceholder="ค้นหาซัพพลายเออร์...">
                       {availableSuppliers.map((s) => (
                         <SelectItem key={s.id} value={s.id}>{s.nameEn ?? s.code}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={!addSupplierId}
-                    onClick={() => {
-                      if (addSupplierId) {
-                        setSupplierIds((prev) => [...prev, addSupplierId]);
-                        setAddSupplierId("");
-                      }
-                    }}
+                  <p id="supplier-hint" className="text-xs text-fg-muted">
+                    เลือกแล้วระบบจะเพิ่มเข้ารายการด้านล่างทันที เลือกได้หลายราย
+                  </p>
+                  <div
+                    className={cn(
+                      "rounded-md border p-3",
+                      selectedSuppliers.length > 0 ? "border-border bg-surface-2/50" : "border-dashed border-warning/60 bg-warning-soft",
+                    )}
+                    aria-live="polite"
                   >
-                    เพิ่ม
-                  </Button>
-                </div>
-              )}
-              {selectedSuppliers.length > 0 && (
-                <div className="mt-1 flex flex-wrap gap-1.5">
-                  {selectedSuppliers.map((s) => (
-                    <span
-                      key={s.id}
-                      className="inline-flex items-center gap-1 rounded-md bg-surface-2 px-2 py-1 text-xs text-fg-secondary"
-                    >
-                      {s.nameEn ?? s.code}
-                      <button
-                        type="button"
-                        aria-label={`ลบ ${s.nameEn ?? s.code}`}
-                        onClick={() => setSupplierIds((prev) => prev.filter((id) => id !== s.id))}
-                        className="text-fg-muted hover:text-danger"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
+                    {selectedSuppliers.length === 0 ? (
+                      <p className="flex items-center gap-1.5 text-xs font-medium text-warning-fg">
+                        <CircleAlert className="h-3.5 w-3.5 shrink-0" />
+                        ยังไม่มีซัพพลายเออร์ในรายการ — ต้องมีอย่างน้อย 1 รายจึงจะรับเข้าวัตถุดิบนี้ได้
+                      </p>
+                    ) : (
+                      <>
+                        <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-fg-secondary">
+                          <Check className="h-3.5 w-3.5 text-success" />
+                          ซัพพลายเออร์ที่เลือกแล้ว ({selectedSuppliers.length})
+                        </p>
+                        <ul className="flex flex-wrap gap-1.5">
+                          {selectedSuppliers.map((s) => (
+                            <li
+                              key={s.id}
+                              className="inline-flex items-center gap-1.5 rounded-md border border-primary/25 bg-primary-soft px-2.5 py-1 text-sm text-primary"
+                            >
+                              {s.nameEn ?? s.code}
+                              <button
+                                type="button"
+                                aria-label={`ลบ ${s.nameEn ?? s.code}`}
+                                title="นำออกจากรายการ"
+                                onClick={() => setSupplierIds((prev) => prev.filter((id) => id !== s.id))}
+                                className="rounded-sm text-primary/70 hover:text-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
+                  </div>
+                </>
               )}
             </div>
 

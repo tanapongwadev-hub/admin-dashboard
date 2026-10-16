@@ -76,6 +76,9 @@ its pages, actions, loading states, tests and document detail routes.
 | `reports/audit-logs/` | Audit, formerly `audit-logs/` |
 | `reports/analytics/` | Analytics, formerly `analytics/` |
 | `system/menus/`, `system/users/`, `system/settings/` | Former root menus/users/settings pages |
+| `sales/orders/`, `sales/job-orders/` (+ `[id]`), `sales/actions.ts` | Sales orders, sales job orders / cut stock (added 2026-10-14) |
+| `reports/sales/` | Sales report (added 2026-10-14) |
+| `manuals/`, `manuals/[slug]/` | In-app user manuals (added 2026-10-16) |
 
 `dashboard/`, `materials/page.tsx`, `materials/job-orders/`, `material-processing/`
 and `master-data/` remain in place. Browser aliases live in
@@ -393,6 +396,19 @@ Activity-event design documents (2026-09-26): `docs/activity-logging/architectur
 **The `.on-navy` scoping class** (see globals.css) redefines `--surface`, `--surface-2`, `--border`, `--border-strong`, `--fg`, `--fg-secondary`, `--fg-muted`, `--primary`, and `--primary-soft` for its subtree — apply it to a container (`<aside className="on-navy ...">`) to make every _already-token-driven_ class inside it (`bg-surface`, `text-fg-secondary`, `bg-primary-soft`, ...) resolve against the dark-navy palette instead of the light one, with zero changes to the descendant components themselves. This is the same mechanism the old `.dark` class used — see Conventions § Theme.
 
 ## Conventions
+
+### User manuals — `/manuals`, 2026-10-16
+
+- MAIN menu คู่มือการใช้งาน (`USER_MANUALS`, icon `book-open`, last root) from cps-api migration `1790600000033-AddUserManualMenu` (applied locally; also in seed.ts/permission-registry.ts). Permission `USER_MANUAL_VIEW` uses action READ with no department rows, so every role holding READ sees it (rule: `isAllowedInDepartment`). The pages themselves only need a session.
+- Content is static data in `src/lib/manuals/content.ts` (types in `types.ts`): `MANUAL_CATEGORIES` mirrors the sidebar workspaces; each `Manual` has steps with optional screenshots, access note, tips, related slugs. Index page groups by category with a GET `?q=` search; detail page `/manuals/[slug]` renders numbered steps, "เปิดหน้าจอนี้" link, tips, related and prev/next. Server Components only, no client JS.
+- Screenshots live in `public/manuals/<slug>/NN.jpg`; regenerate with `node scripts/capture-manual-screens.mjs [slug ...]` (run with `MSYS_NO_PATHCONV=1` from Git Bash). Each `PLAN` shot runs actions (go/click/fill/pick/files/press) without ever saving, then draws numbered red markers on its `marks`. A step's `callouts[i]` explains marker `i+1`, rendered as a numbered list under the image; keep marks and callouts in the same order and count, and drop a mark the script reports as not visible (otherwise the numbering skips). `material-processing/06.png` (after processing) is the one shot from a real processing run. When a screen changes, update the step text (live menu names), the PLAN marks and the screenshot together. Sales job order detail and product-order detail have no screenshot because dev data had no records.
+
+### Sales (orders → job orders → cut stock → report) — 2026-10-14
+
+- Read `docs/plans/2026-10-14-sales-module-plan.md` before changing sales, FG packing, or finished-product stock. Backend: cps-api `src/modules/sales` (raw-SQL service, three controllers), migration `1790600000032-CreateSalesModule`. Frontend: `lib/api/sales.ts`, `lib/filters/sales-filters.ts`, `app/(dashboard)/sales/actions.ts`, `components/sales/*`, routes `/sales/orders`, `/sales/job-orders[/id]`, `/reports/sales`.
+- Stock source is packed LOT-model FG boxes (`production_packages` PACKED), sold by scanning box QR. Confirming a DRAFT order creates the sales job order and hard-reserves boxes FIFO, all-or-nothing (409 `shortfalls[]`). Issue consumes only reserved, picked boxes, writes append-only `sales_shipments` under one `DO-` number and is idempotent on a client `requestId` (kept across retries in the detail view).
+- FG packing now posts a `product_stock_movements` receive per box; packing void posts an issue and is refused while a box has an active sales reservation; sales issue posts an issue per product. All go through `cps-api/src/common/product-stock-ledger.ts` (locks the product row). The migration backfilled existing PACKED product boxes.
+- Lists use the shared `SalesFilterBar` (search + status/customer/product dropdowns + date range + chips; no drawer — small-filter exception like Job Orders). Row actions come from the pure `getSalesOrderRowActions()`, mirroring the backend state machine. Permissions: `SALES_ORDER_{VIEW,CREATE,UPDATE,DELETE,CONFIRM,CANCEL}`, `SALES_JOB_ORDER_{VIEW,PRINT,PICK,ISSUE}`, `SALES_REPORT_VIEW` (migration only; grant via IAM).
 
 ### QR print isolation
 
@@ -1056,6 +1072,16 @@ Before writing any new route, component, data-layer file, or Server Action, chec
 ---
 
 ## Recent Changes
+
+- 2026-10-16: Manuals now show a screenshot for nearly every step with numbered red markers and matching numbered explanations (`ManualStep.callouts`, also searchable). Rewrote `scripts/capture-manual-screens.mjs` with an action DSL and marker overlay; recaptured 71 annotated shots (e.g. the add-material wizard now has 8, one per wizard screen, filled with demo values but never saved). `.claude/launch.json` now starts `pnpm dev`. All 20 pages rendered via Playwright (200, no broken images, no console errors). During capture cps-api once returned 500 on `GET /categories` (master-data hub error page); it loaded on retry. No lint/typecheck/build per R0.
+
+- 2026-10-16: Added in-app user manuals: MAIN menu คู่มือการใช้งาน (`/manuals`, cps-api migration 1790600000033 applied locally, permission USER_MANUAL_VIEW open to every role with READ), 20 step-by-step manuals in 8 categories matching the sidebar, 36 screenshots under `public/manuals/`, capture script `scripts/capture-manual-screens.mjs`. Rendered all 20 pages via Playwright (200, no console errors, desktop + 390px). No lint/typecheck/build per R0.
+
+- 2026-10-16: Added `scripts/record-material-create-guide.mjs` (`node scripts/record-material-create-guide.mjs [pcs|pipe|sheet|coil|all|probe]`): Playwright records the current material create wizard once per steel type into `docs/manuals/videos/create-{pcs,pipe,sheet,coil}.webm`, using `docs/mock-materials/images` and stamped `DEMO-<TYPE>-<stamp>` codes so re-runs never collide. Each run creates real demo materials in the dev DB through the UI (this run: DEMO-PCS-RYU0, DEMO-PIPE-UTH1, DEMO-SHEET-XNYW, DEMO-COIL-0JRE plus their -CUT/-PRESS outputs). `probe` lists live unit/type/supplier options. The older `record-materials-guide.mjs` create episode targets the pre-wizard form and is stale. Videos are embedded in the Claude Doc manual for adding materials.
+
+- 2026-10-15: Materials create/edit supplier field (`material-pc-form-dialog.tsx`): picking a supplier now adds it immediately (removed the separate "เพิ่ม" button users forgot to press); the select resets to its placeholder, is searchable, disables when all are chosen, and a bordered panel lists chosen suppliers with a count, or a warning empty state saying receiving needs at least one. Source inspection only; browser check blocked (no login), no lint/typecheck per R0.
+
+- 2026-10-14: Added the sales system — sales orders (`/sales/orders`), sales job orders with scan-pick and cut stock (`/sales/job-orders`), and sales report (`/reports/sales`), new MAIN menu การขายและจัดส่ง + report submenu, cps-api `sales` module, migration 1790600000032 (applied to cps_db and cps_db_test), FG packing/void now feed finished-product stock. Development plan: `docs/plans/2026-10-14-sales-module-plan.md`. Lifecycle verified by a script on cps_db_test (shortfall, FIFO, pick, partial + idempotent issue, cancel, concurrent confirm, report); UI create/confirm-shortfall/delete and the three pages checked in the browser. No lint/typecheck/unit tests run (R0). 2026-10-15 follow-up: with the API temporarily run against cps_db_test, the job-order detail page was browser-tested end to end (wrong QR rejected, lowercase QR picked, pick-all, confirm cut stock -> DO-20261015-0001 for 150 pcs across 3 boxes with a partially reserved box keeping 15, report shows the shipment, no console errors); the API was then restored to cps_db. Print sheet not exercised. On request, cps-api `pnpm test:production` (cps_db_test) passed 20/20 with the packing/void stock-ledger changes, and the API container was restarted cleanly.
 
 - 2026-10-13: Added direct “พิมพ์ QR งานค้าง” buttons to eligible process-board step headers for Product and internal-Material orders. Fresh QR-box balances determine printable WAITING/PARTIAL work; closed/done/empty boxes are excluded. Shared eight-per-A4 labels show remaining quantity and current process; loading/duplicate-click guard, empty/error feedback and afterprint cleanup included. Corrected transfer-dialog help to 8 labels per A4. Source inspection only; no browser/print verification or tests/lint/build/typecheck per R0.
 

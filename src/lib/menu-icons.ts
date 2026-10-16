@@ -32,6 +32,10 @@ import {
   ClipboardCheck,
   Workflow,
   ScanSearch,
+  ShoppingCart,
+  Receipt,
+  PackageCheck,
+  ChartColumn,
   Circle,
   type LucideIcon,
 } from "lucide-react";
@@ -76,6 +80,10 @@ const MENU_ICONS: Record<string, LucideIcon> = {
   "file-text": FileText,
   "clipboard-list": ClipboardList,
   "clipboard-check": ClipboardCheck,
+  "shopping-cart": ShoppingCart,
+  receipt: Receipt,
+  "package-check": PackageCheck,
+  "chart-column": ChartColumn,
 };
 
 export function menuIcon(name: string | null): LucideIcon {
