@@ -1,8 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { ArrowDown, ArrowUp, ArrowUpDown, Download, Search } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, Download, Eye, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ProductMovementsDialog } from "./product-movements-dialog";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Empty, Panel, nf } from "@/components/materials-dashboard/materials-movement-overview";
@@ -21,11 +23,24 @@ function status(row: Row) {
 // Per-product totals for the selected range: documents and quantity received /
 // issued, net movement and the current balance. Search, sort and hiding of
 // products without movement are client-side over the loaded list (<= 500 rows).
-export function ProductsTotalsTable({ rows: source }: { rows: ProductsOverview["byProduct"] }) {
+const PAGE_SIZES = [10, 20, 50];
+
+export function ProductsTotalsTable({
+  rows: source,
+  from,
+  to,
+}: {
+  rows: ProductsOverview["byProduct"];
+  from: string;
+  to: string;
+}) {
   const all = React.useMemo<Row[]>(() => source.map((r) => ({ ...r, net: r.receivedQty - r.issuedQty })), [source]);
   const [search, setSearch] = React.useState("");
   const [hideEmpty, setHideEmpty] = React.useState(true);
   const [sort, setSort] = React.useState<{ key: SortKey; dir: "asc" | "desc" }>({ key: "receivedQty", dir: "desc" });
+  const [page, setPage] = React.useState(1);
+  const [limit, setLimit] = React.useState(10);
+  const [detail, setDetail] = React.useState<{ code: string; name: string } | null>(null);
 
   const moving = all.filter((r) => r.receivedDocs + r.issuedDocs > 0).length;
   const query = search.trim().toLowerCase();
@@ -39,8 +54,12 @@ export function ProductsTotalsTable({ rows: source }: { rows: ProductsOverview["
       return sort.dir === "asc" ? cmp : -cmp;
     });
   const sum = (key: keyof Row) => rows.reduce((t, r) => t + Number(r[key]), 0);
+  const pages = Math.max(1, Math.ceil(rows.length / limit));
+  const safePage = Math.min(page, pages);
+  const pageRows = rows.slice((safePage - 1) * limit, safePage * limit);
 
   function toggle(key: SortKey) {
+    setPage(1);
     setSort((s) => (s.key === key ? { key, dir: s.dir === "asc" ? "desc" : "asc" } : { key, dir: key === "code" ? "asc" : "desc" }));
   }
 
@@ -89,20 +108,26 @@ export function ProductsTotalsTable({ rows: source }: { rows: ProductsOverview["
           <input
             id="products-totals-search"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
             placeholder="ค้นหารหัส / ชื่อสินค้า"
             className="h-9 w-full rounded-md border border-border-strong bg-surface pl-8 pr-2 text-sm text-fg"
           />
         </div>
         <label className="flex items-center gap-2 text-xs text-fg-secondary">
-          <input type="checkbox" checked={hideEmpty} onChange={(e) => setHideEmpty(e.target.checked)} className="size-3.5 accent-[var(--primary)]" />
+          <input type="checkbox" checked={hideEmpty} onChange={(e) => {
+              setHideEmpty(e.target.checked);
+              setPage(1);
+            }} className="size-3.5 accent-[var(--primary)]" />
           แสดงเฉพาะสินค้าที่มีความเคลื่อนไหว
         </label>
       </div>
       {rows.length === 0 ? (
         <Empty>{all.length === 0 ? "ยังไม่มีสินค้า" : "ไม่พบสินค้าตามเงื่อนไข"}</Empty>
       ) : (
-        <div className="max-h-[28rem] overflow-auto">
+        <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -114,10 +139,11 @@ export function ProductsTotalsTable({ rows: source }: { rows: ProductsOverview["
                 <SortHead k="net">สุทธิ</SortHead>
                 <SortHead k="balance">คงเหลือ</SortHead>
                 <TableHead>สถานะ</TableHead>
+                <TableHead className="w-10"><span className="sr-only">รายละเอียด</span></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rows.map((r) => {
+              {pageRows.map((r) => {
                 const st = status(r);
                 return (
                   <TableRow key={r.code}>
@@ -136,6 +162,11 @@ export function ProductsTotalsTable({ rows: source }: { rows: ProductsOverview["
                       {nf.format(r.balance)} <span className="text-xs text-fg-muted">{r.unit ?? ""}</span>
                     </TableCell>
                     <TableCell><Badge variant={st.variant}>{st.label}</Badge></TableCell>
+                    <TableCell>
+                      <Button variant="ghost" size="icon" aria-label={`ดูรายละเอียดรับเข้า–จ่ายออกของ ${r.code}`} title="ดูรายละเอียด" onClick={() => setDetail({ code: r.code, name: r.name })}>
+                        <Eye className="size-4" aria-hidden="true" />
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 );
               })}
@@ -150,11 +181,28 @@ export function ProductsTotalsTable({ rows: source }: { rows: ProductsOverview["
                 <TableCell className="text-right font-semibold tabular-nums">{nf.format(sum("net"))}</TableCell>
                 <TableCell className="text-right font-semibold tabular-nums">{nf.format(sum("balance"))}</TableCell>
                 <TableCell />
+                <TableCell />
               </TableRow>
             </TableFooter>
           </Table>
         </div>
       )}
+      {rows.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border px-5 py-3 text-xs text-fg-muted">
+          <span>แสดง {nf.format((safePage - 1) * limit + 1)}–{nf.format(Math.min(safePage * limit, rows.length))} จาก {nf.format(rows.length)} รายการ · หน้า {safePage}/{pages} (ยอดรวมคิดจากทุกหน้า)</span>
+          <div className="flex items-center gap-2">
+            <Select value={String(limit)} onValueChange={(v) => { setLimit(Number(v)); setPage(1); }}>
+              <SelectTrigger className="h-8 w-28" aria-label="จำนวนต่อหน้า"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {PAGE_SIZES.map((n) => (<SelectItem key={n} value={String(n)}>{n} / หน้า</SelectItem>))}
+              </SelectContent>
+            </Select>
+            <Button variant="outline" size="sm" disabled={safePage <= 1} onClick={() => setPage(safePage - 1)}>ก่อนหน้า</Button>
+            <Button variant="outline" size="sm" disabled={safePage >= pages} onClick={() => setPage(safePage + 1)}>ถัดไป</Button>
+          </div>
+        </div>
+      )}
+      <ProductMovementsDialog target={detail} from={from} to={to} onClose={() => setDetail(null)} />
     </Panel>
   );
 }

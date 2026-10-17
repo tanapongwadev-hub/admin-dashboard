@@ -156,7 +156,7 @@ export function ProductsMovementOverview({ overview, today }: { overview: Produc
         </div>
       </Panel>
 
-      <ProductsTotalsTable rows={overview.byProduct} />
+      <ProductsTotalsTable rows={overview.byProduct} from={range.from} to={range.to} />
 
       <div className="grid min-w-0 gap-4 lg:grid-cols-2">
         <StockHealth stock={stock} />

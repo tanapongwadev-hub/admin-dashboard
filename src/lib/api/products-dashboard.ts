@@ -59,3 +59,27 @@ export function getProductsOverview(accessToken: string, from: string, to: strin
     { headers: { Authorization: `Bearer ${accessToken}` } },
   );
 }
+
+export interface ProductMovementDetail {
+  product: { code: string; name: string; unit: string | null } | null;
+  range: { from: string; to: string };
+  totals: { receivedQty: number; issuedQty: number; count: number };
+  truncated: boolean;
+  items: Array<{
+    id: string;
+    type: "receive" | "issue";
+    qty: number;
+    balanceAfter: number;
+    referenceNo: string;
+    remark: string | null;
+    recordedAt: string;
+    recordedBy: string | null;
+  }>;
+}
+
+export function getProductMovements(accessToken: string, code: string, from: string, to: string) {
+  return apiFetch<ProductMovementDetail>(
+    `/dashboard/products/movements?code=${encodeURIComponent(code)}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  );
+}
