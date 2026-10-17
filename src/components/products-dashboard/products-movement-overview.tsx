@@ -29,6 +29,7 @@ import {
   MaterialsMovementChart,
   type MovementMetric,
 } from "@/components/materials-dashboard/materials-movement-chart";
+import { ProductsTotalsTable } from "./products-totals-table";
 import type { ProductsOverview } from "@/lib/api/products-dashboard";
 import { formatThaiDate } from "@/lib/production-day";
 import { cn } from "@/lib/utils";
@@ -154,6 +155,8 @@ export function ProductsMovementOverview({ overview, today }: { overview: Produc
           )}
         </div>
       </Panel>
+
+      <ProductsTotalsTable rows={overview.byProduct} />
 
       <div className="grid min-w-0 gap-4 lg:grid-cols-2">
         <StockHealth stock={stock} />

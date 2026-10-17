@@ -39,6 +39,18 @@ export interface ProductsOverview {
   recentIssues: ProductsOverviewMovement[];
   stock: { total: number; outOfStock: number; lowStock: number; normal: number; totalQty: number };
   lowStock: Array<{ code: string; name: string; unit: string | null; balance: number; minStock: number }>;
+  /** Totals per product for the range (active products plus any with movements). */
+  byProduct: Array<{
+    code: string;
+    name: string;
+    unit: string | null;
+    minStock: number;
+    balance: number;
+    receivedQty: number;
+    receivedDocs: number;
+    issuedQty: number;
+    issuedDocs: number;
+  }>;
 }
 
 export function getProductsOverview(accessToken: string, from: string, to: string) {
