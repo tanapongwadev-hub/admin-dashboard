@@ -242,7 +242,7 @@ explain: { code: string; granted: boolean; reasons: ('ROLE' | 'USER_ALLOW' | 'US
 - ตัวกรอง "แสดงเฉพาะที่มี override" เพื่อตรวจข้อยกเว้นรายคนได้ง่าย และหน้าแท็บแผนกแสดงจำนวนคนที่ได้ override ข้ามแผนกต่อเมนู
 - ดูตัวอย่าง sidebar ของผู้ใช้คนนั้น (`access-summary.menus`)
 
-> การสร้างผู้ใช้/มอบหมายแผนก-role ยังอยู่ที่ `/system/users` ซึ่งเป็น mock — ทำให้ใช้ API จริงเป็นงานแยก (ดูข้อ 10)
+> การสร้างผู้ใช้/มอบหมายแผนก-role อยู่ที่ `/system/users` (ใช้ API จริงแล้วตั้งแต่ 2026-10-17)
 
 ### ไฟล์ตามโครงสร้างเดิม
 
@@ -309,7 +309,7 @@ src/components/permissions/
 5. **แก้เมนูที่ไม่มี permission** (`MATERIALS_PC_OVERVIEW`, `PRODUCTION_TRACEABILITY`) — ดูคำถามข้อ 11.1 — **เสร็จแล้ว**: migration `1790600000035` เพิ่ม permission นำทาง `MATERIALS_PC_OVERVIEW_VIEW`, `PRODUCTION_TRACEABILITY_VIEW` และพบเพิ่ม `MATERIALS_REPORT_VIEW` (ขอบเขตเริ่มต้นคัดลอกจากสิทธิ์ข้อมูล) หน้าจอยังใช้สิทธิ์ข้อมูลเดิม จึงไม่ต้องแก้ guard
 6. **ตั้งค่าเริ่มต้นจริง** — หลังหน้าใช้งานได้ SUPER_ADMIN ไล่ปิด/เปิดให้ WE, PS ก่อนสร้างผู้ใช้ทั่วไป
 
-งานแยก (เสนอเป็น session ต่างหาก): ทำ `/system/users` ให้ใช้ API จริง (สร้างผู้ใช้, มอบหมายแผนก/role)
+งานแยก: ทำ `/system/users` ให้ใช้ API จริง — **เสร็จแล้ว 2026-10-17** ดู `docs/plans/2026-10-17-system-users-plan.md`
 
 ## 11. คำถามที่ยังต้องตัดสินใจ (ไม่บล็อกขั้น 1–4)
 

@@ -44,7 +44,7 @@ No password, token, secret, cookie, session credential, raw file, unrestricted r
 
 | Event family | Concrete actions | Delivery | Reason required |
 | --- | --- | --- | --- |
-| `iam.user.*` | `created`, `updated`, `deactivated`, `restored`, `password_reset_requested` | critical_atomic | deactivate/reset override |
+| `iam.user.*` | `created`, `updated`, `deactivated`, `restored`, `password_reset`, `password_reset_requested`, `deleted` | critical_atomic | deactivate/reset override |
 | `iam.role.*` | `created`, `updated`, `deleted`, `permission_changed` | critical_atomic | permission change/delete |
 | `iam.permission.*` | `created`, `updated`, `deleted`, `department_scope_changed` | critical_atomic | yes for access changes |
 | `iam.department.*` | `created`, `updated`, `deleted`, `assignment_changed` | critical_atomic | delete/assignment override |
@@ -53,6 +53,8 @@ No password, token, secret, cookie, session credential, raw file, unrestricted r
 Implemented (2026-10-17): `iam.permission.department_scope_changed`, produced by cps-api `PermissionsService` from `PUT /permissions/access` (reason required) and `PUT /permissions/:id/departments` (legacy, reason optional). Schema version 1, SUCCESS only, target `PERMISSION`/permission id, before/after `{ code, accessScope, departmentIds }`; written in the same transaction as the scope change. Covered by `permissions.service.spec.ts`.
 
 Implemented (2026-10-17): `iam.role.actions_changed`, produced by cps-api `RolesService` from `PUT /roles/actions` (reason required) and from `POST`/`PATCH /roles` when `actionCodes` changes (reason null). Schema version 1, SUCCESS only, target `ROLE`/role id, before/after `{ code, actionCodes }`; only written when the action set actually changes, in the same transaction. Covered by `roles.service.spec.ts`.
+
+Implemented (2026-10-17): `iam.user.created`, `iam.user.updated`, `iam.user.deactivated`, `iam.user.restored`, `iam.user.password_reset`, `iam.user.deleted`, produced by cps-api `UsersService` from `POST /users`, `PATCH /users/:id`, `PATCH /users/:id/status`, `POST /users/:id/reset-password` and `DELETE /users/:id` (used by `/system/users`). Schema version 1, SUCCESS only, target `USER`/user id, actor = the SUPER_ADMIN. before/after `{ username, firstName, lastName, email, telephone, isActive, assignments?[{ departmentId, roleId }] }` — never the password or its hash (`password_reset` has null before/after). Written in the same transaction as the change; `updated` only when the snapshot differs, status change skipped when unchanged. Covered by `users.lifecycle.spec.ts` and `users.aggregate-update.spec.ts`.
 
 Implemented (2026-10-17): `iam.user_permission.overrides_changed`, produced by cps-api `replaceAssignmentOverrides` from `PUT /users/:id/assignments/:assignmentId/permissions` (reason required) and from `PATCH /users/:id/assignments/:assignmentId` when `permissionIds` is sent (reason null). Schema version 1, SUCCESS only, target `USER_ASSIGNMENT`/assignment id with the assignment's department, before/after `{ userId, overrides[{ permissionCode, effect, expiresAt }] }`; only written when the set changes, in the same transaction. Covered by `user-permission-overrides.service.spec.ts` and `users.service.spec.ts`.
 
