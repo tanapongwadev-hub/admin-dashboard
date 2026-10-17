@@ -4,6 +4,7 @@ import { getCurrentSession } from "@/lib/session";
 import { cookies } from "next/headers";
 import { tokenExpiresAt } from "@/lib/auth-tokens";
 import { AuthHeartbeat } from "@/components/layout/auth-heartbeat";
+import { listMyDepartments, type MyDepartment } from "@/lib/api/auth";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getCurrentSession();
@@ -20,13 +21,20 @@ export default async function DashboardLayout({ children }: { children: React.Re
     redirect("/api/auth/clear-cookies?next=/login");
   }
 
+  const accessToken = (await cookies()).get("accessToken")?.value;
+  // Only users with several assignments get a switcher; never block the page on it.
+  const departments: MyDepartment[] = accessToken
+    ? await listMyDepartments(accessToken).catch(() => [])
+    : [];
+
   return (
     <DashboardShell
       user={session.user}
       currentDepartmentRole={session.currentDepartmentRole}
       menus={session.menus}
+      departments={departments}
     >
-      <AuthHeartbeat expiresAt={tokenExpiresAt((await cookies()).get("accessToken")?.value)} />
+      <AuthHeartbeat expiresAt={tokenExpiresAt(accessToken)} />
       {children}
     </DashboardShell>
   );

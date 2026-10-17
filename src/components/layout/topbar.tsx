@@ -11,7 +11,7 @@ import { CommandPalette } from "@/components/layout/command-palette";
 import { NotificationsMenu } from "@/components/layout/notifications-menu";
 import { UserMenu } from "@/components/layout/user-menu";
 import { secondaryNav, menuHref, flattenMenus } from "@/lib/nav";
-import type { AuthenticatedUser, CurrentDepartmentRole, MenuNode } from "@/lib/api/auth";
+import type { AuthenticatedUser, CurrentDepartmentRole, MenuNode, MyDepartment } from "@/lib/api/auth";
 
 function useBreadcrumb(menus: MenuNode[]) {
   const pathname = usePathname();
@@ -29,12 +29,14 @@ export function Topbar({
   user,
   currentDepartmentRole,
   menus,
+  departments = [],
   collapsed,
   onToggleCollapsed,
 }: {
   user: AuthenticatedUser;
   currentDepartmentRole: CurrentDepartmentRole | null;
   menus: MenuNode[];
+  departments?: MyDepartment[];
   collapsed: boolean;
   onToggleCollapsed: () => void;
 }) {
@@ -105,7 +107,7 @@ export function Topbar({
         </Button>
         <NotificationsMenu />
         <div className="mx-1 h-6 w-px bg-border" />
-        <UserMenu user={user} currentDepartmentRole={currentDepartmentRole} />
+        <UserMenu user={user} currentDepartmentRole={currentDepartmentRole} departments={departments} />
       </div>
     </header>
   );

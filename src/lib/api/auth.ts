@@ -130,6 +130,35 @@ export function getMe(accessToken: string) {
   });
 }
 
+// GET /auth/me/departments — the signed-in user's own selectable assignments.
+export interface MyDepartment {
+  userDepartmentRoleId: string;
+  departmentId: string | null;
+  departmentCode: string | null;
+  departmentName: string | null;
+  departmentNameEn: string | null;
+  departmentParentName: string | null;
+  departmentParentNameEn: string | null;
+  roleCode: string;
+  roleName: string;
+  isCurrent: boolean;
+}
+
+export function listMyDepartments(accessToken: string) {
+  return apiFetch<{ data?: MyDepartment[] } | MyDepartment[]>("/auth/me/departments", {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  }).then((result) => (Array.isArray(result) ? result : (result.data ?? [])));
+}
+
+// POST /auth/switch-department — issues tokens for another of the user's assignments.
+export function switchDepartment(accessToken: string, userDepartmentRoleId: string) {
+  return apiFetch<LoginSuccess>("/auth/switch-department", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${accessToken}` },
+    body: JSON.stringify({ userDepartmentRoleId }),
+  });
+}
+
 export function logout(accessToken: string) {
   return apiFetch<{ success: boolean; message: string }>("/auth/logout", {
     method: "POST",

@@ -4,17 +4,19 @@ import * as React from "react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import type { AuthenticatedUser, CurrentDepartmentRole, MenuNode } from "@/lib/api/auth";
+import type { AuthenticatedUser, CurrentDepartmentRole, MenuNode, MyDepartment } from "@/lib/api/auth";
 
 export function DashboardShell({
   user,
   currentDepartmentRole,
   menus,
+  departments = [],
   children,
 }: {
   user: AuthenticatedUser;
   currentDepartmentRole: CurrentDepartmentRole | null;
   menus: MenuNode[];
+  departments?: MyDepartment[];
   children: React.ReactNode;
 }) {
   const [collapsed, setCollapsed] = React.useState(false);
@@ -40,6 +42,7 @@ export function DashboardShell({
             user={user}
             currentDepartmentRole={currentDepartmentRole}
             menus={menus}
+            departments={departments}
             collapsed={collapsed}
             onToggleCollapsed={() => setCollapsed((v) => !v)}
           />
