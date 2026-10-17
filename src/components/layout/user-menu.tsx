@@ -61,7 +61,8 @@ export function UserMenu({
       return;
     }
     toast.success(`สลับเป็น ${departmentLabel(department)} แล้ว`);
-    router.push("/dashboard");
+    // Stay on the current page (path + query): the refresh re-renders it for the
+    // new department. A page the new department cannot open shows its own notice.
     router.refresh();
   }
 
