@@ -31,7 +31,7 @@ export async function EngineeringPage({ scope }: { scope: EngineeringScope }) {
   }
   const permissions = {
     bom: { view: allowed(engineeringPermission(scope, 'bom', 'VIEW')), create: allowed(engineeringPermission(scope, 'bom', 'CREATE')) && allowed('MATERIAL_VIEW'), activate: allowed(engineeringPermission(scope, 'bom', 'UPDATE')) },
-    workflow: { view: allowed(engineeringPermission(scope, 'workflow', 'VIEW')), create: allowed(engineeringPermission(scope, 'workflow', 'CREATE')) && allowed('PROCESS_STEP_VIEW'), activate: allowed(engineeringPermission(scope, 'workflow', 'UPDATE')) },
+    workflow: { view: allowed(engineeringPermission(scope, 'workflow', 'VIEW')), create: allowed(engineeringPermission(scope, 'workflow', 'CREATE')), activate: allowed(engineeringPermission(scope, 'workflow', 'UPDATE')) },
   };
   if (!(['bom', 'workflow'] as const).some((kind) => allowed(engineeringPermission(scope, kind, 'VIEW')) || allowed(engineeringPermission(scope, kind, 'CREATE')))) return (
     <PermissionNotice
@@ -59,8 +59,7 @@ export async function EngineeringPage({ scope }: { scope: EngineeringScope }) {
         <p className="mt-1 text-sm text-fg-muted">กำหนดส่วนประกอบและลำดับขั้นตอน แยกเวอร์ชัน BOM และ Workflow ตามข้อมูลปลายทาง</p>
       </header>
       {allowed(engineeringPermission(scope, 'bom', 'CREATE')) && !allowed('MATERIAL_VIEW') && <p className="rounded-md bg-warning-soft p-3 text-sm text-fg">การเพิ่ม BOM ต้องมีสิทธิ์ดูวัสดุส่วนประกอบ กรุณาติดต่อผู้ดูแลระบบ</p>}
-      {allowed(engineeringPermission(scope, 'workflow', 'CREATE')) && !allowed('PROCESS_STEP_VIEW') && <p className="rounded-md bg-warning-soft p-3 text-sm text-fg">การเพิ่ม Workflow ต้องมีสิทธิ์ดูขั้นตอนกระบวนการ กรุณาติดต่อผู้ดูแลระบบ</p>}
-      <EngineeringClient scope={scope} owners={owners.map((owner) => ({ id: owner.id, code: owner.code, name: owner.name, isActive: owner.isActive }))} materials={catalog.activeMaterials} processSteps={processSteps} permissions={permissions} />
+            <EngineeringClient scope={scope} owners={owners.map((owner) => ({ id: owner.id, code: owner.code, name: owner.name, isActive: owner.isActive }))} materials={catalog.activeMaterials} processSteps={processSteps} permissions={permissions} />
     </div>
   );
 }
