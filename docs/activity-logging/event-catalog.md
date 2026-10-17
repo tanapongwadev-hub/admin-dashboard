@@ -50,6 +50,12 @@ No password, token, secret, cookie, session credential, raw file, unrestricted r
 | `iam.department.*` | `created`, `updated`, `deleted`, `assignment_changed` | critical_atomic | delete/assignment override |
 | `iam.menu.*` | `created`, `updated`, `deleted`, `reordered` | critical_atomic | delete |
 
+Implemented (2026-10-17): `iam.permission.department_scope_changed`, produced by cps-api `PermissionsService` from `PUT /permissions/access` (reason required) and `PUT /permissions/:id/departments` (legacy, reason optional). Schema version 1, SUCCESS only, target `PERMISSION`/permission id, before/after `{ code, accessScope, departmentIds }`; written in the same transaction as the scope change. Covered by `permissions.service.spec.ts`.
+
+Implemented (2026-10-17): `iam.role.actions_changed`, produced by cps-api `RolesService` from `PUT /roles/actions` (reason required) and from `POST`/`PATCH /roles` when `actionCodes` changes (reason null). Schema version 1, SUCCESS only, target `ROLE`/role id, before/after `{ code, actionCodes }`; only written when the action set actually changes, in the same transaction. Covered by `roles.service.spec.ts`.
+
+Implemented (2026-10-17): `iam.user_permission.overrides_changed`, produced by cps-api `replaceAssignmentOverrides` from `PUT /users/:id/assignments/:assignmentId/permissions` (reason required) and from `PATCH /users/:id/assignments/:assignmentId` when `permissionIds` is sent (reason null). Schema version 1, SUCCESS only, target `USER_ASSIGNMENT`/assignment id with the assignment's department, before/after `{ userId, overrides[{ permissionCode, effect, expiresAt }] }`; only written when the set changes, in the same transaction. Covered by `user-permission-overrides.service.spec.ts` and `users.service.spec.ts`.
+
 All IAM events retain immutable actor and target snapshots. Permission-related changes are `Restricted`, create alerts when high-risk capabilities are granted, and are visible only with sensitive-view permission.
 
 ### Inventory and production workflows — P0

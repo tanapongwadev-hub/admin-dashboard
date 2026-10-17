@@ -14,11 +14,12 @@ import {
   type ListMaterialsParams,
 } from "@/lib/api/materials";
 import { MaterialPcClient } from "@/components/materials-pc/material-pc-client";
-import { loadProductMaterialCatalog } from "@/lib/product-materials";
-import { groupMaterials } from "@/lib/material-groups";
 import { listMaterialIdsWithBom } from "@/lib/api/engineering";
 
 const PAGE_SIZES = new Set([20, 40, 60]);
+// PIPE/SHEET/COIL are raw source materials (Material main). They are listed only
+// in the Pipe / Sheet / Coil tab; their processed outputs stay in the normal tab.
+const RAW_SHAPES = new Set(["PIPE", "SHEET", "COIL"]);
 
 export default async function MaterialsPcPage({
   searchParams,
@@ -90,7 +91,7 @@ export default async function MaterialsPcPage({
 
   const inventoryQuery: ListMaterialInventoryParams = { search, isActive, type, stockStatus, supplierId: params.supplierId, modelId: params.modelId, loadingPointId: params.loadingPointId, processLineName: params.processLineName, sortBy, sortOrder };
   const materialQuery: ListMaterialsParams = { search, isActive, type, supplierId: params.supplierId, modelId: params.modelId, loadingPointId: params.loadingPointId, sortBy: sortBy === "name" ? "name" : "code", sortOrder };
-  const [lookups, inventory, materialList, catalog, balances, bomMaterialIds] = await Promise.all([
+  const [lookups, inventory, materialList, balances, bomMaterialIds] = await Promise.all([
     getMaterialLookups(accessToken),
     canViewStock
       ? listMaterialInventory(accessToken, {
@@ -122,7 +123,6 @@ export default async function MaterialsPcPage({
           sortOrder,
         })
       : Promise.resolve(null),
-    loadProductMaterialCatalog((catalogPage) => listMaterials(accessToken, { page: catalogPage, limit: 100, sortBy: "code", sortOrder: "asc" })),
     canViewStock ? listStockBalances(accessToken) : Promise.resolve(null),
     canViewBom ? listMaterialIdsWithBom(accessToken) : Promise.resolve([]),
   ]);
@@ -139,16 +139,15 @@ export default async function MaterialsPcPage({
     ));
     matches.push(...pages.flatMap((result) => result.items));
   }
-  const rawGroups = groupMaterials(matches, catalog.diagramMaterials).filter((group) => ["PIPE", "SHEET", "COIL"].includes(group.main.materialType));
+  const rawMatches = matches.filter((material) => RAW_SHAPES.has(material.materialType));
+  const normalMatches = matches.filter((material) => !RAW_SHAPES.has(material.materialType));
   const bomIds = new Set(bomMaterialIds);
   const bomMatches = matches.filter((material) => bomIds.has(material.id));
-  const tabRows = activeTab === "bom" ? bomMatches : matches;
-  const totalItems = activeTab === "raw" ? rawGroups.length : tabRows.length;
+  const tabRows = activeTab === "bom" ? bomMatches : activeTab === "raw" ? rawMatches : normalMatches;
+  const totalItems = tabRows.length;
   const totalPages = Math.ceil(totalItems / limit);
   const currentPage = Math.min(page, Math.max(1, totalPages));
-  const displayedMaterials = activeTab === "raw"
-    ? rawGroups.slice((currentPage - 1) * limit, currentPage * limit).flatMap((group) => group.members)
-    : tabRows.slice((currentPage - 1) * limit, currentPage * limit);
+  const displayedMaterials = tabRows.slice((currentPage - 1) * limit, currentPage * limit);
   const groupedMeta = { page: currentPage, limit, totalItems, totalPages };
   const stockByMaterialId = balances
     ? Object.fromEntries(balances.map((balance) => [balance.materialId, balance])) as Record<string, StockBalance>
@@ -185,8 +184,9 @@ export default async function MaterialsPcPage({
         stockByMaterialId={stockByMaterialId}
         canViewStock={canViewStock}
         activeTab={activeTab}
-        tabCounts={{ all: matches.length, raw: rawGroups.length, bom: bomMatches.length }}
+        tabCounts={{ all: normalMatches.length, raw: rawMatches.length, bom: bomMatches.length }}
         canViewBom={canViewBom}
+        bomMaterialIds={bomMaterialIds}
       />
     </div>
   );

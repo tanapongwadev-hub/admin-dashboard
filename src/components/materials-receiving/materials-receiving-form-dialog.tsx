@@ -151,7 +151,9 @@ export function MaterialsReceivingFormDialog({
   const supplierSelectValue = suppliers.some((s) => s.id === supplierId) ? supplierId : "";
   const effectiveSupplierId = supplierSelectValue || (suppliers.length === 1 ? suppliers[0].id : "");
 
-  const selectedMaterial = lookups.materials.find((m) => m.id === materialId);
+  // BOM owners are received only from closing production; cps-api also refuses them.
+  const receivableMaterials = lookups.materials.filter((m) => !m.hasBom);
+  const selectedMaterial = receivableMaterials.find((m) => m.id === materialId);
   const packingQuantity = selectedMaterial?.packingQuantity ?? null;
   const receiveQty = Number(receiveQuantity) || 0;
   const preview = calculateReceivingPreview({
@@ -223,19 +225,22 @@ export function MaterialsReceivingFormDialog({
           <div className="flex flex-col gap-4 px-6 py-5 md:overflow-y-auto md:[scrollbar-width:none] md:[&::-webkit-scrollbar]:hidden">
             <div className="flex flex-col gap-1.5">
               <Label>วัสดุ</Label>
-              {lookups.materials.length === 0 ? (
+              {receivableMaterials.length === 0 ? (
                 <MasterDataEmptyLink href="/materials/catalog" resourceLabel="วัสดุ" />
               ) : (
                 <Select value={materialId} onValueChange={handleMaterialChange}>
                   <SelectTrigger><SelectValue placeholder="เลือกวัสดุ" /></SelectTrigger>
                   <SelectContent>
-                    {lookups.materials.map((material) => (
+                    {receivableMaterials.map((material) => (
                       <SelectItem key={material.id} value={material.id}>
                         {material.code} · {material.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+              )}
+              {lookups.materials.some((m) => m.hasBom) && (
+                <p className="text-xs text-fg-muted">วัสดุที่มี BOM ไม่แสดงในรายการนี้ เพราะรับเข้าได้จากการปิดการผลิตเท่านั้น</p>
               )}
               {selectedMaterial && !receivesSheets && (
                 <p className="text-xs text-fg-muted">

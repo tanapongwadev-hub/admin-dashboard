@@ -98,6 +98,8 @@ export interface MaterialReceiving {
 
 export interface MaterialReceivingLookupMaterial {
   processingMaterialId?: string | null;
+  /** Owns a Material BOM: received only from closing production, never manually. */
+  hasBom?: boolean;
   id: string;
   code: string;
   name: string;

@@ -52,7 +52,7 @@ export function MaterialsReceivingClient({
   const router = useRouter();
   const pathname = usePathname();
   const initialMaterial = initialMaterialCode
-    ? lookups.materials.find((m) => m.code.toLowerCase() === initialMaterialCode.toLowerCase())
+    ? lookups.materials.find((m) => !m.hasBom && m.code.toLowerCase() === initialMaterialCode.toLowerCase())
     : undefined;
   const canReceive = canCreate && canConfirm;
   // Defaults to "card" (not "table") — every field on the card is explicitly

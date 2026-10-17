@@ -62,6 +62,8 @@ interface MaterialCollectionProps {
   // MATERIALS_RECEIVING_CREATE just lands on a receiving list they can't
   // create from, same as navigating there directly via the sidebar.
   onReceive: (material: Material) => void;
+  // false for Materials that may only be received from closing production (they own a BOM).
+  isReceivable?: (material: Material) => boolean;
   // Navigates to /materials/materials-receiving with this material's code
   // as a persistent list filter (?materialCode=, no ?open=create) — "view
   // history", distinct from onReceive's "go create a new receiving" intent.
@@ -238,6 +240,7 @@ export function getMaterialRowActions(
     // Optional for the same reason — omitting it just means "รับเข้า"
     // isn't in the resulting action list.
     onReceive?: (material: Material) => void;
+    isReceivable?: (material: Material) => boolean;
     // Optional — omitting any of these three just means that action isn't
     // in the resulting list (same "optional handler, no-op call sites don't
     // need a stub" convention as onViewDetails/onReceive above).
@@ -256,7 +259,7 @@ export function getMaterialRowActions(
       variant: "default",
     });
   }
-  if (handlers.onReceive) {
+  if (handlers.onReceive && handlers.isReceivable?.(material) !== false) {
     actions.push({
       label: "รับเข้า",
       icon: PackagePlus,
@@ -264,7 +267,8 @@ export function getMaterialRowActions(
       variant: "default",
     });
   }
-  if (handlers.onViewReceivingHistory) {
+  // BOM owners are received only from production, so their manual receiving history is hidden too.
+  if (handlers.onViewReceivingHistory && handlers.isReceivable?.(material) !== false) {
     actions.push({
       label: "รายการรับเข้า",
       icon: ArrowDownToLine,
@@ -317,6 +321,7 @@ function MaterialActions({
   onToggleStatus,
   onViewDetails,
   onReceive,
+  isReceivable,
   onViewReceivingHistory,
   onViewDisbursementHistory,
   onViewBomUsage,
@@ -330,6 +335,7 @@ function MaterialActions({
         onToggleStatus,
         onViewDetails,
         onReceive,
+        isReceivable,
         onViewReceivingHistory,
         onViewDisbursementHistory,
         onViewBomUsage,
@@ -403,6 +409,7 @@ function MaterialEditorialCard({
   onToggleStatus,
   onViewDetails,
   onReceive,
+  isReceivable,
   onViewReceivingHistory,
   onViewDisbursementHistory,
   onViewBomUsage,
@@ -433,6 +440,7 @@ function MaterialEditorialCard({
             actions={getMaterialRowActions(material, canEdit, canDelete, {
               onEdit,
               onToggleStatus,
+              isReceivable,
               onViewReceivingHistory,
               onViewDisbursementHistory,
               onViewBomUsage,
@@ -499,15 +507,18 @@ function MaterialEditorialCard({
           (flex-1 alone doesn't allow a flex item to shrink below its
           content's natural width). */}
       <div className="flex gap-2 border-t border-border px-4 py-3">
-        <Button
-          variant="primary"
-          size="sm"
-          className="min-w-0 flex-1 px-2"
-          onClick={() => onReceive(material)}
-        >
-          <PackagePlus className="h-3.5 w-3.5 shrink-0" />
-          <span className="min-w-0 truncate">+ รับเข้า</span>
-        </Button>
+        {/* BOM owners are received only from closing production: no receive action at all. */}
+        {isReceivable?.(material) !== false && (
+          <Button
+            variant="primary"
+            size="sm"
+            className="min-w-0 flex-1 px-2"
+            onClick={() => onReceive(material)}
+          >
+            <PackagePlus className="h-3.5 w-3.5 shrink-0" />
+            <span className="min-w-0 truncate">+ รับเข้า</span>
+          </Button>
+        )}
         <Button
           variant="secondary"
           size="sm"
@@ -582,6 +593,7 @@ function MaterialListItem({
   onToggleStatus,
   onViewDetails,
   onReceive,
+  isReceivable,
   onViewReceivingHistory,
   onViewDisbursementHistory,
   onViewBomUsage,
@@ -656,6 +668,7 @@ function MaterialListItem({
             onToggleStatus,
             onViewDetails,
             onReceive,
+            isReceivable,
             onViewReceivingHistory,
             onViewDisbursementHistory,
             onViewBomUsage,
@@ -687,6 +700,7 @@ function MaterialPcSelectableTable({
   onToggleStatus,
   onViewDetails,
   onReceive,
+  isReceivable,
   onViewReceivingHistory,
   onViewDisbursementHistory,
   onViewBomUsage,
@@ -801,6 +815,7 @@ function MaterialPcSelectableTable({
                       onToggleStatus={onToggleStatus}
                       onViewDetails={onViewDetails}
                       onReceive={onReceive}
+                      isReceivable={isReceivable}
                       onViewReceivingHistory={onViewReceivingHistory}
                       onViewDisbursementHistory={onViewDisbursementHistory}
                       onViewBomUsage={onViewBomUsage}
@@ -833,6 +848,7 @@ export function MaterialPcCollection({
   onToggleStatus,
   onViewDetails,
   onReceive,
+  isReceivable,
   onViewReceivingHistory,
   onViewDisbursementHistory,
   onViewBomUsage,
@@ -849,6 +865,7 @@ export function MaterialPcCollection({
     onToggleStatus,
     onViewDetails,
     onReceive,
+    isReceivable,
     onViewReceivingHistory,
     onViewDisbursementHistory,
     onViewBomUsage,
@@ -876,6 +893,7 @@ export function MaterialPcCollection({
           onToggleStatus={onToggleStatus}
           onViewDetails={onViewDetails}
           onReceive={onReceive}
+          isReceivable={isReceivable}
           onViewReceivingHistory={onViewReceivingHistory}
           onViewDisbursementHistory={onViewDisbursementHistory}
           onViewBomUsage={onViewBomUsage}
@@ -952,6 +970,7 @@ export function MaterialPcTable({
   onToggleStatus,
   onViewDetails,
   onReceive,
+  isReceivable,
   onViewReceivingHistory,
   onViewDisbursementHistory,
   onViewBomUsage,
@@ -969,6 +988,8 @@ export function MaterialPcTable({
   onToggleStatus: (material: Material) => void;
   onViewDetails: (material: Material) => void;
   onReceive: (material: Material) => void;
+  // false for Materials that may only be received from closing production (they own a BOM).
+  isReceivable?: (material: Material) => boolean;
   onViewReceivingHistory: (material: Material) => void;
   onViewDisbursementHistory: (material: Material) => void;
   onViewBomUsage: (material: Material) => void;
@@ -1018,6 +1039,7 @@ export function MaterialPcTable({
         onToggleStatus={onToggleStatus}
         onViewDetails={onViewDetails}
         onReceive={onReceive}
+        isReceivable={isReceivable}
         onViewReceivingHistory={onViewReceivingHistory}
         onViewDisbursementHistory={onViewDisbursementHistory}
         onViewBomUsage={onViewBomUsage}

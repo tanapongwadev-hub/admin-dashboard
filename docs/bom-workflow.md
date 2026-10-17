@@ -36,6 +36,14 @@ Service ล็อก Material ปลายทางระหว่างสร�
 
 Frontend: `components/engineering/engineering-page.tsx` โหลด catalogs ครบทุกหน้า; client/form ใช้ Radix, RHF+zod และ Server Actions ใน `bom-workflow/actions.ts` ตรวจ session/permission ซ้ำ ใช้ route ที่อนุญาตไว้และ revalidate Products/Materials หลัง mutation
 
+## Receiving rule for BOM-owned Materials
+
+A Material that owns a Material BOM (any version: DRAFT, ACTIVE or INACTIVE) is manufactured, so its stock may only come from closing production (`MaterialProductionReceiptService` → `receiveProductionWithManager`).
+
+- cps-api `MaterialsReceivingService` refuses `POST /materials-receiving`, `POST /materials-receiving/receive` and confirming a manual draft (no `productionOrderLineId`/`sourceReceivingId`) with 409 "วัสดุนี้มี BOM จึงรับเข้าเองไม่ได้ ต้องรับเข้าจากการปิดการผลิตเท่านั้น". Production receipts and material-processing outputs are not affected.
+- `GET /materials-receiving/lookups` marks each material with `hasBom`; the receiving form leaves those out of its picker and explains why, and `?materialCode=` for a BOM material does not preselect it.
+- On `/materials/catalog`, the card hides its "+ รับเข้า" button (only "รายละเอียด" remains) and row menus drop "รับเข้า" and "รายการรับเข้า" for BOM owners. The catalog learns BOM owners from `/material-engineering/materials/with-bom`, which needs `MATERIAL_BOMS_VIEW`; without that permission the button still shows and the backend refuses the receipt.
+
 ## Installation / inspection
 
 Migration ติดตั้งใน local สำเร็จ สองครั้งแรก rollback ทั้ง transaction จาก legacy menu CHECK และ parameter type ของ permission insert; แก้ก่อน migration สำเร็จ ไม่มีข้อมูลธุรกิจเดิมถูกลบ Environment อื่นต้องรัน migration ก่อนเปิด API ใหม่ จากนั้น refresh session/page เพื่อโหลดเมนู

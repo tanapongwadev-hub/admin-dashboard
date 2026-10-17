@@ -30,6 +30,7 @@ export function MaterialPcClient({
   activeTab,
   tabCounts,
   canViewBom,
+  bomMaterialIds,
 }: {
   materials: Material[];
   meta: PaginatedResult<Material>["meta"];
@@ -43,7 +44,12 @@ export function MaterialPcClient({
   activeTab: "all" | "raw" | "bom";
   tabCounts: { all: number; raw: number; bom: number };
   canViewBom: boolean;
+  // Materials owning a Material BOM: stock only comes from closing production,
+  // so the manual "รับเข้า" action is hidden for them (cps-api enforces it too).
+  bomMaterialIds: string[];
 }) {
+  const bomIdSet = React.useMemo(() => new Set(bomMaterialIds), [bomMaterialIds]);
+  const isReceivable = React.useCallback((material: Material) => !bomIdSet.has(material.id), [bomIdSet]);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -138,12 +144,12 @@ export function MaterialPcClient({
         )}
       </div>
 
-      <MaterialPcFilters lookups={lookups} canViewStock={canViewStock} totalItems={meta.totalItems} countUnit={activeTab === "raw" ? "กลุ่ม" : "รายการ"} />
+      <MaterialPcFilters lookups={lookups} canViewStock={canViewStock} totalItems={meta.totalItems} countUnit="รายการ" />
 
       <MaterialPcTable
         materials={materials}
         collectionHeader={collectionHeader}
-        groupRelated={activeTab === "raw"}
+        groupRelated={false}
         meta={meta}
         view={view}
         canEdit={canEdit}
@@ -153,6 +159,7 @@ export function MaterialPcClient({
         onToggleStatus={(material) => setStatusTarget(material)}
         onViewDetails={(material) => setDetailsTarget(material)}
         onReceive={handleReceive}
+        isReceivable={isReceivable}
         onViewReceivingHistory={handleViewReceivingHistory}
         onViewDisbursementHistory={handleViewDisbursementHistory}
         onViewBomUsage={(material) => setBomUsageTarget(material)}
