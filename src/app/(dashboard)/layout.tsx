@@ -21,7 +21,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
     redirect("/api/auth/clear-cookies?next=/login");
   }
 
-  const accessToken = (await cookies()).get("accessToken")?.value;
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get("accessToken")?.value;
+  // The refresh token expires at the hard end of the 4-hour session.
+  const sessionEndsAt = tokenExpiresAt(cookieStore.get("refreshToken")?.value);
   // Only users with several assignments get a switcher; never block the page on it.
   const departments: MyDepartment[] = accessToken
     ? await listMyDepartments(accessToken).catch(() => [])
@@ -33,6 +36,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       currentDepartmentRole={session.currentDepartmentRole}
       menus={session.menus}
       departments={departments}
+      sessionEndsAt={sessionEndsAt}
     >
       <AuthHeartbeat expiresAt={tokenExpiresAt(accessToken)} />
       {children}

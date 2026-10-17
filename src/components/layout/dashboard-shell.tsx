@@ -11,12 +11,14 @@ export function DashboardShell({
   currentDepartmentRole,
   menus,
   departments = [],
+  sessionEndsAt = null,
   children,
 }: {
   user: AuthenticatedUser;
   currentDepartmentRole: CurrentDepartmentRole | null;
   menus: MenuNode[];
   departments?: MyDepartment[];
+  sessionEndsAt?: number | null;
   children: React.ReactNode;
 }) {
   const [collapsed, setCollapsed] = React.useState(false);
@@ -43,6 +45,7 @@ export function DashboardShell({
             currentDepartmentRole={currentDepartmentRole}
             menus={menus}
             departments={departments}
+            sessionEndsAt={sessionEndsAt}
             collapsed={collapsed}
             onToggleCollapsed={() => setCollapsed((v) => !v)}
           />

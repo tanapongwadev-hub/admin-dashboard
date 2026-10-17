@@ -10,6 +10,7 @@ import { SidebarNav } from "@/components/layout/sidebar-nav";
 import { CommandPalette } from "@/components/layout/command-palette";
 import { NotificationsMenu } from "@/components/layout/notifications-menu";
 import { UserMenu } from "@/components/layout/user-menu";
+import { SessionCountdown } from "@/components/layout/session-countdown";
 import { secondaryNav, menuHref, flattenMenus } from "@/lib/nav";
 import type { AuthenticatedUser, CurrentDepartmentRole, MenuNode, MyDepartment } from "@/lib/api/auth";
 
@@ -30,6 +31,7 @@ export function Topbar({
   currentDepartmentRole,
   menus,
   departments = [],
+  sessionEndsAt = null,
   collapsed,
   onToggleCollapsed,
 }: {
@@ -37,6 +39,7 @@ export function Topbar({
   currentDepartmentRole: CurrentDepartmentRole | null;
   menus: MenuNode[];
   departments?: MyDepartment[];
+  sessionEndsAt?: number | null;
   collapsed: boolean;
   onToggleCollapsed: () => void;
 }) {
@@ -105,6 +108,7 @@ export function Topbar({
         <Button variant="ghost" size="icon" className="text-fg-secondary sm:hidden" aria-label="ค้นหา">
           <CommandPaletteMobileIcon />
         </Button>
+        <SessionCountdown endsAt={sessionEndsAt} />
         <NotificationsMenu />
         <div className="mx-1 h-6 w-px bg-border" />
         <UserMenu user={user} currentDepartmentRole={currentDepartmentRole} departments={departments} />
