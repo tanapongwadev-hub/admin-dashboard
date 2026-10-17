@@ -25,10 +25,16 @@ const EXACT_MESSAGES: Record<string, string> = {
   "Unsupported image format": "รูปแบบไฟล์รูปภาพไม่รองรับ",
   "Invalid menu item id": "รหัสรายการเมนูไม่ถูกต้อง",
   "Code already exists": "รหัสนี้มีอยู่ในระบบแล้ว",
+  "Cannot disable the last super admin": "ปิดใช้งาน Super Admin คนสุดท้ายไม่ได้",
+  "Cannot remove the last super admin": "ถอดหรือลบ Super Admin คนสุดท้ายไม่ได้",
+  "User already has this department assignment": "ผู้ใช้นี้อยู่ในแผนกนี้แล้ว",
+  "User assignment not found": "ไม่พบการมอบหมายแผนกนี้ อาจถูกลบไปแล้ว กรุณารีเฟรช",
 };
 
 const RESOURCE_NAMES: Record<string, string> = {
   user: "ผู้ใช้",
+  username: "ชื่อผู้ใช้",
+  email: "อีเมล",
   department: "แผนก",
   role: "บทบาท",
   menu: "เมนู",

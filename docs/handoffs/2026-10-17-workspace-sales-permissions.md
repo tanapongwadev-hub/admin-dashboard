@@ -85,6 +85,27 @@ URL เดิม redirect แบบ 308 จาก `src/lib/legacy-menu-paths.ts`
 - **`/materials/catalog`**: แท็บรายการปกติไม่แสดงวัสดุต้นทาง PIPE/SHEET/COIL แล้ว แท็บ Pipe/Sheet/Coil แสดงเฉพาะ main แบบรายการแบน ไม่จัดกลุ่ม (ต่างจาก handoff ฉบับก่อน) วัสดุที่มี BOM ไม่มีปุ่มรับเข้าหรือ "รายการรับเข้า"
 - **ฟอร์มวัสดุ**: เลือก supplier แล้วเพิ่มทันที ไม่มีปุ่ม "เพิ่ม" แยกแล้ว
 
+## 7. ต่อจากฉบับนี้: `/system/users` ใช้ API จริงแล้ว (2026-10-17, รอบหลัง)
+
+หน้า `/system/users` เดิมเป็นข้อมูลตัวอย่าง ตอนนี้เรียก cps-api `/users` จริง (frontend อย่างเดียว ไม่แก้ backend) ทำให้ขั้นที่ 6 ของแผนสิทธิ์ (สร้างผู้ใช้ทั่วไปแล้วไล่ตั้งสิทธิ์) ทำผ่านหน้าเว็บได้
+
+| ทำอะไรได้ | ไฟล์ |
+| --- | --- |
+| รายการ + ค้นหา + แบ่งหน้า 20 คน (URL `?search=&page=`), SUPER_ADMIN เท่านั้น | `src/app/(dashboard)/system/users/page.tsx`, `components/users/users-client.tsx` |
+| เพิ่มผู้ใช้ (ต้องเลือกแผนก + role แรก), แก้ชื่อ/อีเมล/เบอร์ | `components/users/user-form-dialog.tsx` |
+| เพิ่ม/เปลี่ยน/ถอด แผนกและ role (บันทึกทีละแถว, ไม่ลบสิทธิ์รายบุคคล) | `components/users/user-assignments-dialog.tsx` |
+| ตั้งรหัสผ่านใหม่ (ผู้ใช้ถูก logout ทุกเครื่อง), เปิด/ปิดใช้งาน, ลบถาวร | `user-password-dialog.tsx`, `users-client.tsx` |
+| กติกาเมนูแถว / ชื่อแสดง / role ที่เลือกได้ (ไม่มี SUPER_ADMIN) | `components/users/user-row-actions.ts` (+ test) |
+| Server Actions + API client | `system/users/actions.ts` (+ `users-actions.test.ts`), `src/lib/api/users.ts` |
+
+ข้อจำกัดที่รู้:
+
+- **ยังไม่ได้รันอะไรเลย** — session นี้ไม่มี `node_modules` และไม่มี cps-api/DB ให้ต่อ จึงไม่ได้รัน test/lint/typecheck และไม่ได้เปิดใน browser สิ่งแรกที่ควรทำ (ถ้าผู้ใช้ขอ): `pnpm install`, `npx tsc --noEmit -p tsconfig.json`, `pnpm lint`, `npx tsx --test src/components/users/user-row-actions.test.ts "src/app/(dashboard)/system/users/users-actions.test.ts"` แล้วลองสร้างผู้ใช้จริงบน `cps_db_test`
+- แถวรายการไม่มีเบอร์โทร (API list ไม่ส่งมา) ฟอร์มแก้ไขจึงเริ่มช่องเบอร์ว่าง และการเว้นว่างจะคงค่าเดิม ลบอีเมล/เบอร์ทิ้งจากหน้านี้ไม่ได้ (cps-api `update` ข้ามค่าว่าง)
+- ไม่มีปุ่มปลดล็อกบัญชี (ไม่มี endpoint) สถานะ "ถูกล็อก" แสดงอย่างเดียว
+- ลบผู้ใช้เป็นการลบถาวร ถ้าผู้ใช้มีประวัติที่อ้างถึง (audit, เอกสาร) cps-api อาจตอบ error ให้ใช้ปิดใช้งานแทน — ยังไม่ได้ทดสอบกรณีนี้
+- สร้าง SUPER_ADMIN จากหน้านี้ไม่ได้โดยตั้งใจ (assignment ต้องมีแผนก)
+
 ## งานค้าง / ยังไม่ได้ตรวจ
 
 - ไม่มี SUPER_ADMIN อื่นหรือผู้ใช้ธรรมดาใน local นอกจาก `permtest_*` ใน `cps_db_test` grid override ในแท็บผู้ใช้จึงทดสอบบน `cps_db_test` เท่านั้น

@@ -64,7 +64,7 @@ export function CommandPalette() {
           </Command.Group>
 
           <Command.Group heading="การดำเนินการ" className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-fg-muted">
-            <Item icon={Plus} onSelect={() => go("/system/users?new=1")}>เชิญผู้ใช้งาน</Item>
+            <Item icon={Plus} onSelect={() => go("/system/users?new=1")}>เพิ่มผู้ใช้งาน</Item>
             <Item icon={Plus} onSelect={() => go("/engineering/products?new=1")}>เพิ่มสินค้า</Item>
           </Command.Group>
         </Command.List>
