@@ -149,7 +149,9 @@ export function Sidebar({
         // else — see globals.css. The sidebar's own color never changes; it
         // isn't part of any light/dark toggle (there isn't one anymore).
         "on-navy hidden shrink-0 flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-sm transition-[width] duration-200 lg:flex",
-        collapsed ? "w-[72px]" : "w-64"
+        // Expanded width follows the widest visible row (only open menus render
+        // their children), so labels stay readable; capped so it never swallows the page.
+        collapsed ? "w-[72px]" : "w-max min-w-64 max-w-[26rem]"
       )}
     >
       <div className="flex h-16 items-center justify-between border-b border-border px-4">

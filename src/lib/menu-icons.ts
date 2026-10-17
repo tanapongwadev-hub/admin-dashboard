@@ -1,5 +1,8 @@
 import {
   LayoutDashboard,
+  Package,
+  Layers,
+  Factory,
   LayoutGrid,
   Menu,
   Shield,
@@ -49,6 +52,9 @@ import type { MenuNode } from "./api/auth";
 // icon just to cover names we haven't seen yet.
 const MENU_ICONS: Record<string, LucideIcon> = {
   "layout-dashboard": LayoutDashboard,
+  "layers": Layers,
+  "factory": Factory,
+  "package": Package,
   "layout-grid": LayoutGrid,
   menu: Menu,
   shield: Shield,

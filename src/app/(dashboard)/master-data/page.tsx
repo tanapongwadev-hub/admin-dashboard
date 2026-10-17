@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
-import { Box, Car, FolderTree, GitBranch, ListChecks, MapPin, Route, Ruler, ShieldAlert, Tag, Truck, UserCircle, Workflow, XCircle, Building } from "lucide-react";
+import { Box, Car, FolderTree, GitBranch, KeyRound, ListChecks, MapPin, Network, Route, Ruler, ShieldAlert, Tag, Truck, UserCircle, Workflow, XCircle, Building } from "lucide-react";
 import { getCurrentSession } from "@/lib/session";
 import { listCategories } from "@/lib/api/categories";
 import { listCustomers } from "@/lib/api/customers";
@@ -17,8 +17,21 @@ import { listRejectReasons } from "@/lib/api/reject-reasons";
 import { listMaterialTypes } from "@/lib/api/material-types";
 import { listSuppliers } from "@/lib/api/suppliers";
 import { listUnits } from "@/lib/api/units";
+import { listDepartmentsAll, listRolesAll } from "@/lib/api/access-master";
 import { listStatusItems } from "@/lib/api/status-items";
 import { MasterDataDashboardView, type MasterDataResourceCard } from "@/components/master-data/master-data-dashboard-view";
+import { masterDataGroupOf } from "@/components/master-data/master-data-groups";
+
+// Counts for the SUPER_ADMIN-only access-control lists, which have no server-side
+// active filter: derive both numbers from the (<=100 row) list.
+async function listDepartmentCounts(token: string, params: { isActive?: boolean }) {
+  const { items } = await listDepartmentsAll(token);
+  return { meta: { totalItems: params.isActive ? items.filter((d) => d.isActive).length : items.length } };
+}
+async function listRoleCounts(token: string, params: { isActive?: boolean }) {
+  const { items } = await listRolesAll(token);
+  return { meta: { totalItems: params.isActive ? items.filter((r) => r.isActive).length : items.length } };
+}
 
 export const metadata: Metadata = { title: "ข้อมูลหลัก · Master Data" };
 
@@ -192,12 +205,30 @@ export default async function MasterDataDashboardPage() {
       permission: "ORGANIZATION_VIEW",
       list: listOrganizations,
     },
+    {
+      key: "departments",
+      name: "แผนก",
+      description: "กลุ่มและแผนกย่อย ใช้กำหนดว่าผู้ใช้เข้าเมนูไหนได้",
+      href: "/system/departments",
+      icon: Network,
+      permission: "__SUPER_ADMIN__",
+      list: listDepartmentCounts,
+    },
+    {
+      key: "roles",
+      name: "บทบาท (Role)",
+      description: "บทบาทและ action ที่แต่ละ role ทำได้",
+      href: "/system/roles",
+      icon: KeyRound,
+      permission: "__SUPER_ADMIN__",
+      list: listRoleCounts,
+    },
   ] as const;
 
   const resources: MasterDataResourceCard[] = await Promise.all(
     definitions.map(async (def): Promise<MasterDataResourceCard> => {
       if (!has(def.permission)) {
-        return { key: def.key, name: def.name, description: def.description, href: def.href, icon: def.icon, total: null, active: null };
+        return { key: def.key, group: masterDataGroupOf(def.key), name: def.name, description: def.description, href: def.href, icon: def.icon, total: null, active: null };
       }
       const [totalPage, activePage] = await Promise.all([
         def.list(accessToken, { page: 1, limit: 1 }),
@@ -205,6 +236,7 @@ export default async function MasterDataDashboardPage() {
       ]);
       return {
         key: def.key,
+        group: masterDataGroupOf(def.key),
         name: def.name,
         description: def.description,
         href: def.href,

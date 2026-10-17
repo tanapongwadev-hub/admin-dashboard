@@ -15,6 +15,17 @@ export interface UserRow {
   isActive: boolean;
   isLocked: boolean;
   createdAt: string;
+  /** Active assignments (list only): group › department and role. */
+  assignments?: Array<{
+    id: string;
+    departmentCode: string | null;
+    departmentNameEn: string | null;
+    departmentNameTh: string | null;
+    parentNameEn: string | null;
+    parentNameTh: string | null;
+    roleCode: string;
+    roleNameTh: string;
+  }>;
 }
 
 export interface UserDetail extends UserRow {

@@ -154,6 +154,8 @@ export interface ListProductionOrdersParams {
   search?: string;
   status?: ProductionOrderStatus;
   planIds?: string[];
+  /** Sub-department view: only orders whose workflow has a step with this process-step code. */
+  stepCode?: string;
 }
 
 const auth = (accessToken: string) => ({
@@ -170,6 +172,7 @@ export function listProductionOrders(
   if (params.limit) query.set("limit", String(params.limit));
   if (params.search) query.set("search", params.search);
   if (params.status) query.set("status", params.status);
+  if (params.stepCode) query.set("stepCode", params.stepCode);
   if (params.planIds?.length) query.set("planIds", params.planIds.join(","));
   const qs = query.size ? `?${query}` : "";
   return apiFetch<PaginatedProductionOrders>(`/production-orders${qs}`, {

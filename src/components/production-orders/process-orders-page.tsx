@@ -66,6 +66,15 @@ export async function ProcessOrdersPageContent({
   const search = params.search?.trim() || undefined;
   const accessToken = (await cookies()).get("accessToken")!.value;
 
+  // A sub-department user only sees work that goes through their own step
+  // (workflow step code === department code), same rule as the order detail page.
+  const role = session?.currentDepartmentRole;
+  const departmentStepCode =
+    session && !session.user.isSuperAdmin && role?.departmentParentId ? (role.departmentCode ?? undefined) : undefined;
+  const departmentNote = departmentStepCode
+    ? ` · เฉพาะที่มีขั้นตอน ${departmentStepCode} ของแผนก ${role?.departmentParentName ?? ""} › ${role?.departmentName ?? departmentStepCode}`
+    : "";
+
   const href = (overrides: { tab?: Tab; page?: number }) => {
     const q = new URLSearchParams();
     q.set("tab", overrides.tab ?? tab);
@@ -87,6 +96,7 @@ export async function ProcessOrdersPageContent({
       search,
       status: "ISSUED",
       targetType,
+      workflowStepCode: departmentStepCode,
     });
     // Plan ISSUED already implies the Job Order is fully issued; keep the
     // explicit check so a half-issued plan never leaks into the list.
@@ -112,7 +122,7 @@ export async function ProcessOrdersPageContent({
     const orderedPlanIds = new Set(ordered.items.map((o) => o.productionPlanId));
     const plans = issued.filter((p) => !orderedPlanIds.has(p.id));
     meta = list.meta;
-    summary = `รอสั่งผลิต ${plans.length} รายการในหน้านี้ (จากแผนที่จ่ายวัตถุดิบครบ ${list.meta.totalItems} แผน)`;
+    summary = `รอสั่งผลิต ${plans.length} รายการในหน้านี้ (จากแผนที่จ่ายวัตถุดิบครบ ${list.meta.totalItems} แผน)${departmentNote}`;
 
     body =
       plans.length === 0 ? (
@@ -219,8 +229,10 @@ export async function ProcessOrdersPageContent({
       limit: LIMIT,
       search,
       targetType,
+      stepCode: departmentStepCode,
     });
     meta = list.meta;
+    summary = `ทั้งหมด ${meta.totalItems} รายการ${departmentNote}`;
 
     body =
       list.items.length === 0 ? (

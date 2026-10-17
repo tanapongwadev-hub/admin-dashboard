@@ -155,6 +155,7 @@ export function UsersClient({
             <TableHeader>
               <TableRow>
                 <TableHead>ผู้ใช้</TableHead>
+                <TableHead>แผนก / role</TableHead>
                 <TableHead>อีเมล</TableHead>
                 <TableHead>สถานะ</TableHead>
                 <TableHead>สร้างเมื่อ</TableHead>
@@ -180,6 +181,26 @@ export function UsersClient({
                           <p className="truncate font-mono text-xs text-fg-muted">@{user.username}</p>
                         </div>
                       </div>
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {user.assignments && user.assignments.length > 0 ? (
+                        <ul className="flex flex-col gap-1">
+                          {user.assignments.map((assignment) => (
+                            <li key={assignment.id} className="text-fg-secondary">
+                              <span className="font-medium text-fg">
+                                {assignment.departmentNameEn
+                                  ? assignment.parentNameEn
+                                    ? `${assignment.parentNameEn} › ${assignment.departmentCode}`
+                                    : assignment.departmentNameEn
+                                  : "ทุกแผนก"}
+                              </span>
+                              <span className="text-fg-muted"> · {assignment.roleNameTh}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <span className="text-fg-muted">—</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-sm text-fg-secondary">{user.email ?? "—"}</TableCell>
                     <TableCell>

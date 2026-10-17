@@ -140,6 +140,8 @@ export interface ListProductionPlansParams {
   status?: ProductionPlanStatus;
   needByDateFrom?: string;
   needByDateTo?: string;
+  /** Sub-department view: only plans whose target's ACTIVE workflow has this process-step code. */
+  workflowStepCode?: string;
 }
 
 function queryString(params: ListProductionPlansParams): string {

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, CheckCircle2, Database, Layers, ShieldOff, type LucideIcon } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { MASTER_DATA_GROUPS } from "@/components/master-data/master-data-groups";
 
 function formatCount(value: number) {
   return new Intl.NumberFormat("th-TH").format(value);
@@ -19,6 +20,8 @@ function formatUpdatedDate() {
 
 export interface MasterDataResourceCard {
   key: string;
+  /** Category id from master-data-groups.ts. */
+  group: string;
   name: string;
   description: string;
   href: string;
@@ -155,14 +158,25 @@ export function MasterDataDashboardView({ resources }: { resources: MasterDataRe
             <MetricCard label="ปิดใช้งาน" value={totalInactive} note="รายการที่ถูกปิดใช้งานทุกหมวด" icon={Layers} tone="bg-warning-soft text-warning" />
           </section>
 
-          <section
-            className="grid grid-cols-1 gap-3 @min-[28rem]:grid-cols-2 @min-[56rem]:grid-cols-3 @min-[72rem]:grid-cols-4"
-            aria-label="รายการข้อมูลหลัก"
-          >
-            {resources.map((resource) => (
-              <ResourceCard key={resource.key} resource={resource} />
-            ))}
-          </section>
+          {MASTER_DATA_GROUPS.map((group) => {
+            const cards = resources.filter((resource) => resource.group === group.id);
+            if (cards.length === 0) return null;
+            return (
+              <section key={group.id} aria-labelledby={`md-group-${group.id}`} className="flex flex-col gap-3">
+                <div className="flex items-baseline gap-3">
+                  <h2 id={`md-group-${group.id}`} className="text-base font-semibold text-fg">{group.label}</h2>
+                  <p className="hidden text-xs text-fg-muted sm:block">{group.description}</p>
+                  <span className="h-px flex-1 bg-border" aria-hidden="true" />
+                  <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs text-fg-muted">{cards.length}</span>
+                </div>
+                <div className="grid grid-cols-1 gap-3 @min-[28rem]:grid-cols-2 @min-[56rem]:grid-cols-3 @min-[72rem]:grid-cols-4">
+                  {cards.map((resource) => (
+                    <ResourceCard key={resource.key} resource={resource} />
+                  ))}
+                </div>
+              </section>
+            );
+          })}
         </>
       )}
     </div>
