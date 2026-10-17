@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { Pencil, Ban, RotateCcw, ChevronLeft, ChevronRight, Eye } from "lucide-react";
+import { Pencil, Ban, RotateCcw, ChevronLeft, ChevronRight, Eye, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
@@ -24,6 +24,7 @@ export function getGenericRowActions<TEntity extends BaseMasterEntity>(
     onEdit: (entity: TEntity) => void;
     onToggleStatus: (entity: TEntity) => void;
     onViewDetails?: (entity: TEntity) => void;
+    onPermanentDelete?: (entity: TEntity) => void;
   }
 ): RowAction[] {
   const actions: RowAction[] = [];
@@ -44,6 +45,9 @@ export function getGenericRowActions<TEntity extends BaseMasterEntity>(
         ? { label: "ปิดใช้งาน", icon: Ban, onSelect: () => handlers.onToggleStatus(entity), variant: "danger" }
         : { label: "เปิดใช้งาน", icon: RotateCcw, onSelect: () => handlers.onToggleStatus(entity), variant: "default" }
     );
+  }
+  if (canDelete && handlers.onPermanentDelete) {
+    actions.push({ label: "ลบถาวร", icon: Trash2, onSelect: () => handlers.onPermanentDelete!(entity), variant: "danger" });
   }
   return actions;
 }
@@ -68,6 +72,7 @@ export function GenericMasterDataTable<TEntity extends BaseMasterEntity>({
   onEdit,
   onToggleStatus,
   onViewDetails,
+  onPermanentDelete,
 }: {
   resource: MasterDataResourceConfig<TEntity>;
   items: TEntity[];
@@ -77,6 +82,7 @@ export function GenericMasterDataTable<TEntity extends BaseMasterEntity>({
   onEdit: (entity: TEntity) => void;
   onToggleStatus: (entity: TEntity) => void;
   onViewDetails: (entity: TEntity) => void;
+  onPermanentDelete?: (entity: TEntity) => void;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -136,7 +142,7 @@ export function GenericMasterDataTable<TEntity extends BaseMasterEntity>({
                 <TableCell className="text-right">
                   <RowActionsMenu
                     itemLabel={entity.nameTh}
-                    actions={getGenericRowActions(entity, canEdit, canDelete, { onEdit, onToggleStatus, onViewDetails })}
+                    actions={getGenericRowActions(entity, canEdit, canDelete, { onEdit, onToggleStatus, onViewDetails, onPermanentDelete })}
                   />
                 </TableCell>
               </TableRow>

@@ -1,3 +1,4 @@
+import { apiFetch } from "./client";
 import { createResourceApi, type BaseListParams, type PaginatedResult } from "./create-resource-api";
 
 // Master data for the "ประเภทวัสดุ" (material type: PC / OF / OF-MAT) lookup.
@@ -53,6 +54,13 @@ export interface UpdateMaterialTypePayload extends Partial<MaterialTypePayload> 
 const api = createResourceApi<MaterialType, MaterialTypePayload, UpdateMaterialTypePayload, ListMaterialTypesParams>(
   "/material-types"
 );
+
+export function deleteMaterialTypePermanently(accessToken: string, id: string) {
+  return apiFetch<{ id: string; deleted: true }>(`/material-types/${id}/permanent`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+}
 
 export const listMaterialTypes = api.list;
 export const getMaterialType = api.get;

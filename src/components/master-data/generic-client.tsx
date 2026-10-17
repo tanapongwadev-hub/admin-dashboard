@@ -10,6 +10,7 @@ import { GenericMasterDataTable } from "@/components/master-data/generic-table";
 import { GenericMasterDataFormDialog } from "@/components/master-data/generic-form-dialog";
 import { GenericMasterDataStatusDialog } from "@/components/master-data/generic-status-dialog";
 import { GenericMasterDataDetailsDialog } from "@/components/master-data/generic-details-dialog";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { getEntityFromResult } from "@/lib/master-data/utils";
 import { masterDataResources } from "@/lib/master-data/resources";
 import type { PaginatedResult } from "@/lib/api/create-resource-api";
@@ -52,6 +53,8 @@ export function GenericMasterDataClient<TEntity extends BaseMasterEntity>({
   const [formTarget, setFormTarget] = React.useState<TEntity | null | undefined>(undefined);
   const [statusTarget, setStatusTarget] = React.useState<TEntity | null>(null);
   const [detailsTarget, setDetailsTarget] = React.useState<TEntity | null>(null);
+  const [deleteTarget, setDeleteTarget] = React.useState<TEntity | null>(null);
+  const permanentDelete = resource.actions.permanentDelete;
 
   function handleSaved() {
     router.refresh();
@@ -67,6 +70,17 @@ export function GenericMasterDataClient<TEntity extends BaseMasterEntity>({
       toast.success(entity.isActive ? `ปิดใช้งาน${resource.entityLabel}แล้ว` : `เปิดใช้งาน${resource.entityLabel}แล้ว`, {
         description: `อัปเดต ${updated?.nameTh ?? entity.nameTh} เรียบร้อยแล้ว`,
       });
+      router.refresh();
+      return;
+    }
+    toast.error(result.message);
+  }
+
+  async function handlePermanentDelete(entity: TEntity) {
+    if (!permanentDelete) return;
+    const result = await permanentDelete(entity.id);
+    if (result.status === "success") {
+      toast.success(`ลบ${resource.entityLabel}ถาวรแล้ว`, { description: `${entity.code} · ${entity.nameTh}` });
       router.refresh();
       return;
     }
@@ -95,6 +109,7 @@ export function GenericMasterDataClient<TEntity extends BaseMasterEntity>({
         onEdit={(entity) => setFormTarget(entity)}
         onToggleStatus={(entity) => setStatusTarget(entity)}
         onViewDetails={(entity) => setDetailsTarget(entity)}
+        onPermanentDelete={permanentDelete ? (entity) => setDeleteTarget(entity) : undefined}
       />
 
       <GenericMasterDataDetailsDialog
@@ -112,6 +127,19 @@ export function GenericMasterDataClient<TEntity extends BaseMasterEntity>({
           onOpenChange={(open) => !open && setFormTarget(undefined)}
           entity={formTarget}
           onSaved={handleSaved}
+        />
+      )}
+
+      {canDelete && permanentDelete && (
+        <ConfirmDialog
+          open={!!deleteTarget}
+          onOpenChange={(open) => !open && setDeleteTarget(null)}
+          title={`ลบ${resource.entityLabel}ถาวรหรือไม่?`}
+          description={deleteTarget ? `"${deleteTarget.nameTh}" (${deleteTarget.code}) จะถูกลบออกจากระบบถาวรและกู้คืนไม่ได้ หากมีข้อมูลอื่นใช้อยู่ ระบบจะไม่อนุญาตให้ลบ — ถ้าเพียงต้องการเลิกใช้ ให้เลือก "ปิดใช้งาน" แทน` : ""}
+          confirmLabel="ลบถาวร"
+          onConfirm={() => {
+            if (deleteTarget) void handlePermanentDelete(deleteTarget);
+          }}
         />
       )}
 

@@ -130,6 +130,8 @@ export interface MasterDataResourceConfig<TEntity extends BaseMasterEntity = Bas
     update: (id: string, payload: Record<string, unknown> & { updatedAt: string }) => Promise<GenericActionResult<TEntity>>;
     deactivate: (id: string) => Promise<GenericActionResult<TEntity>>;
     restore: (id: string) => Promise<GenericActionResult<TEntity>>;
+    /** Optional hard delete — adds a "ลบถาวร" row action with a confirmation dialog. */
+    permanentDelete?: (id: string) => Promise<{ status: "success" } | { status: "conflict" | "error"; message: string }>;
   };
   pageTitle: string;
   pageDescription: string;

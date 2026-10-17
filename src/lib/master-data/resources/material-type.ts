@@ -4,6 +4,7 @@ import {
   updateMaterialTypeAction,
   deactivateMaterialTypeAction,
   restoreMaterialTypeAction,
+  deleteMaterialTypePermanentlyAction,
 } from "@/app/(dashboard)/master-data/material-types/actions";
 import type { MasterDataResourceConfig } from "@/lib/master-data/types";
 
@@ -26,6 +27,7 @@ export const materialTypeResource: MasterDataResourceConfig<MaterialType> = {
     update: (id, payload) => updateMaterialTypeAction(id, payload as unknown as UpdateMaterialTypePayload),
     deactivate: (id) => deactivateMaterialTypeAction(id),
     restore: (id) => restoreMaterialTypeAction(id),
+    permanentDelete: (id) => deleteMaterialTypePermanentlyAction(id),
   },
   pageTitle: "ประเภทวัสดุ",
   pageDescription: "จัดการข้อมูลหลักประเภทวัสดุ (PC / OF / OF-MAT) ที่ใช้จำแนกวัสดุในระบบ",
