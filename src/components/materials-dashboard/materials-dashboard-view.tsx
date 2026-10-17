@@ -331,6 +331,7 @@ export function MaterialsDashboardView({
   today,
   canViewMaterials,
   canViewStock,
+  canViewReceiving,
   canCreateReceiving,
 }: {
   inventorySummary: MaterialInventorySummary | null;
@@ -342,6 +343,7 @@ export function MaterialsDashboardView({
   today: string;
   canViewMaterials: boolean;
   canViewStock: boolean;
+  canViewReceiving: boolean;
   canCreateReceiving: boolean;
 }) {
   return (
@@ -399,7 +401,7 @@ export function MaterialsDashboardView({
 
       <div className={cn("grid min-w-0 gap-5", !overview && "xl:grid-cols-[minmax(0,1.2fr)_minmax(20rem,0.8fr)]")}>
         <CriticalMaterials items={criticalMaterials} canViewStock={canViewStock} canViewMaterials={canViewMaterials} />
-        {overview ? null : canViewStock ? (
+        {overview ? null : canViewReceiving ? (
           <RecentReceiving items={recentReceivings} total={receivingTotal} />
         ) : (
           <Card className="materials-dashboard-panel min-w-0 overflow-hidden">

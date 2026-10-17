@@ -80,7 +80,7 @@ export default async function MaterialsPcPage({
   // on MATERIALS_RECEIVING_VIEW, not MATERIAL_VIEW — a user can see the
   // materials list without being able to see stock, so this is optional and
   // only fetched when permitted (see AGENTS.md § Materials PC).
-  const canViewStock = session.user.isSuperAdmin || session.permissions.includes("MATERIALS_RECEIVING_VIEW");
+  const canViewStock = session.user.isSuperAdmin || session.permissions.includes("MATERIALS_RECEIVING_VIEW") || session.permissions.includes("MATERIAL_STOCK_VIEW");
 
   const stockStatuses = new Set<MaterialStockStatus>(["NORMAL", "LOW_STOCK", "OUT_OF_STOCK"]);
   const stockStatus = stockStatuses.has(params.stockStatus as MaterialStockStatus)

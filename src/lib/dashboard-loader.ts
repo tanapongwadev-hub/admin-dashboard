@@ -85,8 +85,8 @@ function watchItem(item: MaterialInventoryItem): WatchlistItem {
 // viewer's own permissions, and every block degrades to empty on failure so
 // one unavailable endpoint never takes the page down.
 export async function loadDashboardData(accessToken: string, session: Session): Promise<DashboardData> {
-  const canViewStock = can(session, "MATERIALS_RECEIVING_VIEW");
-  const canViewReceiving = canViewStock;
+  const canViewReceiving = can(session, "MATERIALS_RECEIVING_VIEW");
+  const canViewStock = canViewReceiving || can(session, "MATERIAL_STOCK_VIEW");
   const canViewDisbursement = can(session, "MATERIALS_DISBURSEMENT_VIEW");
 
   const [summary, inventoryLow, inventoryOut, recentReceivings, recentDisbursements] = await Promise.all([

@@ -18,7 +18,9 @@ export default async function MaterialsDashboardPage({
   const session = await getCurrentSession();
   const params = await searchParams;
   const canViewMaterials = !!session && (session.user.isSuperAdmin || session.permissions.includes("MATERIAL_VIEW"));
-  const canViewStock = !!session && (session.user.isSuperAdmin || session.permissions.includes("MATERIALS_RECEIVING_VIEW"));
+  const canViewReceiving = !!session && (session.user.isSuperAdmin || session.permissions.includes("MATERIALS_RECEIVING_VIEW"));
+  // Stock balances also open with the stock-only permission (no receiving documents).
+  const canViewStock = canViewReceiving || (!!session && session.permissions.includes("MATERIAL_STOCK_VIEW"));
 
   const canViewDisbursement = !!session && (session.user.isSuperAdmin || session.permissions.includes("MATERIALS_DISBURSEMENT_VIEW"));
 
@@ -63,7 +65,7 @@ export default async function MaterialsDashboardPage({
   const materialListPromise = !canViewStock && canViewMaterials
     ? listMaterials(accessToken, { page: 1, limit: 1, isActive: true, sortBy: "code", sortOrder: "asc" })
     : Promise.resolve(null);
-  const receivingPromise = canViewStock
+  const receivingPromise = canViewReceiving
     ? listMaterialsReceiving(accessToken, {
         page: 1,
         limit: 6,
@@ -77,7 +79,7 @@ export default async function MaterialsDashboardPage({
   const to = params.to && DATE.test(params.to) ? (params.to > today ? today : params.to) : today;
   const from = params.from && DATE.test(params.from) ? params.from : addDays(to, -29);
   const overviewPromise: Promise<MaterialsOverview | null> =
-    canViewStock || canViewDisbursement
+    canViewReceiving || canViewDisbursement
       ? getMaterialsOverview(accessToken, from <= to ? from : to, to).catch(() => null)
       : Promise.resolve(null);
 
@@ -104,7 +106,8 @@ export default async function MaterialsDashboardPage({
       today={today}
       canViewMaterials={canViewMaterials}
       canViewStock={canViewStock}
-      canCreateReceiving={canViewStock && (session.user.isSuperAdmin || session.permissions.includes("MATERIALS_RECEIVING_CREATE"))}
+      canViewReceiving={canViewReceiving}
+      canCreateReceiving={canViewReceiving && (session.user.isSuperAdmin || session.permissions.includes("MATERIALS_RECEIVING_CREATE"))}
     />
   );
 }
