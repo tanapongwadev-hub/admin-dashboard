@@ -30,7 +30,7 @@ import {
   type MovementMetric,
 } from "./materials-movement-chart";
 
-const nf = new Intl.NumberFormat("th-TH", { maximumFractionDigits: 2 });
+export const nf = new Intl.NumberFormat("th-TH", { maximumFractionDigits: 2 });
 const TYPE_LABEL: Record<string, string> = { production: "เบิกเพื่อผลิต", stock_cut: "ตัดสต็อก" };
 
 interface Preset {
@@ -57,7 +57,7 @@ const PRESETS: Preset[] = [
   },
 ];
 
-function RangePicker({ from, to, today }: { from: string; to: string; today: string }) {
+export function RangePicker({ from, to, today }: { from: string; to: string; today: string }) {
   const router = useRouter();
   const pathname = usePathname();
   const [draft, setDraft] = React.useState({ from, to });
@@ -123,7 +123,7 @@ function RangePicker({ from, to, today }: { from: string; to: string; today: str
   );
 }
 
-function Kpi({
+export function Kpi({
   label,
   value,
   note,
@@ -150,7 +150,7 @@ function Kpi({
   );
 }
 
-function Panel({
+export function Panel({
   title,
   hint,
   action,
@@ -175,11 +175,11 @@ function Panel({
   );
 }
 
-function Empty({ children }: { children: React.ReactNode }) {
+export function Empty({ children }: { children: React.ReactNode }) {
   return <p className="px-5 py-10 text-center text-sm text-fg-muted">{children}</p>;
 }
 
-function RankList({ rows, barClass }: { rows: MaterialsOverviewTop[]; barClass: string }) {
+export function RankList({ rows, barClass }: { rows: MaterialsOverviewTop[]; barClass: string }) {
   if (rows.length === 0) return <Empty>ไม่มีรายการในช่วงเวลานี้</Empty>;
   const max = Math.max(...rows.map((r) => r.qty), 1);
   return (
@@ -206,7 +206,7 @@ function RankList({ rows, barClass }: { rows: MaterialsOverviewTop[]; barClass: 
   );
 }
 
-function Split({ rows }: { rows: Array<{ label: string; qty: number; docs: number }> }) {
+export function Split({ rows }: { rows: Array<{ label: string; qty: number; docs: number }> }) {
   if (rows.length === 0) return <Empty>ไม่มีรายการในช่วงเวลานี้</Empty>;
   const total = rows.reduce((s, r) => s + r.qty, 0) || 1;
   return (
@@ -227,8 +227,8 @@ function Split({ rows }: { rows: Array<{ label: string; qty: number; docs: numbe
   );
 }
 
-type TrendView = MovementChartKind | "table";
-const TREND_VIEWS: Array<{ key: TrendView; label: string; icon: typeof BarChart3 }> = [
+export type TrendView = MovementChartKind | "table";
+export const TREND_VIEWS: Array<{ key: TrendView; label: string; icon: typeof BarChart3 }> = [
   { key: "combo", label: "แท่ง + เส้นสะสม", icon: BarChart3 },
   { key: "area", label: "พื้นที่", icon: TrendingUp },
   { key: "line", label: "เส้น", icon: LineChart },
@@ -236,7 +236,7 @@ const TREND_VIEWS: Array<{ key: TrendView; label: string; icon: typeof BarChart3
   { key: "table", label: "ตาราง", icon: Table2 },
 ];
 
-function DailyTable({ days, access }: { days: MaterialsOverview["daily"]; access: MaterialsOverview["access"] }) {
+export function DailyTable({ days, access }: { days: MaterialsOverview["daily"]; access: MaterialsOverview["access"] }) {
   const [hideEmpty, setHideEmpty] = React.useState(true);
   const rows = hideEmpty ? days.filter((d) => d.receivedDocs + d.disbursedDocs > 0) : days;
   const sum = (key: keyof MaterialsOverview["daily"][number]) => days.reduce((t, d) => t + Number(d[key]), 0);
@@ -299,7 +299,7 @@ function DailyTable({ days, access }: { days: MaterialsOverview["daily"]; access
 }
 
 // A ranking / breakdown panel that can switch between its list and a donut.
-function Breakdown({
+export function Breakdown({
   title,
   hint,
   rows,
