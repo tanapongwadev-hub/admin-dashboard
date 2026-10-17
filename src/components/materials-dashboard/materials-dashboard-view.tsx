@@ -20,7 +20,9 @@ import type {
   MaterialStockStatus,
 } from "@/lib/api/materials";
 import type { MaterialReceiving, MaterialReceivingStatus } from "@/lib/api/materials-receiving";
+import type { MaterialsOverview } from "@/lib/api/materials-dashboard";
 import { cn } from "@/lib/utils";
+import { MaterialsMovementOverview } from "./materials-movement-overview";
 
 function formatCount(value: number) {
   return new Intl.NumberFormat("th-TH").format(value);
@@ -325,6 +327,8 @@ export function MaterialsDashboardView({
   criticalMaterials,
   recentReceivings,
   receivingTotal,
+  overview,
+  today,
   canViewMaterials,
   canViewStock,
   canCreateReceiving,
@@ -334,6 +338,8 @@ export function MaterialsDashboardView({
   criticalMaterials: MaterialInventoryItem[];
   recentReceivings: MaterialReceiving[];
   receivingTotal: number | null;
+  overview: MaterialsOverview | null;
+  today: string;
   canViewMaterials: boolean;
   canViewStock: boolean;
   canCreateReceiving: boolean;
@@ -366,6 +372,8 @@ export function MaterialsDashboardView({
         </div>
       </header>
 
+      {overview && <MaterialsMovementOverview overview={overview} today={today} />}
+
       {inventorySummary ? (
         <StockHealth summary={inventorySummary} canViewMaterials={canViewMaterials} />
       ) : (
@@ -389,9 +397,9 @@ export function MaterialsDashboardView({
         <MetricCard label="หมดสต็อก" value={inventorySummary?.outOfStock ?? null} note="ควรดำเนินการก่อน" icon={TriangleAlert} tone="bg-danger-soft text-danger" />
       </section>
 
-      <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(20rem,0.8fr)]">
+      <div className={cn("grid min-w-0 gap-5", !overview && "xl:grid-cols-[minmax(0,1.2fr)_minmax(20rem,0.8fr)]")}>
         <CriticalMaterials items={criticalMaterials} canViewStock={canViewStock} canViewMaterials={canViewMaterials} />
-        {canViewStock ? (
+        {overview ? null : canViewStock ? (
           <RecentReceiving items={recentReceivings} total={receivingTotal} />
         ) : (
           <Card className="materials-dashboard-panel min-w-0 overflow-hidden">
