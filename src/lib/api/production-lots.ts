@@ -517,6 +517,60 @@ export function scanTrace(accessToken: string, code: string) {
   );
 }
 
+// GET /production/traceability/commercial — production dates, sales and material lots.
+export interface CommercialTrace {
+  query: string;
+  /** BOX = scanned box, FG_LOT = every box of that FG lot, ORDER_LINE = every box of the order line. */
+  scope: "BOX" | "FG_LOT" | "ORDER_LINE";
+  production: {
+    orderCode: string;
+    planCode: string;
+    planId: string;
+    productCode: string | null;
+    productName: string | null;
+    orderedDate: string;
+  } | null;
+  boxes: Array<{
+    qrCode: string;
+    boxNo: number;
+    qty: number | string;
+    status: string;
+    fgLotNo: string | null;
+    productionDate: string | null;
+    shift: string | null;
+  }>;
+  sales: Array<{
+    issueNo: string;
+    issueDate: string;
+    qty: number | string;
+    salesOrderCode: string | null;
+    customerName: string | null;
+    qrCode: string;
+    boxNo: number;
+  }>;
+  materialLots: Array<{
+    materialCode: string;
+    materialName: string;
+    internalLotNo: string;
+    supplierLotNo: string | null;
+    receiveDate: string;
+    supplierName: string | null;
+    issuedQty: number;
+    unit: string | null;
+    jobOrderCode: string | null;
+    pickedDate: string | null;
+  }>;
+  /** false when the caller lacks the permission for that section (its rows are empty). */
+  access: { sales: boolean; materials: boolean };
+}
+
+export function commercialTrace(accessToken: string, code: string) {
+  return apiFetch<CommercialTrace>(
+    `/production/traceability/commercial?q=${encodeURIComponent(code)}`,
+    { headers: auth(accessToken) },
+  );
+}
+
 export function traceLot(
   accessToken: string,
   lotId: string,

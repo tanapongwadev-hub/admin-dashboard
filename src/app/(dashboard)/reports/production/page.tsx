@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ApiError } from "@/lib/api/client";
-import { scanTrace, type OriginShare, type ScanResult, type TraceNode, type TransferTagTrace } from "@/lib/api/production-lots";
+import { commercialTrace, scanTrace, type CommercialTrace, type OriginShare, type ScanResult, type TraceNode, type TransferTagTrace } from "@/lib/api/production-lots";
+import { CommercialTraceSections } from "@/components/production-lots/commercial-trace";
 import { lotColorAt, type LotColor } from "@/lib/lot-colors";
 import { formatThaiDate } from "@/lib/production-day";
 import { apiErrorMessage } from "@/lib/user-error";
@@ -36,11 +37,17 @@ export default async function TraceabilityPage({ searchParams }: { searchParams:
 
   const q = ((await searchParams).q ?? "").trim();
   let result: ScanResult | null = null;
+  let commercial: CommercialTrace | null = null;
   let error: string | null = null;
   if (q) {
     const accessToken = (await cookies()).get("accessToken")!.value;
     try {
-      result = await scanTrace(accessToken, q);
+      // Sales + material lots are an add-on to the production lineage; a failure
+      // there must not hide the lineage itself.
+      [result, commercial] = await Promise.all([
+        scanTrace(accessToken, q),
+        commercialTrace(accessToken, q).catch(() => null),
+      ]);
     } catch (err) {
       if (err instanceof ApiError) error = err.status === 404 ? `ไม่พบ QR หรือ Lot "${q}"` : apiErrorMessage(err);
       else throw err;
@@ -51,7 +58,7 @@ export default async function TraceabilityPage({ searchParams }: { searchParams:
     <div className="flex flex-col gap-5">
       <div>
         <h1 className="text-2xl font-semibold text-fg">สอบกลับการผลิต</h1>
-        <p className="text-sm text-fg-secondary">สแกน QR กล่อง หรือพิมพ์เลข Lot เพื่อดูว่ามาจาก Lot ไหน ผลิตวันไหน กะไหน</p>
+        <p className="text-sm text-fg-secondary">สแกน QR กล่อง หรือพิมพ์เลข Lot ของสินค้า เพื่อดูว่าผลิตวันไหน กะไหน ขายวันไหน และใช้วัตถุดิบ Lot ใดบ้าง</p>
       </div>
       <form method="get" className="flex max-w-xl gap-2" role="search">
         <div className="relative flex-1">
@@ -80,6 +87,7 @@ export default async function TraceabilityPage({ searchParams }: { searchParams:
         </p>
       )}
       {result && <TraceResult result={result} />}
+      {result && commercial && <CommercialTraceSections trace={commercial} />}
     </div>
   );
 }
