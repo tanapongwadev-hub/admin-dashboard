@@ -7,16 +7,28 @@ import {
   ArrowDownToLine,
   ArrowRight,
   ArrowUpFromLine,
+  BarChart3,
   CalendarRange,
+  LineChart,
+  ListOrdered,
+  PieChart,
+  Table2,
+  TrendingUp,
   FileClock,
   Scale,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card } from "@/components/ui/card";
 import type { MaterialsOverview, MaterialsOverviewTop } from "@/lib/api/materials-dashboard";
 import { addDays, formatThaiDate } from "@/lib/production-day";
 import { cn } from "@/lib/utils";
-import { MaterialsMovementChart, type MovementMetric } from "./materials-movement-chart";
+import {
+  MaterialsDonut,
+  MaterialsMovementChart,
+  type MovementChartKind,
+  type MovementMetric,
+} from "./materials-movement-chart";
 
 const nf = new Intl.NumberFormat("th-TH", { maximumFractionDigits: 2 });
 const TYPE_LABEL: Record<string, string> = { production: "เบิกเพื่อผลิต", stock_cut: "ตัดสต็อก" };
@@ -29,6 +41,7 @@ interface Preset {
 
 const monthStart = (date: string) => `${date.slice(0, 8)}01`;
 const PRESETS: Preset[] = [
+  { key: "today", label: "วันนี้", range: (t) => ({ from: t, to: t }) },
   { key: "7", label: "7 วัน", range: (t) => ({ from: addDays(t, -6), to: t }) },
   { key: "14", label: "14 วัน", range: (t) => ({ from: addDays(t, -13), to: t }) },
   { key: "30", label: "30 วัน", range: (t) => ({ from: addDays(t, -29), to: t }) },
@@ -214,6 +227,122 @@ function Split({ rows }: { rows: Array<{ label: string; qty: number; docs: numbe
   );
 }
 
+type TrendView = MovementChartKind | "table";
+const TREND_VIEWS: Array<{ key: TrendView; label: string; icon: typeof BarChart3 }> = [
+  { key: "combo", label: "แท่ง + เส้นสะสม", icon: BarChart3 },
+  { key: "area", label: "พื้นที่", icon: TrendingUp },
+  { key: "line", label: "เส้น", icon: LineChart },
+  { key: "net", label: "สุทธิรายวัน", icon: Scale },
+  { key: "table", label: "ตาราง", icon: Table2 },
+];
+
+function DailyTable({ days, access }: { days: MaterialsOverview["daily"]; access: MaterialsOverview["access"] }) {
+  const [hideEmpty, setHideEmpty] = React.useState(true);
+  const rows = hideEmpty ? days.filter((d) => d.receivedDocs + d.disbursedDocs > 0) : days;
+  const sum = (key: keyof MaterialsOverview["daily"][number]) => days.reduce((t, d) => t + Number(d[key]), 0);
+  return (
+    <div>
+      <label className="flex items-center gap-2 px-5 pb-2 text-xs text-fg-secondary">
+        <input type="checkbox" checked={hideEmpty} onChange={(e) => setHideEmpty(e.target.checked)} className="size-3.5 accent-[var(--primary)]" />
+        ซ่อนวันที่ไม่มีรายการ ({days.length - days.filter((d) => d.receivedDocs + d.disbursedDocs > 0).length} วัน)
+      </label>
+      <div className="max-h-[22rem] overflow-auto border-t border-border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>วันที่</TableHead>
+              {access.receiving && <TableHead className="text-right">รับเข้า (เอกสาร)</TableHead>}
+              {access.receiving && <TableHead className="text-right">รับเข้า (ปริมาณ)</TableHead>}
+              {access.disbursement && <TableHead className="text-right">จ่ายออก (เอกสาร)</TableHead>}
+              {access.disbursement && <TableHead className="text-right">จ่ายออก (ปริมาณ)</TableHead>}
+              {access.receiving && access.disbursement && <TableHead className="text-right">สุทธิ</TableHead>}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={6} className="py-8 text-center text-fg-muted">ไม่มีรายการในช่วงเวลานี้</TableCell>
+              </TableRow>
+            )}
+            {rows.map((d) => {
+              const net = d.receivedQty - d.disbursedQty;
+              return (
+                <TableRow key={d.date}>
+                  <TableCell className="whitespace-nowrap font-medium">{formatThaiDate(d.date)}</TableCell>
+                  {access.receiving && <TableCell className="text-right tabular-nums">{nf.format(d.receivedDocs)}</TableCell>}
+                  {access.receiving && <TableCell className="text-right tabular-nums text-success-fg">{nf.format(d.receivedQty)}</TableCell>}
+                  {access.disbursement && <TableCell className="text-right tabular-nums">{nf.format(d.disbursedDocs)}</TableCell>}
+                  {access.disbursement && <TableCell className="text-right tabular-nums text-warning-fg">{nf.format(d.disbursedQty)}</TableCell>}
+                  {access.receiving && access.disbursement && (
+                    <TableCell className={cn("text-right font-medium tabular-nums", net < 0 ? "text-danger-fg" : "text-fg")}>{net > 0 ? "+" : ""}{nf.format(net)}</TableCell>
+                  )}
+                </TableRow>
+              );
+            })}
+          </TableBody>
+          <TableFooter>
+            <TableRow>
+              <TableCell className="font-semibold">รวม</TableCell>
+              {access.receiving && <TableCell className="text-right font-semibold tabular-nums">{nf.format(sum("receivedDocs"))}</TableCell>}
+              {access.receiving && <TableCell className="text-right font-semibold tabular-nums">{nf.format(sum("receivedQty"))}</TableCell>}
+              {access.disbursement && <TableCell className="text-right font-semibold tabular-nums">{nf.format(sum("disbursedDocs"))}</TableCell>}
+              {access.disbursement && <TableCell className="text-right font-semibold tabular-nums">{nf.format(sum("disbursedQty"))}</TableCell>}
+              {access.receiving && access.disbursement && (
+                <TableCell className="text-right font-semibold tabular-nums">{nf.format(sum("receivedQty") - sum("disbursedQty"))}</TableCell>
+              )}
+            </TableRow>
+          </TableFooter>
+        </Table>
+      </div>
+    </div>
+  );
+}
+
+// A ranking / breakdown panel that can switch between its list and a donut.
+function Breakdown({
+  title,
+  hint,
+  rows,
+  list,
+}: {
+  title: string;
+  hint: string;
+  rows: Array<{ label: string; qty: number }>;
+  list: React.ReactNode;
+}) {
+  const [mode, setMode] = React.useState<"list" | "donut">("list");
+  return (
+    <Panel
+      title={title}
+      hint={hint}
+      action={
+        rows.length > 0 ? (
+          <div className="flex rounded-md border border-border p-0.5" role="group" aria-label="รูปแบบการแสดง">
+            {([
+              ["list", "รายการ", ListOrdered],
+              ["donut", "สัดส่วน", PieChart],
+            ] as const).map(([key, label, Icon]) => (
+              <button
+                key={key}
+                type="button"
+                aria-pressed={mode === key}
+                title={label}
+                onClick={() => setMode(key)}
+                className={cn("flex items-center gap-1 rounded px-2 py-1 text-xs font-medium", mode === key ? "bg-primary-soft text-primary" : "text-fg-secondary hover:bg-surface-2")}
+              >
+                <Icon className="size-3.5" aria-hidden="true" />
+                {label}
+              </button>
+            ))}
+          </div>
+        ) : null
+      }
+    >
+      {mode === "donut" && rows.length > 0 ? <MaterialsDonut rows={rows} /> : list}
+    </Panel>
+  );
+}
+
 export function MaterialsMovementOverview({
   overview,
   today,
@@ -223,6 +352,7 @@ export function MaterialsMovementOverview({
 }) {
   const { range, totals, access } = overview;
   const [metric, setMetric] = React.useState<MovementMetric>("qty");
+  const [trendView, setTrendView] = React.useState<TrendView>("combo");
   const [showReceived, setShowReceived] = React.useState(true);
   const [showDisbursed, setShowDisbursed] = React.useState(true);
   const net = totals.receivedQty - totals.disbursedQty;
@@ -280,9 +410,25 @@ export function MaterialsMovementOverview({
 
       <Panel
         title="แนวโน้มรายวัน"
-        hint="แท่ง = ยอดแต่ละวัน · เส้น = ยอดสุทธิสะสม"
+        hint={trendView === "combo" ? "แท่ง = ยอดแต่ละวัน · เส้น = ยอดสุทธิสะสม" : trendView === "net" ? "แต่ละวัน = รับเข้า − จ่ายออก (แดง = จ่ายมากกว่ารับ)" : trendView === "table" ? "สรุปรายวันพร้อมยอดรวม" : "ยอดแต่ละวันของช่วงที่เลือก"}
         action={
           <div className="flex flex-wrap items-center justify-end gap-1.5">
+            <div className="flex rounded-md border border-border p-0.5" role="group" aria-label="รูปแบบการแสดง">
+              {TREND_VIEWS.map(({ key, label, icon: Icon }) => (
+                <button
+                  key={key}
+                  type="button"
+                  aria-pressed={trendView === key}
+                  title={label}
+                  aria-label={label}
+                  onClick={() => setTrendView(key)}
+                  className={cn("flex items-center gap-1 rounded px-2 py-1 text-xs font-medium", trendView === key ? "bg-primary-soft text-primary" : "text-fg-secondary hover:bg-surface-2")}
+                >
+                  <Icon className="size-3.5" aria-hidden="true" />
+                  <span className="hidden sm:inline">{label}</span>
+                </button>
+              ))}
+            </div>
             <div className="flex rounded-md border border-border p-0.5" role="group" aria-label="หน่วยของกราฟ">
               {(["qty", "docs"] as const).map((m) => (
                 <button
@@ -322,9 +468,11 @@ export function MaterialsMovementOverview({
           </div>
         }
       >
-        <div className="px-3 pb-3 pt-4">
-          {hasData ? (
-            <MaterialsMovementChart days={overview.daily} metric={metric} showReceived={received} showDisbursed={disbursed} />
+        <div className={trendView === "table" ? "pb-3 pt-3" : "px-3 pb-3 pt-4"}>
+          {hasData && trendView === "table" ? (
+            <DailyTable days={overview.daily} access={access} />
+          ) : hasData && trendView !== "table" ? (
+            <MaterialsMovementChart days={overview.daily} metric={metric} kind={trendView} showReceived={received} showDisbursed={disbursed} />
           ) : (
             <Empty>ยังไม่มีเอกสารรับเข้าหรือจ่ายออกที่ยืนยันแล้วในช่วงเวลานี้ — ลองเลือกช่วงวันที่กว้างขึ้น</Empty>
           )}
@@ -333,24 +481,36 @@ export function MaterialsMovementOverview({
 
       <div className="grid min-w-0 gap-4 lg:grid-cols-2">
         {access.receiving && (
-          <Panel title="วัสดุที่รับเข้ามากที่สุด" hint="Top 8 ตามปริมาณ">
-            <RankList rows={overview.topReceived} barClass="bg-chart-2" />
-          </Panel>
+          <Breakdown
+            title="วัสดุที่รับเข้ามากที่สุด"
+            hint="Top 8 ตามปริมาณ"
+            rows={overview.topReceived.map((r) => ({ label: `${r.code} ${r.name}`, qty: r.qty }))}
+            list={<RankList rows={overview.topReceived} barClass="bg-chart-2" />}
+          />
         )}
         {access.disbursement && (
-          <Panel title="วัสดุที่จ่ายออกมากที่สุด" hint="Top 8 ตามปริมาณ">
-            <RankList rows={overview.topDisbursed} barClass="bg-chart-3" />
-          </Panel>
+          <Breakdown
+            title="วัสดุที่จ่ายออกมากที่สุด"
+            hint="Top 8 ตามปริมาณ"
+            rows={overview.topDisbursed.map((r) => ({ label: `${r.code} ${r.name}`, qty: r.qty }))}
+            list={<RankList rows={overview.topDisbursed} barClass="bg-chart-3" />}
+          />
         )}
         {access.receiving && (
-          <Panel title="ผู้จัดจำหน่ายที่ส่งมอบ" hint="ตามปริมาณรับเข้า">
-            <Split rows={overview.bySupplier.map((s) => ({ label: s.name, qty: s.qty, docs: s.docs }))} />
-          </Panel>
+          <Breakdown
+            title="ผู้จัดจำหน่ายที่ส่งมอบ"
+            hint="ตามปริมาณรับเข้า"
+            rows={overview.bySupplier.map((s) => ({ label: s.name, qty: s.qty }))}
+            list={<Split rows={overview.bySupplier.map((s) => ({ label: s.name, qty: s.qty, docs: s.docs }))} />}
+          />
         )}
         {access.disbursement && (
-          <Panel title="จ่ายออกตามประเภท" hint="เบิกเพื่อผลิต เทียบกับตัดสต็อก">
-            <Split rows={overview.byDisbursementType.map((t) => ({ label: TYPE_LABEL[t.type] ?? t.type, qty: t.qty, docs: t.docs }))} />
-          </Panel>
+          <Breakdown
+            title="จ่ายออกตามประเภท"
+            hint="เบิกเพื่อผลิต เทียบกับตัดสต็อก"
+            rows={overview.byDisbursementType.map((t) => ({ label: TYPE_LABEL[t.type] ?? t.type, qty: t.qty }))}
+            list={<Split rows={overview.byDisbursementType.map((t) => ({ label: TYPE_LABEL[t.type] ?? t.type, qty: t.qty, docs: t.docs }))} />}
+          />
         )}
       </div>
 
