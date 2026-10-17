@@ -583,3 +583,34 @@ export function traceLot(
     },
   );
 }
+
+// GET /production/traceability/product-lots — finished-product lot report.
+export interface ProductLotRow {
+  lotId: string;
+  lotNo: string;
+  productionDate: string;
+  shift: string | null;
+  orderCode: string;
+  productCode: string | null;
+  productName: string | null;
+  packedQty: number;
+  boxCount: number;
+  /** null when the caller cannot see sales. */
+  soldQty: number | null;
+  firstSaleDate: string | null;
+  lastSaleDate: string | null;
+}
+
+export interface ProductLotReport {
+  items: ProductLotRow[];
+  summary: { lots: number; boxes: number; packedQty: number; soldQty: number | null };
+  meta: { page: number; limit: number; totalItems: number; totalPages: number };
+  access: { sales: boolean };
+}
+
+export function listProductLots(accessToken: string, params: Record<string, string>) {
+  const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v !== "")).toString();
+  return apiFetch<ProductLotReport>(`/production/traceability/product-lots${qs ? `?${qs}` : ""}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+}
