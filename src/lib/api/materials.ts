@@ -270,7 +270,7 @@ export interface ListMaterialInventoryParams {
   loadingPointId?: string;
   processLineName?: string;
   stockStatus?: MaterialStockStatus;
-  sortBy?: "code" | "name" | "currentStock" | "lastReceivedAt";
+  sortBy?: "code" | "name" | "currentStock" | "lastReceivedAt" | "createdAt";
   sortOrder?: "asc" | "desc";
 }
 

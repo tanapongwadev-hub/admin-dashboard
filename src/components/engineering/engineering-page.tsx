@@ -6,6 +6,7 @@ import { listProcessSteps } from '@/lib/api/process-steps';
 import { loadProductMaterialCatalog } from '@/lib/product-materials';
 import { engineeringPermission, type EngineeringScope } from '@/lib/api/engineering';
 import { EngineeringClient } from './engineering-client';
+import { PermissionNotice } from '@/components/layout/permission-notice';
 
 async function loadProcessSteps(token: string) {
   const query = { limit: 100, isActive: true, sortBy: 'code' as const, sortOrder: 'asc' as const };
@@ -18,12 +19,30 @@ export async function EngineeringPage({ scope }: { scope: EngineeringScope }) {
   const session = await getCurrentSession();
   const allowed = (code: string) => !!session && (session.user.isSuperAdmin || session.permissions.includes(code));
   const masterPermission = scope === 'materials' ? 'MATERIAL_VIEW' : 'PRODUCTS_VIEW';
-  if (!allowed(masterPermission)) return <p className="p-6 text-sm text-fg-muted">ต้องมีสิทธิ์ {masterPermission} เพื่อเลือกข้อมูลปลายทาง</p>;
+  if (!allowed(masterPermission)) {
+    const label = scope === 'materials' ? 'ดูข้อมูลวัสดุ' : 'ดูข้อมูลสินค้า';
+    return (
+      <PermissionNotice
+        title="ยังไม่มีสิทธิ์เลือกข้อมูลปลายทาง"
+        description={`หน้านี้ต้องเลือก${scope === 'materials' ? 'วัสดุ' : 'สินค้า'}ปลายทางก่อนกำหนด BOM และ Workflow แต่บัญชีของคุณยังไม่มีสิทธิ์ดูรายการนั้น`}
+        required={[{ code: masterPermission, label }]}
+      />
+    );
+  }
   const permissions = {
     bom: { view: allowed(engineeringPermission(scope, 'bom', 'VIEW')), create: allowed(engineeringPermission(scope, 'bom', 'CREATE')) && allowed('MATERIAL_VIEW'), activate: allowed(engineeringPermission(scope, 'bom', 'UPDATE')) },
     workflow: { view: allowed(engineeringPermission(scope, 'workflow', 'VIEW')), create: allowed(engineeringPermission(scope, 'workflow', 'CREATE')) && allowed('PROCESS_STEP_VIEW'), activate: allowed(engineeringPermission(scope, 'workflow', 'UPDATE')) },
   };
-  if (!(['bom', 'workflow'] as const).some((kind) => allowed(engineeringPermission(scope, kind, 'VIEW')) || allowed(engineeringPermission(scope, kind, 'CREATE')))) return <p className="p-6 text-sm text-fg-muted">คุณไม่มีสิทธิ์จัดการ BOM หรือ Workflow</p>;
+  if (!(['bom', 'workflow'] as const).some((kind) => allowed(engineeringPermission(scope, kind, 'VIEW')) || allowed(engineeringPermission(scope, kind, 'CREATE')))) return (
+    <PermissionNotice
+      title="ไม่มีสิทธิ์จัดการ BOM หรือ Workflow"
+      description="บัญชีของคุณเข้าหน้านี้ได้ แต่ยังไม่มีสิทธิ์ดูหรือสร้าง BOM และ Workflow ในส่วนนี้"
+      required={[
+        { code: engineeringPermission(scope, 'bom', 'VIEW'), label: 'ดู BOM' },
+        { code: engineeringPermission(scope, 'workflow', 'VIEW'), label: 'ดู Workflow' },
+      ]}
+    />
+  );
   const token = (await cookies()).get('accessToken')!.value;
   const [catalog, products, processSteps] = await Promise.all([
     allowed('MATERIAL_VIEW') ? loadProductMaterialCatalog((page) => listMaterials(token, { page, limit: 100, sortBy: 'code', sortOrder: 'asc' })) : Promise.resolve({ diagramMaterials: [], activeMaterials: [] }),

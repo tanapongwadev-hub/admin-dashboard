@@ -8,7 +8,15 @@ import { formatWeight } from "@/lib/utils";
 
 // `data` defaults to every category, so an existing bare <CategoryBreakdownChart />
 // renders exactly as before; the dashboard narrows it via the category filter.
-export function CategoryBreakdownChart({ data = materialCategoryBreakdown }: { data?: MaterialCategoryShare[] }) {
+export function CategoryBreakdownChart({
+  data = materialCategoryBreakdown,
+  format = formatWeight,
+  totalLabel = "คงเหลือในสต็อก",
+}: {
+  data?: MaterialCategoryShare[];
+  format?: (value: number) => string;
+  totalLabel?: string;
+}) {
   const total = data.reduce((s, t) => s + t.value, 0);
 
   if (data.length === 0) {
@@ -49,13 +57,13 @@ export function CategoryBreakdownChart({ data = materialCategoryBreakdown }: { d
                 borderRadius: 8,
                 fontSize: 12,
               }}
-              formatter={(value, name) => [formatWeight(Number(value)), String(name)]}
+              formatter={(value, name) => [format(Number(value)), String(name)]}
             />
           </PieChart>
         </ResponsiveContainer>
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-lg font-semibold tabular-nums text-fg">{formatWeight(total)}</span>
-          <span className="text-[11px] text-fg-muted">คงเหลือในสต็อก</span>
+          <span className="text-lg font-semibold tabular-nums text-fg">{format(total)}</span>
+          <span className="text-[11px] text-fg-muted">{totalLabel}</span>
         </div>
       </div>
       <div className="flex w-full min-w-0 flex-1 flex-col gap-2.5">
@@ -76,7 +84,7 @@ export function CategoryBreakdownChart({ data = materialCategoryBreakdown }: { d
               <span className="tabular-nums text-xs text-fg-muted">
                 {total > 0 ? `${Math.round((source.value / total) * 100)}%` : "—"}
               </span>
-              <span className="font-semibold tabular-nums text-fg">{formatWeight(source.value)}</span>
+              <span className="font-semibold tabular-nums text-fg">{format(source.value)}</span>
             </span>
           </div>
         ))}

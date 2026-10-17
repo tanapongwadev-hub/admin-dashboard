@@ -48,6 +48,11 @@ export interface CurrentDepartmentRole {
   departmentId: string | null;
   departmentName: string | null;
   departmentCode: string | null;
+  departmentNameEn?: string | null;
+  /** Group department of a sub-department (e.g. materials for materials.pc); null for a group. */
+  departmentParentId?: string | null;
+  departmentParentName?: string | null;
+  departmentParentNameEn?: string | null;
   roleId: string;
   roleName: string;
   roleCode: string;

@@ -37,7 +37,7 @@ export default async function UsersPage({
   const search = params.search?.trim() || undefined;
   const [users, departments, roles] = await Promise.all([
     listUsersPage(accessToken, { page: Math.max(1, Number(params.page) || 1), limit: PAGE_SIZE, search }),
-    listDepartments(accessToken).then((result) => result.items.filter((d) => d.isActive)),
+    listDepartments(accessToken).then((result) => result.items.filter((d) => d.isActive).sort((a, b) => a.nameEn.localeCompare(b.nameEn))),
     listRoles(accessToken).then((result) => assignableRoles(result.items)),
   ]);
 

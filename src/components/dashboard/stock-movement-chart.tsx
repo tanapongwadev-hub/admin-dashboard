@@ -18,9 +18,13 @@ import { formatWeight } from "@/lib/utils";
 export function StockMovementChart({
   data = stockMovementTrend,
   height = 300,
+  format = formatWeight,
+  labels = { received: "รับเข้า", disbursed: "เบิกออก" },
 }: {
   data?: StockMovementPoint[];
   height?: number;
+  format?: (value: number) => string;
+  labels?: { received: string; disbursed: string };
 }) {
   return (
     <ResponsiveContainer width="100%" height={height}>
@@ -50,7 +54,7 @@ export function StockMovementChart({
           axisLine={false}
           tickLine={false}
           tick={{ fill: "var(--fg-muted)", fontSize: 12 }}
-          tickFormatter={(v) => formatWeight(v)}
+          tickFormatter={(v) => format(v)}
           width={52}
         />
         <Tooltip
@@ -63,7 +67,7 @@ export function StockMovementChart({
             boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
           }}
           labelStyle={{ color: "var(--fg)", fontWeight: 600, marginBottom: 4 }}
-          formatter={(value, name) => [formatWeight(Number(value)), name === "received" ? "รับเข้า" : "เบิกออก"]}
+          formatter={(value, name) => [format(Number(value)), name === "received" ? labels.received : labels.disbursed]}
         />
         <Area type="monotone" dataKey="disbursed" stroke="var(--chart-3)" strokeWidth={2} fill="url(#disbursedFill)" />
         <Area type="monotone" dataKey="received" stroke="var(--chart-2)" strokeWidth={2.5} fill="url(#receivedFill)" />

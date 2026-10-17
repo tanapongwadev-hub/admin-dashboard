@@ -1,16 +1,14 @@
 "use client";
 
 import { useTransition } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Download, RefreshCw, SlidersHorizontal } from "lucide-react";
+import { Download, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
-// The mock trend series is 14 days long (see src/lib/dashboard-data.ts), so
-// these are the only two windows that can be shown honestly — no "30 วัน"
-// option that would silently render the same 14 points.
+// The loader fetches 14 days (lib/dashboard-loader.ts TREND_DAYS), so these
+// are the only two windows that can be shown honestly.
 export type TrendRange = "7" | "14";
 
 export const TREND_RANGE_OPTIONS: { value: TrendRange; label: string }[] = [
@@ -24,8 +22,6 @@ export function DashboardHeader({
   lowStockCount,
   range,
   onRangeChange,
-  onOpenFilters,
-  activeFilterCount,
   onExport,
 }: {
   greeting: string;
@@ -33,8 +29,6 @@ export function DashboardHeader({
   lowStockCount: number;
   range: TrendRange;
   onRangeChange: (range: TrendRange) => void;
-  onOpenFilters: () => void;
-  activeFilterCount: number;
   onExport: () => void;
 }) {
   const router = useRouter();
@@ -47,19 +41,7 @@ export function DashboardHeader({
     <header className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
       <div className="min-w-0">
         <h1 className="text-2xl font-semibold leading-tight tracking-[-0.02em] text-fg">แดชบอร์ด</h1>
-        <p className="mt-1 text-sm text-fg-muted">{greeting} · ภาพรวมความเคลื่อนไหวบนพื้นโรงงานวันนี้</p>
-        {/* Every number on this page comes from lib/dashboard-data.ts (mock),
-            not cps-api. Say so plainly until it is wired to real data. */}
-        <p
-          role="note"
-          className="mt-3 inline-flex flex-wrap items-center gap-x-1.5 rounded-md border border-warning/40 bg-warning-soft px-3 py-2 text-[13px] text-warning-fg"
-        >
-          <span className="font-semibold">ข้อมูลตัวอย่าง:</span>
-          ตัวเลขในหน้านี้ยังไม่เชื่อมกับข้อมูลจริง ดูสต็อกจริงได้ที่
-          <Link href="/materials" className="font-semibold underline underline-offset-2">
-            ภาพรวมวัตถุดิบ
-          </Link>
-        </p>
+        <p className="mt-1 text-sm text-fg-muted">{greeting} · ข้อมูลจริงจากระบบ ณ ตอนนี้</p>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -101,22 +83,6 @@ export function DashboardHeader({
             </SelectContent>
           </Select>
         </div>
-
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-9 lg:hidden"
-          onClick={onOpenFilters}
-          aria-label={`เปิดตัวกรอง${activeFilterCount > 0 ? ` (ใช้งานอยู่ ${activeFilterCount} รายการ)` : ""}`}
-        >
-          <SlidersHorizontal className="size-3.5" />
-          ตัวกรอง
-          {activeFilterCount > 0 && (
-            <span className="ml-0.5 inline-flex min-w-4 items-center justify-center rounded-full bg-primary-soft px-1 text-[10px] font-semibold tabular-nums text-primary">
-              {activeFilterCount}
-            </span>
-          )}
-        </Button>
 
         <Button
           variant="outline"

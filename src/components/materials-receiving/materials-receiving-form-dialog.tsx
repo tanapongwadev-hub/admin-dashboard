@@ -1,6 +1,8 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { PackageCheck, Boxes, CheckCircle2 } from "lucide-react";
 import {
@@ -105,6 +107,7 @@ export function MaterialsReceivingFormDialog({
   // (see AGENTS.md § Material Receiving), so every state variable's useState
   // initializer already runs fresh. That's the "derive, don't effect"
   // pattern this project's lint config enforces.
+  const router = useRouter();
   const [materialId, setMaterialId] = React.useState(initialMaterialId ?? "");
   const [receiveQuantity, setReceiveQuantity] = React.useState("");
   const [supplierProductionDate, setSupplierProductionDate] = React.useState(todayIso());
@@ -184,8 +187,19 @@ export function MaterialsReceivingFormDialog({
     (suppliers.length <= 1 || !!effectiveSupplierId) &&
     !isSubmitting;
 
+  // A Material without a linked supplier cannot be received: send the user to
+  // that Material's edit dialog (suppliers are set there) instead of failing.
+  const missingSupplierHref = selectedMaterial
+    ? `/materials/catalog?search=${encodeURIComponent(selectedMaterial.code)}&edit=${selectedMaterial.id}`
+    : null;
+
   async function handleConfirmReceive() {
     if (!selectedMaterial || !canSubmit) return;
+    if (!isLoadingSuppliers && suppliers.length === 0 && missingSupplierHref) {
+      toast.error("วัสดุนี้ยังไม่มีซัพพลายเออร์", { description: "พาไปหน้าแก้ไขวัสดุเพื่อเพิ่มซัพพลายเออร์" });
+      router.push(missingSupplierHref);
+      return;
+    }
     setIsSubmitting(true);
 
     const result = await receiveMaterialsReceivingAction({
@@ -270,11 +284,13 @@ export function MaterialsReceivingFormDialog({
                 <p className="text-[11px] text-fg-muted">วัสดุนี้มีซัพพลายเออร์มากกว่า 1 ราย กรุณาเลือก</p>
               </div>
             )}
-            {materialId && !isLoadingSuppliers && suppliers.length === 0 && (
-              <MasterDataEmptyLink
-                href="/materials/catalog"
-                resourceLabel="ซัพพลายเออร์ของวัสดุนี้"
-              />
+            {materialId && !isLoadingSuppliers && suppliers.length === 0 && missingSupplierHref && (
+              <div role="alert" className="flex flex-col gap-2 rounded-md border border-dashed border-warning/60 bg-warning-soft/40 p-3 text-sm text-fg">
+                <p>วัสดุนี้ยังไม่ได้ผูกซัพพลายเออร์ จึงรับเข้าไม่ได้ ต้องเพิ่มซัพพลายเออร์ที่หน้าแก้ไขวัสดุก่อน</p>
+                <Button asChild size="sm" variant="outline" className="w-fit">
+                  <Link href={missingSupplierHref}>ไปหน้าแก้ไขวัสดุ {selectedMaterial?.code}</Link>
+                </Button>
+              </div>
             )}
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

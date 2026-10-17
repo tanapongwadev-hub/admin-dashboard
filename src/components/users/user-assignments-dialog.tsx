@@ -49,7 +49,7 @@ function DepartmentSelect({
       <SelectContent>
         {options.map((department) => (
           <SelectItem key={department.id} value={department.id}>
-            {department.code} · {department.nameTh}
+            {department.nameEn} · {department.nameTh}
           </SelectItem>
         ))}
       </SelectContent>

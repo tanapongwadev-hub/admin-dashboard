@@ -295,7 +295,7 @@ export function MaterialPcFormDialog({
   material?: Material | null;
   draft?: MaterialDraftRecord | null;
   lookups: MaterialLookups;
-  onSaved: () => void;
+  onSaved: (created?: Material) => void;
 }) {
   const isEdit = !!material;
   const [step, setStep] = React.useState(() => draft?.data.materialType ? Math.min(draft.step, draft.data.materialType === "PCS" ? 1 : 2) : 0);
@@ -585,7 +585,7 @@ export function MaterialPcFormDialog({
         description: `บันทึก ${result.material.name} เรียบร้อยแล้ว`,
       });
       onOpenChange(false);
-      onSaved();
+      onSaved(isEdit ? undefined : result.material);
       return;
     }
     toast.error(result.message);
@@ -639,10 +639,10 @@ export function MaterialPcFormDialog({
             </DialogDescription>
             {draft && <p className="mt-2 text-xs text-primary">กำลังทำต่อจากร่าง · บันทึกล่าสุด {new Date(draft.updatedAt).toLocaleString("th-TH")}</p>}
             <nav aria-label="ขั้นตอนกรอกข้อมูลวัสดุ" className="mt-4">
-              <ol className={cn("grid gap-2", isRawMaterial ? "grid-cols-3" : "grid-cols-2")}>
-                {steps.map((label, index) => <li key={index} aria-current={step === index ? "step" : undefined} className={cn("flex min-w-0 items-center gap-2 rounded-lg border px-3 py-2", step === index ? "border-primary bg-primary-soft text-primary" : "border-border bg-surface text-fg-muted")}>
+              <ol className={cn("flex gap-2 sm:grid", isRawMaterial ? "sm:grid-cols-3" : "sm:grid-cols-2")}>
+                {steps.map((label, index) => <li key={index} aria-current={step === index ? "step" : undefined} className={cn("flex min-w-0 items-center gap-2 rounded-lg border px-2.5 py-2 sm:px-3", step === index ? "flex-[3] sm:flex-none" : "flex-none sm:flex-none", step === index ? "border-primary bg-primary-soft text-primary" : "border-border bg-surface text-fg-muted")}>
                   <span className={cn("flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold", step >= index ? "bg-primary text-primary-fg" : "bg-surface-2 text-fg-muted")}>{step > index ? <Check className="size-3.5" aria-hidden="true" /> : index + 1}</span>
-                  <span className="text-xs font-medium leading-relaxed">{label}</span>
+                  <span className={cn("text-xs font-medium leading-relaxed", step !== index && "hidden sm:inline")}>{label}</span>
                 </li>)}
               </ol>
             </nav>
@@ -989,12 +989,12 @@ export function MaterialPcFormDialog({
           </div>
 
           <DialogFooter className="shrink-0 flex-wrap bg-surface">
-            <Button type="button" variant="ghost" className="mr-auto" disabled={busy} onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="ghost" className="order-2 basis-[calc(50%-0.25rem)] sm:order-none sm:basis-auto sm:mr-auto" disabled={busy} onClick={() => onOpenChange(false)}>
               ยกเลิก
             </Button>
-            <Button type="button" variant="outline" disabled={busy} onClick={() => void saveDraft()}><Save className="size-4" aria-hidden="true" />{savingDraft ? "กำลังบันทึกร่าง…" : "บันทึกร่าง"}</Button>
-            {step > 0 && <Button type="button" variant="outline" disabled={busy} onClick={() => goToStep(step - 1)}><ArrowLeft className="size-4" aria-hidden="true" />ย้อนกลับ</Button>}
-            <Button key={step === lastStep ? "save" : "next"} type="submit" disabled={busy}>
+            <Button type="button" variant="outline" className="order-2 basis-[calc(50%-0.25rem)] sm:order-none sm:basis-auto" disabled={busy} onClick={() => void saveDraft()}><Save className="size-4" aria-hidden="true" />{savingDraft ? "กำลังบันทึกร่าง…" : "บันทึกร่าง"}</Button>
+            {step > 0 && <Button type="button" variant="outline" className="order-1 flex-1 sm:order-none sm:flex-none" disabled={busy} onClick={() => goToStep(step - 1)}><ArrowLeft className="size-4" aria-hidden="true" />ย้อนกลับ</Button>}
+            <Button key={step === lastStep ? "save" : "next"} type="submit" className="order-1 flex-1 sm:order-none sm:flex-none" disabled={busy}>
               {isSubmitting ? "กำลังบันทึก…" : advancing ? "กำลังตรวจข้อมูล…" : step < lastStep ? "ถัดไป" : isEdit ? "บันทึกการเปลี่ยนแปลง" : "เพิ่มวัสดุ"}
               {step < lastStep && <ArrowRight className="size-4" aria-hidden="true" />}
             </Button>

@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 export interface FilterDropdownOption {
   value: string;
   label: string;
+  disabled?: boolean;
 }
 
 // Sentinel for "no filter" in a Radix Select, which can't represent an

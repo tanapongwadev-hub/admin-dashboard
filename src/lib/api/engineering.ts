@@ -37,6 +37,21 @@ export function createEngineeringVersion(token: string, scope: EngineeringScope,
   });
 }
 
+// Edit and permanent delete are refused by the API for an ACTIVE version.
+export function updateEngineeringVersion(token: string, scope: EngineeringScope, kind: EngineeringKind, id: string, payload: EngineeringPayload) {
+  const url = scope === 'materials' ? `${endpoint(scope, kind)}/${encodeURIComponent(id)}` : `${endpoint(scope, kind)}/${encodeURIComponent(id)}/content`;
+  return apiFetch<unknown>(url, {
+    method: 'PATCH', headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify(kind === 'bom' ? { specification: payload.specification, remark: payload.remark, items: payload.items } : { remark: payload.remark, steps: payload.steps }),
+  });
+}
+
+export function deleteEngineeringVersion(token: string, scope: EngineeringScope, kind: EngineeringKind, id: string) {
+  return apiFetch<unknown>(`${endpoint(scope, kind)}/${encodeURIComponent(id)}`, {
+    method: 'DELETE', headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
 export function activateEngineeringVersion(token: string, scope: EngineeringScope, kind: EngineeringKind, id: string) {
   return apiFetch<unknown>(`${endpoint(scope, kind)}/${encodeURIComponent(id)}/activate`, { method: 'PATCH', headers: { Authorization: `Bearer ${token}` } });
 }

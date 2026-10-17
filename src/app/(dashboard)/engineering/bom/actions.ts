@@ -6,7 +6,7 @@ import { getCurrentSession } from '@/lib/session';
 import { ApiError } from '@/lib/api/client';
 import { redirectIfSessionExpired, redirectMissingSession } from '@/lib/session-expiry';
 import { apiErrorMessage, CONNECTION_ERROR_MESSAGE } from '@/lib/user-error';
-import { activateEngineeringVersion, createEngineeringVersion, engineeringPermission, listEngineeringVersions, type EngineeringScope, type EngineeringKind, type EngineeringPayload } from '@/lib/api/engineering';
+import { activateEngineeringVersion, createEngineeringVersion, deleteEngineeringVersion, updateEngineeringVersion, engineeringPermission, listEngineeringVersions, type EngineeringScope, type EngineeringKind, type EngineeringPayload } from '@/lib/api/engineering';
 
 async function tokenFor(scope: EngineeringScope, kind: EngineeringKind, action: 'VIEW' | 'CREATE' | 'UPDATE') {
   if (!['materials', 'products'].includes(scope) || !['bom', 'workflow'].includes(kind)) return null;
@@ -40,6 +40,18 @@ export async function createEngineeringAction(scope: EngineeringScope, kind: Eng
     const version = await createEngineeringVersion(token, scope, kind, id, payload);
     refresh(scope); return { status: 'success' as const, id: version.id };
   } catch (error) { return failure(error); }
+}
+export async function updateEngineeringAction(scope: EngineeringScope, kind: EngineeringKind, id: string, payload: EngineeringPayload) {
+  const token = await tokenFor(scope, kind, 'UPDATE');
+  if (!token) return { status: 'error' as const, message: 'คุณไม่มีสิทธิ์แก้ไขข้อมูลนี้' };
+  try { await updateEngineeringVersion(token, scope, kind, id, payload); refresh(scope); return { status: 'success' as const }; }
+  catch (error) { return failure(error); }
+}
+export async function deleteEngineeringAction(scope: EngineeringScope, kind: EngineeringKind, id: string) {
+  const token = await tokenFor(scope, kind, 'UPDATE');
+  if (!token) return { status: 'error' as const, message: 'คุณไม่มีสิทธิ์ลบข้อมูลนี้' };
+  try { await deleteEngineeringVersion(token, scope, kind, id); refresh(scope); return { status: 'success' as const }; }
+  catch (error) { return failure(error); }
 }
 export async function activateEngineeringAction(scope: EngineeringScope, kind: EngineeringKind, id: string) {
   const token = await tokenFor(scope, kind, 'UPDATE');

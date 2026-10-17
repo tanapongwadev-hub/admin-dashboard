@@ -1,5 +1,6 @@
 import {
   LayoutDashboard,
+  LayoutGrid,
   Menu,
   Shield,
   Briefcase,
@@ -48,6 +49,7 @@ import type { MenuNode } from "./api/auth";
 // icon just to cover names we haven't seen yet.
 const MENU_ICONS: Record<string, LucideIcon> = {
   "layout-dashboard": LayoutDashboard,
+  "layout-grid": LayoutGrid,
   menu: Menu,
   shield: Shield,
   briefcase: Briefcase,

@@ -20,6 +20,7 @@ export interface MatrixDepartment {
   code: string;
   nameTh: string;
   nameEn: string;
+  parentId?: string | null;
   isActive: boolean;
 }
 

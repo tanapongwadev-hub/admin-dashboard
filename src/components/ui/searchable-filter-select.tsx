@@ -66,7 +66,7 @@ export function SearchableFilterSelect({
         <SelectContent searchPlaceholder={searchPlaceholder}>
           <SelectItem value={emptyValue}>{allLabel}</SelectItem>
           {unique.filter((option) => option.value !== "").map((option) => (
-            <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+            <SelectItem key={option.value} value={option.value} disabled={option.disabled}>{option.label}</SelectItem>
           ))}
         </SelectContent>
       </Select>

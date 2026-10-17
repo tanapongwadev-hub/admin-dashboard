@@ -81,6 +81,8 @@ export function LotOrderBoard({
   canAct,
   canReverse,
   reconciliations = {},
+  visibleStepCode = null,
+  visibleStepLabel = null,
 }: {
   orderCode: string;
   initialBoards: LineBoard[];
@@ -90,6 +92,10 @@ export function LotOrderBoard({
   canReverse: boolean;
   /** Per line id, checked when the page loaded (null = check unavailable). */
   reconciliations?: Record<string, LineReconciliation | null>;
+  /** Sub-department users see only the workflow step whose code matches (null = every step). */
+  visibleStepCode?: string | null;
+  /** "กลุ่ม › แผนกย่อย" label shown with the filter notice. */
+  visibleStepLabel?: string | null;
 }) {
   const router = useRouter();
   const [boards, setBoards] = useState(initialBoards);
@@ -278,10 +284,26 @@ export function LotOrderBoard({
 
             <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
               <h3 className="text-sm font-semibold text-fg">เส้นทางการผลิต</h3>
-              <p className="text-xs text-fg-muted">{board.steps.length} ขั้นตอน · ยอดในแต่ละขั้นแสดงเป็นชิ้น</p>
+              <p className="text-xs text-fg-muted">
+                {visibleStepCode
+                  ? `แสดง ${board.steps.filter((s) => s.code === visibleStepCode).length} จาก ${board.steps.length} ขั้นตอน`
+                  : `${board.steps.length} ขั้นตอน`}{" "}
+                · ยอดในแต่ละขั้นแสดงเป็นชิ้น
+              </p>
             </div>
+            {visibleStepCode && (
+              <p role="note" className="mt-3 rounded-lg bg-primary-soft px-3 py-2 text-xs text-fg">
+                แสดงเฉพาะขั้นตอน <span className="font-mono font-semibold">{visibleStepCode}</span> ของแผนก{" "}
+                <span className="font-semibold">{visibleStepLabel ?? visibleStepCode}</span>
+              </p>
+            )}
             <ol className="flex flex-col" aria-label="ลำดับขั้นตอนการผลิต">
-              {board.steps.map((step, i) => {
+              {board.steps
+                .map((step, i) => ({ step, i }))
+                .filter(({ step }) => !visibleStepCode || step.code === visibleStepCode)
+                .map(({ step, i }) => {
+                // Keep the real neighbour so transfer targets stay correct; only the
+                // connector line is dropped when steps are hidden.
                 const next = board.steps[i + 1];
                 const isReceiving = step.receivingType !== "NONE";
                 const openLots = step.lots.filter(
@@ -297,7 +319,7 @@ export function LotOrderBoard({
                     key={step.stepIndex}
                     className="relative grid grid-cols-[2rem_minmax(0,1fr)] gap-3 pb-5 last:pb-0 sm:grid-cols-[3rem_minmax(0,1fr)] sm:gap-5"
                   >
-                    {next && <span aria-hidden className="absolute bottom-0 left-4 top-10 w-px bg-border-strong sm:left-6 sm:top-12" />}
+                    {next && !visibleStepCode && <span aria-hidden className="absolute bottom-0 left-4 top-10 w-px bg-border-strong sm:left-6 sm:top-12" />}
                     <span aria-hidden className={cn("relative z-10 mt-1 flex size-8 items-center justify-center rounded-full border-2 text-sm font-semibold sm:size-12", active ? "border-primary bg-primary-soft text-primary" : "border-border-strong bg-surface text-fg-muted")}>
                       {i + 1}
                     </span>

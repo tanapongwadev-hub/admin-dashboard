@@ -31,6 +31,7 @@ export function MaterialPcClient({
   tabCounts,
   canViewBom,
   bomMaterialIds,
+  initialEditMaterial = null,
 }: {
   materials: Material[];
   meta: PaginatedResult<Material>["meta"];
@@ -47,6 +48,8 @@ export function MaterialPcClient({
   // Materials owning a Material BOM: stock only comes from closing production,
   // so the manual "รับเข้า" action is hidden for them (cps-api enforces it too).
   bomMaterialIds: string[];
+  /** Material whose edit dialog opens on arrival (from ?edit=<id>). */
+  initialEditMaterial?: Material | null;
 }) {
   const bomIdSet = React.useMemo(() => new Set(bomMaterialIds), [bomMaterialIds]);
   const isReceivable = React.useCallback((material: Material) => !bomIdSet.has(material.id), [bomIdSet]);
@@ -65,7 +68,13 @@ export function MaterialPcClient({
   // and the choice is persisted in localStorage per the page key. See
   // AGENTS.md § Materials PC for why Editorial is the default.
   const [view, setView] = useViewMode("materials-pc", "card");
-  const [formTarget, setFormTarget] = React.useState<Material | null | undefined>(undefined);
+  const [formTarget, setFormTarget] = React.useState<Material | null | undefined>(initialEditMaterial ?? undefined);
+  React.useEffect(() => {
+    if (!searchParams.get("edit")) return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("edit");
+    router.replace(`${pathname}?${params.toString()}`);
+  }, [searchParams, pathname, router]);
   const [draftTarget, setDraftTarget] = React.useState<MaterialDraftRecord | null>(null);
   const [draftsOpen, setDraftsOpen] = React.useState(false);
   const [statusTarget, setStatusTarget] = React.useState<Material | null>(null);
@@ -73,7 +82,15 @@ export function MaterialPcClient({
   const [detailsTarget, setDetailsTarget] = React.useState<Material | null>(null);
   const [bomUsageTarget, setBomUsageTarget] = React.useState<Material | null>(null);
 
-  function handleSaved() {
+  function handleSaved(created?: Material) {
+    if (created) {
+      // Jump to the freshly created material (newest first anyway).
+      const raw = ["PIPE", "SHEET", "COIL"].includes(created.materialType ?? "");
+      const params = new URLSearchParams({ search: created.code });
+      if (raw) params.set("tab", "raw");
+      router.push(`${pathname}?${params.toString()}`);
+      return;
+    }
     router.refresh();
   }
 

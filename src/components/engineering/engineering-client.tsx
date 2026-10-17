@@ -2,17 +2,18 @@
 
 import { useEffect, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, GitBranch, Workflow } from 'lucide-react';
+import { Plus, GitBranch, Workflow, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Label } from '@/components/ui/label';
 import { SearchableFilterSelect } from '@/components/ui/searchable-filter-select';
 import { MasterDataEmptyLink } from '@/components/ui/master-data-empty-link';
-import { activateEngineeringAction, engineeringHistoryAction } from '@/app/(dashboard)/engineering/bom/actions';
+import { activateEngineeringAction, deleteEngineeringAction, engineeringHistoryAction } from '@/app/(dashboard)/engineering/bom/actions';
 import type { EngineeringScope, EngineeringKind, EngineeringVersion } from '@/lib/api/engineering';
 import type { Material } from '@/lib/api/materials';
 import type { ProcessStep } from '@/lib/api/process-steps';
@@ -68,7 +69,8 @@ function VersionPanel({ scope, owner, kind, materials, processSteps, permissions
   const [versions, setVersions] = useState<EngineeringVersion[] | null>(null);
   const [error, setError] = useState('');
   const [reload, setReload] = useState(0);
-  const [editor, setEditor] = useState<{ base?: EngineeringVersion } | null>(null);
+  const [editor, setEditor] = useState<{ base?: EngineeringVersion; editing?: boolean } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<EngineeringVersion | null>(null);
   const [pending, startTransition] = useTransition();
   const permission = permissions[kind];
   useEffect(() => {
@@ -82,6 +84,15 @@ function VersionPanel({ scope, owner, kind, materials, processSteps, permissions
     return () => { cancelled = true; };
   }, [scope, kind, owner.id, reload, permission.view]);
 
+  function removeVersion(version: EngineeringVersion) {
+    startTransition(async () => {
+      try {
+        const result = await deleteEngineeringAction(scope, kind, version.id);
+        if (result.status === 'error') { setError(result.message); setDeleteTarget(null); return; }
+        toast.success(`ลบ ${version.version} ถาวรแล้ว`); setDeleteTarget(null); setReload((value) => value + 1); router.refresh();
+      } catch { setError(CONNECTION_ERROR_MESSAGE); setDeleteTarget(null); }
+    });
+  }
   function activate(id: string) {
     startTransition(async () => {
       try {
@@ -95,13 +106,14 @@ function VersionPanel({ scope, owner, kind, materials, processSteps, permissions
     <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-sm text-fg-muted">{kind === 'bom' ? 'จำนวนส่วนประกอบสำหรับผลิตปลายทาง 1 หน่วย' : 'ลำดับขั้นตอนตั้งแต่ต้นจนจบกระบวนการ'}</p>{permission.create && owner.isActive && <Button size="sm" onClick={() => setEditor({})}><Plus className="mr-1 size-4" />เพิ่ม {kind === 'bom' ? 'BOM' : 'Workflow'}</Button>}</div>
     {error && <div role="alert" className="rounded-md bg-danger-soft p-3 text-sm text-danger">{error}<Button variant="secondary" size="sm" className="ml-3" onClick={() => setReload((value) => value + 1)}>โหลดใหม่</Button></div>}
     {!permission.view ? <p className="text-sm text-fg-muted">คุณไม่มีสิทธิ์ดูประวัติ {kind === 'bom' ? 'BOM' : 'Workflow'}</p> : versions === null && !error ? <p role="status" className="py-6 text-sm text-fg-muted">กำลังโหลดเวอร์ชัน…</p> : versions?.length === 0 ? <p className="rounded-md border border-dashed border-border p-8 text-center text-sm text-fg-muted">ยังไม่มี {kind === 'bom' ? 'BOM' : 'Workflow'} สำหรับรายการนี้</p> : versions?.map((version) => <article key={version.id} className="rounded-md border border-border">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-surface-2/40 p-3"><div className="flex items-center gap-2"><span className="font-semibold text-fg">{version.version}</span><Badge variant={version.status === 'ACTIVE' ? 'success' : version.status === 'DRAFT' ? 'warning' : 'neutral'}>{version.status === 'ACTIVE' ? 'ใช้งาน' : version.status === 'DRAFT' ? 'ร่าง' : 'ไม่ใช้งาน'}</Badge></div><div className="flex flex-wrap gap-2">{permission.create && owner.isActive && <Button variant="secondary" size="sm" onClick={() => setEditor({ base: version })}>ทำสำเนาเป็นเวอร์ชันใหม่</Button>}{permission.activate && owner.isActive && version.status !== 'ACTIVE' && <Button size="sm" disabled={pending} onClick={() => activate(version.id)}>เปิดใช้เวอร์ชันนี้</Button>}</div></div>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-surface-2/40 p-3"><div className="flex items-center gap-2"><span className="font-semibold text-fg">{version.version}</span><Badge variant={version.status === 'ACTIVE' ? 'success' : version.status === 'DRAFT' ? 'warning' : 'neutral'}>{version.status === 'ACTIVE' ? 'ใช้งาน' : version.status === 'DRAFT' ? 'ร่าง' : 'ไม่ใช้งาน'}</Badge></div><div className="flex flex-wrap gap-2">{permission.create && owner.isActive && version.status === 'ACTIVE' && <Button variant="secondary" size="sm" title="บันทึกการแก้ไขเป็นเวอร์ชันใหม่" onClick={() => setEditor({ base: version })}><Pencil className="mr-1 size-3.5" aria-hidden="true" />แก้ไข</Button>}{permission.activate && owner.isActive && version.status !== 'ACTIVE' && <Button variant="secondary" size="sm" disabled={pending} onClick={() => setEditor({ base: version, editing: true })}><Pencil className="mr-1 size-3.5" aria-hidden="true" />แก้ไข</Button>}{permission.activate && version.status !== 'ACTIVE' && <Button variant="danger" size="sm" disabled={pending} onClick={() => setDeleteTarget(version)}><Trash2 className="mr-1 size-3.5" aria-hidden="true" />ลบถาวร</Button>}{permission.activate && owner.isActive && version.status !== 'ACTIVE' && <Button size="sm" disabled={pending} onClick={() => activate(version.id)}>เปิดใช้เวอร์ชันนี้</Button>}</div></div>
       <details className="p-3"><summary className="cursor-pointer text-sm font-medium text-fg">{kind === 'bom' ? `${version.items?.length ?? 0} ส่วนประกอบ` : `${version.steps?.length ?? 0} ขั้นตอน`} · {new Date(version.createdAt).toLocaleDateString('th-TH', { timeZone: 'Asia/Bangkok' })}</summary>
         {version.specification && <p className="mt-3 whitespace-pre-wrap text-sm text-fg-secondary">{version.specification}</p>}
         {kind === 'bom' ? <ol className="mt-3 space-y-2">{version.items?.map((item, index) => <li key={item.id} className="rounded-md bg-surface-2 p-3 text-sm"><p className="font-medium text-fg">{index + 1}. {item.materialCode} · {item.materialName}</p><p className="mt-1 text-fg-secondary">{quantityFormatter.format(item.quantity)} {item.unitNameTh}{item.isScrap ? ' · เศษวัสดุ' : ''}{item.wastagePercent ? ` · เผื่อสูญเสีย ${item.wastagePercent}%` : ''}</p>{item.remark && <p className="mt-1 text-xs text-fg-muted">{item.remark}</p>}</li>)}</ol> : <ol className="mt-3 space-y-2">{version.steps?.map((step, index) => <li key={step.id} className="rounded-md bg-surface-2 p-3 text-sm"><p className="font-medium text-fg">{index + 1}. {step.stepName}</p>{step.description && <p className="mt-1 whitespace-pre-wrap text-fg-secondary">{step.description}</p>}</li>)}</ol>}
         {version.remark && <p className="mt-3 whitespace-pre-wrap text-sm text-fg-secondary">{version.remark}</p>}
       </details>
     </article>)}
-    {editor && <EngineeringFormDialog scope={scope} kind={kind} owner={owner} materials={materials} processSteps={processSteps} base={editor.base} onClose={() => setEditor(null)} onSaved={() => { setEditor(null); setReload((value) => value + 1); router.refresh(); }} />}
+    {editor && <EngineeringFormDialog scope={scope} kind={kind} owner={owner} materials={materials} processSteps={processSteps} base={editor.base} editing={editor.editing} canActivate={permissions[kind].activate} onClose={() => setEditor(null)} onSaved={() => { setEditor(null); setReload((value) => value + 1); router.refresh(); }} />}
+    <ConfirmDialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open && !pending) setDeleteTarget(null); }} title={`ลบ ${deleteTarget?.version ?? ''} ถาวร?`} description={`${kind === 'bom' ? 'BOM' : 'Workflow'} เวอร์ชันนี้และรายการข้างในจะถูกลบถาวร กู้คืนไม่ได้ (เวอร์ชันที่เปิดใช้งานอยู่ลบไม่ได้)`} confirmLabel="ลบถาวร" onConfirm={() => deleteTarget && removeVersion(deleteTarget)} />
   </div>;
 }

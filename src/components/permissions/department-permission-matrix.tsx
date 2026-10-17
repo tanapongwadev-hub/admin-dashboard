@@ -76,7 +76,10 @@ export function DepartmentPermissionMatrix({ initialMatrix }: { initialMatrix: P
   const [saved, setSaved] = React.useState<AccessMap>(() => toAccessMap(initialMatrix.permissions));
   const [access, setAccess] = React.useState<AccessMap>(saved);
   const activeDepartments = React.useMemo(
-    () => matrix.departments.filter((department) => department.isActive),
+    () =>
+      matrix.departments
+        .filter((department) => department.isActive && !department.parentId)
+        .sort((a, b) => a.nameEn.localeCompare(b.nameEn)),
     [matrix.departments],
   );
   const activeDepartmentIds = React.useMemo(
@@ -202,15 +205,15 @@ export function DepartmentPermissionMatrix({ initialMatrix }: { initialMatrix: P
       <div className="flex flex-wrap items-end justify-between gap-3 rounded-xl border border-border bg-surface p-4">
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex min-w-56 flex-col gap-1.5">
-            <Label htmlFor="permission-department">แผนก</Label>
+            <Label htmlFor="permission-department">กลุ่มแผนก</Label>
             <Select value={departmentId} onValueChange={setDepartmentId}>
               <SelectTrigger id="permission-department" className="w-full sm:w-64">
                 <SelectValue placeholder="เลือกแผนก" />
               </SelectTrigger>
               <SelectContent searchPlaceholder="ค้นหาแผนก">
                 {activeDepartments.map((item) => (
-                  <SelectItem key={item.id} value={item.id} textValue={`${item.code} ${item.nameTh}`}>
-                    {item.code} · {item.nameTh}
+                  <SelectItem key={item.id} value={item.id} textValue={`${item.nameEn} ${item.nameTh}`}>
+                    {item.nameEn} · {item.nameTh}
                   </SelectItem>
                 ))}
               </SelectContent>

@@ -46,6 +46,16 @@ export async function ProductionOrderPageContent({
   const basePath = order.targetType === "material" ? "/production/internal-materials/orders" : "/production/products/orders";
   if (order.targetType !== targetType) redirect(`${basePath}/${order.id}`);
 
+  // A sub-department user (e.g. production.we) only works their own process
+  // step: workflow steps whose code equals the department code. Group-level
+  // users and SUPER_ADMIN see every step.
+  const role = session?.currentDepartmentRole;
+  const departmentStepCode =
+    session && !session.user.isSuperAdmin && role?.departmentParentId ? role.departmentCode : null;
+  const departmentLabel = role?.departmentParentName
+    ? `${role.departmentParentName} › ${role.departmentName ?? role.departmentCode}`
+    : null;
+
   const backLink = (
     <Link
       href={`${basePath}?tab=orders`}
@@ -82,6 +92,8 @@ export async function ProductionOrderPageContent({
           canAct={can("PRODUCTION_ORDER_ADVANCE")}
           canReverse={can("PRODUCTION_ORDER_REVERSE")}
           reconciliations={reconciliations}
+          visibleStepCode={departmentStepCode}
+          visibleStepLabel={departmentLabel}
         />
       </div>
     );

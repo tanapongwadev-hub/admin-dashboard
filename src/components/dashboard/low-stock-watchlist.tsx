@@ -19,7 +19,7 @@ export function LowStockWatchlist({ items = lowStockWatchlist }: { items?: Watch
   return (
     <div className="flex flex-col gap-4">
       {items.map((item) => {
-        const ratio = item.qty / item.reorderPoint;
+        const ratio = item.reorderPoint > 0 ? item.qty / item.reorderPoint : 0;
         const critical = ratio < 0.5;
         return (
           <div key={item.code} className="flex items-center gap-3">
@@ -41,7 +41,7 @@ export function LowStockWatchlist({ items = lowStockWatchlist }: { items?: Watch
                   />
                 </div>
                 <span className={cn("shrink-0 text-xs", critical ? "text-danger" : "text-warning")}>
-                  {critical ? "ต้องสั่งซื้อด่วน" : "ต่ำกว่าจุดสั่งซื้อ"}
+                  {item.qty <= 0 ? "หมดสต็อก" : critical ? "ต้องสั่งซื้อด่วน" : "ต่ำกว่าจุดสั่งซื้อ"}
                 </span>
               </div>
             </div>

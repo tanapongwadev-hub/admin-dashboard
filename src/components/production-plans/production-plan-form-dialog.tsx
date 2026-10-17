@@ -66,7 +66,14 @@ export function ProductionPlanFormDialog({
 }) {
   const targetLabel = targetType === 'material' ? 'วัตถุดิบภายใน' : 'สินค้า';
   const targetOptions = targetType === 'material'
-    ? (lookups.materials ?? []).map((material) => ({ value: `material:${material.id}`, label: `${material.code} · ${material.name} · BOM ${material.activeBomVersion}` }))
+    ? (lookups.materials ?? []).map((material) => {
+        const reason = material.isRaw ? 'วัตถุดิบก่อนแปรรูป' : !material.activeBomId ? 'ยังไม่มี BOM' : null;
+        return {
+          value: `material:${material.id}`,
+          label: `${material.code} · ${material.name} · ${reason ?? `BOM ${material.activeBomVersion}`}`,
+          disabled: reason !== null,
+        };
+      })
     : lookups.products.map((product) => ({ value: `product:${product.id}`, label: `${product.code} · ${product.name} · BOM ${product.activeBomVersion}` }));
   const form = useForm<FormInput, unknown, Values>({
     resolver: zodResolver(schema),

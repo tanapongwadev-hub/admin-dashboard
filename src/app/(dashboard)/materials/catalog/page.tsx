@@ -38,6 +38,7 @@ export default async function MaterialsPcPage({
     sortBy?: string;
     sortOrder?: string;
     tab?: string;
+    edit?: string;
   }>;
 }) {
   const session = await getCurrentSession();
@@ -85,12 +86,12 @@ export default async function MaterialsPcPage({
   const stockStatus = stockStatuses.has(params.stockStatus as MaterialStockStatus)
     ? (params.stockStatus as MaterialStockStatus)
     : undefined;
-  const inventorySorts = new Set(["code", "name", "currentStock", "lastReceivedAt"]);
-  const sortBy = inventorySorts.has(params.sortBy ?? "") ? params.sortBy as "code" | "name" | "currentStock" | "lastReceivedAt" : "code";
-  const sortOrder: "asc" | "desc" = params.sortOrder === "desc" ? "desc" : "asc";
+  const inventorySorts = new Set(["code", "name", "currentStock", "lastReceivedAt", "createdAt"]);
+  const sortBy = inventorySorts.has(params.sortBy ?? "") ? params.sortBy as "code" | "name" | "currentStock" | "lastReceivedAt" | "createdAt" : "createdAt";
+  const sortOrder: "asc" | "desc" = params.sortOrder === "asc" ? "asc" : "desc";
 
   const inventoryQuery: ListMaterialInventoryParams = { search, isActive, type, stockStatus, supplierId: params.supplierId, modelId: params.modelId, loadingPointId: params.loadingPointId, processLineName: params.processLineName, sortBy, sortOrder };
-  const materialQuery: ListMaterialsParams = { search, isActive, type, supplierId: params.supplierId, modelId: params.modelId, loadingPointId: params.loadingPointId, sortBy: sortBy === "name" ? "name" : "code", sortOrder };
+  const materialQuery: ListMaterialsParams = { search, isActive, type, supplierId: params.supplierId, modelId: params.modelId, loadingPointId: params.loadingPointId, sortBy: sortBy === "name" ? "name" : sortBy === "createdAt" ? "createdAt" : "code", sortOrder };
   const [lookups, inventory, materialList, balances, bomMaterialIds] = await Promise.all([
     getMaterialLookups(accessToken),
     canViewStock
@@ -119,7 +120,7 @@ export default async function MaterialsPcPage({
           supplierId: params.supplierId,
           modelId: params.modelId,
           loadingPointId: params.loadingPointId,
-          sortBy: sortBy === "name" ? "name" : "code",
+          sortBy: sortBy === "name" ? "name" : sortBy === "createdAt" ? "createdAt" : "code",
           sortOrder,
         })
       : Promise.resolve(null),
@@ -167,6 +168,9 @@ export default async function MaterialsPcPage({
 
   const canEdit = session.user.isSuperAdmin || session.permissions.includes("MATERIAL_CREATE") || session.permissions.includes("MATERIAL_UPDATE");
   const canDelete = session.user.isSuperAdmin || session.permissions.includes("MATERIAL_DELETE");
+  // ?edit=<id> (e.g. from Material Receiving when a Material has no supplier)
+  // opens that Material's edit dialog once.
+  const initialEditMaterial = canEdit && params.edit ? matches.find((material) => material.id === params.edit) ?? null : null;
 
   return (
     <div className="flex flex-col gap-5">
@@ -187,6 +191,7 @@ export default async function MaterialsPcPage({
         tabCounts={{ all: normalMatches.length, raw: rawMatches.length, bom: bomMatches.length }}
         canViewBom={canViewBom}
         bomMaterialIds={bomMaterialIds}
+        initialEditMaterial={initialEditMaterial}
       />
     </div>
   );

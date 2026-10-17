@@ -35,6 +35,8 @@ export interface DepartmentOption {
   code: string;
   nameTh: string;
   nameEn: string;
+  /** Group department id; null for a group (materials / production / delivery). */
+  parentId?: string | null;
   isActive: boolean;
 }
 

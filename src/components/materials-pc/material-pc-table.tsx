@@ -933,8 +933,8 @@ function SortableButton({ label, field }: { label: string; field: MaterialSortFi
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const active = (searchParams.get("sortBy") ?? "code") === field;
-  const direction = searchParams.get("sortOrder") === "desc" ? "desc" : "asc";
+  const active = (searchParams.get("sortBy") ?? "createdAt") === field;
+  const direction = (searchParams.get("sortBy") ?? "createdAt") === "createdAt" && !searchParams.get("sortOrder") ? "desc" : searchParams.get("sortOrder") === "asc" ? "asc" : "desc";
   return (
       <button
         type="button"

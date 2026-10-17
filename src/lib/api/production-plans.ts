@@ -90,7 +90,15 @@ export interface ProductionPlan {
 }
 
 export interface ProductionPlanLookups {
-  materials?: Array<ProductionPlanMaterial & { activeBomId: string; activeBomVersion: string }>;
+  /** Every active internal Material; plannable only with an ACTIVE BOM and when not raw stock. */
+  materials?: Array<
+    ProductionPlanMaterial & {
+      materialType?: string;
+      isRaw?: boolean;
+      activeBomId: string | null;
+      activeBomVersion: string | null;
+    }
+  >;
   products: Array<
     ProductionPlanProduct & { activeBomId: string; activeBomVersion: string }
   >;
