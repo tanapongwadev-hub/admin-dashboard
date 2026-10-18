@@ -43,3 +43,23 @@ export function deleteSetupDraft(accessToken: string, id: string) {
     headers: auth(accessToken),
   });
 }
+
+export interface SetupOverviewItem {
+  id: string;
+  code: string;
+  name: string;
+  bomCount: number;
+  bomActive: number;
+  workflowCount: number;
+  workflowActive: number;
+}
+
+export interface SetupOverview {
+  products: SetupOverviewItem[];
+  materials: SetupOverviewItem[];
+}
+
+/** Active products / materials that already have both a BOM and a workflow. */
+export function getSetupOverview(accessToken: string) {
+  return apiFetch<SetupOverview>("/setup-wizard/overview", { headers: auth(accessToken) });
+}

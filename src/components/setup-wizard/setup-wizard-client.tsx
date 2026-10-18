@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Check, ChevronLeft, ChevronRight, CheckCircle2, FolderOpen, Loader2, Plus, Save, Trash2, X } from "lucide-react";
+import { Boxes, Package, Check, ImagePlus, ChevronLeft, ChevronRight, CheckCircle2, FolderOpen, Loader2, Plus, Save, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,27 +13,39 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { MasterDataSelect, type MasterDataSelectOption } from "@/components/ui/master-data-select";
+import Image from "next/image";
+import { uploadMaterialPcImageAction } from "@/app/(dashboard)/materials/catalog/actions";
+import { uploadProductImageAction } from "@/app/(dashboard)/engineering/products/actions";
+import { checkMaterialCodeAction } from "@/app/(dashboard)/materials/catalog/actions";
 import {
   deleteSetupDraftAction,
   runSetupAction,
   saveSetupDraftAction,
 } from "@/app/(dashboard)/engineering/setup/actions";
-import type { MaterialLookups } from "@/lib/api/materials";
+import type { Material, MaterialLookups } from "@/lib/api/materials";
+import type { ProcessStep } from "@/lib/api/process-steps";
+import type { EngineeringKind, EngineeringScope, EngineeringVersion } from "@/lib/api/engineering";
+import { deleteEngineeringAction, engineeringHistoryAction } from "@/app/(dashboard)/engineering/bom/actions";
+import { EngineeringFormDialog } from "@/components/engineering/engineering-form-dialog";
 import type { ProductLookupItem, ProductLookups } from "@/lib/api/products";
-import type { SetupDraftRecord, SetupDraftSummary } from "@/lib/api/setup-wizard";
+import type { SetupDraftRecord, SetupDraftSummary, SetupOverview } from "@/lib/api/setup-wizard";
 import {
   emptyMaterial,
   isNewMaterialRef,
   newMaterialKey,
   newMaterialRef,
   SETUP_STEPS,
+  visibleSteps,
+  type SetupMode,
   emptySetupData,
   nextRowKey,
   resetRowKeys,
   setupDraftTitle,
   validateSetupStep,
   type SetupData,
+  type SetupBomRow,
   type SetupMaterialData,
+  type SetupWorkflowRow,
 } from "@/lib/setup-wizard";
 import { cn } from "@/lib/utils";
 
@@ -44,18 +56,24 @@ interface CatalogMaterial {
   unitId: string;
 }
 
+export type ManageCan = Record<"products" | "materials", { bom: boolean; workflow: boolean }>;
+
 interface Props {
   materialLookups: MaterialLookups;
   productLookups: ProductLookups;
-  materials: CatalogMaterial[];
-  processSteps: Array<{ id: string; code: string; nameTh: string }>;
+  materials: Material[];
+  processSteps: ProcessStep[];
+  manage: ManageCan;
   drafts: SetupDraftSummary[];
+  overview: SetupOverview;
   initialDraft: SetupDraftRecord | null;
   can: {
     material: boolean;
     product: boolean;
     bom: boolean;
     workflow: boolean;
+    materialBom: boolean;
+    materialWorkflow: boolean;
     activateBom: boolean;
     activateWorkflow: boolean;
   };
@@ -109,6 +127,7 @@ function hydrate(raw: Record<string, unknown> | undefined): SetupData {
       typeof r.materialsEnabled === "boolean"
         ? r.materialsEnabled
         : (raw.material as { enabled?: boolean } | undefined)?.enabled !== false,
+    mode: r.mode ?? "product",
     created: migrateCreated(raw),
   };
 }
@@ -126,11 +145,12 @@ function Field({ label, htmlFor, required, children, hint }: { label: string; ht
   );
 }
 
-function StepRail({ current, done, summaries, onSelect }: { current: number; done: boolean[]; summaries: string[]; onSelect: (index: number) => void }) {
+function StepRail({ current, done, summaries, visible, onSelect }: { current: number; done: boolean[]; summaries: string[]; visible: number[]; onSelect: (index: number) => void }) {
   return (
     <nav aria-label="ขั้นตอนการสร้างครบชุด" className="rounded-xl border border-border bg-surface p-2">
       <ol className="flex gap-1 overflow-x-auto">
-        {SETUP_STEPS.map((step, index) => {
+        {visible.map((index, pos) => {
+          const step = SETUP_STEPS[index];
           const state = index === current ? "active" : done[index] ? "done" : "upcoming";
           return (
             <li key={step.id} className="min-w-40 flex-1">
@@ -151,7 +171,7 @@ function StepRail({ current, done, summaries, onSelect }: { current: number; don
                     state === "upcoming" && "bg-surface-2 text-fg-muted"
                   )}
                 >
-                  {state === "done" ? <Check className="size-3.5" aria-hidden="true" /> : index + 1}
+                  {state === "done" ? <Check className="size-3.5" aria-hidden="true" /> : pos + 1}
                 </span>
                 <span className="min-w-0">
                   <span className={cn("block text-sm font-semibold", state === "upcoming" ? "text-fg-secondary" : "text-fg")}>{step.label}</span>
@@ -166,7 +186,7 @@ function StepRail({ current, done, summaries, onSelect }: { current: number; don
   );
 }
 
-export function SetupWizardClient({ materialLookups, productLookups, materials, processSteps, drafts, initialDraft, can }: Props) {
+export function SetupWizardClient({ materialLookups, productLookups, materials, processSteps, drafts, overview, initialDraft, can, manage }: Props) {
   const router = useRouter();
   const [data, setData] = React.useState<SetupData>(() => hydrate(initialDraft?.data));
   const [step, setStep] = React.useState(initialDraft?.step ?? 0);
@@ -183,7 +203,11 @@ export function SetupWizardClient({ materialLookups, productLookups, materials, 
     setData((d) => ({ ...d, materials: d.materials.map((m) => (m.key === key ? { ...m, ...patch } : m)) }));
   const patchProduct = (patch: Partial<SetupData["product"]>) => setData((d) => ({ ...d, product: { ...d.product, ...patch } }));
 
-  const stepErrors = SETUP_STEPS.map((_, i) => (i < 4 ? validateSetupStep(i, data) : null));
+  const mode = data.mode;
+  const visible = visibleSteps(mode);
+  const hasInternalMaterial = data.materialsEnabled && data.materials.some((m) => m.locationType === "internal");
+  const materialCan = { materialBom: can.materialBom, materialWorkflow: can.materialWorkflow };
+  const stepErrors = SETUP_STEPS.map((_, i) => (i < 4 ? validateSetupStep(i, data, materialCan) : null));
   const done = SETUP_STEPS.map((_, i) => i < 4 && i < step && stepErrors[i] === null);
 
   const unitOptions = toOptions(materialLookups.units);
@@ -221,18 +245,66 @@ export function SetupWizardClient({ materialLookups, productLookups, materials, 
     [draftRef]
   );
 
-  function goNext() {
-    const error = validateSetupStep(step, data);
+  /** Message when a new material code is already used in the system (checked before creating). */
+  async function findTakenMaterialCode(): Promise<string | null> {
+    if (!data.materialsEnabled) return null;
+    for (const m of data.materials) {
+      if (data.created.materialIds?.[m.key] || !m.code.trim()) continue;
+      const result = await checkMaterialCodeAction(m.code);
+      if (result.status === "error") return result.message;
+      if (!result.available) return `รหัสวัสดุ "${m.code.trim()}" มีอยู่ในระบบแล้ว กรุณาเปลี่ยนรหัส`;
+    }
+    return null;
+  }
+
+  const [checking, setChecking] = React.useState(false);
+
+  /** Entering the BOM step: pre-fill rows with the new materials from step 1 (once each). */
+  function seedBomRows() {
+    setData((d) => {
+      if (!d.bomEnabled || d.created.bomId || !d.materialsEnabled) return d;
+      const seeded = new Set(d.bomSeededKeys ?? []);
+      const fresh = d.materials.filter((m) => m.code.trim() && !seeded.has(m.key));
+      if (fresh.length === 0) return d;
+      const kept = d.bomRows.filter((r) => r.materialId);
+      const added = fresh
+        .filter((m) => !kept.some((r) => r.materialId === newMaterialRef(m.key)))
+        .map((m) => ({ key: nextRowKey(), materialId: newMaterialRef(m.key), unitId: m.unitId, quantity: "1", wastagePercent: "" }));
+      const rows = [...kept, ...added];
+      return {
+        ...d,
+        bomRows: rows.length ? rows : d.bomRows,
+        bomSeededKeys: [...seeded, ...fresh.map((m) => m.key)],
+      };
+    });
+  }
+
+  function goToStep(next: number) {
+    if (next === 2) seedBomRows();
+    setStep(next);
+  }
+
+  async function goNext() {
+    const error = validateSetupStep(step, data, materialCan);
     if (error) {
       toast.error(error);
       return;
     }
-    setStep((s) => Math.min(s + 1, SETUP_STEPS.length - 1));
+    if (step === 0) {
+      setChecking(true);
+      const taken = await findTakenMaterialCode();
+      setChecking(false);
+      if (taken) {
+        toast.error(taken);
+        return;
+      }
+    }
+    goToStep(visible[Math.min(visible.indexOf(step) + 1, visible.length - 1)]);
   }
 
   async function handleRun() {
-    for (let i = 0; i < 4; i += 1) {
-      const error = validateSetupStep(i, data);
+    for (const i of visible.filter((x) => x < 4)) {
+      const error = validateSetupStep(i, data, materialCan);
       if (error) {
         toast.error(`ขั้นตอน ${SETUP_STEPS[i].label}: ${error}`);
         setStep(i);
@@ -241,6 +313,14 @@ export function SetupWizardClient({ materialLookups, productLookups, materials, 
     }
     setRunning(true);
     setProblem(null);
+    const taken = await findTakenMaterialCode();
+    if (taken) {
+      setProblem(taken);
+      setStep(0);
+      toast.error(taken);
+      setRunning(false);
+      return;
+    }
     const result = await runSetupAction(data);
     const nextData = { ...data, created: result.created };
     setData(nextData);
@@ -274,19 +354,41 @@ export function SetupWizardClient({ materialLookups, productLookups, materials, 
     return (
       <div className="flex flex-col items-center gap-4 rounded-xl border border-border bg-surface px-6 py-14 text-center">
         <CheckCircle2 className="size-12 text-success" aria-hidden="true" />
-        <h2 className="text-lg font-semibold text-fg">สร้างครบชุดเรียบร้อย</h2>
+        <h2 className="text-lg font-semibold text-fg">{data.mode === "material" ? "สร้างวัสดุเรียบร้อย" : "สร้างครบชุดเรียบร้อย"}</h2>
         <ul className="text-sm text-fg-secondary">
           {createdMaterialCount > 0 && <li>วัสดุใหม่ {createdMaterialCount} รายการถูกสร้างแล้ว</li>}
-          <li>สินค้า {data.product.code} ถูกสร้างแล้ว</li>
+          {data.mode !== "material" && <li>สินค้า {data.product.code} ถูกสร้างแล้ว</li>}
           {data.created.bomId && <li>BOM {data.activate ? "(เปิดใช้งานแล้ว)" : "(ฉบับร่าง)"}</li>}
           {data.created.workflowId && <li>Workflow {data.activate ? "(เปิดใช้งานแล้ว)" : "(ฉบับร่าง)"}</li>}
         </ul>
         <div className="flex flex-wrap justify-center gap-2">
-          <Button asChild><Link href="/engineering/products">ไปที่รายการสินค้า</Link></Button>
-          <Button asChild variant="outline"><Link href="/engineering/bom/products">ไปที่ BOM / Workflow</Link></Button>
+          {data.mode === "material" ? (
+            <Button asChild><Link href="/materials/catalog">ไปที่ทะเบียนวัสดุ</Link></Button>
+          ) : (
+            <>
+              <Button asChild><Link href="/engineering/products">ไปที่รายการสินค้า</Link></Button>
+              <Button asChild variant="outline"><Link href="/engineering/bom/products">ไปที่ BOM / Workflow</Link></Button>
+            </>
+          )}
           <Button variant="outline" onClick={() => router.push("/engineering/setup")}>เริ่มชุดใหม่</Button>
         </div>
       </div>
+    );
+  }
+
+  if (!data.mode) {
+    return (
+      <ModeChooser
+        drafts={drafts}
+        overview={overview}
+        materials={materials}
+        processSteps={processSteps}
+        manage={manage}
+        onPick={(picked) => {
+          setData((d) => ({ ...d, mode: picked, materialsEnabled: picked === "material" ? true : d.materialsEnabled }));
+          setStep(0);
+        }}
+      />
     );
   }
 
@@ -333,12 +435,16 @@ export function SetupWizardClient({ materialLookups, productLookups, materials, 
           </ul>
         </section>
       )}
-      <StepRail current={step} done={done} summaries={summaries} onSelect={setStep} />
+      <StepRail current={step} done={done} summaries={summaries} visible={visible} onSelect={goToStep} />
       </div>
 
       <div className="rounded-xl border border-border bg-surface">
         <div className="rounded-t-xl border-b border-border bg-surface-2 px-5 py-2.5 text-xs font-medium text-fg-muted">
-          ขั้นตอนที่ {step + 1} จาก {SETUP_STEPS.length}
+          ขั้นตอนที่ {visible.indexOf(step) + 1} จาก {visible.length}
+          <span className="ml-2 font-semibold text-fg-secondary">· {mode === "material" ? "สร้างวัสดุ" : "สร้างสินค้าครบชุด"}</span>
+          <button type="button" className="ml-2 text-primary underline" onClick={() => setData((d) => ({ ...d, mode: undefined }))}>
+            เปลี่ยนประเภท
+          </button>
           {draftRef && <span className="ml-2 text-primary">· กำลังแก้ไขร่าง</span>}
         </div>
 
@@ -350,7 +456,7 @@ export function SetupWizardClient({ materialLookups, productLookups, materials, 
                 <Notice>บัญชีของคุณไม่มีสิทธิ์สร้างวัสดุ (MATERIAL_CREATE) — ข้ามขั้นตอนนี้และเลือกวัสดุที่มีอยู่ใน BOM แทน</Notice>
               ) : (
                 <>
-                  <label className="flex items-center gap-2 text-sm text-fg">
+                  <label className={cn("flex items-center gap-2 text-sm text-fg", mode === "material" && "hidden")}>
                     <Checkbox
                       checked={!data.materialsEnabled}
                       onCheckedChange={(v) => setData((d) => ({ ...d, materialsEnabled: v !== true }))}
@@ -392,6 +498,13 @@ export function SetupWizardClient({ materialLookups, productLookups, materials, 
                             unitOptions={unitOptions}
                             supplierOptions={supplierOptions}
                             materialTypeOptions={materialTypeOptions}
+                            stepOptions={stepOptions}
+                            componentOptions={[
+                              ...newMaterialOptions.filter((o) => o.id !== newMaterialRef(m.key)),
+                              ...materials.map((x) => ({ id: x.id, label: `${x.code} · ${x.name}` })),
+                            ]}
+                            catalog={materials}
+                            canEngineer={can.materialBom && can.materialWorkflow}
                           />
                         )
                       )}
@@ -403,7 +516,7 @@ export function SetupWizardClient({ materialLookups, productLookups, materials, 
                       >
                         <Plus className="size-4" aria-hidden="true" /> เพิ่มวัสดุใหม่อีกรายการ
                       </Button>
-                      <p className="text-xs text-fg-muted">รูปภาพวัสดุและวัสดุแบบ Pipe/Sheet/Coil เพิ่มได้ภายหลังที่หน้าทะเบียนวัสดุ</p>
+                      <p className="text-xs text-fg-muted">วัสดุแบบ Pipe/Sheet/Coil เพิ่มได้ภายหลังที่หน้าทะเบียนวัสดุ</p>
                     </>
                   )}
                 </>
@@ -459,7 +572,15 @@ export function SetupWizardClient({ materialLookups, productLookups, materials, 
                   <Field label="มาตราส่วน" htmlFor="sw-p-scale">
                     <Input id="sw-p-scale" maxLength={50} value={data.product.scale} onChange={(e) => patchProduct({ scale: e.target.value })} />
                   </Field>
-                  <p className="text-xs text-fg-muted sm:col-span-2">รูปภาพสินค้าเพิ่มได้ภายหลังที่หน้ารายการสินค้า</p>
+                  <div className="sm:col-span-2">
+                    <ImageField
+                      id="sw-p-image"
+                      label="รูปภาพสินค้า (ไม่บังคับ)"
+                      path={data.product.imagePath}
+                      onChange={(imagePath) => patchProduct({ imagePath })}
+                      upload={uploadProductImageAction}
+                    />
+                  </div>
                 </div>
               )}
             </div>
@@ -587,18 +708,18 @@ export function SetupWizardClient({ materialLookups, productLookups, materials, 
 
           {step === 4 && (
             <div className="flex flex-col gap-4">
-              <StepHeading title="ตรวจสอบและสร้าง" desc="ระบบจะสร้างตามลำดับ วัสดุ → สินค้า → BOM → Workflow ถ้าขั้นใดล้มเหลว ส่วนที่สร้างแล้วจะถูกเก็บไว้ในร่างและทำต่อได้" />
+              <StepHeading title="ตรวจสอบและสร้าง" desc={mode === "material" ? "ระบบจะสร้างวัสดุตามลำดับ (วัสดุภายในจะสร้าง BOM + Workflow ของวัสดุด้วย) ถ้าล้มเหลว ส่วนที่สร้างแล้วจะถูกเก็บไว้ในร่างและทำต่อได้" : "ระบบจะสร้างตามลำดับ วัสดุ → สินค้า → BOM → Workflow ถ้าขั้นใดล้มเหลว ส่วนที่สร้างแล้วจะถูกเก็บไว้ในร่างและทำต่อได้"} />
               <dl className="grid gap-px overflow-hidden rounded-lg border border-border bg-border text-sm">
                 <ReviewRow
                   label="วัสดุ"
                   status={!data.materialsEnabled ? "skip" : createdMaterialCount === data.materials.length ? "created" : "todo"}
                   value={data.materialsEnabled ? data.materials.map((m) => m.code.trim() || "—").join(", ") : "ไม่สร้างใหม่"}
                 />
-                <ReviewRow label="สินค้า" status={data.created.productId ? "created" : "todo"} value={`${data.product.code} · ${data.product.name}`} />
-                <ReviewRow label="BOM" status={data.created.bomId ? "created" : data.bomEnabled ? "todo" : "skip"} value={data.bomEnabled ? `${data.bomRows.length} รายการ` : "ข้าม"} />
-                <ReviewRow label="Workflow" status={data.created.workflowId ? "created" : data.workflowEnabled ? "todo" : "skip"} value={data.workflowEnabled ? `${data.workflowRows.length} ขั้นตอน` : "ข้าม"} />
+                {mode !== "material" && <ReviewRow label="สินค้า" status={data.created.productId ? "created" : "todo"} value={`${data.product.code} · ${data.product.name}`} />}
+                {mode !== "material" && <ReviewRow label="BOM" status={data.created.bomId ? "created" : data.bomEnabled ? "todo" : "skip"} value={data.bomEnabled ? `${data.bomRows.length} รายการ` : "ข้าม"} />}
+                {mode !== "material" && <ReviewRow label="Workflow" status={data.created.workflowId ? "created" : data.workflowEnabled ? "todo" : "skip"} value={data.workflowEnabled ? `${data.workflowRows.length} ขั้นตอน` : "ข้าม"} />}
               </dl>
-              {(data.bomEnabled || data.workflowEnabled) && (
+              {(mode === "material" ? hasInternalMaterial : data.bomEnabled || data.workflowEnabled) && (
                 <label className="flex items-center gap-2 text-sm text-fg">
                   <Checkbox
                     checked={data.activate && can.activateBom && can.activateWorkflow}
@@ -614,7 +735,7 @@ export function SetupWizardClient({ materialLookups, productLookups, materials, 
         </fieldset>
 
         <div className="sticky bottom-0 z-10 flex flex-wrap items-center justify-between gap-2 rounded-b-xl border-t border-border bg-surface-2 px-5 py-4 shadow-[0_-4px_12px_-8px_rgb(0_0_0/0.25)]">
-          <Button type="button" variant="outline" disabled={step === 0 || locked} onClick={() => setStep((s) => Math.max(0, s - 1))}>
+          <Button type="button" variant="outline" disabled={step === visible[0] || locked} onClick={() => goToStep(visible[Math.max(0, visible.indexOf(step) - 1)])}>
             <ChevronLeft className="size-4" aria-hidden="true" /> ย้อนกลับ
           </Button>
           <div className="flex flex-wrap gap-2">
@@ -627,7 +748,7 @@ export function SetupWizardClient({ materialLookups, productLookups, materials, 
                 {Object.keys(data.created).length > 0 ? "สร้างส่วนที่เหลือ" : "สร้างทั้งหมด"}
               </Button>
             ) : (
-              <Button type="button" onClick={goNext}>
+              <Button type="button" disabled={checking} onClick={() => void goNext()}>
                 ถัดไป <ChevronRight className="size-4" aria-hidden="true" />
               </Button>
             )}
@@ -746,6 +867,10 @@ function MaterialCard({
   unitOptions,
   supplierOptions,
   materialTypeOptions,
+  stepOptions,
+  componentOptions,
+  catalog,
+  canEngineer,
 }: {
   m: SetupMaterialData;
   index: number;
@@ -754,6 +879,10 @@ function MaterialCard({
   unitOptions: MasterDataSelectOption[];
   supplierOptions: MasterDataSelectOption[];
   materialTypeOptions: MasterDataSelectOption[];
+  stepOptions: MasterDataSelectOption[];
+  componentOptions: MasterDataSelectOption[];
+  catalog: CatalogMaterial[];
+  canEngineer: boolean;
 }) {
   const id = (name: string) => `sw-m-${name}-${m.key}`;
   return (
@@ -786,7 +915,15 @@ function MaterialCard({
           <MasterDataSelect
             options={[{ id: "external", label: "ภายนอก (External)" }, { id: "internal", label: "ภายใน (Internal)" }]}
             value={m.locationType}
-            onValueChange={(v) => onPatch({ locationType: v === "internal" ? "internal" : "external" })}
+            onValueChange={(v) => {
+              const internal = v === "internal";
+              onPatch({
+                locationType: internal ? "internal" : "external",
+                // In-house materials need a BOM + Workflow — open one blank row of each.
+                ...(internal && m.bomRows.length === 0 ? { bomRows: [blankBomRow()] } : {}),
+                ...(internal && m.workflowRows.length === 0 ? { workflowRows: [blankStepRow()] } : {}),
+              });
+            }}
             placeholder="เลือก" href="/materials/catalog" resourceLabel="Location Type"
           />
         </Field>
@@ -817,11 +954,534 @@ function MaterialCard({
           </Field>
         </div>
         <div className="sm:col-span-2">
+          <ImageField
+            id={id("image")}
+            label="รูปภาพวัสดุ (ไม่บังคับ)"
+            path={m.imagePath}
+            onChange={(imagePath) => onPatch({ imagePath })}
+            upload={uploadMaterialPcImageAction}
+          />
+        </div>
+        <div className="sm:col-span-2">
           <Field label="ข้อกำหนดเฉพาะ (ไม่บังคับ)" htmlFor={id("spec")}>
             <Textarea id={id("spec")} rows={2} value={m.specification} onChange={(e) => onPatch({ specification: e.target.value })} />
           </Field>
         </div>
+        {m.locationType === "internal" && (
+          <InternalProcess m={m} onPatch={onPatch} stepOptions={stepOptions} componentOptions={componentOptions} catalog={catalog} canEngineer={canEngineer} />
+        )}
       </div>
     </section>
+  );
+}
+
+const blankBomRow = (): SetupBomRow => ({ key: nextRowKey(), materialId: "", unitId: "", quantity: "", wastagePercent: "" });
+const blankStepRow = (): SetupWorkflowRow => ({ key: nextRowKey(), processStepId: "", description: "" });
+
+/** BOM + Workflow of an in-house (Location Type = ภายใน) material. */
+function InternalProcess({
+  m,
+  onPatch,
+  stepOptions,
+  componentOptions,
+  catalog,
+  canEngineer,
+}: {
+  m: SetupMaterialData;
+  onPatch: (patch: Partial<SetupMaterialData>) => void;
+  stepOptions: MasterDataSelectOption[];
+  componentOptions: MasterDataSelectOption[];
+  catalog: CatalogMaterial[];
+  canEngineer: boolean;
+}) {
+  const updateBom = (key: number, patch: Partial<SetupBomRow>) =>
+    onPatch({ bomRows: m.bomRows.map((r) => (r.key === key ? { ...r, ...patch } : r)) });
+  const updateStep = (key: number, patch: Partial<SetupWorkflowRow>) =>
+    onPatch({ workflowRows: m.workflowRows.map((r) => (r.key === key ? { ...r, ...patch } : r)) });
+  return (
+    <div className="flex flex-col gap-4 sm:col-span-2">
+      <Notice tone={canEngineer ? "warning" : "danger"}>
+        {canEngineer
+          ? "วัสดุภายใน (ผลิตเอง) ต้องมี BOM และ Workflow ของวัสดุนี้ — ระบบจะสร้างให้พร้อมกับวัสดุ"
+          : "วัสดุภายในต้องมี BOM และ Workflow แต่บัญชีของคุณไม่มีสิทธิ์สร้าง — เปลี่ยน Location Type เป็นภายนอก หรือขอสิทธิ์เพิ่ม"}
+      </Notice>
+
+      <div className="flex flex-col gap-2">
+        <h4 className="text-sm font-semibold text-fg">BOM ของวัสดุนี้ (ส่วนประกอบต่อ 1 หน่วย)</h4>
+        {m.bomRows.map((row, index) => {
+          const options = componentOptions.filter((o) => o.id === row.materialId || !m.bomRows.some((r) => r.materialId === o.id));
+          return (
+            <div key={row.key} className="grid gap-3 rounded-lg border border-border border-l-4 border-l-primary p-3 sm:grid-cols-[1fr_8rem_7rem_auto] sm:items-end">
+              <Field label={`ส่วนประกอบที่ ${index + 1}`}>
+                <MasterDataSelect
+                  options={options}
+                  value={row.materialId}
+                  onValueChange={(v) => {
+                    const picked = catalog.find((c) => c.id === v);
+                    updateBom(row.key, { materialId: v, unitId: picked?.unitId ?? (row.unitId || m.unitId) });
+                  }}
+                  placeholder="เลือกวัตถุดิบ" href="/materials/catalog" resourceLabel="วัตถุดิบ"
+                />
+              </Field>
+              <Field label="จำนวน" htmlFor={`sw-mb-q-${row.key}`}>
+                <Input id={`sw-mb-q-${row.key}`} type="number" min={0} step="any" value={row.quantity} onChange={(e) => updateBom(row.key, { quantity: e.target.value })} />
+              </Field>
+              <Field label="สูญเสีย %" htmlFor={`sw-mb-w-${row.key}`}>
+                <Input id={`sw-mb-w-${row.key}`} type="number" min={0} max={100} step="any" value={row.wastagePercent} onChange={(e) => updateBom(row.key, { wastagePercent: e.target.value })} />
+              </Field>
+              <Button type="button" size="icon" variant="ghost" aria-label="ลบส่วนประกอบ" onClick={() => onPatch({ bomRows: m.bomRows.filter((r) => r.key !== row.key) })}>
+                <Trash2 className="size-4" aria-hidden="true" />
+              </Button>
+            </div>
+          );
+        })}
+        <Button type="button" variant="outline" className="self-start" onClick={() => onPatch({ bomRows: [...m.bomRows, blankBomRow()] })}>
+          <Plus className="size-4" aria-hidden="true" /> เพิ่มส่วนประกอบ
+        </Button>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <h4 className="text-sm font-semibold text-fg">Workflow ของวัสดุนี้ (ลำดับขั้นตอนการผลิต)</h4>
+        {m.workflowRows.map((row, index) => {
+          const options = stepOptions.filter((o) => o.id === row.processStepId || !m.workflowRows.some((r) => r.processStepId === o.id));
+          return (
+            <div key={row.key} className="grid gap-3 rounded-lg border border-border border-l-4 border-l-success p-3 sm:grid-cols-[2rem_1fr_1fr_auto] sm:items-end">
+              <span className="flex size-7 items-center justify-center rounded-full bg-success-soft text-xs font-semibold text-success">{index + 1}</span>
+              <Field label="กระบวนการ">
+                <MasterDataSelect options={options} value={row.processStepId} onValueChange={(v) => updateStep(row.key, { processStepId: v })} placeholder="เลือกกระบวนการ" href="/master-data/process-steps" resourceLabel="กระบวนการผลิต" />
+              </Field>
+              <Field label="รายละเอียด (ไม่บังคับ)" htmlFor={`sw-mw-d-${row.key}`}>
+                <Input id={`sw-mw-d-${row.key}`} value={row.description} onChange={(e) => updateStep(row.key, { description: e.target.value })} />
+              </Field>
+              <Button type="button" size="icon" variant="ghost" aria-label="ลบขั้นตอน" onClick={() => onPatch({ workflowRows: m.workflowRows.filter((r) => r.key !== row.key) })}>
+                <Trash2 className="size-4" aria-hidden="true" />
+              </Button>
+            </div>
+          );
+        })}
+        <Button type="button" variant="outline" className="self-start" onClick={() => onPatch({ workflowRows: [...m.workflowRows, blankStepRow()] })}>
+          <Plus className="size-4" aria-hidden="true" /> เพิ่มขั้นตอน
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+const IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const IMAGE_MAX = 5 * 1024 * 1024;
+
+type UploadResult = { status: "success"; image: { imagePath: string } } | { status: "error"; message: string };
+
+/** Picks an image, stages it on the server right away, and keeps only the staged path in the form. */
+function ImageField({
+  id,
+  label,
+  path,
+  onChange,
+  upload,
+}: {
+  id: string;
+  label: string;
+  path: string | null;
+  onChange: (path: string | null) => void;
+  upload: (formData: FormData) => Promise<UploadResult>;
+}) {
+  const [busy, setBusy] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  async function handleFile(file: File | undefined) {
+    if (!file) return;
+    if (!IMAGE_TYPES.has(file.type)) return setError("รองรับเฉพาะไฟล์ JPEG, PNG หรือ WebP");
+    if (file.size > IMAGE_MAX) return setError("รูปภาพต้องมีขนาดไม่เกิน 5 MiB");
+    setError(null);
+    setBusy(true);
+    const formData = new FormData();
+    formData.append("file", file);
+    const result = await upload(formData);
+    setBusy(false);
+    if (inputRef.current) inputRef.current.value = "";
+    if (result.status === "error") return setError(result.message);
+    onChange(result.image.imagePath);
+  }
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <Label htmlFor={id}>{label}</Label>
+      <div className="flex flex-wrap items-center gap-3 rounded-lg border border-dashed border-border-strong p-3">
+        <div className="relative flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-md bg-surface-2">
+          {busy ? (
+            <Loader2 className="size-5 animate-spin text-fg-muted" aria-hidden="true" />
+          ) : path ? (
+            <Image src={path} alt="ตัวอย่างรูปภาพที่เลือก" fill unoptimized loading="eager" sizes="80px" className="object-contain p-1" />
+          ) : (
+            <ImagePlus className="size-6 text-fg-muted" aria-hidden="true" />
+          )}
+        </div>
+        <div className="flex min-w-0 flex-col items-start gap-2">
+          <input
+            ref={inputRef}
+            id={id}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="sr-only"
+            onChange={(e) => void handleFile(e.target.files?.[0])}
+          />
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => inputRef.current?.click()}>
+              {path ? "เปลี่ยนรูป" : "เลือกรูปภาพ"}
+            </Button>
+            {path && (
+              <Button type="button" size="sm" variant="ghost" disabled={busy} onClick={() => onChange(null)}>
+                เอารูปออก
+              </Button>
+            )}
+          </div>
+          <p className="text-xs text-fg-muted">JPEG, PNG หรือ WebP · สูงสุด 5 MiB</p>
+          {error && (
+            <p role="alert" className="text-xs text-danger">
+              {error}
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ModeChooser({
+  onPick,
+  drafts,
+  overview,
+  materials,
+  processSteps,
+  manage,
+}: {
+  onPick: (mode: SetupMode) => void;
+  drafts: SetupDraftSummary[];
+  overview: SetupOverview;
+  materials: Material[];
+  processSteps: ProcessStep[];
+  manage: ManageCan;
+}) {
+  const options: Array<{ mode: SetupMode; title: string; desc: string; points: string[]; icon: React.ReactNode }> = [
+    {
+      mode: "product",
+      title: "สร้างสินค้า (Product)",
+      desc: "สร้างสินค้าครบชุด",
+      points: ["วัสดุใหม่ (ถ้ามี)", "สินค้า", "BOM ของสินค้า", "Workflow การผลิต"],
+      icon: <Package className="size-7" aria-hidden="true" />,
+    },
+    {
+      mode: "material",
+      title: "สร้างวัสดุ (Materials)",
+      desc: "สร้างเฉพาะวัสดุ หลายรายการได้",
+      points: ["วัสดุใหม่ได้หลายรายการ", "วัสดุภายใน: BOM + Workflow ของวัสดุ", "ไม่ต้องสร้างสินค้า"],
+      icon: <Boxes className="size-7" aria-hidden="true" />,
+    },
+  ];
+  return (
+    <div className="flex flex-col gap-4">
+      <section className="rounded-xl border border-border bg-surface p-5" aria-label="เลือกประเภทที่จะสร้าง">
+        <h2 className="text-base font-semibold text-fg">ต้องการสร้างอะไร?</h2>
+        <p className="mb-4 text-sm text-fg-muted">เลือกประเภทก่อน แล้วระบบจะแสดงเฉพาะขั้นตอนที่เกี่ยวข้อง</p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {options.map((o) => (
+            <button
+              key={o.mode}
+              type="button"
+              onClick={() => onPick(o.mode)}
+              className="flex flex-col gap-3 rounded-xl border border-border-strong p-4 text-left transition-colors hover:border-primary hover:bg-primary-soft/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <span className="flex size-12 items-center justify-center rounded-lg bg-primary-soft text-primary">{o.icon}</span>
+              <span>
+                <span className="block text-base font-semibold text-fg">{o.title}</span>
+                <span className="block text-sm text-fg-muted">{o.desc}</span>
+              </span>
+              <ul className="flex flex-col gap-1 text-sm text-fg-secondary">
+                {o.points.map((p) => (
+                  <li key={p} className="flex items-center gap-2">
+                    <Check className="size-3.5 text-success" aria-hidden="true" /> {p}
+                  </li>
+                ))}
+              </ul>
+            </button>
+          ))}
+        </div>
+      </section>
+      <CompletedList overview={overview} materials={materials} processSteps={processSteps} manage={manage} />
+      {drafts.length > 0 && (
+        <section className="rounded-xl border border-border bg-surface p-4" aria-label="ร่างของฉัน">
+          <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold text-fg">
+            <FolderOpen className="size-4 text-primary" aria-hidden="true" /> หรือทำร่างที่บันทึกไว้ต่อ ({drafts.length})
+          </h2>
+          <ul className="flex flex-col divide-y divide-border">
+            {drafts.map((draft) => (
+              <li key={draft.id} className="flex items-center justify-between gap-3 py-2">
+                <p className="truncate text-sm text-fg">{draft.title || "ร่างที่ยังไม่ตั้งชื่อ"}</p>
+                <Button size="sm" variant="outline" asChild>
+                  <Link href={`/engineering/setup?draft=${draft.id}`}>ทำต่อ</Link>
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+    </div>
+  );
+}
+
+/** Every active product / material that already has both a BOM and a workflow — with edit / delete of its versions. */
+function CompletedList({
+  overview,
+  materials,
+  processSteps,
+  manage,
+}: {
+  overview: SetupOverview;
+  materials: Material[];
+  processSteps: ProcessStep[];
+  manage: ManageCan;
+}) {
+  const router = useRouter();
+  const [tab, setTab] = React.useState<"products" | "materials">("products");
+  const [query, setQuery] = React.useState("");
+  const [openId, setOpenId] = React.useState<string | null>(null);
+  const items = overview[tab];
+  const q = query.trim().toLowerCase();
+  const shown = items.filter((i) => !q || i.code.toLowerCase().includes(q) || i.name.toLowerCase().includes(q));
+  const href = tab === "products" ? "/engineering/bom/products" : "/engineering/bom/materials";
+  const tabs: Array<{ id: "products" | "materials"; label: string }> = [
+    { id: "products", label: `สินค้า (${overview.products.length})` },
+    { id: "materials", label: `วัสดุ (${overview.materials.length})` },
+  ];
+  return (
+    <section className="rounded-xl border border-border bg-surface" aria-label="รายการที่มี BOM และ Workflow">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
+        <div>
+          <h2 className="text-sm font-semibold text-fg">รายการที่มี BOM + Workflow แล้ว</h2>
+          <p className="text-xs text-fg-muted">กดปุ่มจัดการเพื่อดูเวอร์ชัน แก้ไข หรือลบ BOM / Workflow</p>
+        </div>
+        <Input aria-label="ค้นหารายการ" placeholder="ค้นหารหัสหรือชื่อ" className="h-8 w-full sm:w-56" value={query} onChange={(e) => setQuery(e.target.value)} />
+      </div>
+      <div role="tablist" className="flex gap-1 border-b border-border px-3 pt-2">
+        {tabs.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            role="tab"
+            aria-selected={tab === t.id}
+            onClick={() => {
+              setTab(t.id);
+              setOpenId(null);
+            }}
+            className={cn(
+              "-mb-px border-b-2 px-3 py-2 text-sm font-medium",
+              tab === t.id ? "border-primary text-primary" : "border-transparent text-fg-muted hover:text-fg"
+            )}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+      {shown.length === 0 ? (
+        <p className="px-4 py-8 text-center text-sm text-fg-muted">
+          {items.length === 0 ? "ยังไม่มีรายการที่มีทั้ง BOM และ Workflow" : "ไม่พบรายการที่ค้นหา"}
+        </p>
+      ) : (
+        <ul className="max-h-[32rem] divide-y divide-border overflow-y-auto">
+          {shown.map((item) => (
+            <li key={item.id} className="px-4 py-2.5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-fg">{item.code}</p>
+                  <p className="truncate text-xs text-fg-muted">{item.name}</p>
+                </div>
+                <div className="flex shrink-0 flex-wrap items-center gap-1.5">
+                  <Badge variant={item.bomActive > 0 ? "success" : "warning"}>
+                    BOM {item.bomActive > 0 ? "ใช้งาน" : "ร่าง"} · {item.bomCount} เวอร์ชัน
+                  </Badge>
+                  <Badge variant={item.workflowActive > 0 ? "success" : "warning"}>
+                    Workflow {item.workflowActive > 0 ? "ใช้งาน" : "ร่าง"} · {item.workflowCount} เวอร์ชัน
+                  </Badge>
+                  <Button type="button" size="sm" variant={openId === item.id ? "secondary" : "outline"} onClick={() => setOpenId(openId === item.id ? null : item.id)}>
+                    {openId === item.id ? "ซ่อน" : "จัดการ"}
+                  </Button>
+                </div>
+              </div>
+              {openId === item.id && (
+                <OwnerVersions
+                  scope={tab}
+                  owner={{ id: item.id, code: item.code, name: item.name, isActive: true }}
+                  materials={materials}
+                  processSteps={processSteps}
+                  can={manage[tab]}
+                  onChanged={() => router.refresh()}
+                />
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="border-t border-border px-4 py-2 text-right text-xs">
+        <Link href={href} className="text-primary underline">
+          ไปที่หน้า BOM / Workflow เต็มรูปแบบ
+        </Link>
+      </div>
+    </section>
+  );
+}
+
+type VersionState = { key: string; bom: EngineeringVersion[]; workflow: EngineeringVersion[]; error: string | null } | null;
+
+const STATUS_LABEL: Record<EngineeringVersion["status"], string> = { ACTIVE: "ใช้งาน", DRAFT: "ร่าง", INACTIVE: "ปิดใช้งาน" };
+
+/** Versions of one owner's BOM + workflow, with edit and permanent delete. */
+function OwnerVersions({
+  scope,
+  owner,
+  materials,
+  processSteps,
+  can,
+  onChanged,
+}: {
+  scope: EngineeringScope;
+  owner: { id: string; code: string; name: string; isActive: boolean };
+  materials: Material[];
+  processSteps: ProcessStep[];
+  can: { bom: boolean; workflow: boolean };
+  onChanged: () => void;
+}) {
+  const [reload, setReload] = React.useState(0);
+  const [state, setState] = React.useState<VersionState>(null);
+  const [editor, setEditor] = React.useState<{ kind: EngineeringKind; base: EngineeringVersion; editing: boolean } | null>(null);
+  const [deleteTarget, setDeleteTarget] = React.useState<{ kind: EngineeringKind; version: EngineeringVersion } | null>(null);
+  const [busy, setBusy] = React.useState(false);
+  const key = `${owner.id}:${reload}`;
+  const loading = state?.key !== key;
+
+  React.useEffect(() => {
+    let cancelled = false;
+    void Promise.all([engineeringHistoryAction(scope, "bom", owner.id), engineeringHistoryAction(scope, "workflow", owner.id)]).then(([bom, workflow]) => {
+      if (cancelled) return;
+      setState({
+        key,
+        bom: bom.status === "success" ? bom.versions : [],
+        workflow: workflow.status === "success" ? workflow.versions : [],
+        error: bom.status === "error" ? bom.message : workflow.status === "error" ? workflow.message : null,
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [scope, owner.id, key]);
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    setBusy(true);
+    const result = await deleteEngineeringAction(scope, deleteTarget.kind, deleteTarget.version.id);
+    setBusy(false);
+    if (result.status === "error") toast.error(result.message);
+    else {
+      toast.success(`ลบ ${deleteTarget.version.version} แล้ว`);
+      setReload((n) => n + 1);
+      onChanged();
+    }
+    setDeleteTarget(null);
+  }
+
+  const groups: Array<{ kind: EngineeringKind; label: string; versions: EngineeringVersion[]; allowed: boolean }> = [
+    { kind: "bom", label: "BOM", versions: state?.bom ?? [], allowed: can.bom },
+    { kind: "workflow", label: "Workflow", versions: state?.workflow ?? [], allowed: can.workflow },
+  ];
+
+  return (
+    <div className="mt-3 flex flex-col gap-3 rounded-lg border border-border bg-surface-2/50 p-3">
+      {loading ? (
+        <p className="flex items-center gap-2 text-sm text-fg-muted">
+          <Loader2 className="size-4 animate-spin" aria-hidden="true" /> กำลังโหลดเวอร์ชัน…
+        </p>
+      ) : (
+        <>
+          {state?.error && <Notice tone="danger">{state.error}</Notice>}
+          {groups.map((g) => (
+            <div key={g.kind}>
+              <h4 className="mb-1 text-xs font-semibold uppercase tracking-wide text-fg-secondary">{g.label}</h4>
+              {g.versions.length === 0 ? (
+                <p className="text-xs text-fg-muted">ไม่มีเวอร์ชัน</p>
+              ) : (
+                <ul className="flex flex-col divide-y divide-border rounded-md border border-border bg-surface">
+                  {g.versions.map((v) => {
+                    const count = g.kind === "bom" ? v.items?.length ?? 0 : v.steps?.length ?? 0;
+                    return (
+                      <li key={v.id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-fg">{v.version}</span>
+                          <Badge variant={v.status === "ACTIVE" ? "success" : v.status === "DRAFT" ? "warning" : "neutral"}>{STATUS_LABEL[v.status]}</Badge>
+                          <span className="text-xs text-fg-muted">{count} {g.kind === "bom" ? "รายการ" : "ขั้นตอน"}</span>
+                        </div>
+                        {g.allowed && (
+                          <div className="flex gap-1">
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              title={v.status === "ACTIVE" ? "เวอร์ชันที่ใช้งานแก้ตรงไม่ได้ — จะบันทึกเป็นเวอร์ชันใหม่" : undefined}
+                              onClick={() => setEditor({ kind: g.kind, base: v, editing: v.status !== "ACTIVE" })}
+                            >
+                              {v.status === "ACTIVE" ? "แก้ไข (เวอร์ชันใหม่)" : "แก้ไข"}
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              disabled={v.status === "ACTIVE"}
+                              title={v.status === "ACTIVE" ? "ลบเวอร์ชันที่ใช้งานอยู่ไม่ได้" : undefined}
+                              aria-label={`ลบ ${g.label} ${v.version}`}
+                              onClick={() => setDeleteTarget({ kind: g.kind, version: v })}
+                            >
+                              <Trash2 className="size-4 text-danger" aria-hidden="true" />
+                            </Button>
+                          </div>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          ))}
+        </>
+      )}
+
+      {editor && (
+        <EngineeringFormDialog
+          scope={scope}
+          kind={editor.kind}
+          owner={owner}
+          materials={materials}
+          processSteps={processSteps}
+          base={editor.base}
+          editing={editor.editing}
+          canActivate
+          onClose={() => setEditor(null)}
+          onSaved={() => {
+            setEditor(null);
+            setReload((n) => n + 1);
+            onChanged();
+          }}
+        />
+      )}
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => {
+          if (!open && !busy) setDeleteTarget(null);
+        }}
+        title={`ลบ ${deleteTarget?.version.version ?? ""} ถาวร?`}
+        description={`${deleteTarget?.kind === "bom" ? "BOM" : "Workflow"} เวอร์ชันนี้และรายการข้างในจะถูกลบถาวร กู้คืนไม่ได้`}
+        confirmLabel="ลบถาวร"
+        onConfirm={() => void confirmDelete()}
+      />
+    </div>
   );
 }

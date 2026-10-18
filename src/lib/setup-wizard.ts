@@ -17,6 +17,10 @@ export interface SetupMaterialData {
   packingQuantity: string;
   minimumStock: string;
   specification: string;
+  imagePath: string | null;
+  /** Material BOM / Workflow — required when locationType is "internal" (made in-house). */
+  bomRows: SetupBomRow[];
+  workflowRows: SetupWorkflowRow[];
 }
 
 export interface SetupProductData {
@@ -33,6 +37,8 @@ export interface SetupProductData {
   packing: string;
   lotSize: string;
   scale: string;
+  /** Staged upload path (/uploads/...); sent as the image when the record is created. */
+  imagePath: string | null;
 }
 
 export interface SetupBomRow {
@@ -53,12 +59,23 @@ export interface SetupWorkflowRow {
 export interface SetupCreated {
   /** new-material key -> created material id */
   materialIds?: Record<string, string>;
+  materialBomIds?: Record<string, string>;
+  materialWorkflowIds?: Record<string, string>;
   productId?: string;
   bomId?: string;
   workflowId?: string;
 }
 
+export type SetupMode = "product" | "material";
+
+/** Step indices shown for each mode (material mode skips product / BOM / workflow). */
+export function visibleSteps(mode: SetupMode | undefined): number[] {
+  return mode === "material" ? [0, 4] : [0, 1, 2, 3, 4];
+}
+
 export interface SetupData {
+  /** What is being created; undefined until the user picks (shows the chooser). */
+  mode?: SetupMode;
   materialsEnabled: boolean;
   materials: SetupMaterialData[];
   product: SetupProductData;
@@ -67,6 +84,8 @@ export interface SetupData {
   workflowEnabled: boolean;
   workflowRows: SetupWorkflowRow[];
   activate: boolean;
+  /** New-material keys already offered as BOM rows (so a row the user removed is not re-added). */
+  bomSeededKeys?: number[];
   created: SetupCreated;
 }
 
@@ -93,6 +112,9 @@ export function emptyMaterial(): SetupMaterialData {
     packingQuantity: "",
     minimumStock: "",
     specification: "",
+    imagePath: null,
+    bomRows: [],
+    workflowRows: [],
   };
 }
 
@@ -114,6 +136,7 @@ export function emptySetupData(): SetupData {
       packing: "",
       lotSize: "",
       scale: "",
+      imagePath: null,
     },
     bomEnabled: true,
     bomRows: [{ key: nextRowKey(), materialId: "", unitId: "", quantity: "", wastagePercent: "" }],
@@ -133,9 +156,46 @@ export const SETUP_STEPS = [
 ] as const;
 
 /** Returns a Thai error message, or null when the step is complete enough to move on. */
-export function validateSetupStep(step: number, data: SetupData): string | null {
+export interface SetupMaterialCan {
+  materialBom: boolean;
+  materialWorkflow: boolean;
+}
+
+/** BOM + Workflow rows an internal (in-house) material must have; null when OK. */
+export function validateInternalMaterial(m: SetupMaterialData, data: SetupData, can?: SetupMaterialCan): string | null {
+  if (m.locationType !== "internal") return null;
+  const bomDone = !!data.created.materialBomIds?.[m.key];
+  const wfDone = !!data.created.materialWorkflowIds?.[m.key];
+  if (can && (!can.materialBom || !can.materialWorkflow) && (!bomDone || !wfDone)) {
+    return "วัสดุภายในต้องมี BOM และ Workflow แต่บัญชีของคุณไม่มีสิทธิ์สร้าง (MATERIAL_BOMS_CREATE / MATERIAL_WORKFLOWS_CREATE) — เปลี่ยนเป็นภายนอก หรือขอสิทธิ์เพิ่ม";
+  }
+  if (!bomDone) {
+    if (m.bomRows.length === 0) return "วัสดุภายในต้องมี BOM อย่างน้อย 1 รายการ";
+    if (m.bomRows.some((r) => !r.materialId || !r.unitId || !(Number(r.quantity) > 0))) {
+      return "ทุกรายการ BOM ของวัสดุภายในต้องเลือกวัตถุดิบ หน่วย และจำนวนที่มากกว่า 0";
+    }
+    const ids = m.bomRows.map((r) => r.materialId);
+    if (new Set(ids).size !== ids.length) return "ห้ามเลือกวัตถุดิบซ้ำใน BOM ของวัสดุภายใน";
+    if (ids.includes(newMaterialRef(m.key))) return "BOM ของวัสดุห้ามอ้างถึงวัสดุตัวเอง";
+    const known = new Set(data.materials.map((x) => x.key));
+    if (ids.some((id) => isNewMaterialRef(id) && !known.has(newMaterialKey(id)))) return "BOM ของวัสดุภายในอ้างถึงวัสดุใหม่ที่ไม่มีแล้ว";
+  }
+  if (!wfDone) {
+    if (m.workflowRows.length === 0) return "วัสดุภายในต้องมี Workflow อย่างน้อย 1 ขั้นตอน";
+    if (m.workflowRows.some((r) => !r.processStepId)) return "ทุกขั้นตอน Workflow ของวัสดุภายในต้องเลือกกระบวนการผลิต";
+    const steps = m.workflowRows.map((r) => r.processStepId);
+    if (new Set(steps).size !== steps.length) return "ห้ามเลือกขั้นตอนซ้ำใน Workflow ของวัสดุภายใน";
+  }
+  return null;
+}
+
+export function validateSetupStep(step: number, data: SetupData, can?: SetupMaterialCan): string | null {
   if (step === 0) {
     if (!data.materialsEnabled) return null;
+    for (const [i, m] of data.materials.entries()) {
+      const internal = validateInternalMaterial(m, data, can);
+      if (internal) return `วัสดุใหม่ที่ ${i + 1}: ${internal}`;
+    }
     const pending = data.materials.filter((m) => !data.created.materialIds?.[m.key]);
     for (const [i, m] of pending.entries()) {
       const label = `วัสดุใหม่ที่ ${i + 1}`;
@@ -192,6 +252,7 @@ export function validateSetupStep(step: number, data: SetupData): string | null 
 }
 
 export function setupDraftTitle(data: SetupData): string {
-  const parts = [data.product.code.trim(), data.materialsEnabled ? data.materials[0]?.code.trim() ?? "" : ""].filter(Boolean);
+  const firstMaterial = data.materialsEnabled ? data.materials[0]?.code.trim() ?? "" : "";
+  const parts = (data.mode === "material" ? [firstMaterial] : [data.product.code.trim(), firstMaterial]).filter(Boolean);
   return parts.length ? parts.join(" / ") : "ร่างที่ยังไม่ตั้งชื่อ";
 }

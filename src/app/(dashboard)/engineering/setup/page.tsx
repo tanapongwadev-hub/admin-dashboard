@@ -5,7 +5,7 @@ import { getCurrentSession } from "@/lib/session";
 import { getMaterialLookups, listMaterials } from "@/lib/api/materials";
 import { getProductLookups } from "@/lib/api/products";
 import { listProcessSteps } from "@/lib/api/process-steps";
-import { getSetupDraft, listSetupDrafts } from "@/lib/api/setup-wizard";
+import { getSetupDraft, getSetupOverview, listSetupDrafts } from "@/lib/api/setup-wizard";
 import { loadProductMaterialCatalog } from "@/lib/product-materials";
 import { SetupWizardClient } from "@/components/setup-wizard/setup-wizard-client";
 
@@ -30,9 +30,9 @@ export default async function SetupWizardPage({
 
   const params = await searchParams;
   const accessToken = (await cookies()).get("accessToken")!.value;
-  const canProcessSteps = can("PROCESS_STEP_VIEW") || can("PRODUCT_WORKFLOWS_CREATE");
+  const canProcessSteps = can("PROCESS_STEP_VIEW") || can("PRODUCT_WORKFLOWS_CREATE") || can("MATERIAL_WORKFLOWS_CREATE");
 
-  const [materialLookups, productLookups, catalog, steps, drafts, draft] = await Promise.all([
+  const [materialLookups, productLookups, catalog, steps, drafts, draft, overview] = await Promise.all([
     getMaterialLookups(accessToken),
     getProductLookups(accessToken),
     loadProductMaterialCatalog((page) =>
@@ -45,6 +45,7 @@ export default async function SetupWizardPage({
       : Promise.resolve({ items: [] }),
     listSetupDrafts(accessToken),
     params.draft ? getSetupDraft(accessToken, params.draft).catch(() => null) : Promise.resolve(null),
+    getSetupOverview(accessToken).catch(() => ({ products: [], materials: [] })),
   ]);
 
   return (
@@ -60,15 +61,22 @@ export default async function SetupWizardPage({
         key={draft?.id ?? "new"}
         materialLookups={materialLookups}
         productLookups={productLookups}
-        materials={catalog.activeMaterials.map((m) => ({ id: m.id, code: m.code, name: m.name, unitId: m.unitId }))}
-        processSteps={steps.items.map((s) => ({ id: s.id, code: s.code, nameTh: s.nameTh }))}
+        materials={catalog.activeMaterials}
+        processSteps={steps.items}
         drafts={drafts}
+        overview={overview}
         initialDraft={draft}
+        manage={{
+          products: { bom: can("BOMS_UPDATE"), workflow: can("PRODUCT_WORKFLOWS_UPDATE") },
+          materials: { bom: can("MATERIAL_BOMS_UPDATE"), workflow: can("MATERIAL_WORKFLOWS_UPDATE") },
+        }}
         can={{
           material: can("MATERIAL_CREATE"),
           product: can("PRODUCTS_CREATE"),
           bom: can("BOMS_CREATE"),
           workflow: can("PRODUCT_WORKFLOWS_CREATE"),
+          materialBom: can("MATERIAL_BOMS_CREATE"),
+          materialWorkflow: can("MATERIAL_WORKFLOWS_CREATE"),
           activateBom: can("BOMS_ACTIVATE"),
           activateWorkflow: can("PRODUCT_WORKFLOWS_UPDATE"),
         }}
