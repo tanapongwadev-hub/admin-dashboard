@@ -204,3 +204,11 @@ export function restoreProduct(accessToken: string, id: string) {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
 }
+
+export function checkProductCodeAvailability(accessToken: string, code: string, excludeId?: string) {
+  const query = new URLSearchParams({ code });
+  if (excludeId) query.set("excludeId", excludeId);
+  return apiFetch<{ available: boolean }>(`/products/code-availability?${query.toString()}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+}

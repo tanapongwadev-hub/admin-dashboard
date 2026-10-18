@@ -6,6 +6,8 @@ import { getMaterialLookups, listMaterials } from "@/lib/api/materials";
 import { getProductLookups } from "@/lib/api/products";
 import { listProcessSteps } from "@/lib/api/process-steps";
 import { getSetupDraft, getSetupOverview, listSetupDrafts } from "@/lib/api/setup-wizard";
+import { getBomOverview } from "@/lib/api/bom-overview";
+import { BomOverviewClient } from "@/components/bom-overview/bom-overview-client";
 import { loadProductMaterialCatalog } from "@/lib/product-materials";
 import { SetupWizardClient } from "@/components/setup-wizard/setup-wizard-client";
 
@@ -28,11 +30,29 @@ export default async function SetupWizardPage({
     );
   }
 
-  const params = await searchParams;
   const accessToken = (await cookies()).get("accessToken")!.value;
+
+  // Everyone with SETUP_WIZARD_VIEW can browse every BOM / Workflow, read-only.
+  // Creating, editing and deleting (the wizard) is SUPER_ADMIN only.
+  if (!session.user.isSuperAdmin) {
+    const list = await getBomOverview(accessToken).catch(() => ({ products: [], materials: [] }));
+    return (
+      <div className="flex flex-col gap-5">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-fg">สร้างครบชุด</h1>
+          <p className="mt-1 text-sm text-fg-muted">
+            ดู BOM และ Workflow ของสินค้าและวัสดุทั้งหมด (ดูอย่างเดียว — การสร้าง แก้ไข และลบทำได้เฉพาะผู้ดูแลระบบสูงสุด)
+          </p>
+        </div>
+        <BomOverviewClient overview={list} />
+      </div>
+    );
+  }
+
+  const params = await searchParams;
   const canProcessSteps = can("PROCESS_STEP_VIEW") || can("PRODUCT_WORKFLOWS_CREATE") || can("MATERIAL_WORKFLOWS_CREATE");
 
-  const [materialLookups, productLookups, catalog, steps, drafts, draft, overview] = await Promise.all([
+  const [materialLookups, productLookups, catalog, steps, drafts, draft, overview, details] = await Promise.all([
     getMaterialLookups(accessToken),
     getProductLookups(accessToken),
     loadProductMaterialCatalog((page) =>
@@ -46,6 +66,7 @@ export default async function SetupWizardPage({
     listSetupDrafts(accessToken),
     params.draft ? getSetupDraft(accessToken, params.draft).catch(() => null) : Promise.resolve(null),
     getSetupOverview(accessToken).catch(() => ({ products: [], materials: [] })),
+    getBomOverview(accessToken).catch(() => ({ products: [], materials: [] })),
   ]);
 
   return (
@@ -65,6 +86,7 @@ export default async function SetupWizardPage({
         processSteps={steps.items}
         drafts={drafts}
         overview={overview}
+        details={details}
         initialDraft={draft}
         manage={{
           products: { bom: can("BOMS_UPDATE"), workflow: can("PRODUCT_WORKFLOWS_UPDATE") },

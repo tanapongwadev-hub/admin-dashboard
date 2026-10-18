@@ -1,3 +1,5 @@
+import { validateMaterialCore, type MaterialCoreKey } from "./material-validation";
+
 // Pure types + validation for the "สร้างครบชุด" wizard (no server imports, so
 // both the client wizard and the Server Action can share them).
 
@@ -189,6 +191,22 @@ export function validateInternalMaterial(m: SetupMaterialData, data: SetupData, 
   return null;
 }
 
+export type MaterialFieldKey = MaterialCoreKey;
+
+/** Per-field errors of a new material — the shared rules in lib/material-validation.ts (same as the "เพิ่มวัสดุ" form). */
+export function materialFieldErrors(m: SetupMaterialData): Partial<Record<MaterialFieldKey, string>> {
+  return validateMaterialCore({
+    code: m.code,
+    name: m.name,
+    materialTypeId: m.materialTypeId,
+    unitId: m.unitId,
+    packingQuantity: m.packingQuantity,
+    minimumStock: m.minimumStock,
+    supplierCount: m.supplierIds.length,
+    hasImage: !!m.imagePath,
+  });
+}
+
 export function validateSetupStep(step: number, data: SetupData, can?: SetupMaterialCan): string | null {
   if (step === 0) {
     if (!data.materialsEnabled) return null;
@@ -199,10 +217,8 @@ export function validateSetupStep(step: number, data: SetupData, can?: SetupMate
     const pending = data.materials.filter((m) => !data.created.materialIds?.[m.key]);
     for (const [i, m] of pending.entries()) {
       const label = `วัสดุใหม่ที่ ${i + 1}`;
-      if (!m.code.trim() || !m.name.trim()) return `${label}: กรุณากรอกรหัสและชื่อวัสดุ`;
-      if (!m.unitId) return `${label}: กรุณาเลือกหน่วย`;
-      if (m.supplierIds.length === 0) return `${label}: กรุณาเลือกซัพพลายเออร์อย่างน้อย 1 ราย`;
-      if (m.packingQuantity !== "" && !(Number(m.packingQuantity) >= 1)) return `${label}: จำนวนต่อแพ็กต้องมากกว่า 0`;
+      const first = Object.values(materialFieldErrors(m))[0];
+      if (first) return `${label}: ${first}`;
     }
     const codes = pending.map((m) => m.code.trim().toLowerCase());
     if (new Set(codes).size !== codes.length) return "รหัสวัสดุใหม่ซ้ำกัน";

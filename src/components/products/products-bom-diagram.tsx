@@ -21,11 +21,11 @@ import type { Material } from "@/lib/api/materials";
 // its icon and two text lines were included, that node crossed the dialog's
 // top edge on narrow phones. These values reserve an 18% outer safe zone
 // while keeping a clear gap between the centre product and each component.
-const CENTER_SIZE = 80;
-const NODE_SIZE = 60;
+export const CENTER_SIZE = 80;
+export const NODE_SIZE = 60;
 const RADIUS_PERCENT = 32;
 
-function useRadialPositions(count: number): { x: number; y: number }[] {
+export function useRadialPositions(count: number): { x: number; y: number }[] {
   return React.useMemo(() => {
     if (count === 0) return [];
     return Array.from({ length: count }, (_, i) => {
@@ -40,7 +40,7 @@ function useRadialPositions(count: number): { x: number; y: number }[] {
   }, [count]);
 }
 
-function DiagramNode({
+export function DiagramNode({
   imagePath,
   alt,
   label,

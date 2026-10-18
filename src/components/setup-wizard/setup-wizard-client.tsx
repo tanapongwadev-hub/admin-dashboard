@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Boxes, Package, Check, ImagePlus, ChevronLeft, ChevronRight, CheckCircle2, FolderOpen, Loader2, Plus, Save, Trash2, X } from "lucide-react";
+import { Boxes, Package, Check, ImagePlus, ChevronLeft, ChevronRight, CheckCircle2, FolderOpen, Loader2, Plus, Save, Trash2, Waypoints, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,11 +21,16 @@ import {
   deleteSetupDraftAction,
   runSetupAction,
   saveSetupDraftAction,
+  checkProductCodeAction,
 } from "@/app/(dashboard)/engineering/setup/actions";
 import type { Material, MaterialLookups } from "@/lib/api/materials";
 import type { ProcessStep } from "@/lib/api/process-steps";
 import type { EngineeringKind, EngineeringScope, EngineeringVersion } from "@/lib/api/engineering";
 import { deleteEngineeringAction, engineeringHistoryAction } from "@/app/(dashboard)/engineering/bom/actions";
+import { materialFieldErrors } from "@/lib/setup-wizard";
+import { useCodeAvailability, type CodeAvailability } from "@/hooks/use-code-availability";
+import { OwnerDetail } from "@/components/bom-overview/bom-overview-client";
+import type { BomOverview } from "@/lib/api/bom-overview";
 import { EngineeringFormDialog } from "@/components/engineering/engineering-form-dialog";
 import type { ProductLookupItem, ProductLookups } from "@/lib/api/products";
 import type { SetupDraftRecord, SetupDraftSummary, SetupOverview } from "@/lib/api/setup-wizard";
@@ -66,6 +71,7 @@ interface Props {
   manage: ManageCan;
   drafts: SetupDraftSummary[];
   overview: SetupOverview;
+  details: BomOverview;
   initialDraft: SetupDraftRecord | null;
   can: {
     material: boolean;
@@ -132,7 +138,7 @@ function hydrate(raw: Record<string, unknown> | undefined): SetupData {
   };
 }
 
-function Field({ label, htmlFor, required, children, hint }: { label: string; htmlFor?: string; required?: boolean; children: React.ReactNode; hint?: string }) {
+function Field({ label, htmlFor, required, children, hint, error }: { label: string; htmlFor?: string; required?: boolean; children: React.ReactNode; hint?: string; error?: string }) {
   return (
     <div className="flex flex-col gap-1.5">
       <Label htmlFor={htmlFor}>
@@ -141,6 +147,11 @@ function Field({ label, htmlFor, required, children, hint }: { label: string; ht
       </Label>
       {children}
       {hint && <p className="text-xs text-fg-muted">{hint}</p>}
+      {error && (
+        <p role="alert" className="text-xs text-danger">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
@@ -186,7 +197,7 @@ function StepRail({ current, done, summaries, visible, onSelect }: { current: nu
   );
 }
 
-export function SetupWizardClient({ materialLookups, productLookups, materials, processSteps, drafts, overview, initialDraft, can, manage }: Props) {
+export function SetupWizardClient({ materialLookups, productLookups, materials, processSteps, drafts, overview, details, initialDraft, can, manage }: Props) {
   const router = useRouter();
   const [data, setData] = React.useState<SetupData>(() => hydrate(initialDraft?.data));
   const [step, setStep] = React.useState(initialDraft?.step ?? 0);
@@ -248,8 +259,12 @@ export function SetupWizardClient({ materialLookups, productLookups, materials, 
   /** Message when a new material code is already used in the system (checked before creating). */
   async function findTakenMaterialCode(): Promise<string | null> {
     if (!data.materialsEnabled) return null;
+    const seen = new Set<string>();
     for (const m of data.materials) {
       if (data.created.materialIds?.[m.key] || !m.code.trim()) continue;
+      const lower = m.code.trim().toLowerCase();
+      if (seen.has(lower)) return `รหัสวัสดุ "${m.code.trim()}" ซ้ำกันในฟอร์มนี้ กรุณาเปลี่ยนรหัส`;
+      seen.add(lower);
       const result = await checkMaterialCodeAction(m.code);
       if (result.status === "error") return result.message;
       if (!result.available) return `รหัสวัสดุ "${m.code.trim()}" มีอยู่ในระบบแล้ว กรุณาเปลี่ยนรหัส`;
@@ -257,7 +272,23 @@ export function SetupWizardClient({ materialLookups, productLookups, materials, 
     return null;
   }
 
+  /** Message when the product code is already used (checked before moving on / creating). */
+  async function findTakenProductCode(): Promise<string | null> {
+    if (data.mode === "material" || data.created.productId || !data.product.code.trim()) return null;
+    const result = await checkProductCodeAction(data.product.code);
+    if (result.status === "error") return result.message;
+    return result.available ? null : `รหัสสินค้า "${data.product.code.trim()}" มีอยู่ในระบบแล้ว กรุณาเปลี่ยนรหัส`;
+  }
+
   const [checking, setChecking] = React.useState(false);
+  /** Show per-field errors under the material inputs once the user has tried to continue. */
+  const [attempted, setAttempted] = React.useState(false);
+  const productCodeState = useCodeAvailability(
+    data.product.code,
+    checkProductCodeAction,
+    [],
+    data.mode !== "material" && !data.created.productId
+  );
 
   /** Entering the BOM step: pre-fill rows with the new materials from step 1 (once each). */
   function seedBomRows() {
@@ -287,12 +318,13 @@ export function SetupWizardClient({ materialLookups, productLookups, materials, 
   async function goNext() {
     const error = validateSetupStep(step, data, materialCan);
     if (error) {
+      setAttempted(true);
       toast.error(error);
       return;
     }
-    if (step === 0) {
+    if (step === 0 || step === 1) {
       setChecking(true);
-      const taken = await findTakenMaterialCode();
+      const taken = step === 0 ? await findTakenMaterialCode() : await findTakenProductCode();
       setChecking(false);
       if (taken) {
         toast.error(taken);
@@ -306,6 +338,7 @@ export function SetupWizardClient({ materialLookups, productLookups, materials, 
     for (const i of visible.filter((x) => x < 4)) {
       const error = validateSetupStep(i, data, materialCan);
       if (error) {
+        setAttempted(true);
         toast.error(`ขั้นตอน ${SETUP_STEPS[i].label}: ${error}`);
         setStep(i);
         return;
@@ -313,10 +346,10 @@ export function SetupWizardClient({ materialLookups, productLookups, materials, 
     }
     setRunning(true);
     setProblem(null);
-    const taken = await findTakenMaterialCode();
+    const taken = (await findTakenMaterialCode()) ?? (await findTakenProductCode());
     if (taken) {
       setProblem(taken);
-      setStep(0);
+      setStep(taken.startsWith("รหัสสินค้า") ? 1 : 0);
       toast.error(taken);
       setRunning(false);
       return;
@@ -381,6 +414,7 @@ export function SetupWizardClient({ materialLookups, productLookups, materials, 
       <ModeChooser
         drafts={drafts}
         overview={overview}
+        details={details}
         materials={materials}
         processSteps={processSteps}
         manage={manage}
@@ -504,6 +538,8 @@ export function SetupWizardClient({ materialLookups, productLookups, materials, 
                               ...materials.map((x) => ({ id: x.id, label: `${x.code} · ${x.name}` })),
                             ]}
                             catalog={materials}
+                            otherCodes={data.materials.filter((x) => x.key !== m.key).map((x) => x.code)}
+                            showErrors={attempted}
                             canEngineer={can.materialBom && can.materialWorkflow}
                           />
                         )
@@ -534,7 +570,8 @@ export function SetupWizardClient({ materialLookups, productLookups, materials, 
               ) : (
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Field label="รหัสสินค้า" htmlFor="sw-p-code" required>
-                    <Input id="sw-p-code" maxLength={50} value={data.product.code} onChange={(e) => patchProduct({ code: e.target.value })} />
+                    <Input id="sw-p-code" maxLength={50} value={data.product.code} aria-invalid={productCodeState.status === "duplicate"} aria-describedby={productCodeState.status === "idle" ? undefined : "sw-p-code-status"} onChange={(e) => patchProduct({ code: e.target.value })} />
+                    <CodeFeedback id="sw-p-code-status" state={productCodeState} label="รหัสสินค้า" />
                   </Field>
                   <Field label="ชื่อสินค้า" htmlFor="sw-p-name" required>
                     <Input id="sw-p-name" maxLength={255} value={data.product.name} onChange={(e) => patchProduct({ name: e.target.value })} />
@@ -769,6 +806,26 @@ export function SetupWizardClient({ materialLookups, productLookups, materials, 
   );
 }
 
+/** Live feedback under a code input (uses role=status so screen readers hear changes). */
+function CodeFeedback({ id, state, label }: { id: string; state: CodeAvailability; label: string }) {
+  if (state.status === "idle") return null;
+  const map = {
+    checking: { text: "กำลังตรวจสอบรหัส…", cls: "text-fg-muted" },
+    available: { text: `ใช้${label}นี้ได้`, cls: "text-success" },
+    duplicate: { text: `${label}นี้มีอยู่ในระบบแล้ว กรุณาเปลี่ยน`, cls: "text-danger" },
+    "duplicate-local": { text: `${label}นี้ซ้ำกับรายการอื่นในฟอร์มนี้`, cls: "text-danger" },
+    error: { text: state.message ?? "ตรวจสอบรหัสไม่สำเร็จ", cls: "text-warning" },
+  } as const;
+  const m = map[state.status];
+  return (
+    <p id={id} role="status" aria-live="polite" className={cn("mt-1 flex items-center gap-1 text-xs", m.cls)}>
+      {state.status === "checking" && <Loader2 className="size-3 animate-spin" aria-hidden="true" />}
+      {state.status === "available" && <CheckCircle2 className="size-3" aria-hidden="true" />}
+      {m.text}
+    </p>
+  );
+}
+
 function StepHeading({ title, desc }: { title: string; desc: string }) {
   return (
     <div>
@@ -871,6 +928,8 @@ function MaterialCard({
   componentOptions,
   catalog,
   canEngineer,
+  otherCodes,
+  showErrors,
 }: {
   m: SetupMaterialData;
   index: number;
@@ -883,8 +942,12 @@ function MaterialCard({
   componentOptions: MasterDataSelectOption[];
   catalog: CatalogMaterial[];
   canEngineer: boolean;
+  otherCodes: string[];
+  showErrors: boolean;
 }) {
+  const fe = showErrors ? materialFieldErrors(m) : {};
   const id = (name: string) => `sw-m-${name}-${m.key}`;
+  const codeState = useCodeAvailability(m.code, checkMaterialCodeAction, otherCodes);
   return (
     <section className="rounded-lg border border-border border-l-4 border-l-primary" aria-label={`วัสดุใหม่ที่ ${index + 1}`}>
       <div className="flex items-center justify-between gap-2 border-b border-border bg-primary-soft/50 px-3 py-2">
@@ -899,16 +962,17 @@ function MaterialCard({
         )}
       </div>
       <div className="grid gap-4 p-3 sm:grid-cols-2">
-        <Field label="รหัสวัสดุ" htmlFor={id("code")} required>
-          <Input id={id("code")} maxLength={50} value={m.code} onChange={(e) => onPatch({ code: e.target.value })} />
+        <Field label="รหัสวัสดุ" htmlFor={id("code")} required error={fe.code}>
+          <Input id={id("code")} maxLength={50} value={m.code} aria-invalid={codeState.status === "duplicate" || codeState.status === "duplicate-local"} aria-describedby={codeState.status === "idle" ? undefined : id("code-status")} onChange={(e) => onPatch({ code: e.target.value })} />
+          <CodeFeedback id={id("code-status")} state={codeState} label="รหัสวัสดุ" />
         </Field>
-        <Field label="ชื่อวัสดุ" htmlFor={id("name")} required>
+        <Field label="ชื่อวัสดุ" htmlFor={id("name")} required error={fe.name}>
           <Input id={id("name")} maxLength={255} value={m.name} onChange={(e) => onPatch({ name: e.target.value })} />
         </Field>
-        <Field label="หน่วย" required>
+        <Field label="หน่วย" required error={fe.unitId}>
           <MasterDataSelect options={unitOptions} value={m.unitId} onValueChange={(v) => onPatch({ unitId: v })} placeholder="เลือกหน่วย" href="/master-data/units" resourceLabel="หน่วย" />
         </Field>
-        <Field label="ประเภทวัสดุ (ไม่บังคับ)">
+        <Field label="ประเภทวัสดุ" required error={fe.materialTypeId}>
           <MasterDataSelect options={materialTypeOptions} value={m.materialTypeId} onValueChange={(v) => onPatch({ materialTypeId: v })} placeholder="เลือกประเภท" href="/master-data/material-types" resourceLabel="ประเภทวัสดุ" />
         </Field>
         <Field label="Location Type">
@@ -927,14 +991,14 @@ function MaterialCard({
             placeholder="เลือก" href="/materials/catalog" resourceLabel="Location Type"
           />
         </Field>
-        <Field label="จำนวนต่อแพ็ก" htmlFor={id("pack")}>
-          <Input id={id("pack")} type="number" min={1} value={m.packingQuantity} onChange={(e) => onPatch({ packingQuantity: e.target.value })} />
+        <Field label="จำนวนต่อแพ็ก" htmlFor={id("pack")} required error={fe.packingQuantity}>
+          <Input id={id("pack")} type="number" min={1} max={1000000} step={1} inputMode="numeric" aria-invalid={!!fe.packingQuantity} value={m.packingQuantity} onChange={(e) => onPatch({ packingQuantity: e.target.value })} />
         </Field>
-        <Field label="สต็อกขั้นต่ำ" htmlFor={id("min")}>
+        <Field label="สต็อกขั้นต่ำ" htmlFor={id("min")} error={fe.minimumStock}>
           <Input id={id("min")} type="number" min={0} value={m.minimumStock} onChange={(e) => onPatch({ minimumStock: e.target.value })} />
         </Field>
         <div className="sm:col-span-2">
-          <Field label="ซัพพลายเออร์" required hint="เพิ่มได้หลายราย — ต้องมีอย่างน้อย 1 รายจึงจะรับเข้าได้">
+          <Field label="ซัพพลายเออร์" required error={fe.suppliers} hint="เพิ่มได้หลายราย — ต้องมีอย่างน้อย 1 รายจึงจะรับเข้าได้">
             <MasterDataSelect
               options={supplierOptions.filter((o) => !m.supplierIds.includes(o.id))}
               value=""
@@ -956,7 +1020,9 @@ function MaterialCard({
         <div className="sm:col-span-2">
           <ImageField
             id={id("image")}
-            label="รูปภาพวัสดุ (ไม่บังคับ)"
+            label="รูปภาพวัสดุ"
+            required
+            errorText={fe.image}
             path={m.imagePath}
             onChange={(imagePath) => onPatch({ imagePath })}
             upload={uploadMaterialPcImageAction}
@@ -1079,9 +1145,13 @@ function ImageField({
   path,
   onChange,
   upload,
+  required,
+  errorText,
 }: {
   id: string;
   label: string;
+  required?: boolean;
+  errorText?: string;
   path: string | null;
   onChange: (path: string | null) => void;
   upload: (formData: FormData) => Promise<UploadResult>;
@@ -1107,8 +1177,11 @@ function ImageField({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <Label htmlFor={id}>{label}</Label>
-      <div className="flex flex-wrap items-center gap-3 rounded-lg border border-dashed border-border-strong p-3">
+      <Label htmlFor={id}>
+        {label}
+        {required && <span className="ml-0.5 text-danger">*</span>}
+      </Label>
+      <div className={cn("flex flex-wrap items-center gap-3 rounded-lg border border-dashed p-3", errorText ? "border-danger" : "border-border-strong")}>
         <div className="relative flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-md bg-surface-2">
           {busy ? (
             <Loader2 className="size-5 animate-spin text-fg-muted" aria-hidden="true" />
@@ -1138,9 +1211,9 @@ function ImageField({
             )}
           </div>
           <p className="text-xs text-fg-muted">JPEG, PNG หรือ WebP · สูงสุด 5 MiB</p>
-          {error && (
+          {(error ?? errorText) && (
             <p role="alert" className="text-xs text-danger">
-              {error}
+              {error ?? errorText}
             </p>
           )}
         </div>
@@ -1153,6 +1226,7 @@ function ModeChooser({
   onPick,
   drafts,
   overview,
+  details,
   materials,
   processSteps,
   manage,
@@ -1160,6 +1234,7 @@ function ModeChooser({
   onPick: (mode: SetupMode) => void;
   drafts: SetupDraftSummary[];
   overview: SetupOverview;
+  details: BomOverview;
   materials: Material[];
   processSteps: ProcessStep[];
   manage: ManageCan;
@@ -1209,7 +1284,7 @@ function ModeChooser({
           ))}
         </div>
       </section>
-      <CompletedList overview={overview} materials={materials} processSteps={processSteps} manage={manage} />
+      <CompletedList overview={overview} details={details} materials={materials} processSteps={processSteps} manage={manage} />
       {drafts.length > 0 && (
         <section className="rounded-xl border border-border bg-surface p-4" aria-label="ร่างของฉัน">
           <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold text-fg">
@@ -1234,11 +1309,13 @@ function ModeChooser({
 /** Every active product / material that already has both a BOM and a workflow — with edit / delete of its versions. */
 function CompletedList({
   overview,
+  details,
   materials,
   processSteps,
   manage,
 }: {
   overview: SetupOverview;
+  details: BomOverview;
   materials: Material[];
   processSteps: ProcessStep[];
   manage: ManageCan;
@@ -1247,6 +1324,7 @@ function CompletedList({
   const [tab, setTab] = React.useState<"products" | "materials">("products");
   const [query, setQuery] = React.useState("");
   const [openId, setOpenId] = React.useState<string | null>(null);
+  const [viewId, setViewId] = React.useState<string | null>(null);
   const items = overview[tab];
   const q = query.trim().toLowerCase();
   const shown = items.filter((i) => !q || i.code.toLowerCase().includes(q) || i.name.toLowerCase().includes(q));
@@ -1260,7 +1338,7 @@ function CompletedList({
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
         <div>
           <h2 className="text-sm font-semibold text-fg">รายการที่มี BOM + Workflow แล้ว</h2>
-          <p className="text-xs text-fg-muted">กดปุ่มจัดการเพื่อดูเวอร์ชัน แก้ไข หรือลบ BOM / Workflow</p>
+          <p className="text-xs text-fg-muted">กด “ดู” เพื่อดูแผนภาพองค์ประกอบ หรือ “จัดการ” เพื่อดูเวอร์ชัน แก้ไข หรือลบ BOM / Workflow</p>
         </div>
         <Input aria-label="ค้นหารายการ" placeholder="ค้นหารหัสหรือชื่อ" className="h-8 w-full sm:w-56" value={query} onChange={(e) => setQuery(e.target.value)} />
       </div>
@@ -1274,6 +1352,7 @@ function CompletedList({
             onClick={() => {
               setTab(t.id);
               setOpenId(null);
+              setViewId(null);
             }}
             className={cn(
               "-mb-px border-b-2 px-3 py-2 text-sm font-medium",
@@ -1289,7 +1368,7 @@ function CompletedList({
           {items.length === 0 ? "ยังไม่มีรายการที่มีทั้ง BOM และ Workflow" : "ไม่พบรายการที่ค้นหา"}
         </p>
       ) : (
-        <ul className="max-h-[32rem] divide-y divide-border overflow-y-auto">
+        <ul className="divide-y divide-border">
           {shown.map((item) => (
             <li key={item.id} className="px-4 py-2.5">
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1297,18 +1376,29 @@ function CompletedList({
                   <p className="truncate text-sm font-medium text-fg">{item.code}</p>
                   <p className="truncate text-xs text-fg-muted">{item.name}</p>
                 </div>
-                <div className="flex shrink-0 flex-wrap items-center gap-1.5">
+                <div className="flex min-w-0 max-w-full flex-wrap items-center gap-1.5">
                   <Badge variant={item.bomActive > 0 ? "success" : "warning"}>
                     BOM {item.bomActive > 0 ? "ใช้งาน" : "ร่าง"} · {item.bomCount} เวอร์ชัน
                   </Badge>
                   <Badge variant={item.workflowActive > 0 ? "success" : "warning"}>
                     Workflow {item.workflowActive > 0 ? "ใช้งาน" : "ร่าง"} · {item.workflowCount} เวอร์ชัน
                   </Badge>
+                  <Button type="button" size="sm" variant={viewId === item.id ? "secondary" : "outline"} onClick={() => setViewId(viewId === item.id ? null : item.id)}>
+                    <Waypoints className="size-3.5" aria-hidden="true" /> {viewId === item.id ? "ซ่อนแผนภาพ" : "ดู"}
+                  </Button>
                   <Button type="button" size="sm" variant={openId === item.id ? "secondary" : "outline"} onClick={() => setOpenId(openId === item.id ? null : item.id)}>
                     {openId === item.id ? "ซ่อน" : "จัดการ"}
                   </Button>
                 </div>
               </div>
+              {viewId === item.id && (() => {
+                const owner = details[tab].find((o) => o.id === item.id);
+                return owner ? (
+                  <FocusOnMount label={`แผนภาพองค์ประกอบ ${item.code}`}>
+                    <OwnerDetail owner={owner} />
+                  </FocusOnMount>
+                ) : null;
+              })()}
               {openId === item.id && (
                 <OwnerVersions
                   scope={tab}
@@ -1329,6 +1419,28 @@ function CompletedList({
         </Link>
       </div>
     </section>
+  );
+}
+
+/** Moves keyboard focus and scroll to freshly opened detail content (mounts only when opened). */
+function FocusOnMount({ label, children }: { label: string; children: React.ReactNode }) {
+  const ref = React.useRef<HTMLDivElement>(null);
+  React.useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.focus({ preventScroll: true });
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
+  return (
+    <div
+      ref={ref}
+      tabIndex={-1}
+      role="region"
+      aria-label={label}
+      className="mt-2 scroll-mt-4 overflow-hidden rounded-lg border border-border outline-none focus-visible:ring-2 focus-visible:ring-primary"
+    >
+      {children}
+    </div>
   );
 }
 

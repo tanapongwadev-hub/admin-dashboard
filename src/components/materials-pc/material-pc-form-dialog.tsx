@@ -36,6 +36,7 @@ import {
 } from "@/app/(dashboard)/materials/catalog/actions";
 import type { Material, MaterialDraftRecord, MaterialLookups, MaterialShape } from "@/lib/api/materials";
 import { cn } from "@/lib/utils";
+import { MATERIAL_LIMITS, MATERIAL_MESSAGES, validateMaterialTypeId, validatePackingQuantity } from "@/lib/material-validation";
 import { useMaterialCodeAvailability, type MaterialCodeAvailability } from "@/hooks/use-material-code-availability";
 import { CONNECTION_ERROR_MESSAGE } from "@/lib/user-error";
 
@@ -177,15 +178,15 @@ export function MaterialImagePicker({
 
 const schema = z
   .object({
-    code: z.string().trim().min(1, "กรุณากรอกรหัส").max(50),
-    name: z.string().min(1, "กรุณากรอกชื่อ").max(255),
+    code: z.string().trim().min(1, MATERIAL_MESSAGES.codeRequired).max(MATERIAL_LIMITS.codeMax),
+    name: z.string().min(1, MATERIAL_MESSAGES.nameRequired).max(MATERIAL_LIMITS.nameMax),
     materialType: z.enum(["", "PCS", "PIPE", "SHEET", "COIL"]),
     locationType: z.enum(["internal", "external"]),
     outputLocationType: z.enum(["internal", "external"]),
     ratio: z.union([z.string(), z.number()]).optional(),
-    unitId: z.string().min(1, "กรุณาเลือกหน่วย"),
+    unitId: z.string().min(1, MATERIAL_MESSAGES.unitRequired),
     packingQuantity: z.union([z.string(), z.number()]).optional(),
-    minimumStock: z.coerce.number().min(0, "สต็อกขั้นต่ำต้องไม่น้อยกว่า 0"),
+    minimumStock: z.coerce.number().min(0, MATERIAL_MESSAGES.minimumStockNegative),
     deliveryTypeId: z.string(),
     materialTypeId: z.string(),
     modelId: z.string(),
@@ -209,9 +210,8 @@ const schema = z
       ctx.addIssue({ code: "custom", path: ["materialType"], message: "กรุณาเลือกชนิดเหล็กก่อนกรอกข้อมูลวัสดุ" });
       return;
     }
-    if (!values.materialTypeId || values.materialTypeId === NONE) {
-      ctx.addIssue({ code: "custom", path: ["materialTypeId"], message: "กรุณาเลือกประเภทวัสดุ" });
-    }
+    const typeError = validateMaterialTypeId(values.materialTypeId, NONE);
+    if (typeError) ctx.addIssue({ code: "custom", path: ["materialTypeId"], message: typeError });
     const ratio = Number(values.ratio);
     if (values.materialType !== "PCS" && (!Number.isInteger(ratio) || ratio < 1 || ratio > 1000000)) {
       ctx.addIssue({
@@ -228,21 +228,15 @@ const schema = z
       ] as const) {
         if (!values[field].trim()) ctx.addIssue({ code: "custom", path: [field], message });
       }
-      const packing = Number(values.outputPackingQuantity);
-      if (!Number.isInteger(packing) || packing < 1 || packing > 1000000) ctx.addIssue({ code: "custom", path: ["outputPackingQuantity"], message: "กรอกจำนวนชิ้นต่อกล่องเป็นจำนวนเต็ม 1–1,000,000" });
+      if (validatePackingQuantity(values.outputPackingQuantity) !== null) ctx.addIssue({ code: "custom", path: ["outputPackingQuantity"], message: "กรอกจำนวนชิ้นต่อกล่องเป็นจำนวนเต็ม 1–1,000,000" });
       if (values.outputCode.trim().length > 50) ctx.addIssue({ code: "custom", path: ["outputCode"], message: "รหัสไม่เกิน 50 ตัวอักษร" });
       if (values.outputName.trim().length > 255) ctx.addIssue({ code: "custom", path: ["outputName"], message: "ชื่อไม่เกิน 255 ตัวอักษร" });
       if (values.outputCode.trim().toLowerCase() === values.code.trim().toLowerCase()) {
         ctx.addIssue({ code: "custom", path: ["outputCode"], message: "รหัสหลังแปรรูปต้องต่างจากต้นทาง" });
       }
     } else {
-      const raw = values.packingQuantity;
-      if (raw === "" || raw === undefined) {
-        ctx.addIssue({ code: "custom", path: ["packingQuantity"], message: "กรุณากรอกจำนวนต่อแพ็ก" });
-      } else {
-        const packing = Number(raw);
-        if (!Number.isInteger(packing) || packing < 1 || packing > 1000000) ctx.addIssue({ code: "custom", path: ["packingQuantity"], message: "จำนวนต่อแพ็กต้องเป็นจำนวนเต็ม 1–1,000,000" });
-      }
+      const packingError = validatePackingQuantity(values.packingQuantity);
+      if (packingError) ctx.addIssue({ code: "custom", path: ["packingQuantity"], message: packingError });
     }
   });
 

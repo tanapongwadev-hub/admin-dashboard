@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { ApiError } from "@/lib/api/client";
 import { createMaterial } from "@/lib/api/materials";
-import { createProduct } from "@/lib/api/products";
+import { checkProductCodeAvailability, createProduct } from "@/lib/api/products";
 import { createBom, activateBom } from "@/lib/api/boms";
 import { activateEngineeringVersion, createEngineeringVersion } from "@/lib/api/engineering";
 import { createProductWorkflow, activateProductWorkflow } from "@/lib/api/product-workflows";
@@ -222,4 +222,18 @@ export async function runSetupAction(data: SetupData): Promise<RunSetupResult> {
     try { revalidatePath(path); } catch { /* best-effort */ }
   }
   return { status: "success", created };
+}
+
+/** Real-time duplicate check for the product code typed in the wizard. */
+export async function checkProductCodeAction(
+  code: string
+): Promise<{ status: "success"; available: boolean } | Failure> {
+  const normalized = code.trim();
+  if (!normalized || normalized.length > 50) return { status: "error", message: "กรอกรหัสสินค้า 1–50 ตัวอักษร" };
+  try {
+    const result = await checkProductCodeAvailability(await token(), normalized);
+    return { status: "success", available: result.available };
+  } catch (err) {
+    return failure(err);
+  }
 }
