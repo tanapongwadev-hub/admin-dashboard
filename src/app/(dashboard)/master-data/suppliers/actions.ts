@@ -5,11 +5,17 @@ import {
   updateSupplier,
   deactivateSupplier,
   restoreSupplier,
+  deleteSupplierPermanently,
   type Supplier,
   type SupplierPayload,
   type UpdateSupplierPayload,
 } from "@/lib/api/suppliers";
 import { createCrudActions, type CrudActionResult } from "@/lib/create-crud-actions";
+import { cookies } from "next/headers";
+import { revalidatePath } from "next/cache";
+import { ApiError } from "@/lib/api/client";
+import { redirectIfSessionExpired, redirectMissingSession } from "@/lib/session-expiry";
+import { apiErrorMessage, CONNECTION_ERROR_MESSAGE } from "@/lib/user-error";
 
 // Server Actions for the `/master-data/suppliers` admin page. All the
 // real logic (cookie read, 409 mapping, session-expiry sign-out,
@@ -53,4 +59,35 @@ export async function deactivateSupplierAction(id: string) {
 }
 export async function restoreSupplierAction(id: string) {
   return actions.restore(id);
+}
+
+export type SupplierDeleteResult =
+  | { status: "success" }
+  | { status: "conflict"; message: string }
+  | { status: "error"; message: string };
+
+// Permanent (hard) delete — cps-api refuses with 409 while receivings or other
+// records still use the supplier, and that Thai message is shown as-is.
+export async function performDeleteSupplierPermanently(accessToken: string, id: string): Promise<SupplierDeleteResult> {
+  try {
+    await deleteSupplierPermanently(accessToken, id);
+  } catch (err) {
+    redirectIfSessionExpired(err);
+    if (err instanceof ApiError) {
+      return { status: err.status === 409 ? "conflict" : "error", message: apiErrorMessage(err) };
+    }
+    return { status: "error", message: CONNECTION_ERROR_MESSAGE };
+  }
+  try {
+    revalidatePath("/master-data/suppliers");
+  } catch {
+    /* best-effort */
+  }
+  return { status: "success" };
+}
+
+export async function deleteSupplierPermanentlyAction(id: string): Promise<SupplierDeleteResult> {
+  const accessToken = (await cookies()).get("accessToken")?.value;
+  if (!accessToken) redirectMissingSession();
+  return performDeleteSupplierPermanently(accessToken, id);
 }

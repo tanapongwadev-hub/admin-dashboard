@@ -174,6 +174,30 @@ export function deactivateProduct(accessToken: string, id: string) {
   });
 }
 
+export interface ProductDeletionCheck {
+  product: { id: string; code: string; name: string };
+  canDelete: boolean;
+  blockers: string[];
+  bomCount: number;
+  workflowCount: number;
+}
+
+export function checkProductDeletion(accessToken: string, id: string) {
+  return apiFetch<ProductDeletionCheck>(`/products/${encodeURIComponent(id)}/deletion-check`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+}
+
+// Permanent delete: the product's own BOMs and workflows go with it;
+// stock/plan/order/sales history blocks it (409).
+export function deleteProductPermanently(accessToken: string, id: string, confirmationCode: string) {
+  return apiFetch<{ id: string; code: string; name: string }>(`/products/${encodeURIComponent(id)}/permanent`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${accessToken}` },
+    body: JSON.stringify({ confirmationCode }),
+  });
+}
+
 export function restoreProduct(accessToken: string, id: string) {
   return apiFetch<Product>(`/products/${id}/restore`, {
     method: "PATCH",

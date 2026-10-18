@@ -25,6 +25,7 @@ import { ApiError } from "@/lib/api/client";
 import { redirectIfSessionExpired, redirectMissingSession } from "@/lib/session-expiry";
 import { apiErrorMessage, CONNECTION_ERROR_MESSAGE } from "@/lib/user-error";
 import { getCurrentSession } from "@/lib/session";
+import { listEngineeringVersions, type EngineeringVersion } from "@/lib/api/engineering";
 import { checkMaterialDeletion, deleteMaterialPermanently, type MaterialDeletionCheck } from "@/lib/api/materials";
 
 export type MaterialDeletionResult = { status: "success"; check: MaterialDeletionCheck } | { status: "error"; message: string };
@@ -39,13 +40,13 @@ export async function checkMaterialDeletionAction(id: string): Promise<MaterialD
   catch (err) { redirectIfSessionExpired(err); return { status: "error", message: err instanceof ApiError ? apiErrorMessage(err) : CONNECTION_ERROR_MESSAGE }; }
 }
 
-export async function deleteMaterialPermanentlyAction(id: string, confirmationCode: string): Promise<{ status: "success" } | { status: "error"; message: string }> {
+export async function deleteMaterialPermanentlyAction(id: string, confirmationCode: string, includeBom = false): Promise<{ status: "success" } | { status: "error"; message: string }> {
   const session = await getCurrentSession();
   if (!session) redirectMissingSession();
   if (!session.user.isSuperAdmin && !session.permissions.includes("MATERIAL_DELETE")) return { status: "error", message: "คุณไม่มีสิทธิ์ลบวัสดุ" };
   const token = await requireAccessToken();
   if (!token) redirectMissingSession();
-  try { await deleteMaterialPermanently(token, id, confirmationCode); }
+  try { await deleteMaterialPermanently(token, id, confirmationCode, includeBom); }
   catch (err) { redirectIfSessionExpired(err); return { status: "error", message: err instanceof ApiError ? apiErrorMessage(err) : CONNECTION_ERROR_MESSAGE }; }
   try { revalidatePath("/materials"); revalidatePath("/materials/catalog"); revalidatePath("/engineering/bom/materials"); } catch { /* best-effort */ }
   return { status: "success" };
@@ -240,6 +241,15 @@ export async function uploadMaterialPcImageAction(
   const accessToken = await requireAccessToken();
   if (!accessToken) redirectMissingSession();
   return performUploadMaterialImage(accessToken, formData);
+}
+
+// The material's own BOM versions (components). Hidden by the caller when the
+// viewer lacks MATERIAL_BOMS_VIEW or the call fails — usage list still works.
+export async function listOwnMaterialBomsAction(materialId: string): Promise<{ status: "success"; boms: EngineeringVersion[] } | { status: "error"; message: string }> {
+  const accessToken = await requireAccessToken();
+  if (!accessToken) redirectMissingSession();
+  try { return { status: "success", boms: await listEngineeringVersions(accessToken, "materials", "bom", materialId) }; }
+  catch (err) { redirectIfSessionExpired(err); return { status: "error", message: errorResult(err).message }; }
 }
 
 export async function listBomUsageByMaterialAction(materialId: string): Promise<BomUsageListActionResult> {

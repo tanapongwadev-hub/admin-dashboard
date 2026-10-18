@@ -1,3 +1,4 @@
+import { apiFetch } from "./client";
 import { createResourceApi, type BaseListParams, type PaginatedResult } from "./create-resource-api";
 
 // Master data for the "ผู้จัดจำหน่าย" (supplier) lookup. Mirrors
@@ -58,6 +59,14 @@ export interface UpdateSupplierPayload extends Partial<SupplierPayload> {
 }
 
 const api = createResourceApi<Supplier, SupplierPayload, UpdateSupplierPayload, ListSuppliersParams>("/suppliers");
+
+// Hard delete — 409 while receivings or other records reference the supplier.
+export function deleteSupplierPermanently(accessToken: string, id: string) {
+  return apiFetch<{ id: string; deleted: true }>(`/suppliers/${id}/permanent`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+}
 
 export const listSuppliers = api.list;
 export const getSupplier = api.get;

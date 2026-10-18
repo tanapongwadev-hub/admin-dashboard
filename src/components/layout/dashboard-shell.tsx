@@ -50,7 +50,7 @@ export function DashboardShell({
             onToggleCollapsed={() => setCollapsed((v) => !v)}
           />
           <main id="main-content" tabIndex={-1} className="min-h-0 focus:outline-none flex-1 overflow-y-auto overscroll-y-contain rounded-xl border border-border bg-surface [scrollbar-gutter:stable] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <div className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">{children}</div>
+            <div className="w-full px-4 py-6 sm:px-6 lg:px-8">{children}</div>
           </main>
         </div>
       </div>

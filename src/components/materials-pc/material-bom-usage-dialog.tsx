@@ -6,9 +6,10 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatNumber } from "@/lib/utils";
-import { listBomUsageByMaterialAction } from "@/app/(dashboard)/materials/catalog/actions";
+import { listBomUsageByMaterialAction, listOwnMaterialBomsAction } from "@/app/(dashboard)/materials/catalog/actions";
 import type { Material } from "@/lib/api/materials";
 import type { BomUsageRow, BomStatus } from "@/lib/api/boms";
+import type { EngineeringVersion } from "@/lib/api/engineering";
 
 // Same DRAFT/ACTIVE/INACTIVE display mapping products-details-dialog.tsx
 // already uses for a BOM's own status badge — kept as a small local
@@ -52,6 +53,16 @@ export function MaterialBomUsageView({ material }: { material: Material }) {
     };
   }, [material.id]);
 
+  const [own, setOwn] = React.useState<{ materialId: string; boms: EngineeringVersion[] } | null>(null);
+  React.useEffect(() => {
+    let cancelled = false;
+    listOwnMaterialBomsAction(material.id).then((res) => {
+      if (!cancelled) setOwn({ materialId: material.id, boms: res.status === "success" ? res.boms : [] });
+    }).catch(() => { if (!cancelled) setOwn({ materialId: material.id, boms: [] }); });
+    return () => { cancelled = true; };
+  }, [material.id]);
+  const ownBoms = own?.materialId === material.id ? own.boms : [];
+
   const isCurrent = result?.materialId === material.id;
   const usage = isCurrent && result.status === "success" ? result.usage : null;
   const error = isCurrent && result.status === "error" ? result.message : null;
@@ -61,8 +72,45 @@ export function MaterialBomUsageView({ material }: { material: Material }) {
       <header className="border-b border-border px-6 py-5">
         <p className="font-mono text-xs tracking-[0.05em] text-primary">{material.code}</p>
         <h2 className="mt-1 text-lg font-semibold leading-tight text-fg">{material.name}</h2>
-        <p className="mt-1 text-sm text-fg-muted">BOM / Products ที่ใช้วัสดุนี้</p>
+        <p className="mt-1 text-sm text-fg-muted">BOM ของวัสดุนี้ และ BOM / Products ที่ใช้วัสดุนี้</p>
       </header>
+
+      {ownBoms.length > 0 && (
+        <section className="space-y-3 border-b border-border px-6 py-5" aria-label="BOM ของวัสดุนี้">
+          <h3 className="text-sm font-semibold text-fg">BOM ของวัสดุนี้ ({ownBoms.length} เวอร์ชัน)</h3>
+          {ownBoms.map((bom) => {
+            const status = BOM_STATUS_DISPLAY[bom.status];
+            return (
+              <div key={bom.id} className="overflow-hidden rounded-lg border border-border">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-surface-2/50 px-3 py-2">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-sm font-semibold text-fg">{bom.version}</span>
+                    <Badge variant={status.variant} style={{ fontSize: "10.5px" }}>{status.label}</Badge>
+                  </div>
+                  <span className="text-xs text-fg-muted">{bom.items?.length ?? 0} ส่วนประกอบ · {new Date(bom.createdAt).toLocaleDateString("th-TH", { timeZone: "Asia/Bangkok" })}</span>
+                </div>
+                {bom.specification && <p className="border-b border-border px-3 py-2 text-xs text-fg-secondary">{bom.specification}</p>}
+                <ol className="divide-y divide-border">
+                  {bom.items?.map((item, index) => (
+                    <li key={item.id} className="flex items-start justify-between gap-3 px-3 py-2 text-sm">
+                      <div className="min-w-0">
+                        <p className="break-words text-fg"><span className="text-fg-muted">{index + 1}.</span> <span className="font-mono text-xs text-fg-secondary">{item.materialCode}</span> · {item.materialName}</p>
+                        {(item.wastagePercent || item.remark) && <p className="mt-0.5 text-xs text-fg-muted">{item.wastagePercent ? `เผื่อสูญเสีย ${item.wastagePercent}%` : ""}{item.wastagePercent && item.remark ? " · " : ""}{item.remark ?? ""}</p>}
+                      </div>
+                      <p className="shrink-0 tabular-nums text-fg-secondary">
+                        {formatNumber(item.quantity)} {item.unitNameTh}
+                        {item.isScrap && <Badge variant="outline" className="ml-1.5 px-1.5 py-0 text-[10px]">เศษ</Badge>}
+                      </p>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            );
+          })}
+        </section>
+      )}
+
+      <h3 className="px-6 pt-5 text-sm font-semibold text-fg">ถูกใช้เป็นส่วนประกอบใน</h3>
 
       <section className="px-6 py-5">
         {error ? (

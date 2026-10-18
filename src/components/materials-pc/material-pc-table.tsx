@@ -25,6 +25,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { RowActionsMenu, type RowAction } from "@/components/ui/row-actions-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MaterialPcBulkDeleteDialog } from "@/components/materials-pc/material-pc-bulk-delete-dialog";
 import { MaterialPcImagePreview } from "@/components/materials-pc/material-pc-image-preview";
 import type { ViewMode } from "@/hooks/use-view-mode";
 import type { Material, PaginatedResult, StockBalance } from "@/lib/api/materials";
@@ -710,6 +711,8 @@ function MaterialPcSelectableTable({
   const groups = groupRelated ? groupMaterials(materials) : materials.map((main) => ({ id: main.id, main, members: [main] }));
   const groupByMemberId = new Map(groups.flatMap((group) => group.members.map((member) => [member.id, group] as const)));
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const router = useRouter();
   const allSelected = materials.length > 0 && selected.size === materials.length;
   const someSelected = selected.size > 0 && !allSelected;
 
@@ -730,10 +733,24 @@ function MaterialPcSelectableTable({
       {selected.size > 0 && (
         <div className="flex items-center justify-between rounded-md border border-primary/30 bg-primary-soft px-3 py-2 text-sm text-primary">
           <span>เลือกแล้ว {selected.size} รายการ</span>
-          <Button type="button" variant="ghost" size="sm" onClick={() => setSelected(new Set())} className="h-7 px-2 text-primary hover:text-primary">
-            ล้างการเลือก
-          </Button>
+          <div className="flex items-center gap-1">
+            {canDelete && onDeletePermanent && (
+              <Button type="button" variant="ghost" size="sm" onClick={() => setBulkDeleteOpen(true)} className="h-7 gap-1 px-2 text-danger hover:text-danger">
+                <Trash2 className="size-3.5" aria-hidden="true" />ลบที่เลือก
+              </Button>
+            )}
+            <Button type="button" variant="ghost" size="sm" onClick={() => setSelected(new Set())} className="h-7 px-2 text-primary hover:text-primary">
+              ล้างการเลือก
+            </Button>
+          </div>
         </div>
+      )}
+      {bulkDeleteOpen && (
+        <MaterialPcBulkDeleteDialog
+          materials={materials.filter((m) => selected.has(m.id))}
+          onClose={() => setBulkDeleteOpen(false)}
+          onDone={() => { setBulkDeleteOpen(false); setSelected(new Set()); router.refresh(); }}
+        />
       )}
       {collectionHeader}
       <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm [&>div:last-child]:max-h-[68vh] [&>div:last-child]:overflow-auto [&>div:last-child]:[scrollbar-width:none] [&>div:last-child::-webkit-scrollbar]:hidden">
@@ -757,6 +774,7 @@ function MaterialPcSelectableTable({
               <TableHead>ข้อมูลปฏิบัติงาน</TableHead>
               <TableHead>การใช้งาน</TableHead>
               {stockByMaterialId && <SortableHead label="รับเข้าล่าสุด" field="lastReceivedAt" />}
+              <TableHead className="whitespace-nowrap" title="วันที่รับเข้าหรือแก้ไขข้อมูลวัสดุล่าสุด (แล้วแต่อย่างใดใหม่กว่า)">ทำรายการล่าสุด</TableHead>
               <TableHead className="text-right">การจัดการ</TableHead>
             </TableRow>
           </TableHeader>
@@ -806,6 +824,7 @@ function MaterialPcSelectableTable({
                     <MaterialStatus material={material} />
                   </TableCell>
                   {stockByMaterialId && <TableCell className="whitespace-nowrap text-fg-muted">{formatDate(balance?.lastReceivedAt)}</TableCell>}
+                  <TableCell className="whitespace-nowrap text-fg-muted">{formatDate(latestActivity(material.updatedAt, balance?.lastReceivedAt))}</TableCell>
                   <TableCell className="text-right">
                     <MaterialActions
                       material={material}
@@ -950,6 +969,11 @@ function SortableButton({ label, field }: { label: string; field: MaterialSortFi
         {label}<ArrowUpDown className={cn("size-3.5", active ? "text-primary" : "text-fg-muted")} />
       </button>
   );
+}
+
+function latestActivity(...values: (string | null | undefined)[]): string | null {
+  const times = values.filter((v): v is string => !!v).map((v) => new Date(v).getTime()).filter((t) => !Number.isNaN(t));
+  return times.length ? new Date(Math.max(...times)).toISOString() : null;
 }
 
 function formatDate(value?: string | null): string {

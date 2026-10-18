@@ -44,6 +44,8 @@ const shapes: MaterialShape[] = ["PCS", "PIPE", "SHEET", "COIL"];
 const MATERIAL_IMAGE_MAX_SIZE = 5 * 1024 * 1024;
 const MATERIAL_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
+const SHAPE_LABELS: Record<string, string> = { PCS: "ชิ้นงาน (PCS)", PIPE: "ท่อ (PIPE)", SHEET: "แผ่น (SHEET)", COIL: "ม้วน (COIL)" };
+
 export function validateMaterialImage(
   file: Pick<File, "type" | "size"> | null,
   required = true
@@ -207,6 +209,9 @@ const schema = z
       ctx.addIssue({ code: "custom", path: ["materialType"], message: "กรุณาเลือกชนิดเหล็กก่อนกรอกข้อมูลวัสดุ" });
       return;
     }
+    if (!values.materialTypeId || values.materialTypeId === NONE) {
+      ctx.addIssue({ code: "custom", path: ["materialTypeId"], message: "กรุณาเลือกประเภทวัสดุ" });
+    }
     const ratio = Number(values.ratio);
     if (values.materialType !== "PCS" && (!Number.isInteger(ratio) || ratio < 1 || ratio > 1000000)) {
       ctx.addIssue({
@@ -230,9 +235,14 @@ const schema = z
       if (values.outputCode.trim().toLowerCase() === values.code.trim().toLowerCase()) {
         ctx.addIssue({ code: "custom", path: ["outputCode"], message: "รหัสหลังแปรรูปต้องต่างจากต้นทาง" });
       }
-    } else if (values.packingQuantity !== "" && values.packingQuantity !== undefined) {
-      const packing = Number(values.packingQuantity);
-      if (!Number.isInteger(packing) || packing < 1) ctx.addIssue({ code: "custom", path: ["packingQuantity"], message: "จำนวนต่อแพ็กต้องเป็นจำนวนเต็มอย่างน้อย 1" });
+    } else {
+      const raw = values.packingQuantity;
+      if (raw === "" || raw === undefined) {
+        ctx.addIssue({ code: "custom", path: ["packingQuantity"], message: "กรุณากรอกจำนวนต่อแพ็ก" });
+      } else {
+        const packing = Number(raw);
+        if (!Number.isInteger(packing) || packing < 1 || packing > 1000000) ctx.addIssue({ code: "custom", path: ["packingQuantity"], message: "จำนวนต่อแพ็กต้องเป็นจำนวนเต็ม 1–1,000,000" });
+      }
     }
   });
 
@@ -304,6 +314,7 @@ export function MaterialPcFormDialog({
   const stepHeadingRef = React.useRef<HTMLHeadingElement>(null);
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const [supplierIds, setSupplierIds] = React.useState<string[]>([]);
+  const [supplierTouched, setSupplierTouched] = React.useState(false);
   const [imageFile, setImageFile] = React.useState<File | null>(null);
   const [imagePreview, setImagePreview] = React.useState<string | null>(null);
   const [imageError, setImageError] = React.useState<string | null>(null);
@@ -386,6 +397,7 @@ export function MaterialPcFormDialog({
   const steps = isRawMaterial ? ["ชนิดเหล็ก", "Material ก่อนแปรรูป", "Material หลังแปรรูป"] : ["ชนิดเหล็ก", "ข้อมูล Material"];
   const lastStep = steps.length - 1;
   const busy = isSubmitting || advancing || savingDraft;
+  const supplierError = supplierTouched && supplierIds.length === 0 ? "กรุณาเลือกซัพพลายเออร์อย่างน้อย 1 ราย" : null;
   const availableSuppliers = lookups.suppliers.filter((s) => !supplierIds.includes(s.id));
   const selectedSuppliers = supplierIds
     .map((id) => lookups.suppliers.find((s) => s.id === id))
@@ -445,9 +457,12 @@ export function MaterialPcFormDialog({
       } else if (step === 1) {
         const fieldsValid = await trigger(SOURCE_FIELDS, { shouldFocus: true });
         const imageValid = validateSourceImage();
+        const suppliersValid = supplierIds.length > 0;
+        if (!suppliersValid) setSupplierTouched(true);
         const invalidCode = fieldsValid ? await validateCodes(["code"]) : undefined;
         if (!imageValid) imageInputRef.current?.focus();
         if (invalidCode) goToStep(1, invalidCode);
+        else if (fieldsValid && imageValid && !suppliersValid) goToStep(1, "addSupplierId");
         else if (fieldsValid && imageValid) goToStep(2);
         else if (imageValid) goToStep(1, SOURCE_FIELDS.find((field) => getFieldState(field).invalid));
       }
@@ -494,6 +509,11 @@ export function MaterialPcFormDialog({
   }
 
   async function onSubmit(input: FormInput) {
+    if (supplierIds.length === 0) {
+      setSupplierTouched(true);
+      goToStep(1, "addSupplierId");
+      return;
+    }
     if (!validateSourceImage()) {
       goToStep(1, "material-image");
       return;
@@ -654,8 +674,8 @@ export function MaterialPcFormDialog({
             <div className="space-y-3 rounded-xl border border-border bg-surface-2 p-4">
               <div className="space-y-1"><Label htmlFor="materialType">ชนิดเหล็ก <span className="text-danger">*</span></Label><p className="text-xs text-fg-muted">เลือกชนิดเหล็กก่อน เพื่อแสดงแบบฟอร์ม Material ที่ต้องกรอก</p></div>
               <Select value={materialType} disabled={busy} onValueChange={(value) => setValue("materialType", value as MaterialShape, { shouldValidate: true, shouldDirty: true })}>
-                <SelectTrigger id="materialType" className="h-11 bg-surface text-base sm:text-sm" aria-required="true" aria-invalid={!!errors.materialType} aria-describedby={`materialType-hint${errors.materialType ? " materialType-error" : ""}`}><SelectValue placeholder="เลือกชนิดเหล็ก PCS / PIPE / SHEET / COIL" /></SelectTrigger>
-                <SelectContent>{shapes.map((shape) => <SelectItem key={shape} value={shape}>{shape}</SelectItem>)}</SelectContent>
+                <SelectTrigger id="materialType" className="h-11 bg-surface text-base sm:text-sm" aria-required="true" aria-invalid={!!errors.materialType} aria-describedby={`materialType-hint${errors.materialType ? " materialType-error" : ""}`}><SelectValue placeholder="เลือกชนิดเหล็ก" /></SelectTrigger>
+                <SelectContent>{shapes.map((shape) => <SelectItem key={shape} value={shape}>{SHAPE_LABELS[shape] ?? shape}</SelectItem>)}</SelectContent>
               </Select>
               <p id="materialType-hint" aria-live="polite" className="text-xs text-fg-secondary">{hasMaterialType ? isRawMaterial ? "กรอก Material 2 ชุด: วัตถุดิบก่อนแปรรูป และชิ้นงานหลังแปรรูป" : "กรอก Material 1 ชุด สำหรับวัสดุชนิด PCS" : "PCS ใช้ข้อมูล 1 ชุด · PIPE / SHEET / COIL ใช้ข้อมูล 2 ชุด"}</p>
               {errors.materialType && <p id="materialType-error" className="text-xs text-danger" role="alert">{errors.materialType.message}</p>}
@@ -700,26 +720,26 @@ export function MaterialPcFormDialog({
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="materialTypeId">ประเภทวัสดุ</Label>
+                <Label htmlFor="materialTypeId">ประเภทวัสดุ <span className="text-danger">*</span></Label>
                 {lookups.materialTypes.length === 0 ? (
                   <MasterDataEmptyLink href="/master-data/material-types" resourceLabel="ประเภทวัสดุ" />
                 ) : (
-                  <Select value={watch("materialTypeId")} onValueChange={(v) => setValue("materialTypeId", v, { shouldValidate: true })}>
-                    <SelectTrigger id="materialTypeId"><SelectValue /></SelectTrigger>
+                  <Select value={watch("materialTypeId") === NONE ? "" : watch("materialTypeId")} onValueChange={(v) => setValue("materialTypeId", v, { shouldValidate: true })}>
+                    <SelectTrigger id="materialTypeId" aria-required="true" aria-invalid={errors.materialTypeId ? true : undefined} aria-describedby={errors.materialTypeId ? "materialTypeId-error" : undefined}><SelectValue placeholder="เลือกประเภทวัสดุ" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={NONE}>ไม่ระบุ</SelectItem>
                       {lookups.materialTypes.map((item) => (
                         <SelectItem key={item.id} value={item.id}>{item.nameTh || item.code}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 )}
+                {errors.materialTypeId && <p id="materialTypeId-error" role="alert" className="text-xs text-danger">{errors.materialTypeId.message}</p>}
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="locationType">Location Type <span className="text-danger">*</span></Label>
+                <Label htmlFor="locationType">ที่ตั้งวัสดุ (Location Type) <span className="text-danger">*</span></Label>
                 <Select value={watch("locationType")} onValueChange={(value) => { if (value === "internal" || value === "external") setValue("locationType", value, { shouldValidate: true, shouldDirty: true }); }}>
                   <SelectTrigger id="locationType" aria-required="true" aria-invalid={!!errors.locationType} aria-describedby={errors.locationType ? "locationType-error" : undefined}><SelectValue /></SelectTrigger>
-                  <SelectContent><SelectItem value="internal">Internal (ภายใน)</SelectItem><SelectItem value="external">External (ภายนอก)</SelectItem></SelectContent>
+                  <SelectContent><SelectItem value="internal">ภายใน</SelectItem><SelectItem value="external">ภายนอก</SelectItem></SelectContent>
                 </Select>
                 {errors.locationType && <p id="locationType-error" role="alert" className="text-xs text-danger">{errors.locationType.message}</p>}
               </div>
@@ -734,7 +754,7 @@ export function MaterialPcFormDialog({
                     </SelectTrigger>
                     <SelectContent>
                       {lookups.units.map((unit) => (
-                        <SelectItem key={unit.id} value={unit.id}>{unit.nameEn ?? unit.code}</SelectItem>
+                        <SelectItem key={unit.id} value={unit.id}>{unit.nameTh || unit.nameEn || unit.code}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -746,8 +766,8 @@ export function MaterialPcFormDialog({
                 )}
               </div>
               {!isRawMaterial && <div className="flex flex-col gap-1.5">
-                <Label htmlFor="packingQuantity">จำนวนต่อแพ็ก</Label>
-                <Input id="packingQuantity" type="number" min="1" {...register("packingQuantity")} aria-invalid={!!errors.packingQuantity} aria-describedby={errors.packingQuantity ? "packingQuantity-error" : undefined} />
+                <Label htmlFor="packingQuantity">จำนวนต่อแพ็ก <span className="text-danger">*</span></Label>
+                <Input id="packingQuantity" type="number" min="1" {...register("packingQuantity")} aria-required="true" aria-invalid={!!errors.packingQuantity} aria-describedby={errors.packingQuantity ? "packingQuantity-error" : undefined} />
                 {errors.packingQuantity && <p id="packingQuantity-error" role="alert" className="text-xs text-danger">{errors.packingQuantity.message}</p>}
               </div>}
 
@@ -820,7 +840,7 @@ export function MaterialPcFormDialog({
             </div>
 
             <div className="mt-4 flex flex-col gap-1.5">
-              <Label htmlFor="addSupplierId">ซัพพลายเออร์</Label>
+              <Label htmlFor="addSupplierId">ซัพพลายเออร์ <span className="text-danger">*</span></Label>
               {lookups.suppliers.length === 0 ? (
                 <MasterDataEmptyLink href="/master-data/suppliers" resourceLabel="ซัพพลายเออร์" />
               ) : (
@@ -834,7 +854,7 @@ export function MaterialPcFormDialog({
                     }}
                     disabled={availableSuppliers.length === 0}
                   >
-                    <SelectTrigger id="addSupplierId" aria-describedby="supplier-hint">
+                    <SelectTrigger id="addSupplierId" aria-required="true" aria-invalid={supplierError ? true : undefined} aria-describedby={supplierError ? "supplier-hint supplier-error" : "supplier-hint"}>
                       <SelectValue
                         placeholder={availableSuppliers.length === 0 ? "เลือกครบทุกรายแล้ว" : "เลือกซัพพลายเออร์เพื่อเพิ่มเข้ารายการ..."}
                       />
@@ -848,6 +868,7 @@ export function MaterialPcFormDialog({
                   <p id="supplier-hint" className="text-xs text-fg-muted">
                     เลือกแล้วระบบจะเพิ่มเข้ารายการด้านล่างทันที เลือกได้หลายราย
                   </p>
+                  {supplierError && <p id="supplier-error" role="alert" className="text-xs text-danger">{supplierError}</p>}
                   <div
                     className={cn(
                       "rounded-md border p-3",
@@ -917,10 +938,10 @@ export function MaterialPcFormDialog({
                   <div className="space-y-1.5"><Label htmlFor="outputCode">รหัสหลังแปรรูป <span className="text-danger">*</span></Label><Input id="outputCode" placeholder="เช่น MAT-0231-CUT" {...register("outputCode")} aria-required="true" aria-invalid={!!errors.outputCode || outputCodeCheck.status === "duplicate"} aria-describedby={`outputCode-check${errors.outputCode ? " outputCode-error" : ""}`} /><MaterialCodeFeedback id="outputCode-check" check={errors.outputCode ? { status: "idle" } : outputCodeCheck} />{errors.outputCode && <p id="outputCode-error" role="alert" className="text-xs text-danger">{errors.outputCode.message}</p>}</div>
                   <div className="space-y-1.5"><Label htmlFor="outputName">ชื่อหลังแปรรูป <span className="text-danger">*</span></Label><Input id="outputName" placeholder="ชื่อชิ้นงานที่ตัดแล้ว" {...register("outputName")} aria-required="true" aria-invalid={!!errors.outputName} aria-describedby={errors.outputName ? "outputName-error" : undefined} />{errors.outputName && <p id="outputName-error" role="alert" className="text-xs text-danger">{errors.outputName.message}</p>}</div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="outputLocationType">Location Type <span className="text-danger">*</span></Label>
+                    <Label htmlFor="outputLocationType">ที่ตั้งวัสดุ (Location Type) <span className="text-danger">*</span></Label>
                     <Select value={watch("outputLocationType")} onValueChange={(value) => { if (value === "internal" || value === "external") setValue("outputLocationType", value, { shouldValidate: true, shouldDirty: true }); }}>
                       <SelectTrigger id="outputLocationType" aria-required="true" aria-invalid={!!errors.outputLocationType} aria-describedby={errors.outputLocationType ? "outputLocationType-error" : undefined}><SelectValue /></SelectTrigger>
-                      <SelectContent><SelectItem value="internal">Internal (ภายใน)</SelectItem><SelectItem value="external">External (ภายนอก)</SelectItem></SelectContent>
+                      <SelectContent><SelectItem value="internal">ภายใน</SelectItem><SelectItem value="external">ภายนอก</SelectItem></SelectContent>
                     </Select>
                     {errors.outputLocationType && <p id="outputLocationType-error" role="alert" className="text-xs text-danger">{errors.outputLocationType.message}</p>}
                   </div>

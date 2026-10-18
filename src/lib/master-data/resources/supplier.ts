@@ -4,6 +4,7 @@ import {
   updateSupplierAction,
   deactivateSupplierAction,
   restoreSupplierAction,
+  deleteSupplierPermanentlyAction,
 } from "@/app/(dashboard)/master-data/suppliers/actions";
 import type { MasterDataResourceConfig } from "@/lib/master-data/types";
 
@@ -37,6 +38,7 @@ export const supplierResource: MasterDataResourceConfig<Supplier> = {
     update: (id, payload) => updateSupplierAction(id, payload as unknown as UpdateSupplierPayload),
     deactivate: (id) => deactivateSupplierAction(id),
     restore: (id) => restoreSupplierAction(id),
+    permanentDelete: (id) => deleteSupplierPermanentlyAction(id),
   },
   pageTitle: "ผู้จัดจำหน่าย",
   pageDescription: "จัดการข้อมูลหลักผู้จัดจำหน่ายที่ใช้ในระบบ",

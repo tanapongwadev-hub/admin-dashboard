@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Pencil, Ban, RotateCcw, Package, Eye, Boxes } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Pencil, Ban, RotateCcw, Package, Eye, Boxes, Trash2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ProductsBulkDeleteDialog } from "@/components/products/products-bulk-delete-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
@@ -453,6 +456,15 @@ export function ProductsCollection({
   onViewDetails,
 }: ProductsCollectionProps) {
   const [previewTarget, setPreviewTarget] = useState<Product | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const router = useRouter();
+  const allSelected = products.length > 0 && selected.size === products.length;
+  const someSelected = selected.size > 0 && !allSelected;
+  function toggleAll(checked: boolean) { setSelected(checked ? new Set(products.map((p) => p.id)) : new Set()); }
+  function toggleOne(id: string, checked: boolean) {
+    setSelected((prev) => { const next = new Set(prev); if (checked) next.add(id); else next.delete(id); return next; });
+  }
 
   const commonProps = {
     stockByProductId,
@@ -467,11 +479,34 @@ export function ProductsCollection({
 
   return (
     <div className="@container">
+      {view === "table" && canDelete && selected.size > 0 && (
+        <div className="mb-2 flex items-center justify-between rounded-md border border-primary/30 bg-primary-soft px-3 py-2 text-sm text-primary">
+          <span>เลือกแล้ว {selected.size} รายการ</span>
+          <div className="flex items-center gap-1">
+            <Button type="button" variant="ghost" size="sm" onClick={() => setBulkDeleteOpen(true)} className="h-7 gap-1 px-2 text-danger hover:text-danger">
+              <Trash2 className="size-3.5" aria-hidden="true" />ลบที่เลือก
+            </Button>
+            <Button type="button" variant="ghost" size="sm" onClick={() => setSelected(new Set())} className="h-7 px-2 text-primary hover:text-primary">ล้างการเลือก</Button>
+          </div>
+        </div>
+      )}
+      {bulkDeleteOpen && (
+        <ProductsBulkDeleteDialog
+          products={products.filter((p) => selected.has(p.id))}
+          onClose={() => setBulkDeleteOpen(false)}
+          onDone={() => { setBulkDeleteOpen(false); setSelected(new Set()); router.refresh(); }}
+        />
+      )}
       {view === "table" ? (
         <div className="max-h-[68vh] overflow-auto rounded-md border border-border bg-surface">
           <Table>
             <TableHeader className="sticky top-0 z-20 bg-surface shadow-[0_1px_0_0_var(--border)]">
               <TableRow>
+                {canDelete && (
+                  <TableHead className="w-11 min-w-11">
+                    <Checkbox aria-label="เลือกสินค้าทั้งหมดในหน้านี้" checked={allSelected ? true : someSelected ? "indeterminate" : false} onCheckedChange={(checked) => toggleAll(checked === true)} />
+                  </TableHead>
+                )}
                 <TableHead>
                   <span className="sr-only">รูปภาพ</span>
                 </TableHead>
@@ -488,7 +523,12 @@ export function ProductsCollection({
             </TableHeader>
             <TableBody>
               {products.map((product) => (
-                <TableRow key={product.id}>
+                <TableRow key={product.id} data-state={selected.has(product.id) ? "selected" : undefined}>
+                  {canDelete && (
+                    <TableCell>
+                      <Checkbox aria-label={`เลือก ${product.code}`} checked={selected.has(product.id)} onCheckedChange={(checked) => toggleOne(product.id, checked === true)} />
+                    </TableCell>
+                  )}
                   <TableCell>
                     <ProductThumbnail product={product} onPreview={setPreviewTarget} />
                   </TableCell>

@@ -140,9 +140,9 @@ export function MaterialPcClient({
         <TabsList aria-label="ประเภทรายการวัสดุ" className="h-auto min-w-max gap-1 p-1">
           <TabsTrigger value="all" className="gap-2">รายการปกติ <span className="text-xs tabular-nums">{tabCounts.all.toLocaleString("th-TH")}</span></TabsTrigger>
           <TabsTrigger value="raw" className="gap-2">Pipe / Sheet / Coil <span className="text-xs tabular-nums">{tabCounts.raw.toLocaleString("th-TH")}</span></TabsTrigger>
-          <TabsTrigger value="bom" disabled={!canViewBom} title={!canViewBom ? "ต้องมีสิทธิ์ดู Material BOM" : undefined} className="gap-2">รายการที่มี BOM {canViewBom && <span className="text-xs tabular-nums">{tabCounts.bom.toLocaleString("th-TH")}</span>}</TabsTrigger>
+          <TabsTrigger value="bom" disabled={!canViewBom} title={!canViewBom ? "ต้องมีสิทธิ์ดู Material BOM" : undefined} className="gap-2">รายการวัสดุ ภายใน {canViewBom && <span className="text-xs tabular-nums">{tabCounts.bom.toLocaleString("th-TH")}</span>}</TabsTrigger>
         </TabsList>
-      {!canViewBom && <p className="mt-2 text-xs text-fg-muted">แท็บรายการที่มี BOM ต้องมีสิทธิ์ดู Material BOM</p>}
+      {!canViewBom && <p className="mt-2 text-xs text-fg-muted">แท็บรายการวัสดุ ภายใน ต้องมีสิทธิ์ดู Material BOM</p>}
     </div>
   );
 

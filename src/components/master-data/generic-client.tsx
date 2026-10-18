@@ -10,6 +10,7 @@ import { GenericMasterDataTable } from "@/components/master-data/generic-table";
 import { GenericMasterDataFormDialog } from "@/components/master-data/generic-form-dialog";
 import { GenericMasterDataStatusDialog } from "@/components/master-data/generic-status-dialog";
 import { GenericMasterDataDetailsDialog } from "@/components/master-data/generic-details-dialog";
+import { deleteMasterDataPermanentlyAction } from "@/lib/master-data/delete-permanently-action";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { getEntityFromResult } from "@/lib/master-data/utils";
 import { masterDataResources } from "@/lib/master-data/resources";
@@ -54,7 +55,7 @@ export function GenericMasterDataClient<TEntity extends BaseMasterEntity>({
   const [statusTarget, setStatusTarget] = React.useState<TEntity | null>(null);
   const [detailsTarget, setDetailsTarget] = React.useState<TEntity | null>(null);
   const [deleteTarget, setDeleteTarget] = React.useState<TEntity | null>(null);
-  const permanentDelete = resource.actions.permanentDelete;
+  const permanentDelete = resource.actions.permanentDelete ?? ((id: string) => deleteMasterDataPermanentlyAction(resource.key, id));
 
   function handleSaved() {
     router.refresh();
@@ -77,7 +78,6 @@ export function GenericMasterDataClient<TEntity extends BaseMasterEntity>({
   }
 
   async function handlePermanentDelete(entity: TEntity) {
-    if (!permanentDelete) return;
     const result = await permanentDelete(entity.id);
     if (result.status === "success") {
       toast.success(`ลบ${resource.entityLabel}ถาวรแล้ว`, { description: `${entity.code} · ${entity.nameTh}` });
@@ -109,7 +109,7 @@ export function GenericMasterDataClient<TEntity extends BaseMasterEntity>({
         onEdit={(entity) => setFormTarget(entity)}
         onToggleStatus={(entity) => setStatusTarget(entity)}
         onViewDetails={(entity) => setDetailsTarget(entity)}
-        onPermanentDelete={permanentDelete ? (entity) => setDeleteTarget(entity) : undefined}
+        onPermanentDelete={(entity) => setDeleteTarget(entity)}
       />
 
       <GenericMasterDataDetailsDialog
@@ -130,7 +130,7 @@ export function GenericMasterDataClient<TEntity extends BaseMasterEntity>({
         />
       )}
 
-      {canDelete && permanentDelete && (
+      {canDelete && (
         <ConfirmDialog
           open={!!deleteTarget}
           onOpenChange={(open) => !open && setDeleteTarget(null)}

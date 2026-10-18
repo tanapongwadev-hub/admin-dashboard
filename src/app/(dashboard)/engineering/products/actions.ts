@@ -8,6 +8,9 @@ import {
   deactivateProduct,
   restoreProduct,
   uploadProductImage,
+  checkProductDeletion,
+  deleteProductPermanently,
+  type ProductDeletionCheck,
   type Product,
   type ProductPayload,
   type StagedProductImage,
@@ -353,4 +356,24 @@ export async function uploadProductWorkflowImageAction(
   const accessToken = await requireAccessToken();
   if (!accessToken) redirectMissingSession();
   return performUploadProductWorkflowImage(accessToken, formData);
+}
+
+export async function checkProductDeletionAction(id: string): Promise<{ status: "success"; check: ProductDeletionCheck } | { status: "error"; message: string }> {
+  const token = await requireAccessToken();
+  if (!token) redirectMissingSession();
+  try { return { status: "success", check: await checkProductDeletion(token, id) }; }
+  catch (err) { return { status: "error", message: errorResult(err).message }; }
+}
+
+export async function deleteProductPermanentlyAction(id: string, confirmationCode: string): Promise<{ status: "success" } | { status: "error"; message: string }> {
+  const token = await requireAccessToken();
+  if (!token) redirectMissingSession();
+  try { await deleteProductPermanently(token, id, confirmationCode); }
+  catch (err) { return { status: "error", message: errorResult(err).message }; }
+  try {
+    revalidatePath("/engineering/products");
+    revalidatePath("/engineering/products/list");
+    revalidatePath("/engineering/bom/products");
+  } catch { /* best-effort */ }
+  return { status: "success" };
 }

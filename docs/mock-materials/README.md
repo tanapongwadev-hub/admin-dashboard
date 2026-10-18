@@ -12,7 +12,7 @@
 
 - ดูคู่ main/sub: `/materials/pc?tab=raw&search=MOCK-`
 - ดูทั้ง 6 รายการ: `/materials/pc?search=MOCK-`
-- ดูรายการที่มี BOM: `/materials/pc?tab=bom&search=MOCK-`
+- ดูรายการวัสดุ ภายใน: `/materials/pc?tab=bom&search=MOCK-`
 - ดู BOM ของ sub: `/bom-workflow/materials` แล้วเลือก Material ปลายทาง `MOCK-SUB-*`
 
 แต่ละ BOM มีส่วนประกอบเป็น main ของคู่เดียวกัน 1 รายการ ใช้หน่วยจริงในระบบ: เส้น/ชีท/คอยล์ และชิ้นสำหรับ sub; ยังคงเงื่อนไขหน้าปลายทางที่แสดงเฉพาะ Internal และไม่ใช่ PIPE/SHEET/COIL

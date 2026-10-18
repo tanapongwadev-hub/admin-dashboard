@@ -4,7 +4,7 @@
 
 - **รายการปกติ** (default, `tab=all` or absent): Materials matching the current filters **except** raw source Materials (shape PIPE/SHEET/COIL, the Material main / วัตถุดิบต้นทาง). Processed outputs (Material sub) and every other Material appear here as independent records. The default active-status filter still applies; choose all statuses to include inactive records.
 - **Pipe / Sheet / Coil** (`tab=raw`): only the raw source Materials (shape PIPE/SHEET/COIL, the Material main), as a flat record list. Their linked outputs (`processingMaterialId`, Material sub) are not shown here; they are in the normal tab. The normal and raw tabs therefore split the filtered result without overlap.
-- **รายการที่มี BOM** (`tab=bom`): Materials owning at least one Material BOM version (DRAFT, ACTIVE or INACTIVE), displayed as independent records. Being a component of someone else's BOM does not qualify. Requires `MATERIAL_BOMS_VIEW`; the trigger is disabled with an explanation without permission, and direct URLs show a permission message.
+- **รายการวัสดุ ภายใน** (`tab=bom`): Materials owning at least one Material BOM version (DRAFT, ACTIVE or INACTIVE), displayed as independent records. Being a component of someone else's BOM does not qualify. Requires `MATERIAL_BOMS_VIEW`; the trigger is disabled with an explanation without permission, and direct URLs show a permission message.
 
 Tab counts follow the current filters and are all record counts. Stock-summary cards are omitted; per-Material stock and stock-status filters remain available.
 

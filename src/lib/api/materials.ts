@@ -15,6 +15,9 @@ export interface MaterialDeletionCheck {
   material: { id: string; code: string; name: string; locationType?: MaterialLocationType };
   canDelete: boolean;
   blockers: string[];
+  ownBomCount?: number;
+  usageCount?: number;
+  canDeleteWithBom?: boolean;
 }
 
 export function checkMaterialDeletion(accessToken: string, id: string) {
@@ -23,11 +26,11 @@ export function checkMaterialDeletion(accessToken: string, id: string) {
   });
 }
 
-export function deleteMaterialPermanently(accessToken: string, id: string, confirmationCode: string) {
+export function deleteMaterialPermanently(accessToken: string, id: string, confirmationCode: string, includeBom = false) {
   return apiFetch<{ id: string; code: string; name: string }>(`/materials/${encodeURIComponent(id)}/permanent`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${accessToken}` },
-    body: JSON.stringify({ confirmationCode }),
+    body: JSON.stringify({ confirmationCode, ...(includeBom ? { includeBom: true } : {}) }),
   });
 }
 

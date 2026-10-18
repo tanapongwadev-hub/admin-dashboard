@@ -20,7 +20,7 @@ Frontend อยู่ที่ `D:\project-cps\New\admin-dashboard`; Backend อ
 | --- | --- | --- |
 | รายการปกติ | ไม่มี `tab` หรือ `tab=all` | วัสดุทั้งหมดตามตัวกรอง แสดงแยกรายการ ไม่จัด main/sub; default ยังเป็นสถานะ active |
 | Pipe / Sheet / Coil | `tab=raw` | กลุ่มที่ main เป็น PIPE/SHEET/COIL พร้อม sub ที่เชื่อมโยง |
-| รายการที่มี BOM | `tab=bom` | วัสดุที่เป็นเจ้าของ Material BOM อย่างน้อยหนึ่งเวอร์ชัน ไม่ใช่แค่ส่วนประกอบของ BOM ผู้อื่น |
+| รายการวัสดุ ภายใน | `tab=bom` | วัสดุที่เป็นเจ้าของ Material BOM อย่างน้อยหนึ่งเวอร์ชัน ไม่ใช่แค่ส่วนประกอบของ BOM ผู้อื่น |
 
 แท็บ BOM ต้องมี `MATERIAL_BOMS_VIEW`; ไม่มีสิทธิ์จะแสดงแท็บ disabled พร้อมคำอธิบาย และ URL ตรงแสดงข้อความไม่มีสิทธิ์ ทุกเวอร์ชัน DRAFT/ACTIVE/INACTIVE นับว่ามี BOM
 
@@ -64,7 +64,7 @@ Main เป็น External, sub เป็น PCS/Internal จึงเลือ�
 
 - ดูคู่: [Materials raw mock](http://localhost:3000/materials/pc?tab=raw&search=MOCK-)
 - ดูทุก Material: [Materials mock](http://localhost:3000/materials/pc?search=MOCK-)
-- ดูรายการที่มี BOM: [Materials BOM mock](http://localhost:3000/materials/pc?tab=bom&search=MOCK-)
+- ดูรายการวัสดุ ภายใน: [Materials BOM mock](http://localhost:3000/materials/pc?tab=bom&search=MOCK-)
 - รายละเอียด/คำสั่ง seed: [mock-materials/README.md](../mock-materials/README.md)
 - IDs และ image paths ที่สร้างจริง: [seed-result.json](../mock-materials/seed-result.json)
 
