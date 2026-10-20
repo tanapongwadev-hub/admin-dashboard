@@ -122,6 +122,12 @@ const SelectContent = React.forwardRef<
   const listId = React.useId();
   React.useEffect(() => {
     if (!open) return;
+    // Don't steal focus (and pop the on-screen keyboard) on touch devices —
+    // the keyboard eats most of the viewport and shifts every option's tap
+    // target out from under the user's next tap, which reads as "the select
+    // doesn't respond" even though it did open. Fine-pointer (mouse/trackpad)
+    // devices still get the convenience of typing to filter immediately.
+    if (typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches) return;
     const frame = requestAnimationFrame(() => inputRef.current?.focus({ preventScroll: true }));
     return () => cancelAnimationFrame(frame);
   }, [open]);
