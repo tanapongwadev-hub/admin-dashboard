@@ -364,7 +364,7 @@ export function MaterialsReceivingFormDialog({
                   <div>
                     <dt className="text-fg-muted">จำนวนต่อแพ็ก</dt>
                     <dd className="font-semibold tabular-nums text-fg">
-                      {formatNumber(packingQuantity)}
+                      {packingQuantity ? formatNumber(packingQuantity) : "—"}
                     </dd>
                   </div>
                   <div>

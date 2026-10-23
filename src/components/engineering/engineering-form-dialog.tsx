@@ -46,10 +46,11 @@ export function EngineeringFormDialog({ scope, kind, owner, materials, processSt
   const form = useForm<Values>({ resolver: zodResolver(schema), defaultValues: { kind, specification: base?.specification ?? '', remark: base?.remark ?? '', entries: entries?.length ? entries : [emptyEntry()] } });
   const rows = useFieldArray({ control: form.control, name: 'entries' });
   const selected = form.watch('entries');
-  // New BOM components exclude raw stock (PIPE/SHEET/COIL) and internal-location
-  // Materials; one already chosen (e.g. copied from an earlier version) stays selectable.
+  // New BOM components exclude raw stock (PIPE/SHEET/COIL). Internal-location Materials are
+  // excluded only for Material BOMs; a Product BOM may use them as in-house components.
+  // One already chosen (e.g. copied from an earlier version) stays selectable.
   const isPickableComponent = (material: Material) =>
-    !(['PIPE', 'SHEET', 'COIL'] as string[]).includes(material.materialType) && material.locationType !== 'internal';
+    !(['PIPE', 'SHEET', 'COIL'] as string[]).includes(material.materialType) && (scope === 'products' || material.locationType !== 'internal');
   const materialsForOwner = materials.filter((material) => scope !== 'materials' || material.id !== owner.id);
 
   function submit(values: Values, activate = false) {
@@ -58,9 +59,16 @@ export function EngineeringFormDialog({ scope, kind, owner, materials, processSt
     startTransition(async () => {
       try {
         const payload = kind === 'bom' ? { specification: values.specification, remark: values.remark, items } : { remark: values.remark, steps: values.entries.map((entry) => ({ processStepId: entry.processStepId, description: entry.description || null })) };
-        const result = editing && base ? await updateEngineeringAction(scope, kind, base.id, payload) : await createEngineeringAction(scope, kind, owner.id, payload);
-        if (result.status === 'error') { setError(result.message); return; }
-        const savedId = editing && base ? base.id : (result as { id: string }).id;
+        let savedId: string;
+        if (editing && base) {
+          const updated = await updateEngineeringAction(scope, kind, base.id, payload);
+          if (updated.status === 'error') { setError(updated.message); return; }
+          savedId = base.id;
+        } else {
+          const created = await createEngineeringAction(scope, kind, owner.id, payload);
+          if (created.status === 'error') { setError(created.message); return; }
+          savedId = created.id;
+        }
         if (activate) {
           const activated = await activateEngineeringAction(scope, kind, savedId);
           if (activated.status === 'error') {
@@ -80,7 +88,8 @@ export function EngineeringFormDialog({ scope, kind, owner, materials, processSt
     <DialogHeader className="shrink-0 bg-surface-2/50">
       <div className="flex items-center gap-3 pr-6"><span className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-border bg-surface text-primary"><Layers3 className="size-5" aria-hidden="true" /></span><div className="min-w-0"><DialogTitle>{editing ? 'แก้ไข' : base ? 'แก้ไข (บันทึกเป็นเวอร์ชันใหม่)' : 'เพิ่ม'} {kind === 'bom' ? 'BOM' : 'Workflow'}</DialogTitle><DialogDescription className="mt-1">{kind === 'bom' ? 'กำหนดส่วนประกอบที่ใช้ต่อปลายทาง 1 หน่วย' : 'กำหนดลำดับขั้นตอนกระบวนการ'}</DialogDescription></div></div>
     </DialogHeader>
-    <form noValidate onSubmit={form.handleSubmit(submit, () => setError('กรุณาตรวจสอบข้อมูลที่ยังไม่ครบหรือเกินกำหนดในแบบฟอร์ม'))} className="flex min-h-0 flex-1 flex-col">
+    {/* Wrapped, not passed directly: handleSubmit calls its handler as (data, event), and a truthy event would land in `activate`. */}
+    <form noValidate onSubmit={form.handleSubmit((values) => submit(values, false), () => setError('กรุณาตรวจสอบข้อมูลที่ยังไม่ครบหรือเกินกำหนดในแบบฟอร์ม'))} className="flex min-h-0 flex-1 flex-col">
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
       <fieldset disabled={pending} className="min-w-0 space-y-6 p-4 sm:p-6">
         <legend className="sr-only">ข้อมูล{kind === 'bom' ? ' BOM' : ' Workflow'}</legend>
