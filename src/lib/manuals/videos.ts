@@ -137,11 +137,11 @@ const SOURCE_CHAPTERS: VideoChapter[] = [
       card("2.3", "material-disbursement", "จ่ายออกวัสดุ", "เบิกวัสดุเพื่อผลิตหรือตัดสต็อก ระบบตัดกล่องเก่าก่อน (FIFO)", { manual: "material-disbursement" }),
       card("2.4", "job-orders-products", "ใบจัดงานสินค้า", "ใบจัดงานของแผนผลิตสินค้า: พิมพ์ สแกนหยิบ และจ่ายวัตถุดิบ", {
         manual: "material-job-orders",
-        screen: "/materials/job-orders/products",
+        screen: "/job-orders/products",
       }),
       card("2.5", "job-orders-internal-materials", "ใบจัดงานวัตถุดิบภายใน", "ใบจัดงานของแผนผลิตวัสดุภายใน ใช้ขั้นตอนเดียวกับใบจัดงานสินค้า", {
         manual: "material-job-orders",
-        screen: "/materials/job-orders/internal-materials",
+        screen: "/job-orders/internal-materials",
       }),
     ],
   },

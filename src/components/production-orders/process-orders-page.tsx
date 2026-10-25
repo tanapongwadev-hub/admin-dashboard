@@ -188,7 +188,7 @@ export async function ProcessOrdersPageContent({
                   <TableCell>
                     {plan.jobOrder && (
                       <Link
-                        href={`/materials/job-orders/${plan.jobOrder.id}`}
+                        href={`/job-orders/${plan.jobOrder.id}`}
                         className="font-mono text-sm text-primary hover:underline"
                       >
                         {plan.jobOrder.code}

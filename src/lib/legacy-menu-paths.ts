@@ -2,6 +2,7 @@
 // These are browser routes only; cps-api endpoint paths do not change.
 export const legacyMenuPaths: readonly (readonly [string, string])[] = [
   ["/products/process-orders", "/production/products/orders"],
+  ["/materials/job-orders", "/job-orders"],
   ["/materials/process-orders", "/production/internal-materials/orders"],
   ["/production/material-plans", "/production/internal-materials/plans"],
   ["/production/plans", "/production/products/plans"],

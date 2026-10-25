@@ -104,6 +104,11 @@ export function MaterialPcClient({
   // only filters the list (a persistent, bookmarkable filter), it doesn't
   // pop the create dialog.
   function handleReceive(material: Material) {
+    // Internal materials are never received manually: stock comes from production into store.
+    if (material.locationType === "internal") {
+      router.push("/production/internal-materials/plans");
+      return;
+    }
     router.push(
       `/materials/receiving?materialCode=${encodeURIComponent(material.code)}&open=create`
     );

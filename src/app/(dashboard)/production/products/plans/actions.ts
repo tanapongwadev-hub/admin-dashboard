@@ -56,8 +56,8 @@ function refreshed() {
   try {
     revalidatePath("/production/products/plans");
     revalidatePath("/production/internal-materials/plans");
-    revalidatePath("/materials/job-orders/products");
-    revalidatePath("/materials/job-orders/internal-materials");
+    revalidatePath("/job-orders/products");
+    revalidatePath("/job-orders/internal-materials");
     revalidatePath("/production/internal-materials/orders");
     revalidatePath("/production/products/orders");
   } catch {
@@ -135,7 +135,7 @@ export async function approveProductionPlanAction(id: string) {
   return transition(id, approveProductionPlan);
 }
 // Issuing now happens from the linked Material Job Order — see
-// app/(dashboard)/materials/job-orders/actions.ts#issueMaterialJobOrderAction.
+// app/(dashboard)/job-orders/actions.ts#issueMaterialJobOrderAction.
 
 export async function cancelProductionPlanAction(
   id: string,

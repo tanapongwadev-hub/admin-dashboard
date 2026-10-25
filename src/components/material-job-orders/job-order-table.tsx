@@ -79,7 +79,7 @@ export function MaterialJobOrderTable({
             <TableRow key={jobOrder.id}>
               <TableCell>
                 <Button asChild type="button" variant="link" className="h-auto p-0 font-mono text-sm">
-                  <Link href={`/materials/job-orders/${jobOrder.id}`}>
+                  <Link href={`/job-orders/${jobOrder.id}`}>
                     {jobOrder.code}
                   </Link>
                 </Button>
@@ -107,7 +107,7 @@ export function MaterialJobOrderTable({
                     size="icon"
                     aria-label={`พิมพ์ใบจัดงาน ${jobOrder.code}`}
                   >
-                    <Link href={`/materials/job-orders/${jobOrder.id}?print=1`}>
+                    <Link href={`/job-orders/${jobOrder.id}?print=1`}>
                       <Printer className="size-4" />
                     </Link>
                   </Button>

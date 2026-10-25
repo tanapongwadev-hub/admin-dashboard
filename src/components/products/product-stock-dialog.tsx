@@ -76,7 +76,7 @@ export function ProductStockDialog({ product, canManageStock, onClose, onSaved }
           {error && <div role="alert" className="rounded-md border border-danger/30 bg-danger-soft p-3 text-sm text-danger">{error}{!stock && <Button variant="secondary" size="sm" className="ml-2" onClick={() => setReload((value) => value + 1)}>โหลดใหม่</Button>}</div>}
           {!stock && !error && <p role="status" className="text-sm text-fg-muted">กำลังโหลดยอดคงเหลือ…</p>}
           {canManageStock && product.isActive && stock && (
-            <form onSubmit={form.handleSubmit(submit)} className="rounded-md border border-border bg-surface-2/40 p-4">
+            <form onSubmit={(event) => void form.handleSubmit(submit)(event)} className="rounded-md border border-border bg-surface-2/40 p-4">
               <h3 className="mb-3 text-sm font-semibold text-fg">บันทึกความเคลื่อนไหว</h3>
               <fieldset disabled={pending} className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">

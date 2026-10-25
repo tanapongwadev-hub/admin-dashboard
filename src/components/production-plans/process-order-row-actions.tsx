@@ -16,14 +16,14 @@ export function getProcessOrderRowActions(
     actions.push({
       label: "ดูใบจัดงาน",
       icon: ClipboardCheck,
-      onSelect: () => go(`/materials/job-orders/${plan.jobOrderId}`),
+      onSelect: () => go(`/job-orders/${plan.jobOrderId}`),
     });
   }
   if (plan.jobOrderId && permissions.canPrintJobOrder) {
     actions.push({
       label: "พิมพ์ใบจัดงาน",
       icon: Printer,
-      onSelect: () => go(`/materials/job-orders/${plan.jobOrderId}?print=1`),
+      onSelect: () => go(`/job-orders/${plan.jobOrderId}?print=1`),
     });
   }
   if (permissions.canViewPlan) {

@@ -318,7 +318,7 @@ export const MANUALS: Manual[] = [
     category: "inventory",
     title: "ใบจัดงาน: หยิบและจ่ายวัตถุดิบตามแผนผลิต",
     summary: "คลังหยิบกล่องที่ระบบกันไว้ให้แผนผลิต แล้วตัดสต็อกจ่ายให้ฝ่ายผลิต",
-    href: "/materials/job-orders",
+    href: "/job-orders",
     access: "ต้องมีสิทธิ์ดู หยิบ และจ่ายออกใบจัดงาน",
     steps: [
       {

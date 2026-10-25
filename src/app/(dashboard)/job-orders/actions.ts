@@ -40,14 +40,14 @@ function errorResult(err: unknown): { status: "error"; message: string } {
 
 function revalidateJobOrderPaths(id?: string) {
   try {
-    revalidatePath("/materials/job-orders");
-    if (id) revalidatePath(`/materials/job-orders/${id}`);
+    revalidatePath("/job-orders");
+    if (id) revalidatePath(`/job-orders/${id}`);
     // Approve/cancel on the Plan side embeds jobOrder.status, and issuing
     // here also flips the linked Plan to ISSUED — keep both lists fresh.
     revalidatePath("/production/products/plans");
     revalidatePath("/production/internal-materials/plans");
-    revalidatePath("/materials/job-orders/products");
-    revalidatePath("/materials/job-orders/internal-materials");
+    revalidatePath("/job-orders/products");
+    revalidatePath("/job-orders/internal-materials");
     revalidatePath("/production/internal-materials/orders");
     revalidatePath("/production/products/orders");
   } catch {

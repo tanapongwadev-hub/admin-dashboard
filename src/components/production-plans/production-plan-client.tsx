@@ -173,11 +173,11 @@ export function ProductionPlanClient({
         onCancel={setCancelTarget}
         onDelete={setDeleteTarget}
         onViewJobOrder={(plan) => {
-          if (plan.jobOrder) router.push(`/materials/job-orders/${plan.jobOrder.id}`);
+          if (plan.jobOrder) router.push(`/job-orders/${plan.jobOrder.id}`);
         }}
         onPrintJobOrder={(plan) => {
           if (plan.jobOrder)
-            router.push(`/materials/job-orders/${plan.jobOrder.id}?print=1`);
+            router.push(`/job-orders/${plan.jobOrder.id}?print=1`);
         }}
       />
       {plans.length > 0 && (

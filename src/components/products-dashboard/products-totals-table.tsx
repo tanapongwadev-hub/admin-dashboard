@@ -25,6 +25,19 @@ function status(row: Row) {
 // products without movement are client-side over the loaded list (<= 500 rows).
 const PAGE_SIZES = [10, 20, 50];
 
+function SortHead({ k, children, right = true, sort, onToggle }: { k: SortKey; children: React.ReactNode; right?: boolean; sort: { key: SortKey; dir: "asc" | "desc" }; onToggle: (k: SortKey) => void }) {
+  const active = sort.key === k;
+  const Icon = !active ? ArrowUpDown : sort.dir === "asc" ? ArrowUp : ArrowDown;
+  return (
+    <TableHead className={right ? "text-right" : undefined} aria-sort={active ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}>
+      <button type="button" onClick={() => onToggle(k)} className={cn("inline-flex items-center gap-1 font-semibold hover:text-fg", active ? "text-primary" : "")}>
+        {children}
+        <Icon className="size-3" aria-hidden="true" />
+      </button>
+    </TableHead>
+  );
+}
+
 export function ProductsTotalsTable({
   rows: source,
   from,
@@ -78,18 +91,6 @@ export function ProductsTotalsTable({
     URL.revokeObjectURL(a.href);
   }
 
-  const SortHead = ({ k, children, right = true }: { k: SortKey; children: React.ReactNode; right?: boolean }) => {
-    const active = sort.key === k;
-    const Icon = !active ? ArrowUpDown : sort.dir === "asc" ? ArrowUp : ArrowDown;
-    return (
-      <TableHead className={right ? "text-right" : undefined} aria-sort={active ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}>
-        <button type="button" onClick={() => toggle(k)} className={cn("inline-flex items-center gap-1 font-semibold hover:text-fg", active ? "text-primary" : "")}>
-          {children}
-          <Icon className="size-3" aria-hidden="true" />
-        </button>
-      </TableHead>
-    );
-  };
 
   return (
     <Panel
@@ -131,13 +132,13 @@ export function ProductsTotalsTable({
           <Table>
             <TableHeader>
               <TableRow>
-                <SortHead k="code" right={false}>สินค้า</SortHead>
-                <SortHead k="receivedDocs">รับเข้า (รายการ)</SortHead>
-                <SortHead k="receivedQty">รับเข้า (ปริมาณ)</SortHead>
-                <SortHead k="issuedDocs">จ่ายออก (รายการ)</SortHead>
-                <SortHead k="issuedQty">จ่ายออก (ปริมาณ)</SortHead>
-                <SortHead k="net">สุทธิ</SortHead>
-                <SortHead k="balance">คงเหลือ</SortHead>
+                <SortHead k="code" sort={sort} onToggle={toggle} right={false}>สินค้า</SortHead>
+                <SortHead k="receivedDocs" sort={sort} onToggle={toggle}>รับเข้า (รายการ)</SortHead>
+                <SortHead k="receivedQty" sort={sort} onToggle={toggle}>รับเข้า (ปริมาณ)</SortHead>
+                <SortHead k="issuedDocs" sort={sort} onToggle={toggle}>จ่ายออก (รายการ)</SortHead>
+                <SortHead k="issuedQty" sort={sort} onToggle={toggle}>จ่ายออก (ปริมาณ)</SortHead>
+                <SortHead k="net" sort={sort} onToggle={toggle}>สุทธิ</SortHead>
+                <SortHead k="balance" sort={sort} onToggle={toggle}>คงเหลือ</SortHead>
                 <TableHead>สถานะ</TableHead>
                 <TableHead className="w-10"><span className="sr-only">รายละเอียด</span></TableHead>
               </TableRow>

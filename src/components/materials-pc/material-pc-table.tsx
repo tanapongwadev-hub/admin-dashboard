@@ -12,6 +12,7 @@ import {
   ImageOff,
   Eye,
   PackagePlus,
+  ClipboardList,
   ArrowUpDown,
   ArrowDownToLine,
   ArrowUpFromLine,
@@ -264,6 +265,15 @@ export function getMaterialRowActions(
     actions.push({
       label: "รับเข้า",
       icon: PackagePlus,
+      onSelect: () => handlers.onReceive!(material),
+      variant: "default",
+    });
+  }
+  // Internal materials are produced, not received: offer the production-plan shortcut instead.
+  if (handlers.onReceive && handlers.isReceivable?.(material) === false && material.locationType === "internal") {
+    actions.push({
+      label: "สร้างแผนผลิต",
+      icon: ClipboardList,
       onSelect: () => handlers.onReceive!(material),
       variant: "default",
     });

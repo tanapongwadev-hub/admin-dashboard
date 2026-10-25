@@ -130,7 +130,7 @@ export function ProductionPlanDetailsDialog({
                       </Badge>
                     </div>
                     <Button asChild type="button" variant="outline" size="sm">
-                      <Link href={`/materials/job-orders/${plan.jobOrder.id}`}>
+                      <Link href={`/job-orders/${plan.jobOrder.id}`}>
                         ดูใบจัดงาน
                       </Link>
                     </Button>

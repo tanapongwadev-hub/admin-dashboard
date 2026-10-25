@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { toast } from "sonner";
-import { issueMaterialJobOrderAction } from "@/app/(dashboard)/materials/job-orders/actions";
+import { issueMaterialJobOrderAction } from "@/app/(dashboard)/job-orders/actions";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

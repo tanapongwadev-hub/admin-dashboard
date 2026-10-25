@@ -54,13 +54,13 @@ export function MaterialsMovementChart({
   showReceived: boolean;
   showDisbursed: boolean;
 }) {
-  let running = 0;
-  const data = days.map((d) => {
+  const data = days.reduce<Array<{ date: string; received: number; disbursed: number; net: number; daily: number }>>((acc, d) => {
     const received = metric === "qty" ? d.receivedQty : d.receivedDocs;
     const disbursed = metric === "qty" ? d.disbursedQty : d.disbursedDocs;
-    running += (showReceived ? received : 0) - (showDisbursed ? disbursed : 0);
-    return { date: d.date, received, disbursed, net: running, daily: received - disbursed };
-  });
+    const running = (acc.length ? acc[acc.length - 1].net : 0) + (showReceived ? received : 0) - (showDisbursed ? disbursed : 0);
+    acc.push({ date: d.date, received, disbursed, net: running, daily: received - disbursed });
+    return acc;
+  }, []);
   const interval = data.length > 31 ? Math.ceil(data.length / 15) - 1 : data.length > 12 ? 1 : 0;
   const both = showReceived && showDisbursed;
 

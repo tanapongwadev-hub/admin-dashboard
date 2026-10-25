@@ -15,7 +15,7 @@ import {
   issueMaterialJobOrderAction,
   pickMaterialJobOrderAction,
   printMaterialJobOrderAction,
-} from "@/app/(dashboard)/materials/job-orders/actions";
+} from "@/app/(dashboard)/job-orders/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -77,7 +77,7 @@ export function MaterialJobOrderDetailView({
     printedOnceRef.current = true;
     void handlePrint();
     // Strip ?print=1 so a later router.refresh() doesn't re-trigger it.
-    router.replace(`/materials/job-orders/${jobOrder.id}`);
+    router.replace(`/job-orders/${jobOrder.id}`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoPrint]);
 

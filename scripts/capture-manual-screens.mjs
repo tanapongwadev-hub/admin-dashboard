@@ -91,8 +91,8 @@ const PLAN = {
     },
   ],
   "material-job-orders": [
-    { go: "/materials/job-orders", marks: ["#job-order-search", "#jo-approved-from", { role: "link", name: /^JO-/, nth: 0 }, { role: "link", name: /^พิมพ์ใบจัดงาน/, nth: 0 }] },
-    { go: "/materials/job-orders", do: [{ open: /\/materials\/job-orders\/\d+/ }], marks: [{ text: /^JO-/, nth: 0 }, btn(/พิมพ์/, { nth: 0 })] },
+    { go: "/job-orders", marks: ["#job-order-search", "#jo-approved-from", { role: "link", name: /^JO-/, nth: 0 }, { role: "link", name: /^พิมพ์ใบจัดงาน/, nth: 0 }] },
+    { go: "/job-orders", do: [{ open: /\/materials\/job-orders\/\d+/ }], marks: [{ text: /^JO-/, nth: 0 }, btn(/พิมพ์/, { nth: 0 })] },
     { scroll: { css: "table", nth: 0 }, marks: [{ css: "table", nth: 0 }] },
   ],
   "material-processing": [

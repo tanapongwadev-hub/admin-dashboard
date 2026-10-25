@@ -74,7 +74,7 @@ export function MaterialPcDraftsDialog({ onClose, onResume }: {
             <FileText className="size-5 shrink-0 text-primary" aria-hidden="true" />
             <div className="min-w-0 flex-1"><p className="break-all font-mono text-xs font-semibold text-primary">{row.code || "ยังไม่ระบุรหัส"}</p><p className="mt-1 break-words text-sm font-medium text-fg">{row.name || "ยังไม่ระบุชื่อ"}</p><div className="mt-2 flex flex-wrap items-center gap-2"><Badge variant="neutral">{row.materialId ? "ร่างแก้ไข" : "ร่างเพิ่มใหม่"}</Badge>{row.materialType && <Badge variant="primary">{row.materialType}</Badge>}<span className="text-xs text-fg-muted">ขั้น {row.step + 1} · {new Date(row.updatedAt).toLocaleString("th-TH")}</span></div></div>
             <Button variant="outline" size="sm" disabled={!!busyId} onClick={() => void resume(row.id)}>{busyId === row.id ? "กำลังดำเนินการ…" : "ทำต่อ"}</Button>
-            <RowActionsMenu itemLabel={row.code || `ร่าง ${row.id}`} actions={getDraftRowActions(row, (id) => void resume(id), setDeleteTarget, !!busyId)} />
+            <DraftRowMenu row={row} onResume={(id) => void resume(id)} onDelete={setDeleteTarget} disabled={!!busyId} />
           </div>)}
         </div>
         <DialogFooter><Button type="button" variant="outline" disabled={!!busyId} onClick={onClose}>ปิด</Button></DialogFooter>
@@ -82,4 +82,10 @@ export function MaterialPcDraftsDialog({ onClose, onResume }: {
     </Dialog>
     <ConfirmDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }} title="ลบร่างนี้?" description="ข้อมูลและรูปภาพในร่างจะถูกลบ โดยไม่กระทบ Material หรือสต็อกที่มีอยู่" confirmLabel="ลบร่าง" onConfirm={() => { if (deleteTarget) void remove(deleteTarget); }} />
   </>;
+}
+
+// Built in its own component so the actions are derived from props (the compiler cannot see
+// that the parent's handlers read a ref, which it rejects when passed to a render-time call).
+function DraftRowMenu({ row, onResume, onDelete, disabled }: { row: MaterialDraftSummary; onResume: (id: string) => void; onDelete: (row: MaterialDraftSummary) => void; disabled: boolean }) {
+  return <RowActionsMenu itemLabel={row.code || `ร่าง ${row.id}`} actions={getDraftRowActions(row, onResume, onDelete, disabled)} />;
 }
