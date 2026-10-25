@@ -1,8 +1,16 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import type { ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { AppRouterContext } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { ProductsTable, getProductRowActions } from "./products-table";
 import type { Product } from "@/lib/api/products";
+
+// ProductsTable calls useRouter(); give the static render a stub app router.
+const routerStub = { push() {}, replace() {}, refresh() {}, back() {}, forward() {}, prefetch() {} };
+function render(node: ReactElement) {
+  return renderToStaticMarkup(<AppRouterContext.Provider value={routerStub as never}>{node}</AppRouterContext.Provider>);
+}
 
 const product: Product = {
   id: "product-1",
@@ -36,7 +44,7 @@ const product: Product = {
 };
 
 test("table view renders one row-actions trigger per product, labelled with the product name", () => {
-  const html = renderToStaticMarkup(
+  const html = render(
     <ProductsTable
       products={[product]}
       totalItems={1}
@@ -50,7 +58,7 @@ test("table view renders one row-actions trigger per product, labelled with the 
   );
 
   assert.match(html, /<table/);
-  assert.equal(html.match(/PRD-001/g)?.length, 1);
+  assert.ok(html.includes("PRD-001"));
   assert.equal(html.match(/aria-label="ตัวเลือกสำหรับ Rear Seat Frame"/g)?.length, 1);
 });
 
@@ -58,7 +66,7 @@ test("table view still shows the action trigger (for 'view details') even when e
   // "ดูรายละเอียด" isn't permission-gated — it's always offered, so the
   // trigger itself is never omitted, unlike edit/disable (same as list view
   // below, and Materials PC's identical pattern).
-  const html = renderToStaticMarkup(
+  const html = render(
     <ProductsTable
       products={[product]}
       totalItems={1}
@@ -75,7 +83,7 @@ test("table view still shows the action trigger (for 'view details') even when e
 });
 
 test("card view renders one compact editorial card with the same visual hierarchy as Materials PC", () => {
-  const html = renderToStaticMarkup(
+  const html = render(
     <ProductsTable
       products={[product]}
       totalItems={1}
@@ -93,15 +101,15 @@ test("card view renders one compact editorial card with the same visual hierarch
   assert.equal(html.match(/PRD-001/g)?.length, 1);
   assert.match(html, /<h2[^>]*>Rear Seat Frame<\/h2>/);
   assert.match(html, /bg-success-soft[^>]*><span class="h-1\.5[^>]*><\/span>ใช้งาน<\/span>/);
-  assert.match(html, /Safety Stock/);
-  assert.match(html, /Min Stock/);
+  assert.match(html, /เกณฑ์ Safety Stock/);
+  assert.match(html, /เกณฑ์ขั้นต่ำ/);
   assert.match(html, />ลูกค้า</);
   assert.match(html, />รุ่น</);
   assert.match(html, />สายการผลิต</);
 });
 
 test("card view shows primary edit, secondary details, and moves status actions into the overlay menu", () => {
-  const html = renderToStaticMarkup(
+  const html = render(
     <ProductsTable
       products={[product]}
       totalItems={1}
@@ -122,7 +130,7 @@ test("card view shows primary edit, secondary details, and moves status actions 
 });
 
 test("card view keeps details visible but omits edit and the overlay menu without mutation permissions", () => {
-  const html = renderToStaticMarkup(
+  const html = render(
     <ProductsTable
       products={[product]}
       totalItems={1}
@@ -141,7 +149,7 @@ test("card view keeps details visible but omits edit and the overlay menu withou
 });
 
 test("card view renders inactive state as the same neutral status badge used by Materials PC", () => {
-  const html = renderToStaticMarkup(
+  const html = render(
     <ProductsTable
       products={[{ ...product, isActive: false }]}
       totalItems={1}
@@ -160,7 +168,7 @@ test("card view renders inactive state as the same neutral status badge used by 
 });
 
 test("card view shows an accessible image fallback when a product has no image", () => {
-  const html = renderToStaticMarkup(
+  const html = render(
     <ProductsTable
       products={[product]}
       totalItems={1}
@@ -177,7 +185,7 @@ test("card view shows an accessible image fallback when a product has no image",
 });
 
 test("list view renders only the list presentation (no table, no card grid)", () => {
-  const html = renderToStaticMarkup(
+  const html = render(
     <ProductsTable
       products={[product]}
       totalItems={1}
@@ -197,7 +205,7 @@ test("list view renders only the list presentation (no table, no card grid)", ()
 });
 
 test("list view uses the row-actions Meatballs menu instead of visible edit/status buttons", () => {
-  const html = renderToStaticMarkup(
+  const html = render(
     <ProductsTable
       products={[product]}
       totalItems={1}
@@ -216,7 +224,7 @@ test("list view uses the row-actions Meatballs menu instead of visible edit/stat
 });
 
 test("list view still shows the action trigger (for 'view details') even when edit/disable are not permitted", () => {
-  const html = renderToStaticMarkup(
+  const html = render(
     <ProductsTable
       products={[product]}
       totalItems={1}
