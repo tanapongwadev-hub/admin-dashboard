@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FieldError } from "@/components/ui/field-error";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { ProcessingSource } from "@/lib/api/material-processing";
@@ -91,7 +92,7 @@ export function MaterialProcessingFormDialog({ source, lookups, onClose, onSaved
         <p id={`mp-${name}-hint`} className={`text-xs ${name === "sourceQuantity" && sourceExceedsAvailable ? "text-danger" : "text-fg-muted"}`}>
           {name === "sourceQuantity" && sourceExceedsAvailable ? "จำนวนเกินวัตถุดิบพร้อมแปรรูป" : hint}
         </p>
-        {error && <p id={`mp-${name}-error`} role="alert" className="text-xs text-danger">{error.message}</p>}
+        {error && <FieldError id={`mp-${name}-error`} message={error.message} />}
       </div>
     );
   }
@@ -174,14 +175,14 @@ export function MaterialProcessingFormDialog({ source, lookups, onClose, onSaved
                       </Select>
                     )} />
                     <p id="mp-target-hint" className="text-xs text-fg-muted">เลือก Material แยกจากวัตถุดิบต้นทาง</p>
-                    {form.formState.errors.targetMaterialId && <p id="mp-target-error" role="alert" className="text-xs text-danger">{form.formState.errors.targetMaterialId.message}</p>}
+                    {form.formState.errors.targetMaterialId && <FieldError id="mp-target-error" message={form.formState.errors.targetMaterialId.message} />}
                     {destinations.length === 0 && <p className="text-xs text-danger">กรุณาสร้าง Material ปลายทางแยกในหน้าวัสดุก่อน</p>}
                   </div>
                   {numericField("packingQuantity", "จำนวนชิ้นต่อกล่อง", "ชิ้น / กล่อง", "กล่องสุดท้ายรับเข้าเท่าจำนวนชิ้นที่เหลือ")}
                   <div className="space-y-2">
                     <Label htmlFor="mp-remark">หมายเหตุ <span className="font-normal text-fg-muted">(ถ้ามี)</span></Label>
                     <Input id="mp-remark" className="h-11 text-base sm:text-sm" placeholder="เช่น รายละเอียดการตัดหรือรอบแปรรูป" {...form.register("remark")} maxLength={1000} aria-invalid={!!form.formState.errors.remark} aria-describedby={form.formState.errors.remark ? "mp-remark-error" : undefined} />
-                    {form.formState.errors.remark && <p id="mp-remark-error" role="alert" className="text-xs text-danger">{form.formState.errors.remark.message}</p>}
+                    {form.formState.errors.remark && <FieldError id="mp-remark-error" message={form.formState.errors.remark.message} />}
                   </div>
                 </section>
               </fieldset>

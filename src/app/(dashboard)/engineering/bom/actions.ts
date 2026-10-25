@@ -23,7 +23,7 @@ function failure(error: unknown) {
 }
 function refresh(scope: EngineeringScope) {
   try {
-    revalidatePath(`/engineering/bom/${scope}`); revalidatePath('/engineering/products'); revalidatePath('/engineering/products/list');
+    revalidatePath("/engineering/setup"); revalidatePath('/engineering/products'); revalidatePath('/engineering/products/list');
     revalidatePath('/materials/catalog');
   } catch { /* Mutation already committed. */ }
 }

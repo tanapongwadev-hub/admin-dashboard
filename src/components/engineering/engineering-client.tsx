@@ -20,7 +20,7 @@ import type { ProcessStep } from '@/lib/api/process-steps';
 import { CONNECTION_ERROR_MESSAGE } from '@/lib/user-error';
 import { EngineeringFormDialog } from './engineering-form-dialog';
 
-const quantityFormatter = new Intl.NumberFormat('en-US', { maximumFractionDigits: 4 });
+const quantityFormatter = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
 
 export type EngineeringOwner = { id: string; code: string; name: string; isActive: boolean };
 export type EngineeringPermissions = Record<EngineeringKind, { view: boolean; create: boolean; activate: boolean }>;

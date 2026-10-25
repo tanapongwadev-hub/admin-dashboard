@@ -3,20 +3,42 @@ import { cookies } from "next/headers";
 import { ShieldAlert } from "lucide-react";
 import { getCurrentSession } from "@/lib/session";
 import { getMaterialLookups, listMaterials } from "@/lib/api/materials";
-import { getProductLookups } from "@/lib/api/products";
+import { getProductLookups, listProducts } from "@/lib/api/products";
 import { listProcessSteps } from "@/lib/api/process-steps";
 import { getSetupDraft, getSetupOverview, listSetupDrafts } from "@/lib/api/setup-wizard";
 import { getBomOverview } from "@/lib/api/bom-overview";
 import { BomOverviewClient } from "@/components/bom-overview/bom-overview-client";
 import { loadProductMaterialCatalog } from "@/lib/product-materials";
 import { SetupWizardClient } from "@/components/setup-wizard/setup-wizard-client";
+import { GitBranch } from "lucide-react";
 
-export const metadata: Metadata = { title: "สร้างครบชุด" };
+export const metadata: Metadata = { title: "BOM และขั้นตอนการผลิต" };
+
+// Work page: สร้างครบชุด (วัสดุ → สินค้า → BOM → Workflow) for SUPER_ADMIN, read-only BOM / Workflow list
+// for everyone else.
+function PageShell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-6">
+      <header className="flex items-start gap-4 rounded-xl border border-border bg-surface p-5 sm:p-6">
+        <span className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-primary/15 bg-primary-soft text-primary">
+          <GitBranch className="size-6" aria-hidden="true" />
+        </span>
+        <div className="min-w-0">
+          <h1 className="text-2xl font-semibold tracking-tight text-fg">BOM และขั้นตอนการผลิต</h1>
+          <p className="mt-1 text-sm leading-relaxed text-fg-muted">
+            ดูว่ารายการไหนยังไม่ครบ แล้วกด “ทำให้ครบ” หรือสร้างใหม่ได้จากหน้านี้
+          </p>
+        </div>
+      </header>
+      {children}
+    </div>
+  );
+}
 
 export default async function SetupWizardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ draft?: string }>;
+  searchParams: Promise<{ draft?: string; view?: string; scope?: string }>;
 }) {
   const session = await getCurrentSession();
   const can = (code: string) => !!session && (session.user.isSuperAdmin || session.permissions.includes(code));
@@ -30,6 +52,8 @@ export default async function SetupWizardPage({
     );
   }
 
+  const params = await searchParams;
+
   const accessToken = (await cookies()).get("accessToken")!.value;
 
   // Everyone with SETUP_WIZARD_VIEW can browse every BOM / Workflow, read-only.
@@ -37,24 +61,23 @@ export default async function SetupWizardPage({
   if (!session.user.isSuperAdmin) {
     const list = await getBomOverview(accessToken).catch(() => ({ products: [], materials: [] }));
     return (
-      <div className="flex flex-col gap-5">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-fg">สร้างครบชุด</h1>
-          <p className="mt-1 text-sm text-fg-muted">
-            ดู BOM และ Workflow ของสินค้าและวัสดุทั้งหมด (ดูอย่างเดียว — การสร้าง แก้ไข และลบทำได้เฉพาะผู้ดูแลระบบสูงสุด)
-          </p>
-        </div>
+      <PageShell>
+        <p className="rounded-lg border border-border bg-surface-2 px-4 py-2.5 text-sm text-fg-secondary">
+          ดูอย่างเดียว — การสร้างครบชุด แก้ไข และลบทำได้เฉพาะผู้ดูแลระบบสูงสุด
+        </p>
         <BomOverviewClient overview={list} />
-      </div>
+      </PageShell>
     );
   }
 
-  const params = await searchParams;
   const canProcessSteps = can("PROCESS_STEP_VIEW") || can("PRODUCT_WORKFLOWS_CREATE") || can("MATERIAL_WORKFLOWS_CREATE");
 
-  const [materialLookups, productLookups, catalog, steps, drafts, draft, overview, details] = await Promise.all([
+  const [materialLookups, productLookups, products, catalog, steps, drafts, draft, overview, details] = await Promise.all([
     getMaterialLookups(accessToken),
     getProductLookups(accessToken),
+    listProducts(accessToken, { isActive: true, sortBy: "code", sortOrder: "asc" })
+      .then((r) => r.items.map((p) => ({ id: p.id, code: p.code, name: p.name })))
+      .catch(() => []),
     loadProductMaterialCatalog((page) =>
       listMaterials(accessToken, { page, limit: 100, sortBy: "name", sortOrder: "asc" })
     ),
@@ -70,18 +93,13 @@ export default async function SetupWizardPage({
   ]);
 
   return (
-    <div className="flex flex-col gap-5">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-fg">สร้างครบชุด</h1>
-        <p className="mt-1 text-sm text-fg-muted">
-          สร้างวัสดุ สินค้า BOM และ Workflow ในที่เดียว บันทึกร่างไว้แล้วกลับมาทำต่อได้
-        </p>
-      </div>
+    <PageShell>
       <SetupWizardClient
         // Fresh state per opened draft (parent-owned remount, not a reset effect).
         key={draft?.id ?? "new"}
         materialLookups={materialLookups}
         productLookups={productLookups}
+        products={products}
         materials={catalog.activeMaterials}
         processSteps={steps.items}
         drafts={drafts}
@@ -103,6 +121,6 @@ export default async function SetupWizardPage({
           activateWorkflow: can("PRODUCT_WORKFLOWS_UPDATE"),
         }}
       />
-    </div>
+    </PageShell>
   );
 }

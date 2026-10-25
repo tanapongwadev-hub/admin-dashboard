@@ -14,13 +14,13 @@ export function formatCurrency(value: number, currency = "USD") {
 }
 
 export function formatNumber(value: number) {
-  return new Intl.NumberFormat("en-US").format(value);
+  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(value);
 }
 
 export function formatCompact(value: number) {
   return new Intl.NumberFormat("en-US", {
     notation: "compact",
-    maximumFractionDigits: 1,
+    maximumFractionDigits: 0,
   }).format(value);
 }
 
@@ -29,7 +29,7 @@ export function formatCompact(value: number) {
 // + "kg" colliding into unreadable labels like "18.4Kkg".
 export function formatWeight(kg: number) {
   if (kg >= 1000) {
-    return `${new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 }).format(kg / 1000)}t`;
+    return `${new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(kg / 1000)}t`;
   }
   return `${formatNumber(kg)} kg`;
 }

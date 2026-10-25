@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { toast } from "sonner";
-import { Plus, Scissors } from "lucide-react";
+import { ClipboardList, Plus, Scissors } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ViewToggle } from "@/components/ui/view-toggle";
 import { useViewMode } from "@/hooks/use-view-mode";
@@ -132,6 +132,11 @@ export function MaterialsReceivingClient({
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-end gap-2">
         <ViewToggle value={view} onChange={setView} modes={["table", "card", "list"]} />
+        <Button asChild variant="outline" className="shrink-0">
+          <Link href="/production/internal-materials/plans">
+            <ClipboardList className="h-4 w-4" aria-hidden="true" /> สร้างแผนผลิตวัสดุภายใน
+          </Link>
+        </Button>
         {canViewProcessing && (
           <Button asChild variant="outline" className="shrink-0">
             <Link href="/material-processing">

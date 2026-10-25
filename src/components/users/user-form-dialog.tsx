@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FieldError } from "@/components/ui/field-error";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import type { DepartmentOption, UserDetail, UserRow } from "@/lib/api/users";
 import type { RoleSummary } from "@/lib/api/permission-access";
@@ -66,14 +67,6 @@ const EMPTY: CreateValues = {
   roleId: "",
 };
 
-function FieldError({ id, message }: { id: string; message?: string }) {
-  if (!message) return null;
-  return (
-    <p id={id} role="alert" className="text-xs text-danger">
-      {message}
-    </p>
-  );
-}
 
 /**
  * Create (user + first department/role) or edit (name/contact only). The

@@ -18,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FieldError } from "@/components/ui/field-error";
 import { Textarea } from "@/components/ui/textarea";
 import { MasterDataEmptyLink } from "@/components/ui/master-data-empty-link";
 import {
@@ -672,7 +673,7 @@ export function MaterialPcFormDialog({
                 <SelectContent>{shapes.map((shape) => <SelectItem key={shape} value={shape}>{SHAPE_LABELS[shape] ?? shape}</SelectItem>)}</SelectContent>
               </Select>
               <p id="materialType-hint" aria-live="polite" className="text-xs text-fg-secondary">{hasMaterialType ? isRawMaterial ? "กรอก Material 2 ชุด: วัตถุดิบก่อนแปรรูป และชิ้นงานหลังแปรรูป" : "กรอก Material 1 ชุด สำหรับวัสดุชนิด PCS" : "PCS ใช้ข้อมูล 1 ชุด · PIPE / SHEET / COIL ใช้ข้อมูล 2 ชุด"}</p>
-              {errors.materialType && <p id="materialType-error" className="text-xs text-danger" role="alert">{errors.materialType.message}</p>}
+              {errors.materialType && <FieldError id="materialType-error" message={errors.materialType.message} />}
             </div>
             {!hasMaterialType && <div className="py-10 text-center"><p className="text-sm font-medium text-fg">เริ่มจากเลือกชนิดเหล็ก</p><p className="mt-2 text-xs text-fg-muted">จากนั้นจึงกรอกรหัส ชื่อ และรายละเอียดวัสดุ</p></div>}
             </div>
@@ -692,9 +693,7 @@ export function MaterialPcFormDialog({
                 />
                 <MaterialCodeFeedback id="code-check" check={errors.code ? { status: "idle" } : sourceCodeCheck} />
                 {errors.code && (
-                  <p id="code-error" className="text-xs text-danger" role="alert">
-                    {errors.code.message}
-                  </p>
+                  <FieldError id="code-error" message={errors.code.message} />
                 )}
               </div>
               <div className="flex flex-col gap-1.5">
@@ -707,9 +706,7 @@ export function MaterialPcFormDialog({
                   {...register("name")}
                 />
                 {errors.name && (
-                  <p id="name-error" className="text-xs text-danger" role="alert">
-                    {errors.name.message}
-                  </p>
+                  <FieldError id="name-error" message={errors.name.message} />
                 )}
               </div>
 
@@ -727,7 +724,7 @@ export function MaterialPcFormDialog({
                     </SelectContent>
                   </Select>
                 )}
-                {errors.materialTypeId && <p id="materialTypeId-error" role="alert" className="text-xs text-danger">{errors.materialTypeId.message}</p>}
+                {errors.materialTypeId && <FieldError id="materialTypeId-error" message={errors.materialTypeId.message} />}
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="locationType">ที่ตั้งวัสดุ (Location Type) <span className="text-danger">*</span></Label>
@@ -735,7 +732,7 @@ export function MaterialPcFormDialog({
                   <SelectTrigger id="locationType" aria-required="true" aria-invalid={!!errors.locationType} aria-describedby={errors.locationType ? "locationType-error" : undefined}><SelectValue /></SelectTrigger>
                   <SelectContent><SelectItem value="internal">ภายใน</SelectItem><SelectItem value="external">ภายนอก</SelectItem></SelectContent>
                 </Select>
-                {errors.locationType && <p id="locationType-error" role="alert" className="text-xs text-danger">{errors.locationType.message}</p>}
+                {errors.locationType && <FieldError id="locationType-error" message={errors.locationType.message} />}
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="unitId">หน่วย</Label>
@@ -754,22 +751,20 @@ export function MaterialPcFormDialog({
                   </Select>
                 )}
                 {errors.unitId && (
-                  <p id="unitId-error" className="text-xs text-danger" role="alert">
-                    {errors.unitId.message}
-                  </p>
+                  <FieldError id="unitId-error" message={errors.unitId.message} />
                 )}
               </div>
               {!isRawMaterial && <div className="flex flex-col gap-1.5">
                 <Label htmlFor="packingQuantity">จำนวนต่อแพ็ก <span className="text-danger">*</span></Label>
                 <Input id="packingQuantity" type="number" min="1" {...register("packingQuantity")} aria-required="true" aria-invalid={!!errors.packingQuantity} aria-describedby={errors.packingQuantity ? "packingQuantity-error" : undefined} />
-                {errors.packingQuantity && <p id="packingQuantity-error" role="alert" className="text-xs text-danger">{errors.packingQuantity.message}</p>}
+                {errors.packingQuantity && <FieldError id="packingQuantity-error" message={errors.packingQuantity.message} />}
               </div>}
 
               {!isRawMaterial && <>
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="minimumStock">สต็อกขั้นต่ำ</Label>
                   <Input id="minimumStock" type="number" min="0" step="0.0001" aria-invalid={errors.minimumStock ? true : undefined} {...register("minimumStock")} />
-                  {errors.minimumStock && <p className="text-xs text-danger" role="alert">{errors.minimumStock.message}</p>}
+                  {errors.minimumStock && <FieldError message={errors.minimumStock.message} />}
                 </div>
 
                 <div className="flex flex-col gap-1.5">
@@ -862,7 +857,7 @@ export function MaterialPcFormDialog({
                   <p id="supplier-hint" className="text-xs text-fg-muted">
                     เลือกแล้วระบบจะเพิ่มเข้ารายการด้านล่างทันที เลือกได้หลายราย
                   </p>
-                  {supplierError && <p id="supplier-error" role="alert" className="text-xs text-danger">{supplierError}</p>}
+                  {supplierError && <FieldError id="supplier-error" message={supplierError} />}
                   <div
                     className={cn(
                       "rounded-md border p-3",
@@ -929,30 +924,30 @@ export function MaterialPcFormDialog({
                 </div>
                 {material?.processingMaterial && !material.processingMaterial.isActive && <p role="alert" className="text-xs text-danger">วัสดุปลายทางถูกปิดใช้งาน กรุณาเปิดใช้งานก่อนบันทึก</p>}
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-1.5"><Label htmlFor="outputCode">รหัสหลังแปรรูป <span className="text-danger">*</span></Label><Input id="outputCode" placeholder="เช่น MAT-0231-CUT" {...register("outputCode")} aria-required="true" aria-invalid={!!errors.outputCode || outputCodeCheck.status === "duplicate"} aria-describedby={`outputCode-check${errors.outputCode ? " outputCode-error" : ""}`} /><MaterialCodeFeedback id="outputCode-check" check={errors.outputCode ? { status: "idle" } : outputCodeCheck} />{errors.outputCode && <p id="outputCode-error" role="alert" className="text-xs text-danger">{errors.outputCode.message}</p>}</div>
-                  <div className="space-y-1.5"><Label htmlFor="outputName">ชื่อหลังแปรรูป <span className="text-danger">*</span></Label><Input id="outputName" placeholder="ชื่อชิ้นงานที่ตัดแล้ว" {...register("outputName")} aria-required="true" aria-invalid={!!errors.outputName} aria-describedby={errors.outputName ? "outputName-error" : undefined} />{errors.outputName && <p id="outputName-error" role="alert" className="text-xs text-danger">{errors.outputName.message}</p>}</div>
+                  <div className="space-y-1.5"><Label htmlFor="outputCode">รหัสหลังแปรรูป <span className="text-danger">*</span></Label><Input id="outputCode" placeholder="เช่น MAT-0231-CUT" {...register("outputCode")} aria-required="true" aria-invalid={!!errors.outputCode || outputCodeCheck.status === "duplicate"} aria-describedby={`outputCode-check${errors.outputCode ? " outputCode-error" : ""}`} /><MaterialCodeFeedback id="outputCode-check" check={errors.outputCode ? { status: "idle" } : outputCodeCheck} />{errors.outputCode && <FieldError id="outputCode-error" message={errors.outputCode.message} />}</div>
+                  <div className="space-y-1.5"><Label htmlFor="outputName">ชื่อหลังแปรรูป <span className="text-danger">*</span></Label><Input id="outputName" placeholder="ชื่อชิ้นงานที่ตัดแล้ว" {...register("outputName")} aria-required="true" aria-invalid={!!errors.outputName} aria-describedby={errors.outputName ? "outputName-error" : undefined} />{errors.outputName && <FieldError id="outputName-error" message={errors.outputName.message} />}</div>
                   <div className="space-y-1.5">
                     <Label htmlFor="outputLocationType">ที่ตั้งวัสดุ (Location Type) <span className="text-danger">*</span></Label>
                     <Select value={watch("outputLocationType")} onValueChange={(value) => { if (value === "internal" || value === "external") setValue("outputLocationType", value, { shouldValidate: true, shouldDirty: true }); }}>
                       <SelectTrigger id="outputLocationType" aria-required="true" aria-invalid={!!errors.outputLocationType} aria-describedby={errors.outputLocationType ? "outputLocationType-error" : undefined}><SelectValue /></SelectTrigger>
                       <SelectContent><SelectItem value="internal">ภายใน</SelectItem><SelectItem value="external">ภายนอก</SelectItem></SelectContent>
                     </Select>
-                    {errors.outputLocationType && <p id="outputLocationType-error" role="alert" className="text-xs text-danger">{errors.outputLocationType.message}</p>}
+                    {errors.outputLocationType && <FieldError id="outputLocationType-error" message={errors.outputLocationType.message} />}
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="outputUnitId">หน่วยหลังแปรรูป <span className="text-danger">*</span></Label>
                     {lookups.units.length === 0 ? <MasterDataEmptyLink href="/master-data/units" resourceLabel="หน่วยนับ" /> : <Select value={watch("outputUnitId")} onValueChange={(value) => setValue("outputUnitId", value, { shouldValidate: true })}><SelectTrigger id="outputUnitId" aria-required="true" aria-invalid={!!errors.outputUnitId} aria-describedby={errors.outputUnitId ? "outputUnitId-error" : undefined}><SelectValue placeholder="เลือกหน่วยชิ้นงาน" /></SelectTrigger><SelectContent>{lookups.units.map((unit) => <SelectItem key={unit.id} value={unit.id}>{unit.nameTh || unit.nameEn || unit.code}</SelectItem>)}</SelectContent></Select>}
-                    {errors.outputUnitId && <p id="outputUnitId-error" role="alert" className="text-xs text-danger">{errors.outputUnitId.message}</p>}
+                    {errors.outputUnitId && <FieldError id="outputUnitId-error" message={errors.outputUnitId.message} />}
                   </div>
-                  <div className="space-y-1.5"><Label htmlFor="ratio">ตัดได้กี่ชิ้นต่อ 1 หน่วยต้นทาง <span className="text-danger">*</span></Label><Input id="ratio" type="number" inputMode="numeric" min="1" step="1" {...register("ratio")} aria-required="true" aria-invalid={!!errors.ratio} aria-describedby="ratio-hint ratio-error" /><p id="ratio-hint" className="text-xs text-fg-muted">ตัวอย่าง: ท่อ 1 เส้น ตัดได้ 100 ชิ้น</p>{errors.ratio && <p id="ratio-error" role="alert" className="text-xs text-danger">{errors.ratio.message}</p>}</div>
-                  <div className="space-y-1.5"><Label htmlFor="outputPackingQuantity">จำนวนชิ้นต่อกล่อง <span className="text-danger">*</span></Label><Input id="outputPackingQuantity" type="number" inputMode="numeric" min="1" max="1000000" step="1" {...register("outputPackingQuantity")} aria-required="true" aria-invalid={!!errors.outputPackingQuantity} aria-describedby={errors.outputPackingQuantity ? "outputPackingQuantity-error" : undefined} />{errors.outputPackingQuantity && <p id="outputPackingQuantity-error" role="alert" className="text-xs text-danger">{errors.outputPackingQuantity.message}</p>}</div>
+                  <div className="space-y-1.5"><Label htmlFor="ratio">ตัดได้กี่ชิ้นต่อ 1 หน่วยต้นทาง <span className="text-danger">*</span></Label><Input id="ratio" type="number" inputMode="numeric" min="1" step="1" {...register("ratio")} aria-required="true" aria-invalid={!!errors.ratio} aria-describedby="ratio-hint ratio-error" /><p id="ratio-hint" className="text-xs text-fg-muted">ตัวอย่าง: ท่อ 1 เส้น ตัดได้ 100 ชิ้น</p>{errors.ratio && <FieldError id="ratio-error" message={errors.ratio.message} />}</div>
+                  <div className="space-y-1.5"><Label htmlFor="outputPackingQuantity">จำนวนชิ้นต่อกล่อง <span className="text-danger">*</span></Label><Input id="outputPackingQuantity" type="number" inputMode="numeric" min="1" max="1000000" step="1" {...register("outputPackingQuantity")} aria-required="true" aria-invalid={!!errors.outputPackingQuantity} aria-describedby={errors.outputPackingQuantity ? "outputPackingQuantity-error" : undefined} />{errors.outputPackingQuantity && <FieldError id="outputPackingQuantity-error" message={errors.outputPackingQuantity.message} />}</div>
                   <div className="space-y-1.5">
                     <Label htmlFor="outputModelId">รุ่น</Label>
                     {lookups.models.length === 0 ? <MasterDataEmptyLink href="/master-data/material-models" resourceLabel="รุ่นวัสดุ" /> : <Select value={watch("outputModelId")} onValueChange={(value) => setValue("outputModelId", value, { shouldValidate: true, shouldDirty: true })}>
                       <SelectTrigger id="outputModelId" aria-invalid={!!errors.outputModelId} aria-describedby={errors.outputModelId ? "outputModelId-error" : undefined}><SelectValue /></SelectTrigger>
                       <SelectContent><SelectItem value={NONE}>ไม่ระบุ</SelectItem>{lookups.models.map((item) => <SelectItem key={item.id} value={item.id}>{item.nameTh || item.nameEn || item.code}</SelectItem>)}</SelectContent>
                     </Select>}
-                    {errors.outputModelId && <p id="outputModelId-error" role="alert" className="text-xs text-danger">{errors.outputModelId.message}</p>}
+                    {errors.outputModelId && <FieldError id="outputModelId-error" message={errors.outputModelId.message} />}
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="outputLoadingPointId">จุดขึ้นสินค้า</Label>
@@ -960,17 +955,17 @@ export function MaterialPcFormDialog({
                       <SelectTrigger id="outputLoadingPointId" aria-invalid={!!errors.outputLoadingPointId} aria-describedby={errors.outputLoadingPointId ? "outputLoadingPointId-error" : undefined}><SelectValue /></SelectTrigger>
                       <SelectContent><SelectItem value={NONE}>ไม่ระบุ</SelectItem>{lookups.loadingPoints.map((item) => <SelectItem key={item.id} value={item.id}>{item.nameTh || item.nameEn || item.code}</SelectItem>)}</SelectContent>
                     </Select>}
-                    {errors.outputLoadingPointId && <p id="outputLoadingPointId-error" role="alert" className="text-xs text-danger">{errors.outputLoadingPointId.message}</p>}
+                    {errors.outputLoadingPointId && <FieldError id="outputLoadingPointId-error" message={errors.outputLoadingPointId.message} />}
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="outputProcessLineName">สายการผลิต</Label>
                     <Input id="outputProcessLineName" maxLength={255} {...register("outputProcessLineName")} aria-invalid={!!errors.outputProcessLineName} aria-describedby={errors.outputProcessLineName ? "outputProcessLineName-error" : undefined} />
-                    {errors.outputProcessLineName && <p id="outputProcessLineName-error" role="alert" className="text-xs text-danger">{errors.outputProcessLineName.message}</p>}
+                    {errors.outputProcessLineName && <FieldError id="outputProcessLineName-error" message={errors.outputProcessLineName.message} />}
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="outputScale">มาตราส่วน</Label>
                     <Input id="outputScale" maxLength={255} {...register("outputScale")} aria-invalid={!!errors.outputScale} aria-describedby={errors.outputScale ? "outputScale-error" : undefined} />
-                    {errors.outputScale && <p id="outputScale-error" role="alert" className="text-xs text-danger">{errors.outputScale.message}</p>}
+                    {errors.outputScale && <FieldError id="outputScale-error" message={errors.outputScale.message} />}
                   </div>
                   <div className="space-y-1.5 sm:col-span-2"><Label htmlFor="outputSpecification">ขนาด / ข้อมูลจำเพาะหลังแปรรูป</Label><Textarea id="outputSpecification" rows={3} placeholder="เช่น ความยาวชิ้นงานหลังตัด 60 มม." {...register("outputSpecification")} /></div>
                 </div>

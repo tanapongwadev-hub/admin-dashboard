@@ -52,7 +52,7 @@ export function MaterialPcClient({
   initialEditMaterial?: Material | null;
 }) {
   const bomIdSet = React.useMemo(() => new Set(bomMaterialIds), [bomMaterialIds]);
-  const isReceivable = React.useCallback((material: Material) => !bomIdSet.has(material.id), [bomIdSet]);
+  const isReceivable = React.useCallback((material: Material) => !bomIdSet.has(material.id) && material.locationType !== "internal", [bomIdSet]);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();

@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import type { MaterialProcessingTrace } from "@/lib/api/material-traceability";
 import type { DrillTarget } from "./material-traceability-details";
 
-const quantity = (value: string | number) => Number(value).toLocaleString("th-TH", { maximumFractionDigits: 4 });
+const quantity = (value: string | number) => Number(value).toLocaleString("th-TH", { maximumFractionDigits: 0 });
 
 export function MaterialProcessingLineage({ entries, onNavigate, showEmpty = false }: {
   entries: MaterialProcessingTrace[];

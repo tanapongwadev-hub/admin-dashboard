@@ -1,2 +1,6 @@
-import { EngineeringPage } from '@/components/engineering/engineering-page';
-export default function Page() { return <EngineeringPage scope="materials" />; }
+import { redirect } from 'next/navigation';
+
+// BOM work moved to /engineering/setup; old links keep working.
+export default function Page() {
+  redirect('/engineering/setup');
+}

@@ -96,7 +96,10 @@ export function createApiFetch(
     }
   
     if (res.status === 204) return undefined as T;
-    return res.json() as Promise<T>;
+    // Some mutations (e.g. DELETE) succeed with an empty 200 body; res.json() would throw on it.
+    const text = await res.text();
+    if (!text.trim()) return undefined as T;
+    return JSON.parse(text) as T;
   };
 }
 

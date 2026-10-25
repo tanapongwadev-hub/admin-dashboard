@@ -6,7 +6,6 @@ import Link from "next/link";
 import {
   CheckCircle2,
   ClipboardCheck,
-  ListChecks,
   PackageMinus,
   Printer,
   QrCode,
@@ -118,49 +117,8 @@ export function MaterialJobOrderDetailView({
     toast.success(`หยิบแล้ว: ${line.materialCode} · กล่อง ${line.packageNo}`);
   }
 
-  const unpickedLines = jobOrder.pickLines.filter(
-    (line) => !line.releasedAt && !line.pickedAt,
-  );
-  const outstandingUnpicked = unpickedLines.length;
 
-  // "หยิบทั้งหมด" — confirms every remaining box in one click instead of
-  // scanning each QR individually. Reuses the same single-line pick action
-  // sequentially (not a new bulk endpoint): each call must carry the
-  // *current* version, so the loop threads the updated job order from one
-  // call into the next rather than firing all calls off the initial state.
-  async function handlePickAll() {
-    const skippedNoQr = unpickedLines.filter((line) => !line.qrCode);
-    const pickable = unpickedLines.filter((line) => line.qrCode);
-    if (pickable.length === 0) {
-      toast.error("ไม่มีรายการที่หยิบได้");
-      return;
-    }
-    setPending(true);
-    let current = jobOrder;
-    let pickedCount = 0;
-    for (const line of pickable) {
-      const result = await pickMaterialJobOrderAction(current.id, {
-        version: current.version,
-        reservationId: line.reservationId,
-        scannedCode: line.qrCode as string,
-      });
-      if (result.status === "error") {
-        toast.error(`${line.materialCode} · กล่อง ${line.packageNo}: ${result.message}`);
-        break;
-      }
-      current = result.jobOrder;
-      pickedCount += 1;
-    }
-    setPending(false);
-    setJobOrder(current);
-    if (pickedCount > 0) {
-      toast.success(`หยิบแล้ว ${pickedCount} กล่อง`);
-    }
-    if (skippedNoQr.length > 0) {
-      toast.error(`ข้าม ${skippedNoQr.length} กล่องที่ไม่มี QR — กรุณาหยิบด้วยการสแกน`);
-    }
-  }
-
+  const outstandingUnpicked = jobOrder.pickLines.filter((line) => !line.releasedAt && !line.pickedAt).length;
   const eligibleIssueLines = getIssueEligiblePickLines(jobOrder.pickLines);
   const issueAllQuantity = eligibleIssueLines.reduce(
     (sum, line) => sum + Number(line.outstandingQuantity),
@@ -189,7 +147,9 @@ export function MaterialJobOrderDetailView({
 
   const canOpenIssue =
     canIssue &&
-    (jobOrder.status === "READY_TO_ISSUE" || jobOrder.status === "PARTIALLY_ISSUED");
+    (jobOrder.status === "WAITING_PICKING" ||
+      jobOrder.status === "READY_TO_ISSUE" ||
+      jobOrder.status === "PARTIALLY_ISSUED");
   const materialGroups = groupPickLinesByMaterial(jobOrder.pickLines);
 
   return (
@@ -331,18 +291,6 @@ export function MaterialJobOrderDetailView({
             </div>
             <Button type="submit" disabled={pending || !scanCode.trim()}>
               ยืนยันหยิบ
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={pending || outstandingUnpicked === 0}
-              onClick={() => void handlePickAll()}
-            >
-              <ListChecks className="size-4" />
-              หยิบทั้งหมด
-              {outstandingUnpicked > 0 && (
-                <span className="text-xs text-fg-muted">({outstandingUnpicked})</span>
-              )}
             </Button>
           </form>
           {outstandingUnpicked === 0 && (

@@ -10,6 +10,7 @@ import { useViewMode } from "@/hooks/use-view-mode";
 import { MaterialsDisbursementFilters } from "@/components/materials-disbursement/materials-disbursement-filters";
 import { MaterialsDisbursementTable } from "@/components/materials-disbursement/materials-disbursement-table";
 import { MaterialsDisbursementFormDialog } from "@/components/materials-disbursement/materials-disbursement-form-dialog";
+import { MaterialsDisbursementDetailsDialog } from "@/components/materials-disbursement/materials-disbursement-details-dialog";
 import { MaterialsDisbursementCancelDialog } from "@/components/materials-disbursement/materials-disbursement-cancel-dialog";
 import {
   confirmMaterialsDisbursementAction,
@@ -55,6 +56,7 @@ export function MaterialsDisbursementClient({
   // Compiler's analysis and a reset-on-open effect would be rejected by lint).
   const [formSessionId, setFormSessionId] = React.useState(0);
   const [cancelTarget, setCancelTarget] = React.useState<MaterialsDisbursement | null>(null);
+  const [detailsTarget, setDetailsTarget] = React.useState<MaterialsDisbursement | null>(null);
   // Same 3-way table/card/list toggle as Materials PC and Materials
   // Receiving (see AGENTS.md § Materials PC) — default stays "table" here
   // since a disbursement's item list (multiple materials per row) reads
@@ -132,6 +134,7 @@ export function MaterialsDisbursementClient({
           setFormSessionId((id) => id + 1);
           setFormTarget(disbursement);
         }}
+        onViewDetails={(disbursement) => setDetailsTarget(disbursement)}
         onConfirm={handleConfirm}
         onCancel={(disbursement) => setCancelTarget(disbursement)}
         onDelete={handleDelete}
@@ -167,6 +170,12 @@ export function MaterialsDisbursementClient({
         </div>
       )}
 
+      <MaterialsDisbursementDetailsDialog
+        key={detailsTarget?.id ?? "details-none"}
+        disbursement={detailsTarget}
+        onOpenChange={(open) => !open && setDetailsTarget(null)}
+      />
+
       {(canCreate || canUpdate) && (
         <MaterialsDisbursementFormDialog
           key={formSessionId}
@@ -175,12 +184,13 @@ export function MaterialsDisbursementClient({
           lookups={lookups}
           disbursement={formTarget}
           onSaved={handleSaved}
+          canConfirm={canConfirm}
         />
       )}
 
       {canCancel && (
         <MaterialsDisbursementCancelDialog
-          key={cancelTarget?.id ?? "none"}
+          key={cancelTarget?.id ?? "cancel-none"}
           disbursement={cancelTarget}
           onOpenChange={(open) => !open && setCancelTarget(null)}
           onConfirm={handleCancel}

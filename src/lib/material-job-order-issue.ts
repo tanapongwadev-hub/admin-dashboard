@@ -4,10 +4,8 @@ export function getIssueEligiblePickLines(
   pickLines: readonly MaterialJobOrderPickLine[],
 ) {
   return pickLines.filter(
-    (line) =>
-      line.pickedAt &&
-      !line.releasedAt &&
-      Number(line.outstandingQuantity) > 0,
+    // Picking is optional: an unpicked box is marked picked by the issue itself.
+    (line) => !line.releasedAt && Number(line.outstandingQuantity) > 0,
   );
 }
 

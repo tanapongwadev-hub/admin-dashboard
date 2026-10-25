@@ -2,7 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import type { Product } from "@/lib/api/products";
 
 export function formatProductQuantity(value: string | number) {
-  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 4 }).format(Number(value));
+  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(Number(value));
 }
 
 export function ProductStockBalance({ product, quantity }: { product: Product; quantity?: string }) {

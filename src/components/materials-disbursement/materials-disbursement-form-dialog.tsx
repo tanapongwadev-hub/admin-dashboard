@@ -2,7 +2,22 @@
 
 import * as React from "react";
 import { toast } from "sonner";
-import { Plus, Trash2, PackageMinus, Factory, AlertTriangle, ClipboardList, Boxes } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  PackageMinus,
+  Factory,
+  AlertTriangle,
+  ClipboardList,
+  Boxes,
+  FileText,
+  Loader2,
+  ImageIcon,
+  UploadCloud,
+  X,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { FieldError } from "@/components/ui/field-error";
 import {
   Dialog,
   DialogContent,
@@ -14,12 +29,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { MasterDataEmptyLink } from "@/components/ui/master-data-empty-link";
 import {
   createMaterialsDisbursementAction,
   updateMaterialsDisbursementAction,
+  confirmMaterialsDisbursementAction,
+  uploadDisbursementAttachmentAction,
 } from "@/app/(dashboard)/materials/disbursements/actions";
 import type {
   MaterialsDisbursement,
@@ -28,24 +44,296 @@ import type {
 } from "@/lib/api/materials-disbursement";
 import { formatNumber } from "@/lib/utils";
 
+const STOCK_CUT_REASONS = [
+  "วัสดุชำรุด/เสียหาย",
+  "วัสดุหมดอายุ/เสื่อมสภาพ",
+  "วัสดุสูญหาย",
+  "ปรับปรุงยอดจากการนับสต็อก",
+  "ใช้เป็นตัวอย่าง/ทดสอบ",
+];
+const OTHER_REASON = "อื่นๆ";
+// Server Actions body limit is 6 MB (next.config.ts), so keep the client cap at 5 MB.
+const ATTACHMENT_MAX_BYTES = 5 * 1024 * 1024;
+const ATTACHMENT_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+
+function formatFileSize(bytes: number): string {
+  return bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)} MB` : `${Math.ceil(bytes / 1024)} KB`;
+}
+
+// Drop-zone + file list (multiple attachments). The native input stays focusable
+// but visually hidden, the label makes the whole zone clickable, files can also
+// be dragged in. Images get a thumbnail, PDFs an icon; already-saved files
+// (`existing`) can be opened or removed, new files are uploaded on submit.
+const ATTACHMENT_MAX_COUNT = 10;
+
+// Small thumbnail tile. New files are read as a data URL (not a memoized
+// object URL revoked in cleanup, which breaks under React StrictMode).
+function Thumb({ src, isPdf }: { src: string | null; isPdf: boolean }) {
+  return (
+    <span className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border bg-surface">
+      {src && !isPdf ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={src} alt="" className="size-full object-cover" />
+      ) : isPdf ? (
+        <FileText className="size-5 text-danger" />
+      ) : (
+        <ImageIcon className="size-5 text-success" />
+      )}
+    </span>
+  );
+}
+
+function NewFileThumb({ file }: { file: File }) {
+  const [loaded, setLoaded] = React.useState<{ file: File; src: string } | null>(null);
+  React.useEffect(() => {
+    if (!file.type.startsWith("image/")) return;
+    let active = true;
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (active && typeof reader.result === "string") setLoaded({ file, src: reader.result });
+    };
+    reader.readAsDataURL(file);
+    return () => {
+      active = false;
+      reader.abort();
+    };
+  }, [file]);
+  const src = loaded && loaded.file === file ? loaded.src : null;
+  return <Thumb src={src} isPdf={file.type === "application/pdf"} />;
+}
+
+function AttachmentPicker({
+  files,
+  existing,
+  onAdd,
+  onRemoveFile,
+  onRemoveExisting,
+  error,
+}: {
+  error?: string;
+  files: File[];
+  existing: { url: string; name: string }[];
+  onAdd: (files: File[]) => void;
+  onRemoveFile: (index: number) => void;
+  onRemoveExisting: (index: number) => void;
+}) {
+  const [dragging, setDragging] = React.useState(false);
+  const [preview, setPreview] = React.useState<{ src: string; name: string } | null>(null);
+  const total = files.length + existing.length;
+
+  // Click a row to preview: images open in a lightbox, PDFs in a new tab.
+  function previewExisting(item: { url: string; name: string }) {
+    if (item.name.toLowerCase().endsWith(".pdf")) window.open(item.url, "_blank", "noopener");
+    else setPreview({ src: item.url, name: item.name });
+  }
+  function previewFile(file: File) {
+    if (file.type === "application/pdf") {
+      const url = URL.createObjectURL(file);
+      window.open(url, "_blank", "noopener");
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") setPreview({ src: reader.result, name: file.name });
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function accept(list: FileList | null) {
+    if (!list || list.length === 0) return;
+    const valid: File[] = [];
+    let room = ATTACHMENT_MAX_COUNT - total;
+    for (const next of Array.from(list)) {
+      if (!ATTACHMENT_TYPES.includes(next.type)) {
+        toast.error(`${next.name}: รองรับเฉพาะไฟล์ JPEG, PNG, WebP หรือ PDF`);
+        continue;
+      }
+      if (next.size > ATTACHMENT_MAX_BYTES) {
+        toast.error(`${next.name}: ไฟล์แนบต้องมีขนาดไม่เกิน 5 MB`);
+        continue;
+      }
+      if (room <= 0) {
+        toast.error(`แนบไฟล์ได้สูงสุด ${ATTACHMENT_MAX_COUNT} ไฟล์`);
+        break;
+      }
+      valid.push(next);
+      room -= 1;
+    }
+    if (valid.length > 0) onAdd(valid);
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <Label htmlFor="md-attachment">ไฟล์แนบ{total > 0 ? ` (${total})` : ""}</Label>
+        <Badge variant="danger">จำเป็น</Badge>
+      </div>
+      <input
+        id="md-attachment"
+        type="file"
+        multiple
+        className="peer sr-only"
+        accept="image/jpeg,image/png,image/webp,application/pdf"
+        onChange={(e) => {
+          accept(e.target.files);
+          e.target.value = "";
+        }}
+      />
+      <label
+        htmlFor="md-attachment"
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragging(true);
+        }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragging(false);
+          accept(e.dataTransfer.files);
+        }}
+        className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 border-dashed p-3 transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-primary ${
+          dragging
+            ? "border-primary bg-primary-soft"
+            : error
+              ? "border-danger bg-danger-soft/40"
+              : total > 0
+                ? "border-success/50 bg-success-soft/40"
+                : "border-border-strong bg-surface-2/40 hover:border-primary hover:bg-primary-soft/50"
+        }`}
+      >
+        <span className="flex size-11 shrink-0 items-center justify-center rounded-md border border-border bg-surface">
+          <UploadCloud className="size-5 text-fg-muted" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-medium text-fg">
+            {total > 0 ? "เพิ่มไฟล์อีก" : "คลิกเพื่อเลือกไฟล์ หรือลากมาวางที่นี่"}
+          </span>
+          <span className="block text-xs text-fg-muted">
+            เลือกได้หลายไฟล์ (สูงสุด {ATTACHMENT_MAX_COUNT}) · รูปภาพ (JPEG, PNG, WebP) หรือ PDF · ไฟล์ละไม่เกิน 5 MB
+          </span>
+        </span>
+      </label>
+      {total > 0 && (
+        <ul className="space-y-1.5">
+          {existing.map((item, index) => (
+            <li
+              key={`existing-${item.url}-${index}`}
+              className="flex items-center gap-3 rounded-md border border-border bg-surface p-2"
+            >
+              <button
+                type="button"
+                onClick={() => previewExisting(item)}
+                className="flex min-w-0 flex-1 items-center gap-3 rounded-md text-left hover:bg-surface-2"
+                aria-label={`ดูตัวอย่าง ${item.name}`}
+              >
+                <Thumb src={item.url} isPdf={item.name.toLowerCase().endsWith(".pdf")} />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium text-fg">{item.name}</span>
+                  <span className="text-xs font-medium text-primary underline">ดูตัวอย่าง</span>
+                </span>
+              </button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={`ลบไฟล์ ${item.name}`}
+                onClick={() => onRemoveExisting(index)}
+              >
+                <X className="size-4" />
+              </Button>
+            </li>
+          ))}
+          {files.map((file, index) => (
+            <li
+              key={`new-${file.name}-${file.size}-${file.lastModified}-${index}`}
+              className="flex items-center gap-3 rounded-md border border-border bg-surface p-2"
+            >
+              <button
+                type="button"
+                onClick={() => previewFile(file)}
+                className="flex min-w-0 flex-1 items-center gap-3 rounded-md text-left hover:bg-surface-2"
+                aria-label={`ดูตัวอย่าง ${file.name}`}
+              >
+                <NewFileThumb file={file} />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium text-fg">{file.name}</span>
+                  <span className="block text-xs text-fg-muted">
+                    {formatFileSize(file.size)} · ยังไม่ได้อัปโหลด ·{" "}
+                    <span className="font-medium text-primary underline">ดูตัวอย่าง</span>
+                  </span>
+                </span>
+              </button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={`ลบไฟล์ ${file.name}`}
+                onClick={() => onRemoveFile(index)}
+              >
+                <X className="size-4" />
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <FieldError message={error} />
+      <Dialog open={!!preview} onOpenChange={(open) => !open && setPreview(null)}>
+        <DialogContent size="xl" className="flex max-h-[90dvh] flex-col">
+          <DialogHeader>
+            <DialogTitle className="truncate text-base">{preview?.name}</DialogTitle>
+            <DialogDescription className="sr-only">ตัวอย่างไฟล์แนบ</DialogDescription>
+          </DialogHeader>
+          <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto bg-surface-2 p-4">
+            {preview && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={preview.src} alt={preview.name} className="max-h-[70dvh] max-w-full object-contain" />
+            )}
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setPreview(null)}>
+              ปิด
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+// Unique even when Fast Refresh resets the module counter but keeps component state.
 let itemKeySeed = 0;
-function nextItemKey(): number {
+function nextItemKey(): string {
   itemKeySeed += 1;
-  return itemKeySeed;
+  return `row-${itemKeySeed}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+interface RowErrors {
+  material?: string;
+  qty?: string;
+  reason?: string;
+  note?: string;
+}
+interface FormErrors {
+  date?: string;
+  attachment?: string;
+  rows: Record<string, RowErrors>;
 }
 
 interface DisbursementItemDraft {
-  key: number;
+  key: string;
   materialId: string;
   requestedQuantity: string;
+  reason: string;
+  reasonNote: string;
 }
 
 function newItemDraft(): DisbursementItemDraft {
-  return { key: nextItemKey(), materialId: "", requestedQuantity: "" };
+  return { key: nextItemKey(), materialId: "", requestedQuantity: "", reason: "", reasonNote: "" };
 }
 
 // Cycled per-row accent theme — same pattern as products-wizard-dialog.tsx's
@@ -82,43 +370,56 @@ export function MaterialsDisbursementFormDialog({
   lookups,
   disbursement,
   onSaved,
+  canConfirm = false,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   lookups: MaterialsDisbursementLookups;
   disbursement?: MaterialsDisbursement | null;
   onSaved: () => void;
+  /** Show "บันทึกและตัดสต็อก" (save, then confirm/cut FIFO in one click). */
+  canConfirm?: boolean;
 }) {
   const isEdit = !!disbursement;
   const [disbursementType, setDisbursementType] = React.useState<DisbursementType>(
     disbursement?.disbursementType ?? "production"
   );
   const [disbursementDate, setDisbursementDate] = React.useState(disbursement?.disbursementDate ?? todayIso());
-  const [reason, setReason] = React.useState(disbursement?.reason ?? "");
-  const [remark, setRemark] = React.useState(disbursement?.remark ?? "");
+  const [newFiles, setNewFiles] = React.useState<File[]>([]);
+  const [keptAttachments, setKeptAttachments] = React.useState<{ url: string; name: string }[]>(() =>
+    disbursement?.attachments && disbursement.attachments.length > 0
+      ? disbursement.attachments
+      : disbursement?.attachmentUrl
+        ? [{ url: disbursement.attachmentUrl, name: disbursement.attachmentName ?? "ไฟล์แนบ" }]
+        : []
+  );
   const [items, setItems] = React.useState<DisbursementItemDraft[]>(() =>
     disbursement && disbursement.items.length > 0
       ? disbursement.items.map((item) => ({
           key: nextItemKey(),
           materialId: item.materialId,
           requestedQuantity: item.requestedQuantity,
+          reason: item.reason ?? "",
+          reasonNote: item.reasonNote ?? "",
         }))
       : [newItemDraft()]
   );
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [attempted, setAttempted] = React.useState(false);
+  const [confirmingAfterSave, setConfirmingAfterSave] = React.useState(false);
 
-  function materialOptionsFor(rowKey: number) {
+  function materialOptionsFor(rowKey: string) {
     const usedElsewhere = new Set(
       items.filter((i) => i.key !== rowKey && i.materialId !== "").map((i) => i.materialId)
     );
     return lookups.materials.filter((m) => !usedElsewhere.has(m.id));
   }
 
-  function updateItem(key: number, patch: Partial<DisbursementItemDraft>) {
+  function updateItem(key: string, patch: Partial<DisbursementItemDraft>) {
     setItems((prev) => prev.map((item) => (item.key === key ? { ...item, ...patch } : item)));
   }
 
-  function removeItem(key: number) {
+  function removeItem(key: string) {
     setItems((prev) => (prev.length > 1 ? prev.filter((item) => item.key !== key) : prev));
   }
 
@@ -126,42 +427,94 @@ export function MaterialsDisbursementFormDialog({
     setItems((prev) => [...prev, newItemDraft()]);
   }
 
-  function validate(): string | null {
-    if (!disbursementDate) return "กรุณาระบุวันที่จ่ายออก";
-    if (disbursementDate > todayIso()) return "วันที่จ่ายออกต้องไม่เกินวันนี้";
-    if (disbursementType === "stock_cut" && !reason.trim()) return "กรุณาระบุเหตุผลสำหรับการตัดสต็อก";
-    if (items.length === 0) return "ต้องมีอย่างน้อย 1 รายการ";
+  // Per-field messages, shown by <FieldError> under each control. They appear
+  // only after the first submit attempt and then track the live values.
+  function validate(): FormErrors {
+    const errors: FormErrors = { rows: {} };
+    if (!disbursementDate) errors.date = "กรุณาระบุวันที่จ่ายออก";
+    else if (disbursementDate > todayIso()) errors.date = "วันที่จ่ายออกต้องไม่เกินวันนี้";
+    if (disbursementType === "stock_cut" && newFiles.length === 0 && keptAttachments.length === 0) {
+      errors.attachment = "กรุณาแนบไฟล์ (รูปภาพหรือ PDF)";
+    }
+    const seen = new Set<string>();
     for (const item of items) {
-      if (!item.materialId) return "กรุณาเลือกวัสดุให้ครบทุกรายการ";
+      const row: RowErrors = {};
+      if (!item.materialId) row.material = "กรุณาเลือกวัสดุ";
+      else if (seen.has(item.materialId)) row.material = "เลือกวัสดุซ้ำกันไม่ได้";
+      else seen.add(item.materialId);
       const qty = Number(item.requestedQuantity);
-      if (!item.requestedQuantity || Number.isNaN(qty) || qty <= 0) {
-        return "จำนวนที่จ่ายออกต้องมากกว่า 0";
+      if (!item.requestedQuantity || Number.isNaN(qty) || qty <= 0) row.qty = "จำนวนที่จ่ายออกต้องมากกว่า 0";
+      if (disbursementType === "stock_cut") {
+        if (!item.reason) row.reason = "กรุณาเลือกเหตุผล";
+        else if (item.reason === OTHER_REASON && !item.reasonNote.trim()) row.note = "กรุณาพิมพ์เหตุผล";
       }
+      if (Object.keys(row).length > 0) errors.rows[item.key] = row;
     }
-    const materialIds = items.map((i) => i.materialId);
-    if (new Set(materialIds).size !== materialIds.length) {
-      return "ไม่สามารถเลือกวัสดุซ้ำกันในรายการเดียวกันได้";
-    }
-    return null;
+    return errors;
   }
 
-  async function handleSubmit() {
-    const error = validate();
-    if (error) {
-      toast.error(error);
+  function hasErrors(e: FormErrors): boolean {
+    return !!e.date || !!e.attachment || Object.keys(e.rows).length > 0;
+  }
+
+  const errors: FormErrors = attempted ? validate() : { rows: {} };
+
+  async function handleSubmit(confirmAfterSave = false) {
+    setAttempted(true);
+    if (hasErrors(validate())) {
+      toast.error("กรุณากรอกข้อมูลให้ครบถ้วนและถูกต้อง");
       return;
     }
     setIsSubmitting(true);
+    setConfirmingAfterSave(confirmAfterSave);
+    let attachments: { url: string; name: string }[] = [];
+    if (disbursementType === "stock_cut") {
+      attachments = [...keptAttachments];
+      for (const file of newFiles) {
+        const form = new FormData();
+        form.append("file", file);
+        const uploaded = await uploadDisbursementAttachmentAction(form);
+        if (uploaded.status === "error") {
+          setIsSubmitting(false);
+          toast.error(`${file.name}: ${uploaded.message}`);
+          return;
+        }
+        attachments.push({ url: uploaded.attachment.attachmentUrl, name: uploaded.attachment.attachmentName });
+      }
+    }
     const payload = {
       disbursementType,
       disbursementDate,
-      reason: reason.trim() || undefined,
-      remark: remark.trim() || undefined,
-      items: items.map((item) => ({ materialId: item.materialId, requestedQuantity: item.requestedQuantity })),
+      ...(disbursementType === "stock_cut" ? { attachments } : {}),
+      items: items.map((item) => ({
+        materialId: item.materialId,
+        requestedQuantity: item.requestedQuantity,
+        ...(disbursementType === "stock_cut"
+          ? {
+              reason: item.reason,
+              reasonNote: item.reason === OTHER_REASON ? item.reasonNote.trim() : undefined,
+            }
+          : {}),
+      })),
     };
     const result = isEdit
       ? await updateMaterialsDisbursementAction(disbursement!.id, payload)
       : await createMaterialsDisbursementAction(payload);
+    if (result.status === "success" && confirmAfterSave) {
+      // Save + cut stock in one click: confirm the document we just saved.
+      const confirmed = await confirmMaterialsDisbursementAction(result.disbursement.id);
+      setIsSubmitting(false);
+      onSaved();
+      if (confirmed.status === "success") {
+        toast.success("บันทึกและตัดสต็อกแล้ว", { description: confirmed.disbursement.disbursementNo });
+        onOpenChange(false);
+      } else {
+        // Saved as a draft but the FIFO cut failed (e.g. not enough stock).
+        toast.error(`บันทึกเป็นร่างแล้ว แต่ตัดสต็อกไม่สำเร็จ: ${confirmed.message}`);
+        onOpenChange(false);
+      }
+      return;
+    }
     setIsSubmitting(false);
     if (result.status === "success") {
       toast.success(isEdit ? "บันทึกการแก้ไขแล้ว" : "สร้างรายการจ่ายออกแล้ว", {
@@ -237,22 +590,23 @@ export function MaterialsDisbursementFormDialog({
                   value={disbursementDate}
                   max={todayIso()}
                   onChange={(e) => setDisbursementDate(e.target.value)}
+                  aria-invalid={!!errors.date}
+                  aria-describedby={errors.date ? "md-date-error" : undefined}
                 />
+                <FieldError id="md-date-error" message={errors.date} />
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="md-reason">
-                เหตุผล{disbursementType === "stock_cut" ? " (จำเป็น)" : " (ไม่บังคับ)"}
-              </Label>
-              <Textarea
-                id="md-reason"
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                placeholder={disbursementType === "stock_cut" ? "ระบุเหตุผลการตัดสต็อก..." : "ระบุเหตุผล (ถ้ามี)..."}
-                rows={2}
+            {disbursementType === "stock_cut" ? (
+              <AttachmentPicker
+                files={newFiles}
+                existing={keptAttachments}
+                onAdd={(added) => setNewFiles((prev) => [...prev, ...added])}
+                onRemoveFile={(i) => setNewFiles((prev) => prev.filter((_, idx) => idx !== i))}
+                onRemoveExisting={(i) => setKeptAttachments((prev) => prev.filter((_, idx) => idx !== i))}
+                error={errors.attachment}
               />
-            </div>
+            ) : null}
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -322,6 +676,7 @@ export function MaterialsDisbursementFormDialog({
                               </SelectContent>
                             </Select>
                           )}
+                          <FieldError message={errors.rows[item.key]?.material} />
                           <p className="text-xs text-fg-muted">วัสดุที่เลือกในรายการอื่นแล้วจะไม่แสดงซ้ำที่นี่</p>
                         </div>
                         <div className="space-y-1.5">
@@ -333,7 +688,9 @@ export function MaterialsDisbursementFormDialog({
                             value={item.requestedQuantity}
                             onChange={(e) => updateItem(item.key, { requestedQuantity: e.target.value })}
                             placeholder="0"
+                            aria-invalid={!!errors.rows[item.key]?.qty}
                           />
+                          <FieldError message={errors.rows[item.key]?.qty} />
                           {material && (
                             <p className={overAvailable ? "text-xs text-danger" : "text-xs text-fg-muted"}>
                               คงเหลือ {formatNumber(available ?? 0)}
@@ -341,6 +698,39 @@ export function MaterialsDisbursementFormDialog({
                             </p>
                           )}
                         </div>
+                        {disbursementType === "stock_cut" && (
+                          <>
+                            <div className="space-y-1.5">
+                              <Label>เหตุผลการตัดสต็อก</Label>
+                              <Select
+                                value={item.reason}
+                                onValueChange={(v) => updateItem(item.key, { reason: v })}
+                              >
+                                <SelectTrigger><SelectValue placeholder="เลือกเหตุผล" /></SelectTrigger>
+                                <SelectContent>
+                                  {[...STOCK_CUT_REASONS, OTHER_REASON].map((r) => (
+                                    <SelectItem key={r} value={r}>
+                                      {r}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FieldError message={errors.rows[item.key]?.reason} />
+                            </div>
+                            <div className="space-y-1.5">
+                              <Label>
+                                เหตุผล{item.reason === OTHER_REASON ? " (จำเป็น)" : ""}
+                              </Label>
+                              <Input
+                                value={item.reasonNote}
+                                onChange={(e) => updateItem(item.key, { reasonNote: e.target.value })}
+                                placeholder={item.reason === OTHER_REASON ? "พิมพ์เหตุผล..." : "ระบุเพิ่มเติม (ถ้ามี)"}
+                                aria-invalid={!!errors.rows[item.key]?.note}
+                              />
+                              <FieldError message={errors.rows[item.key]?.note} />
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
                   );
@@ -348,16 +738,6 @@ export function MaterialsDisbursementFormDialog({
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="md-remark">หมายเหตุ</Label>
-              <Textarea
-                id="md-remark"
-                value={remark}
-                onChange={(e) => setRemark(e.target.value)}
-                placeholder="หมายเหตุเพิ่มเติม (ถ้ามี)..."
-                rows={2}
-              />
-            </div>
           </div>
 
           {/* Live summary column — hidden on mobile (the form itself is the
@@ -435,10 +815,25 @@ export function MaterialsDisbursementFormDialog({
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             ยกเลิก
           </Button>
-          <Button type="button" onClick={handleSubmit} disabled={isSubmitting}>
-            <PackageMinus className="size-4" />
+          <Button
+            type="button"
+            variant={canConfirm ? "outline" : "primary"}
+            onClick={() => handleSubmit(false)}
+            disabled={isSubmitting}
+          >
+            {isSubmitting && !confirmingAfterSave && <Loader2 className="size-4 animate-spin" />}
             {isEdit ? "บันทึกการแก้ไข" : "บันทึกร่าง"}
           </Button>
+          {canConfirm && (
+            <Button type="button" onClick={() => handleSubmit(true)} disabled={isSubmitting}>
+              {isSubmitting && confirmingAfterSave ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <PackageMinus className="size-4" />
+              )}
+              บันทึกและตัดสต็อก
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

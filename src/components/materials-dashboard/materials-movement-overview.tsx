@@ -30,7 +30,7 @@ import {
   type MovementMetric,
 } from "./materials-movement-chart";
 
-export const nf = new Intl.NumberFormat("th-TH", { maximumFractionDigits: 2 });
+export const nf = new Intl.NumberFormat("th-TH", { maximumFractionDigits: 0 });
 const TYPE_LABEL: Record<string, string> = { production: "เบิกเพื่อผลิต", stock_cut: "ตัดสต็อก" };
 
 interface Preset {

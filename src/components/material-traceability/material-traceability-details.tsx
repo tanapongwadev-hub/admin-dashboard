@@ -35,7 +35,7 @@ function formatDateTime(value: string | null): string {
 
 function formatQty(value: string): string {
   const n = Number(value);
-  return Number.isFinite(n) ? n.toLocaleString("th-TH", { maximumFractionDigits: 4 }) : value;
+  return Number.isFinite(n) ? n.toLocaleString("th-TH", { maximumFractionDigits: 0 }) : value;
 }
 
 const STATUS_LABELS: Record<string, string> = {

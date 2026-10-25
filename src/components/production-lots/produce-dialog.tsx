@@ -1,5 +1,6 @@
 "use client";
 
+import { FieldError } from "@/components/ui/field-error";
 import { Loader2, Plus, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { ENABLED_PRODUCE_MODES, type ProduceMode } from "@/lib/production-flags";
@@ -439,9 +440,7 @@ export function ProduceDialog({
               </div>
             )}
             {manual && pickOver && (
-              <p role="alert" className="text-xs text-danger">
-                บาง Lot ใส่จำนวนเกินที่รอผลิตของ Lot นั้น
-              </p>
+              <FieldError message="บาง Lot ใส่จำนวนเกินที่รอผลิตของ Lot นั้น" />
             )}
             <DayShiftFields idPrefix="pd" date={date} shift={shift} onDate={setDate} onShift={setShift} />
 

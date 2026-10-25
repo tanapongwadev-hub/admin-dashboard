@@ -10,7 +10,7 @@ const colorOf = (lot: LotFlowEntry) => lotColor(lot.internalLotNo);
 
 function formatQty(value: string | number): string {
   const n = typeof value === "number" ? value : Number(value);
-  return Number.isFinite(n) ? n.toLocaleString("th-TH", { maximumFractionDigits: 4 }) : String(value);
+  return Number.isFinite(n) ? n.toLocaleString("th-TH", { maximumFractionDigits: 0 }) : String(value);
 }
 
 function formatDate(value: string): string {

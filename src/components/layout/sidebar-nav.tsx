@@ -212,6 +212,8 @@ function MenuTreeItem({
   );
 }
 
+const EMPTY_OVERRIDES: Record<string, boolean> = {};
+
 export function SidebarNav({
   collapsed,
   onNavigate,
@@ -228,16 +230,26 @@ export function SidebarNav({
   const [clickedId, setClickedId] = React.useState<string | null>(null);
   const activeId = React.useMemo(() => findActiveId(resolved, pathname, clickedId), [resolved, pathname, clickedId]);
   const autoOpenIds = React.useMemo(() => activeChainIds(resolved, pathname), [resolved, pathname]);
-  // Only tracks nodes the user has manually clicked open/closed; auto-expand
-  // for the active route is derived fresh each render instead (see
-  // autoOpenIds), so this never needs to be synced via an effect.
-  const [overrides, setOverrides] = React.useState<Record<string, boolean>>({});
-
-  function toggle(id: string, wasOpen: boolean) {
-    setOverrides((prev) => ({ ...prev, [id]: !wasOpen }));
-  }
+  // Only tracks nodes the user has manually clicked open/closed. Auto-expand for
+  // the active route is derived fresh each render (see autoOpenIds). Overrides
+  // belong to the route they were made on: after navigating, they are ignored so
+  // every menu that is not on the active chain folds back up.
+  const [overrideState, setOverrideState] = React.useState<{ path: string; map: Record<string, boolean> }>({ path: pathname, map: {} });
+  const overrides = overrideState.path === pathname ? overrideState.map : EMPTY_OVERRIDES;
 
   const items = resolved.filter((m) => m.menuType !== "BUTTON");
+
+  function toggle(id: string, wasOpen: boolean) {
+    setOverrideState((prev) => {
+      const base = prev.path === pathname ? prev.map : {};
+      const next = { ...base, [id]: !wasOpen };
+      // Accordion: opening a top-level menu folds the other top-level menus that are not active.
+      if (!wasOpen && items.some((m) => m.id === id)) {
+        for (const m of items) if (m.id !== id && !autoOpenIds.has(m.id)) next[m.id] = false;
+      }
+      return { path: pathname, map: next };
+    });
+  }
 
   return (
     <nav className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-2.5 py-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">

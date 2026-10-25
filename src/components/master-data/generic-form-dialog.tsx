@@ -17,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FieldError } from "@/components/ui/field-error";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
@@ -254,9 +255,7 @@ export function GenericMasterDataFormDialog<TEntity extends BaseMasterEntity>({
             )}
           />
           {err ? (
-            <p id={`${field.name}-error`} className="text-xs text-danger" role="alert">
-              {err.message}
-            </p>
+            <FieldError id={`${field.name}-error`} message={err.message} />
           ) : (
             field.hint && <p id={`${field.name}-hint`} className="text-xs text-fg-muted">{field.hint}</p>
           )}
@@ -323,9 +322,7 @@ export function GenericMasterDataFormDialog<TEntity extends BaseMasterEntity>({
             />
           </div>
           {err ? (
-            <p id={`${field.name}-error`} className="text-xs text-danger" role="alert">
-              {err.message}
-            </p>
+            <FieldError id={`${field.name}-error`} message={err.message} />
           ) : (
             field.hint && (
               <p id={`${field.name}-hint`} className="text-xs text-fg-muted">
@@ -354,9 +351,7 @@ export function GenericMasterDataFormDialog<TEntity extends BaseMasterEntity>({
           {...register(path)}
         />
         {err ? (
-          <p id={`${field.name}-error`} className="text-xs text-danger" role="alert">
-            {err.message}
-          </p>
+          <FieldError id={`${field.name}-error`} message={err.message} />
         ) : (
           field.hint && (
             <p id={`${field.name}-hint`} className="text-xs text-fg-muted">
@@ -393,9 +388,7 @@ export function GenericMasterDataFormDialog<TEntity extends BaseMasterEntity>({
                   {...register("code")}
                 />
                 {errorsRecord.code && (
-                  <p id="code-error" className="text-xs text-danger" role="alert">
-                    {errorsRecord.code.message}
-                  </p>
+                  <FieldError id="code-error" message={errorsRecord.code.message} />
                 )}
                 <p className="text-xs text-fg-muted">ระบบจะปรับเป็นตัวพิมพ์ใหญ่ให้อัตโนมัติ</p>
               </div>
@@ -412,9 +405,7 @@ export function GenericMasterDataFormDialog<TEntity extends BaseMasterEntity>({
                   {...register("nameTh")}
                 />
                 {errorsRecord.nameTh && (
-                  <p id="nameTh-error" className="text-xs text-danger" role="alert">
-                    {errorsRecord.nameTh.message}
-                  </p>
+                  <FieldError id="nameTh-error" message={errorsRecord.nameTh.message} />
                 )}
               </div>
 
@@ -428,9 +419,7 @@ export function GenericMasterDataFormDialog<TEntity extends BaseMasterEntity>({
                   {...register("nameEn")}
                 />
                 {errorsRecord.nameEn && (
-                  <p id="nameEn-error" className="text-xs text-danger" role="alert">
-                    {errorsRecord.nameEn.message}
-                  </p>
+                  <FieldError id="nameEn-error" message={errorsRecord.nameEn.message} />
                 )}
               </div>
 

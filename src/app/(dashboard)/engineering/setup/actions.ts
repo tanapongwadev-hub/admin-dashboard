@@ -101,6 +101,11 @@ export async function runSetupAction(data: SetupData): Promise<RunSetupResult> {
     if (data.materialsEnabled) {
       for (const m of data.materials) {
         if (created.materialIds![m.key]) continue;
+        if (m.source === "existing" && m.existingId) {
+          // Existing internal material: nothing to create (it already has its own BOM / Workflow).
+          created.materialIds![m.key] = m.existingId;
+          continue;
+        }
         stage = `สร้างวัสดุ ${m.code.trim()}`;
         const material = await createMaterial(accessToken, {
           type: "PC",
@@ -124,7 +129,7 @@ export async function runSetupAction(data: SetupData): Promise<RunSetupResult> {
     // every new material exists so a BOM can use another new material as a component.
     if (data.materialsEnabled) {
       for (const m of data.materials) {
-        if (m.locationType !== "internal") continue;
+        if (m.locationType !== "internal" || m.source === "existing") continue;
         const ownerId = created.materialIds![m.key];
         if (!ownerId) continue;
         if (!created.materialBomIds![m.key]) {
@@ -160,6 +165,67 @@ export async function runSetupAction(data: SetupData): Promise<RunSetupResult> {
     }
 
     const productMode = data.mode !== "material";
+
+    // Material mode: the BOM + Workflow of the chosen internal material (the "owner").
+    let ownerId: string | undefined = data.ownerSource === "new" ? undefined : data.ownerMaterial?.id;
+    let ownerLabel = data.ownerMaterial?.code ?? "";
+    if (!productMode && data.ownerSource === "new" && data.ownerNew) {
+      const m = data.ownerNew;
+      ownerLabel = m.code.trim();
+      if (!created.materialIds![m.key]) {
+        stage = `สร้างวัสดุภายใน ${ownerLabel}`;
+        const material = await createMaterial(accessToken, {
+          type: "PC",
+          code: m.code.trim(),
+          name: m.name.trim(),
+          materialType: "PCS",
+          locationType: "internal",
+          unitId: m.unitId,
+          materialTypeId: m.materialTypeId || null,
+          supplierIds: m.supplierIds,
+          packingQuantity: optionalInt(m.packingQuantity) ?? null,
+          minimumStock: optionalInt(m.minimumStock) ?? 0,
+          specification: m.specification.trim() || null,
+          imagePath: m.imagePath,
+        });
+        created.materialIds![m.key] = material.id;
+      }
+      ownerId = created.materialIds![m.key];
+    }
+    if (!productMode && ownerId) {
+      if (data.bomEnabled && !created.bomId) {
+        stage = `สร้าง BOM ของวัสดุ ${ownerLabel}`;
+        const bom = await createEngineeringVersion(accessToken, "materials", "bom", ownerId, {
+          items: data.bomRows.map((row) => {
+            const materialId = isNewMaterialRef(row.materialId) ? created.materialIds![String(newMaterialKey(row.materialId))] : row.materialId;
+            if (!materialId) throw new Error("ไม่พบวัสดุใหม่สำหรับ BOM");
+            return {
+              materialId,
+              unitId: row.unitId,
+              quantity: Number(row.quantity),
+              isScrap: false,
+              wastagePercent: row.wastagePercent === "" ? null : Number(row.wastagePercent),
+              remark: null,
+            };
+          }),
+        });
+        created.bomId = bom.id;
+        if (data.activate) await activateEngineeringVersion(accessToken, "materials", "bom", bom.id);
+      }
+      if (data.workflowEnabled && !created.workflowId) {
+        stage = `สร้าง Workflow ของวัสดุ ${ownerLabel}`;
+        const workflow = await createEngineeringVersion(accessToken, "materials", "workflow", ownerId, {
+          steps: data.workflowRows.map((row) => ({ processStepId: row.processStepId, description: row.description.trim() || null })),
+        });
+        created.workflowId = workflow.id;
+        if (data.activate) await activateEngineeringVersion(accessToken, "materials", "workflow", workflow.id);
+      }
+    }
+
+    if (productMode && !created.productId && data.product.source === "existing" && data.product.existingId) {
+      // Existing product: nothing to create, the BOM / Workflow below attach to it.
+      created.productId = data.product.existingId;
+    }
     if (productMode && !created.productId) {
       stage = "สร้างสินค้า";
       const p = data.product;
@@ -218,7 +284,7 @@ export async function runSetupAction(data: SetupData): Promise<RunSetupResult> {
     return { status: "partial", created, message, failedAt: stage };
   }
 
-  for (const path of ["/materials/catalog", "/engineering/products", "/engineering/products/list", "/engineering/bom/products"]) {
+  for (const path of ["/materials/catalog", "/engineering/products", "/engineering/products/list", "/engineering/setup"]) {
     try { revalidatePath(path); } catch { /* best-effort */ }
   }
   return { status: "success", created };

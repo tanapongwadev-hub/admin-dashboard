@@ -25,7 +25,7 @@ function formatDateTime(value: string): string {
 function formatQty(value: string): string {
   const n = Number(value);
   if (!Number.isFinite(n)) return value;
-  return n.toLocaleString("th-TH", { maximumFractionDigits: 4 });
+  return n.toLocaleString("th-TH", { maximumFractionDigits: 0 });
 }
 
 // §4 Main Transaction Report — the dense, paginated stock-movement table,

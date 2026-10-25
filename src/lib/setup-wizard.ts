@@ -10,6 +10,10 @@ export const newMaterialKey = (value: string) => Number(value.slice(NEW_MATERIAL
 
 export interface SetupMaterialData {
   key: number;
+  /** "existing" = an in-house material that is already in the system: it is only picked (no BOM / Workflow is created for it). */
+  source?: "new" | "existing";
+  /** The chosen material when source is "existing". */
+  existingId?: string;
   code: string;
   name: string;
   locationType: "internal" | "external";
@@ -26,6 +30,10 @@ export interface SetupMaterialData {
 }
 
 export interface SetupProductData {
+  /** "existing" = attach the BOM / Workflow to a product that is already in the system (nothing is created for the product). */
+  source?: "new" | "existing";
+  /** The chosen product when source is "existing". */
+  existingId?: string;
   code: string;
   name: string;
   unitId: string;
@@ -70,14 +78,34 @@ export interface SetupCreated {
 
 export type SetupMode = "product" | "material";
 
-/** Step indices shown for each mode (material mode skips product / BOM / workflow). */
-export function visibleSteps(mode: SetupMode | undefined): number[] {
-  return mode === "material" ? [0, 4] : [0, 1, 2, 3, 4];
+/**
+ * Step indices shown, in display order. Both modes have the same 5 steps: step 1 is the owner
+ * (the product, or — in material mode — an existing internal material), then the new component
+ * materials (0), the BOM (2), the Workflow (3) and the review (4). Indices stay fixed (drafts store them).
+ */
+export function visibleSteps(_mode?: SetupMode): number[] {
+  return [1, 0, 2, 3, 4];
+}
+
+/** Step names for the rail / header; step 1 and 0 are named differently in material mode. */
+export function stepLabels(mode: SetupMode | undefined): string[] {
+  const labels: string[] = SETUP_STEPS.map((s) => s.label);
+  if (mode === "material") {
+    labels[0] = "วัสดุส่วนประกอบ";
+    labels[1] = "วัสดุภายใน";
+  }
+  return labels;
 }
 
 export interface SetupData {
   /** What is being created; undefined until the user picks (shows the chooser). */
   mode?: SetupMode;
+  /** Material mode: where the material that gets the BOM + Workflow comes from (default "existing"). */
+  ownerSource?: "existing" | "new";
+  /** Material mode, ownerSource "existing": the existing internal material that gets the BOM + Workflow. */
+  ownerMaterial?: { id: string; code: string; name: string };
+  /** Material mode, ownerSource "new": the internal material typed in by the user (created before its BOM + Workflow). */
+  ownerNew?: SetupMaterialData;
   materialsEnabled: boolean;
   materials: SetupMaterialData[];
   product: SetupProductData;
@@ -120,9 +148,26 @@ export function emptyMaterial(): SetupMaterialData {
   };
 }
 
+export const isExistingMaterial = (m: SetupMaterialData) => m.source === "existing";
+
+/** A blank new internal material to be used as the owner in material mode. */
+export function emptyOwnerMaterial(): SetupMaterialData {
+  return { ...emptyMaterial(), locationType: "internal" };
+}
+
+/** The material that receives the BOM + Workflow in material mode (existing pick or typed-in new one). */
+export function ownerInfo(data: SetupData): { code: string; name: string; isNew: boolean } | null {
+  if (data.ownerSource === "new") {
+    return data.ownerNew && data.ownerNew.code.trim()
+      ? { code: data.ownerNew.code.trim(), name: data.ownerNew.name.trim(), isNew: true }
+      : null;
+  }
+  return data.ownerMaterial ? { code: data.ownerMaterial.code, name: data.ownerMaterial.name, isNew: false } : null;
+}
+
 export function emptySetupData(): SetupData {
   return {
-    materialsEnabled: true,
+    materialsEnabled: false,
     materials: [emptyMaterial()],
     product: {
       code: "",
@@ -165,7 +210,7 @@ export interface SetupMaterialCan {
 
 /** BOM + Workflow rows an internal (in-house) material must have; null when OK. */
 export function validateInternalMaterial(m: SetupMaterialData, data: SetupData, can?: SetupMaterialCan): string | null {
-  if (m.locationType !== "internal") return null;
+  if (m.locationType !== "internal" || isExistingMaterial(m)) return null;
   const bomDone = !!data.created.materialBomIds?.[m.key];
   const wfDone = !!data.created.materialWorkflowIds?.[m.key];
   if (can && (!can.materialBom || !can.materialWorkflow) && (!bomDone || !wfDone)) {
@@ -178,7 +223,7 @@ export function validateInternalMaterial(m: SetupMaterialData, data: SetupData, 
     }
     const ids = m.bomRows.map((r) => r.materialId);
     if (new Set(ids).size !== ids.length) return "ห้ามเลือกวัตถุดิบซ้ำใน BOM ของวัสดุภายใน";
-    if (ids.includes(newMaterialRef(m.key))) return "BOM ของวัสดุห้ามอ้างถึงวัสดุตัวเอง";
+    if (ids.includes(newMaterialRef(m.key)) || (m.existingId && ids.includes(m.existingId))) return "BOM ของวัสดุห้ามอ้างถึงวัสดุตัวเอง";
     const known = new Set(data.materials.map((x) => x.key));
     if (ids.some((id) => isNewMaterialRef(id) && !known.has(newMaterialKey(id)))) return "BOM ของวัสดุภายในอ้างถึงวัสดุใหม่ที่ไม่มีแล้ว";
   }
@@ -211,10 +256,13 @@ export function validateSetupStep(step: number, data: SetupData, can?: SetupMate
   if (step === 0) {
     if (!data.materialsEnabled) return null;
     for (const [i, m] of data.materials.entries()) {
+      if (isExistingMaterial(m) && !m.existingId) return `วัสดุที่ ${i + 1}: กรุณาเลือกวัสดุภายในที่มีอยู่`;
       const internal = validateInternalMaterial(m, data, can);
-      if (internal) return `วัสดุใหม่ที่ ${i + 1}: ${internal}`;
+      if (internal) return `วัสดุ${isExistingMaterial(m) ? "" : "ใหม่"}ที่ ${i + 1}: ${internal}`;
     }
-    const pending = data.materials.filter((m) => !data.created.materialIds?.[m.key]);
+    const existingIds = data.materials.filter((m) => isExistingMaterial(m) && m.existingId).map((m) => m.existingId);
+    if (new Set(existingIds).size !== existingIds.length) return "เลือกวัสดุภายในที่มีอยู่ซ้ำกัน";
+    const pending = data.materials.filter((m) => !isExistingMaterial(m) && !data.created.materialIds?.[m.key]);
     for (const [i, m] of pending.entries()) {
       const label = `วัสดุใหม่ที่ ${i + 1}`;
       const first = Object.values(materialFieldErrors(m))[0];
@@ -225,8 +273,24 @@ export function validateSetupStep(step: number, data: SetupData, can?: SetupMate
     return null;
   }
   if (step === 1) {
+    if (data.mode === "material") {
+      if (data.ownerSource === "new") {
+        const m = data.ownerNew;
+        if (!m) return "กรุณากรอกข้อมูลวัสดุภายใน";
+        if (data.created.materialIds?.[m.key]) return null;
+        const first = Object.values(materialFieldErrors(m))[0];
+        if (first) return `วัสดุภายในใหม่: ${first}`;
+        const code = m.code.trim().toLowerCase();
+        if (data.materialsEnabled && data.materials.some((x) => !isExistingMaterial(x) && x.code.trim().toLowerCase() === code)) {
+          return "รหัสวัสดุภายในซ้ำกับวัสดุส่วนประกอบ";
+        }
+        return null;
+      }
+      return data.ownerMaterial ? null : "กรุณาเลือกวัสดุภายใน";
+    }
     const p = data.product;
     if (data.created.productId) return null;
+    if (p.source === "existing") return p.existingId ? null : "กรุณาเลือกสินค้าที่มีอยู่";
     if (!p.code.trim() || !p.name.trim()) return "กรุณากรอกรหัสและชื่อสินค้า";
     const required: Array<[string, string]> = [
       [p.unitId, "หน่วย"],
@@ -250,6 +314,7 @@ export function validateSetupStep(step: number, data: SetupData, can?: SetupMate
     }
     const ids = rows.map((r) => r.materialId);
     if (new Set(ids).size !== ids.length) return "ห้ามเลือกวัตถุดิบซ้ำใน BOM";
+    if (data.mode === "material" && data.ownerMaterial && ids.includes(data.ownerMaterial.id)) return "BOM ของวัสดุห้ามอ้างถึงวัสดุตัวเอง";
     const known = new Set(data.materials.map((m) => m.key));
     if (rows.some((r) => isNewMaterialRef(r.materialId) && (!data.materialsEnabled || !known.has(newMaterialKey(r.materialId))))) {
       return "BOM อ้างถึงวัสดุใหม่ที่ไม่มีแล้วในขั้นตอนที่ 1 กรุณาเลือกวัตถุดิบใหม่";
@@ -269,6 +334,6 @@ export function validateSetupStep(step: number, data: SetupData, can?: SetupMate
 
 export function setupDraftTitle(data: SetupData): string {
   const firstMaterial = data.materialsEnabled ? data.materials[0]?.code.trim() ?? "" : "";
-  const parts = (data.mode === "material" ? [firstMaterial] : [data.product.code.trim(), firstMaterial]).filter(Boolean);
+  const parts = (data.mode === "material" ? [ownerInfo(data)?.code ?? "", firstMaterial] : [data.product.code.trim(), firstMaterial]).filter(Boolean);
   return parts.length ? parts.join(" / ") : "ร่างที่ยังไม่ตั้งชื่อ";
 }

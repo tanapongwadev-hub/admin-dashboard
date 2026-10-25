@@ -67,7 +67,7 @@ test("builds a full-stock issue payload from every eligible picked line", () => 
   ]);
 });
 
-test("excludes unpicked, released, and fully issued lines from a full-stock issue", () => {
+test("includes unpicked lines but excludes released and fully issued ones from a full-stock issue", () => {
   const items = buildAllOutstandingIssueItems([
     pickLine({ reservationId: "unpicked", pickedAt: null }),
     pickLine({
@@ -79,6 +79,7 @@ test("excludes unpicked, released, and fully issued lines from a full-stock issu
   ]);
 
   assert.deepEqual(items, [
+    { reservationId: "unpicked", quantity: "10.0000" },
     { reservationId: "eligible", quantity: "1.0000" },
   ]);
 });

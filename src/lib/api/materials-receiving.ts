@@ -100,6 +100,8 @@ export interface MaterialReceivingLookupMaterial {
   processingMaterialId?: string | null;
   /** Owns a Material BOM: received only from closing production, never manually. */
   hasBom?: boolean;
+  /** Internal Location Type or owns a BOM: stock comes only from production into store. */
+  productionOnly?: boolean;
   id: string;
   code: string;
   name: string;

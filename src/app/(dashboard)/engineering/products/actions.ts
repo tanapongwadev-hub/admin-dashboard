@@ -80,7 +80,7 @@ function errorResult(err: unknown): ProductActionFailure {
 function revalidateProductPaths() {
   revalidatePath("/engineering/products");
   revalidatePath("/engineering/products/list");
-  revalidatePath("/engineering/bom/products");
+  revalidatePath("/engineering/setup");
 }
 
 // `perform*` helpers — the testable inner functions. The public `*Action`
@@ -373,7 +373,7 @@ export async function deleteProductPermanentlyAction(id: string, confirmationCod
   try {
     revalidatePath("/engineering/products");
     revalidatePath("/engineering/products/list");
-    revalidatePath("/engineering/bom/products");
+    revalidatePath("/engineering/setup");
   } catch { /* best-effort */ }
   return { status: "success" };
 }

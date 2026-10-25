@@ -3,6 +3,7 @@
 import * as React from "react";
 import { createPortal } from "react-dom";
 import type { MaterialReceiving } from "@/lib/api/materials-receiving";
+import { formatNumber } from "@/lib/utils";
 
 // Renders "พิมพ์ QR Code"'s printable content directly in this document and
 // calls the browser's own `window.print()` — no `window.open()`, no popup
@@ -85,7 +86,7 @@ export function MaterialsReceivingQrPrintSheet({
             <p className="break-all font-mono text-[11px] text-black">{pkg.lotDetailNo ?? "—"}</p>
             <p className="text-[11px] font-semibold text-black">{materialLabel}</p>
             <p className="text-[10px] text-gray-600">
-              Box {String(pkg.packageNo).padStart(3, "0")} · {pkg.quantity} หน่วย
+              Box {String(pkg.packageNo).padStart(3, "0")} · {formatNumber(Number(pkg.quantity))} หน่วย
             </p>
             <p className="text-[10px] text-gray-600">Lot: {receiving.internalLotNo}</p>
           </section>

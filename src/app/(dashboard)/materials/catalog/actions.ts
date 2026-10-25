@@ -48,7 +48,7 @@ export async function deleteMaterialPermanentlyAction(id: string, confirmationCo
   if (!token) redirectMissingSession();
   try { await deleteMaterialPermanently(token, id, confirmationCode, includeBom); }
   catch (err) { redirectIfSessionExpired(err); return { status: "error", message: err instanceof ApiError ? apiErrorMessage(err) : CONNECTION_ERROR_MESSAGE }; }
-  try { revalidatePath("/materials"); revalidatePath("/materials/catalog"); revalidatePath("/engineering/bom/materials"); } catch { /* best-effort */ }
+  try { revalidatePath("/materials"); revalidatePath("/materials/catalog"); revalidatePath("/engineering/setup"); } catch { /* best-effort */ }
   return { status: "success" };
 }
 

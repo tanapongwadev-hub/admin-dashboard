@@ -4,6 +4,7 @@ import * as React from "react";
 import { createPortal } from "react-dom";
 import type { MaterialJobOrderDetail } from "@/lib/api/material-job-orders";
 import { groupPickLinesByMaterial } from "@/lib/group-pick-lines";
+import { formatNumber } from "@/lib/utils";
 
 // Same "print the current document, no popup window" pattern as
 // materials-receiving-qr-print-sheet.tsx (see that file's own comment for
@@ -41,7 +42,7 @@ export function MaterialJobOrderPrintSheet({
         {jobOrder.productionPlan.lines.map((line) => (
           <p key={line.id}>
             รายการผลิต: {line.productCode} · {line.productName} — จำนวนผลิต{" "}
-            {line.quantity} · วันที่ต้องใช้ {line.needByDate}
+            {formatNumber(Number(line.quantity))} · วันที่ต้องใช้ {line.needByDate}
           </p>
         ))}
       </div>
@@ -92,7 +93,7 @@ export function MaterialJobOrderPrintSheet({
                     {line.packageNo}
                   </td>
                   <td className="border border-gray-400 px-2 py-1 text-right">
-                    {line.reservedQuantity}
+                    {formatNumber(Number(line.reservedQuantity))}
                   </td>
                 </tr>
               ))}

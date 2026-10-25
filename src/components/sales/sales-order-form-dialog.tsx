@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FieldError } from "@/components/ui/field-error";
 import { MasterDataEmptyLink } from "@/components/ui/master-data-empty-link";
 import {
   Select,
@@ -206,9 +207,7 @@ export function SalesOrderFormDialog({
                   </Select>
                 )}
                 {errors.customerId && (
-                  <p id="so-customer-error" role="alert" className="text-xs text-danger">
-                    {errors.customerId.message}
-                  </p>
+                  <FieldError id="so-customer-error" message={errors.customerId.message} />
                 )}
               </div>
               <div className="space-y-1.5">
@@ -220,7 +219,7 @@ export function SalesOrderFormDialog({
                   {...register("orderDate")}
                 />
                 {errors.orderDate && (
-                  <p role="alert" className="text-xs text-danger">{errors.orderDate.message}</p>
+                  <FieldError message={errors.orderDate.message} />
                 )}
               </div>
               <div className="space-y-1.5">
@@ -233,9 +232,7 @@ export function SalesOrderFormDialog({
                   {...register("dueDate")}
                 />
                 {errors.dueDate && (
-                  <p id="so-due-error" role="alert" className="text-xs text-danger">
-                    {errors.dueDate.message}
-                  </p>
+                  <FieldError id="so-due-error" message={errors.dueDate.message} />
                 )}
               </div>
               <div className="space-y-1.5 sm:col-span-2">
@@ -315,9 +312,7 @@ export function SalesOrderFormDialog({
                             สินค้าที่เลือกในรายการอื่นแล้วจะไม่แสดงซ้ำ
                           </p>
                           {lineErrors?.productId && (
-                            <p role="alert" className="text-xs text-danger">
-                              {lineErrors.productId.message}
-                            </p>
+                            <FieldError message={lineErrors.productId.message} />
                           )}
                         </div>
                         <div className="space-y-1.5">
@@ -334,9 +329,7 @@ export function SalesOrderFormDialog({
                             {...register(`lines.${index}.quantity`)}
                           />
                           {lineErrors?.quantity && (
-                            <p role="alert" className="text-xs text-danger">
-                              {lineErrors.quantity.message}
-                            </p>
+                            <FieldError message={lineErrors.quantity.message} />
                           )}
                         </div>
                         {product && (

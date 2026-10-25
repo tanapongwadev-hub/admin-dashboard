@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Boxes, Pencil, CheckCircle2, Ban, Trash2, Factory, PackageMinus, ImageOff, type LucideIcon } from "lucide-react";
+import { Boxes, Eye, Pencil, CheckCircle2, Ban, Trash2, Factory, PackageMinus, ImageOff, type LucideIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
@@ -124,12 +124,15 @@ export function getMaterialsDisbursementRowActions(
   canDelete: boolean,
   handlers: {
     onEdit: (disbursement: MaterialsDisbursement) => void;
+    onViewDetails: (disbursement: MaterialsDisbursement) => void;
     onConfirm: (disbursement: MaterialsDisbursement) => void;
     onCancel: (disbursement: MaterialsDisbursement) => void;
     onDelete: (disbursement: MaterialsDisbursement) => void;
   }
 ): RowAction[] {
-  const actions: RowAction[] = [];
+  const actions: RowAction[] = [
+    { label: "ดูรายละเอียด", icon: Eye, onSelect: () => handlers.onViewDetails(disbursement) },
+  ];
   if (disbursement.status === "draft" && canUpdate) {
     actions.push({ label: "แก้ไข", icon: Pencil, onSelect: () => handlers.onEdit(disbursement) });
   }
@@ -160,6 +163,7 @@ interface MaterialsDisbursementRowProps {
   canCancel: boolean;
   canDelete: boolean;
   onEdit: (disbursement: MaterialsDisbursement) => void;
+  onViewDetails: (disbursement: MaterialsDisbursement) => void;
   onConfirm: (disbursement: MaterialsDisbursement) => void;
   onCancel: (disbursement: MaterialsDisbursement) => void;
   onDelete: (disbursement: MaterialsDisbursement) => void;
@@ -192,6 +196,7 @@ function MaterialsDisbursementCard({
   canCancel,
   canDelete,
   onEdit,
+  onViewDetails,
   onConfirm,
   onCancel,
   onDelete,
@@ -202,6 +207,7 @@ function MaterialsDisbursementCard({
   const TypeIcon = typeMeta.icon;
   const actions = getMaterialsDisbursementRowActions(disbursement, canUpdate, canConfirm, canCancel, canDelete, {
     onEdit,
+    onViewDetails,
     onConfirm,
     onCancel,
     onDelete,
@@ -321,6 +327,7 @@ function MaterialsDisbursementListItem({
   canCancel,
   canDelete,
   onEdit,
+  onViewDetails,
   onConfirm,
   onCancel,
   onDelete,
@@ -331,6 +338,7 @@ function MaterialsDisbursementListItem({
   const TypeIcon = typeMeta.icon;
   const actions = getMaterialsDisbursementRowActions(disbursement, canUpdate, canConfirm, canCancel, canDelete, {
     onEdit,
+    onViewDetails,
     onConfirm,
     onCancel,
     onDelete,
@@ -402,6 +410,7 @@ function MaterialsDisbursementCollection({
   canCancel,
   canDelete,
   onEdit,
+  onViewDetails,
   onConfirm,
   onCancel,
   onDelete,
@@ -413,11 +422,12 @@ function MaterialsDisbursementCollection({
   canCancel: boolean;
   canDelete: boolean;
   onEdit: (disbursement: MaterialsDisbursement) => void;
+  onViewDetails: (disbursement: MaterialsDisbursement) => void;
   onConfirm: (disbursement: MaterialsDisbursement) => void;
   onCancel: (disbursement: MaterialsDisbursement) => void;
   onDelete: (disbursement: MaterialsDisbursement) => void;
 }) {
-  const commonProps = { canUpdate, canConfirm, canCancel, canDelete, onEdit, onConfirm, onCancel, onDelete };
+  const commonProps = { canUpdate, canConfirm, canCancel, canDelete, onEdit, onViewDetails, onConfirm, onCancel, onDelete };
 
   if (view === "list") {
     return (
@@ -471,7 +481,7 @@ function MaterialsDisbursementCollection({
               canConfirm,
               canCancel,
               canDelete,
-              { onEdit, onConfirm, onCancel, onDelete }
+              { onEdit, onViewDetails, onConfirm, onCancel, onDelete }
             );
             return (
               <TableRow
@@ -549,6 +559,7 @@ export function MaterialsDisbursementTable({
   canCancel,
   canDelete,
   onEdit,
+  onViewDetails,
   onConfirm,
   onCancel,
   onDelete,
@@ -560,6 +571,7 @@ export function MaterialsDisbursementTable({
   canCancel: boolean;
   canDelete: boolean;
   onEdit: (disbursement: MaterialsDisbursement) => void;
+  onViewDetails: (disbursement: MaterialsDisbursement) => void;
   onConfirm: (disbursement: MaterialsDisbursement) => void;
   onCancel: (disbursement: MaterialsDisbursement) => void;
   onDelete: (disbursement: MaterialsDisbursement) => void;
@@ -583,6 +595,7 @@ export function MaterialsDisbursementTable({
       canCancel={canCancel}
       canDelete={canDelete}
       onEdit={onEdit}
+      onViewDetails={onViewDetails}
       onConfirm={onConfirm}
       onCancel={onCancel}
       onDelete={onDelete}

@@ -21,7 +21,7 @@ import type { MaterialsOverviewDay } from "@/lib/api/materials-dashboard";
 export type MovementMetric = "qty" | "docs";
 export type MovementChartKind = "combo" | "area" | "line" | "net";
 
-const nf = new Intl.NumberFormat("th-TH", { maximumFractionDigits: 2 });
+const nf = new Intl.NumberFormat("th-TH", { maximumFractionDigits: 0 });
 
 function shortDate(date: string) {
   const [, month, day] = date.split("-");

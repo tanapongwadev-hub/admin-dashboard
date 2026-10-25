@@ -29,7 +29,7 @@ function formatCount(value: number) {
 }
 
 function formatQuantity(value: string) {
-  return new Intl.NumberFormat("th-TH", { maximumFractionDigits: 2 }).format(Number(value));
+  return new Intl.NumberFormat("th-TH", { maximumFractionDigits: 0 }).format(Number(value));
 }
 
 function formatThaiDate(value: string) {

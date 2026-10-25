@@ -154,8 +154,8 @@ export function MaterialsReceivingFormDialog({
   const supplierSelectValue = suppliers.some((s) => s.id === supplierId) ? supplierId : "";
   const effectiveSupplierId = supplierSelectValue || (suppliers.length === 1 ? suppliers[0].id : "");
 
-  // BOM owners are received only from closing production; cps-api also refuses them.
-  const receivableMaterials = lookups.materials.filter((m) => !m.hasBom);
+  // Internal / BOM-owning materials are received only from production into store; cps-api also refuses them.
+  const receivableMaterials = lookups.materials.filter((m) => !m.productionOnly && !m.hasBom);
   const selectedMaterial = receivableMaterials.find((m) => m.id === materialId);
   const packingQuantity = selectedMaterial?.packingQuantity ?? null;
   const receiveQty = Number(receiveQuantity) || 0;
@@ -253,8 +253,12 @@ export function MaterialsReceivingFormDialog({
                   </SelectContent>
                 </Select>
               )}
-              {lookups.materials.some((m) => m.hasBom) && (
-                <p className="text-xs text-fg-muted">วัสดุที่มี BOM ไม่แสดงในรายการนี้ เพราะรับเข้าได้จากการปิดการผลิตเท่านั้น</p>
+              {lookups.materials.some((m) => m.productionOnly || m.hasBom) && (
+                <p className="text-xs text-fg-muted">วัสดุภายใน (Internal) และวัสดุที่มี BOM ไม่แสดงในรายการนี้ เพราะสต็อกมาจากการผลิตเข้า Store เท่านั้น{" "}
+                  <Link href="/production/internal-materials/plans" className="font-medium text-primary underline-offset-2 hover:underline">
+                    สร้างแผนผลิตวัสดุภายใน →
+                  </Link>
+                </p>
               )}
               {selectedMaterial && !receivesSheets && (
                 <p className="text-xs text-fg-muted">

@@ -20,6 +20,8 @@ export interface MaterialDisbursementItem {
   materialId: string;
   requestedQuantity: string;
   disbursedQuantity: string;
+  reason?: string | null;
+  reasonNote?: string | null;
   // imagePath added to the backend's list/detail response 2026-09-20 (same
   // one-line addition materials-receiving.service.ts's toListResponse
   // needed — see AGENTS.md § Material Receiving) so the table can show each
@@ -36,6 +38,7 @@ export interface MaterialsDisbursement {
   reason: string | null;
   attachmentUrl: string | null;
   attachmentName: string | null;
+  attachments?: { url: string; name: string }[];
   remark: string | null;
   confirmedBy: string | null;
   confirmedAt: string | null;
@@ -53,6 +56,20 @@ export interface MaterialsDisbursement {
   createdAt: string;
   updatedAt: string;
   items: MaterialDisbursementItem[];
+}
+
+export interface MaterialsDisbursementDetailPackage {
+  id: string;
+  packageId: string;
+  disbursedQuantity: string;
+  fifoOrder: number | null;
+  reversedAt: string | null;
+  package: { id: string; lotDetailNo: string; quantity: string; status: string } | null;
+}
+
+// GET /materials-disbursement/:id — items also carry the FIFO box allocations.
+export interface MaterialsDisbursementDetail extends Omit<MaterialsDisbursement, "items"> {
+  items: (MaterialDisbursementItem & { packages: MaterialsDisbursementDetailPackage[] })[];
 }
 
 export interface MaterialsDisbursementLookupMaterial {
@@ -126,6 +143,9 @@ export function getMaterialsDisbursement(accessToken: string, id: string) {
 export interface DisbursementItemPayload {
   materialId: string;
   requestedQuantity: string;
+  // stock_cut only: preset reason or "อื่นๆ" (then reasonNote is required).
+  reason?: string;
+  reasonNote?: string;
 }
 
 export interface CreateMaterialsDisbursementPayload {
@@ -135,8 +155,30 @@ export interface CreateMaterialsDisbursementPayload {
   // client-side too (see materials-disbursement-form-dialog.tsx) but the
   // backend re-checks regardless.
   reason?: string;
+  // Required by cps-api for stock_cut — uploaded first via
+  // uploadDisbursementAttachment (JPEG/PNG/WebP/PDF, ≤ 10 MiB).
+  attachmentUrl?: string;
+  attachmentName?: string;
+  // Multiple files (max 10); when sent it replaces the single-file fields above.
+  attachments?: { url: string; name: string }[];
   remark?: string;
   items: DisbursementItemPayload[];
+}
+
+export interface StoredDisbursementAttachment {
+  attachmentUrl: string;
+  attachmentName: string;
+}
+
+export function uploadDisbursementAttachment(accessToken: string, file: Blob, filename?: string) {
+  const body = new FormData();
+  if (filename) body.append("file", file, filename);
+  else body.append("file", file);
+  return apiFetch<StoredDisbursementAttachment>("/materials-disbursement/attachments", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${accessToken}` },
+    body,
+  });
 }
 
 // Partial — cps-api's UpdateMaterialsDisbursementDto is

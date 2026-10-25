@@ -1,5 +1,6 @@
 "use client";
 
+import { FieldError } from "@/components/ui/field-error";
 import * as React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -79,9 +80,7 @@ export function UserPasswordDialog({
                 {...register("password")}
               />
               {errors.password && (
-                <p id="reset-password-error" role="alert" className="text-xs text-danger">
-                  {errors.password.message}
-                </p>
+                <FieldError id="reset-password-error" message={errors.password.message} />
               )}
             </div>
             <div className="flex flex-col gap-1.5">
@@ -95,9 +94,7 @@ export function UserPasswordDialog({
                 {...register("confirm")}
               />
               {errors.confirm && (
-                <p id="reset-password-confirm-error" role="alert" className="text-xs text-danger">
-                  {errors.confirm.message}
-                </p>
+                <FieldError id="reset-password-confirm-error" message={errors.confirm.message} />
               )}
             </div>
           </fieldset>

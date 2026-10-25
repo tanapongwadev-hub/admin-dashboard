@@ -1,5 +1,6 @@
 "use client";
 
+import { FieldError } from "@/components/ui/field-error";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -96,9 +97,7 @@ export function CloseRemainingDialog({
                 aria-describedby={over ? "cr-over" : undefined}
               />
               {over && (
-                <p id="cr-over" role="alert" className="text-xs text-danger">
-                  เกินงานที่รอผลิต ({step.waitingQty} ชิ้น)
-                </p>
+                <FieldError id="cr-over" message={`เกินงานที่รอผลิต (${step.waitingQty} ชิ้น)`} />
               )}
             </div>
             <div className="flex flex-col gap-1.5">

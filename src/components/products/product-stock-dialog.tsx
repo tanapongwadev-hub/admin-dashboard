@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FieldError } from "@/components/ui/field-error";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getProductStockAction, recordProductStockAction } from "@/app/(dashboard)/engineering/products/stock-actions";
@@ -87,8 +88,8 @@ export function ProductStockDialog({ product, canManageStock, onClose, onSaved }
                     </Select>
                   )} />
                 </div>
-                <div className="space-y-1.5"><Label htmlFor="stock-quantity">จำนวน ({product.unit?.nameTh || product.unit?.code || "หน่วยสินค้า"})</Label><Input id="stock-quantity" type="number" min="0.0001" max="1000000000" step="0.0001" required {...form.register("quantity", { valueAsNumber: true })} aria-invalid={!!form.formState.errors.quantity} />{form.formState.errors.quantity && <p role="alert" className="text-xs text-danger">{form.formState.errors.quantity.message}</p>}</div>
-                <div className="space-y-1.5"><Label htmlFor="stock-reference">เลขที่เอกสารอ้างอิง</Label><Input id="stock-reference" required maxLength={100} placeholder="เช่น ใบรับสินค้า / ใบส่งสินค้า" {...form.register("referenceNo")} aria-invalid={!!form.formState.errors.referenceNo} />{form.formState.errors.referenceNo && <p role="alert" className="text-xs text-danger">{form.formState.errors.referenceNo.message}</p>}</div>
+                <div className="space-y-1.5"><Label htmlFor="stock-quantity">จำนวน ({product.unit?.nameTh || product.unit?.code || "หน่วยสินค้า"})</Label><Input id="stock-quantity" type="number" min="0.0001" max="1000000000" step="0.0001" required {...form.register("quantity", { valueAsNumber: true })} aria-invalid={!!form.formState.errors.quantity} />{form.formState.errors.quantity && <FieldError message={form.formState.errors.quantity.message} />}</div>
+                <div className="space-y-1.5"><Label htmlFor="stock-reference">เลขที่เอกสารอ้างอิง</Label><Input id="stock-reference" required maxLength={100} placeholder="เช่น ใบรับสินค้า / ใบส่งสินค้า" {...form.register("referenceNo")} aria-invalid={!!form.formState.errors.referenceNo} />{form.formState.errors.referenceNo && <FieldError message={form.formState.errors.referenceNo.message} />}</div>
                 <div className="space-y-1.5"><Label htmlFor="stock-remark">หมายเหตุ</Label><Input id="stock-remark" maxLength={1000} {...form.register("remark")} /></div>
                 <div className="flex flex-wrap items-center justify-between gap-3 sm:col-span-2"><p className="text-xs text-fg-muted">บันทึกแล้วมีผลต่อยอดคงเหลือทันที</p><Button type="submit" disabled={pending}>{pending ? "กำลังบันทึก…" : "ยืนยันรายการ"}</Button></div>
               </fieldset>

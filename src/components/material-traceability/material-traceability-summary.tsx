@@ -8,7 +8,7 @@ import type { MaterialTraceabilitySummary } from "@/lib/api/material-traceabilit
 function formatQty(value: string): string {
   const n = Number(value);
   if (!Number.isFinite(n)) return value;
-  return n.toLocaleString("th-TH", { maximumFractionDigits: 4 });
+  return n.toLocaleString("th-TH", { maximumFractionDigits: 0 });
 }
 
 interface SummaryCardDef {

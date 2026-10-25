@@ -6,9 +6,13 @@ import {
   createMaterialsDisbursement,
   updateMaterialsDisbursement,
   deleteMaterialsDisbursement,
+  getMaterialsDisbursement,
   confirmMaterialsDisbursement,
   cancelMaterialsDisbursement,
+  uploadDisbursementAttachment,
+  type StoredDisbursementAttachment,
   type MaterialsDisbursement,
+  type MaterialsDisbursementDetail,
   type CreateMaterialsDisbursementPayload,
   type UpdateMaterialsDisbursementPayload,
 } from "@/lib/api/materials-disbursement";
@@ -119,6 +123,34 @@ export async function performCancelMaterialsDisbursement(
   }
 }
 
+export type DisbursementAttachmentUploadResult =
+  | { status: "success"; attachment: StoredDisbursementAttachment }
+  | { status: "error"; message: string };
+
+export async function performUploadDisbursementAttachment(
+  accessToken: string,
+  formData: FormData
+): Promise<DisbursementAttachmentUploadResult> {
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) {
+    return { status: "error", message: "กรุณาเลือกไฟล์แนบ" };
+  }
+  try {
+    const attachment = await uploadDisbursementAttachment(accessToken, file, file.name);
+    return { status: "success", attachment };
+  } catch (err) {
+    return { status: "error", message: errorResult(err).message };
+  }
+}
+
+export async function uploadDisbursementAttachmentAction(
+  formData: FormData
+): Promise<DisbursementAttachmentUploadResult> {
+  const accessToken = await requireAccessToken();
+  if (!accessToken) redirectMissingSession();
+  return performUploadDisbursementAttachment(accessToken, formData);
+}
+
 export async function createMaterialsDisbursementAction(
   payload: CreateMaterialsDisbursementPayload
 ): Promise<MaterialsDisbursementActionResult> {
@@ -159,4 +191,23 @@ export async function cancelMaterialsDisbursementAction(
   const accessToken = await requireAccessToken();
   if (!accessToken) redirectMissingSession();
   return performCancelMaterialsDisbursement(accessToken, id, cancelReason);
+}
+
+export type MaterialsDisbursementDetailResult =
+  | { status: "success"; disbursement: MaterialsDisbursementDetail }
+  | { status: "error"; message: string };
+
+// Read-only: the full document incl. the FIFO box allocations (the list
+// response omits packages). Opened from the "ดูรายละเอียด" row action.
+export async function getMaterialsDisbursementDetailAction(
+  id: string
+): Promise<MaterialsDisbursementDetailResult> {
+  const accessToken = await requireAccessToken();
+  if (!accessToken) redirectMissingSession();
+  try {
+    const disbursement = (await getMaterialsDisbursement(accessToken, id)) as MaterialsDisbursementDetail;
+    return { status: "success", disbursement };
+  } catch (err) {
+    return { status: "error", message: errorResult(err).message };
+  }
 }

@@ -14,6 +14,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FieldError } from "@/components/ui/field-error";
 import { RowActionsMenu, type RowAction } from "@/components/ui/row-actions-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
@@ -88,18 +89,18 @@ function RoleFormDialog({ role, onClose }: { role: RoleSummary | null; onClose: 
             <div className="space-y-1.5">
               <Label htmlFor="role-code">รหัส *</Label>
               <Input id="role-code" disabled={isEdit} {...register("code")} aria-invalid={!!errors.code} />
-              {isEdit ? <p className="text-xs text-fg-muted">รหัส role แก้ไขไม่ได้</p> : errors.code && <p className="text-xs text-danger" role="alert">{errors.code.message}</p>}
+              {isEdit ? <p className="text-xs text-fg-muted">รหัส role แก้ไขไม่ได้</p> : errors.code && <FieldError message={errors.code.message} />}
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="role-name-th">ชื่อ (ไทย) *</Label>
                 <Input id="role-name-th" {...register("nameTh")} aria-invalid={!!errors.nameTh} />
-                {errors.nameTh && <p className="text-xs text-danger" role="alert">{errors.nameTh.message}</p>}
+                {errors.nameTh && <FieldError message={errors.nameTh.message} />}
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="role-name-en">ชื่อ (อังกฤษ) *</Label>
                 <Input id="role-name-en" {...register("nameEn")} aria-invalid={!!errors.nameEn} />
-                {errors.nameEn && <p className="text-xs text-danger" role="alert">{errors.nameEn.message}</p>}
+                {errors.nameEn && <FieldError message={errors.nameEn.message} />}
               </div>
             </div>
             <div className="space-y-1.5">
