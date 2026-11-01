@@ -2,6 +2,14 @@ import type { ReactNode } from "react";
 
 const LABELS_PER_PAGE = 8;
 
+// The print dialog opens on the next frame after the sheet mounts, which is
+// too soon for a logo that was never fetched (it came out blank). Warm the
+// browser cache as soon as this module loads, i.e. when the page opens.
+if (typeof window !== "undefined") {
+  const warm = new window.Image();
+  warm.src = "/cci_logo.png";
+}
+
 /** Two columns × four rows: each cut-out label is 93.5 × 62 mm. */
 export function ProductionQrPrintLayout({
   title,
@@ -49,6 +57,7 @@ export function ProductionQrLabel({
   orderCode,
   quantity,
   fields,
+  pairFields,
 }: {
   qrImage: string;
   qrCode: string;
@@ -57,13 +66,18 @@ export function ProductionQrLabel({
   orderCode: string;
   quantity: number;
   fields: Array<{ label: string; value: string }>;
+  /** Optional two-column row under `fields` (e.g. step | closed by). */
+  pairFields?: [{ label: string; value: string }, { label: string; value: string }];
 }) {
   return (
     <article className="production-qr-label grid h-[62mm] min-w-0 grid-rows-[14mm_minmax(0,1fr)_7mm] gap-[1mm] border border-black bg-white p-[2mm] text-black text-[8pt] leading-tight">
       <header className="flex min-w-0 items-start justify-between gap-[2mm] border-b border-black pb-[1mm]">
+        {/* eslint-disable-next-line @next/next/no-img-element -- printable logo */}
+        <img src="/cci_logo.png" alt="CCI" className="h-[8mm] w-auto shrink-0 self-start object-contain" />
         <div className="min-w-0 flex-1">
           <p className={`break-all font-mono font-bold leading-tight ${productCode.length > 22 ? "text-[9pt]" : "text-[12pt]"}`}>{productCode || "—"}</p>
-          <p className={`text-[8.5pt] font-medium leading-tight ${productCode.length > 30 ? "line-clamp-1" : "line-clamp-2"}`}>{productName || "ไม่ระบุชื่อชิ้นงาน"}</p>
+          <p className="line-clamp-1 text-[8.5pt] font-medium leading-tight">{productName || "ไม่ระบุชื่อชิ้นงาน"}</p>
+          <p className="mt-[0.5mm] break-all font-mono text-[6.5pt] font-semibold leading-tight">{qrCode}</p>
         </div>
         <div className="shrink-0 border-l border-black pl-[2mm] text-right">
           <p className="text-[6.5pt]">จำนวน</p>
@@ -84,6 +98,16 @@ export function ProductionQrLabel({
               <dd className="break-words text-[8pt] font-bold leading-tight">{value || "—"}</dd>
             </div>
           ))}
+          {pairFields && (
+            <div className="grid grid-cols-2 gap-[2mm]">
+              {pairFields.map(({ label, value }) => (
+                <div key={label} className="min-w-0">
+                  <dt className="text-[6.5pt]">{label}</dt>
+                  <dd className="break-words text-[8pt] font-bold leading-tight">{value || "—"}</dd>
+                </div>
+              ))}
+            </div>
+          )}
         </dl>
       </div>
       <footer className="min-w-0 border-t border-black pt-[0.8mm] leading-tight">
@@ -91,7 +115,6 @@ export function ProductionQrLabel({
           <span className="shrink-0">CPS · ใบสั่งผลิต</span>
           <span className="break-all text-right font-mono font-semibold">{orderCode}</span>
         </div>
-        <p className="mt-[0.5mm] break-all font-mono text-[6.5pt]">{qrCode}</p>
       </footer>
     </article>
   );

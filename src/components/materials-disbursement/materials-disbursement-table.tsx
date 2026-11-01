@@ -55,6 +55,7 @@ function DisbursementMaterialPhoto({
         alt={`รูปวัสดุ: ${materialName}`}
         fill
         sizes="80px"
+        unoptimized
         className="object-contain p-1"
         onError={() => setFailedPath(trimmedPath)}
       />

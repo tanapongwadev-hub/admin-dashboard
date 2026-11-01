@@ -1,6 +1,8 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
+import Link from "next/link";
 import { FileText, ImageIcon, Factory, PackageMinus, Loader2 } from "lucide-react";
 import {
   Dialog,
@@ -121,6 +123,19 @@ export function MaterialsDisbursementDetailsDialog({
                 <Field label="สร้างเมื่อ">{formatDateTime(base.createdAt)}</Field>
                 <Field label="ยืนยันเมื่อ">{formatDateTime(base.confirmedAt)}</Field>
                 <Field label="ยกเลิกเมื่อ">{formatDateTime(base.cancelledAt)}</Field>
+                {base.issueReport && (
+                  <Field label="รายการแจ้งปัญหา">
+                    <Link
+                      href={`/reports/issues?search=${encodeURIComponent(base.issueReport.reportNo)}`}
+                      className="text-primary underline"
+                    >
+                      <span className="font-mono">{base.issueReport.reportNo}</span> · {base.issueReport.title}
+                    </Link>
+                    <span className="block text-xs font-normal text-fg-muted">
+                      เอกสาร {base.issueReport.documentNo ?? "—"}
+                    </span>
+                  </Field>
+                )}
                 {base.reason && <Field label="เหตุผล">{base.reason}</Field>}
                 {base.cancelReason && <Field label="เหตุผลที่ยกเลิก">{base.cancelReason}</Field>}
                 {base.remark && <Field label="หมายเหตุ">{base.remark}</Field>}
@@ -194,28 +209,48 @@ export function MaterialsDisbursementDetailsDialog({
                 return (
                   <section className="space-y-2">
                     <h3 className="text-sm font-semibold text-fg">ไฟล์แนบ ({files.length})</h3>
-                    <ul className="grid gap-2 sm:grid-cols-2">
-                      {files.map((file, index) => (
-                        <li key={`${file.url}-${index}`}>
-                          <a
-                            href={file.url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="flex items-center gap-3 rounded-md border border-border bg-surface p-2 hover:border-primary"
-                          >
-                            <span className="flex size-10 shrink-0 items-center justify-center rounded-md border border-border bg-surface-2">
-                              {file.name.toLowerCase().endsWith(".pdf") ? (
-                                <FileText className="size-5 text-danger" />
+                    <ul className="grid gap-3 sm:grid-cols-2">
+                      {files.map((file, index) => {
+                        const isPdf =
+                          file.name.toLowerCase().endsWith(".pdf") || file.url.toLowerCase().endsWith(".pdf");
+                        return (
+                          <li key={`${file.url}-${index}`} className="overflow-hidden rounded-md border border-border bg-surface">
+                            <div className="relative h-56 bg-surface-2">
+                              {isPdf ? (
+                                <iframe
+                                  src={`${file.url}#toolbar=0&navpanes=0`}
+                                  title={`ตัวอย่างไฟล์ ${file.name}`}
+                                  className="h-full w-full border-0"
+                                />
                               ) : (
-                                <ImageIcon className="size-5 text-success" />
+                                <Image
+                                  src={file.url}
+                                  alt={`ตัวอย่างไฟล์ ${file.name}`}
+                                  fill
+                                  unoptimized
+                                  sizes="(min-width: 640px) 50vw, 100vw"
+                                  className="object-contain p-1"
+                                />
                               )}
-                            </span>
-                            <span className="min-w-0 truncate text-sm font-medium text-primary underline">
-                              {file.name}
-                            </span>
-                          </a>
-                        </li>
-                      ))}
+                            </div>
+                            <a
+                              href={file.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="flex items-center gap-2 border-t border-border px-3 py-2 hover:bg-surface-2"
+                            >
+                              {isPdf ? (
+                                <FileText className="size-4 shrink-0 text-danger" />
+                              ) : (
+                                <ImageIcon className="size-4 shrink-0 text-success" />
+                              )}
+                              <span className="min-w-0 truncate text-sm font-medium text-primary underline">
+                                {file.name}
+                              </span>
+                            </a>
+                          </li>
+                        );
+                      })}
                     </ul>
                   </section>
                 );

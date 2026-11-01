@@ -30,6 +30,7 @@ export function MaterialsDisbursementClient({
   canCreate,
   canUpdate,
   canConfirm,
+  canCreateIssueReport,
   canCancel,
   canDelete,
 }: {
@@ -39,6 +40,7 @@ export function MaterialsDisbursementClient({
   canCreate: boolean;
   canUpdate: boolean;
   canConfirm: boolean;
+  canCreateIssueReport: boolean;
   canCancel: boolean;
   canDelete: boolean;
 }) {
@@ -185,6 +187,7 @@ export function MaterialsDisbursementClient({
           disbursement={formTarget}
           onSaved={handleSaved}
           canConfirm={canConfirm}
+          canCreateIssueReport={canCreateIssueReport}
         />
       )}
 

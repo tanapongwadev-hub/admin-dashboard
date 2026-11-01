@@ -108,6 +108,7 @@ export default async function MaterialsDisbursementPage({
   const canUpdate = session.user.isSuperAdmin || session.permissions.includes("MATERIALS_DISBURSEMENT_UPDATE");
   const canConfirm = session.user.isSuperAdmin || session.permissions.includes("MATERIALS_DISBURSEMENT_CONFIRM");
   const canCancel = session.user.isSuperAdmin || session.permissions.includes("MATERIALS_DISBURSEMENT_CANCEL");
+  const canCreateIssueReport = session.user.isSuperAdmin || session.permissions.includes("ISSUE_REPORT_CREATE");
   const canDelete = session.user.isSuperAdmin || session.permissions.includes("MATERIALS_DISBURSEMENT_DELETE");
 
   return (
@@ -124,6 +125,7 @@ export default async function MaterialsDisbursementPage({
         canCreate={canCreate}
         canUpdate={canUpdate}
         canConfirm={canConfirm}
+        canCreateIssueReport={canCreateIssueReport}
         canCancel={canCancel}
         canDelete={canDelete}
       />

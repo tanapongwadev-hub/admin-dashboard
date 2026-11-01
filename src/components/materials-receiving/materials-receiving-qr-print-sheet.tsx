@@ -40,8 +40,24 @@ export function MaterialsReceivingQrPrintSheet({
     window.addEventListener("afterprint", handleAfterPrint);
     // rAF, not a same-tick call — gives the browser one paint to lay out the
     // freshly-mounted print content before the print dialog captures it.
-    const raf = requestAnimationFrame(() => window.print());
+    // Wait for the logo to finish loading (the QR images are inline data
+    // URLs, the logo is a network file) — printing on the next frame
+    // captured the sheet before it arrived, so the logo came out blank.
+    let raf = 0;
+    let cancelled = false;
+    let started = false;
+    const startPrint = () => {
+      if (cancelled || started) return;
+      started = true;
+      raf = requestAnimationFrame(() => window.print());
+    };
+    const logo = new window.Image();
+    logo.onload = startPrint;
+    logo.onerror = startPrint;
+    logo.src = "/cci_logo.png";
+    if (logo.complete) startPrint();
     return () => {
+      cancelled = true;
       window.removeEventListener("afterprint", handleAfterPrint);
       cancelAnimationFrame(raf);
     };
@@ -56,43 +72,129 @@ export function MaterialsReceivingQrPrintSheet({
   if (!receiving) return null;
 
   const packages = receiving.packages ?? [];
-  const materialLabel = receiving.material
-    ? `${receiving.material.code} · ${receiving.material.name}`
-    : "ไม่ระบุวัสดุ";
+
+  const supplierLabel = receiving.supplier
+    ? (receiving.supplier.nameTh ?? receiving.supplier.nameEn ?? receiving.supplier.code)
+    : null;
+  const unitLabel =
+    receiving.unit?.symbol ?? receiving.unit?.nameTh ?? receiving.unit?.code ?? "หน่วย";
+  const materialCode = receiving.material?.code ?? "—";
+  const materialName = receiving.material?.name ?? "ไม่ระบุวัสดุ";
+
+  // Same sheet geometry as the production labels: A4 portrait, 10 mm
+  // margins, 2 × 4 cut-out labels of 93.5 × 62 mm, 8 per page.
+  const pages: (typeof packages)[] = [];
+  for (let i = 0; i < packages.length; i += 8) pages.push(packages.slice(i, i + 8));
 
   return createPortal(
     <div data-qr-print-sheet className="hidden print:block">
-      <h1 className="mb-3 text-sm font-semibold text-black">
-        QR Code กล่อง — {receiving.internalLotNo} ({materialLabel})
-      </h1>
-      <div className="grid grid-cols-3 gap-2.5">
-        {packages.map((pkg) => (
-          <section
-            key={pkg.id}
-            className="flex flex-col items-center gap-1 break-inside-avoid rounded-lg border border-gray-300 p-2.5 text-center"
-          >
-            {pkg.qrCode ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={pkg.qrCode}
-                alt={`QR ${pkg.lotDetailNo ?? pkg.packageNo}`}
-                className="h-28 w-28"
-              />
-            ) : (
-              <div className="flex h-28 w-28 items-center justify-center rounded-md border border-dashed border-gray-300 text-[11px] text-gray-500">
-                ไม่มี QR
-              </div>
-            )}
-            <p className="break-all font-mono text-[11px] text-black">{pkg.lotDetailNo ?? "—"}</p>
-            <p className="text-[11px] font-semibold text-black">{materialLabel}</p>
-            <p className="text-[10px] text-gray-600">
-              Box {String(pkg.packageNo).padStart(3, "0")} · {formatNumber(Number(pkg.quantity))} หน่วย
+      <style>{`
+        @page { size: A4 portrait; margin: 10mm; }
+        @media print {
+          .receiving-qr-page { width: 190mm; break-after: page; break-inside: avoid; }
+          .receiving-qr-page:last-child { break-after: auto; }
+          .receiving-qr-label { break-inside: avoid; }
+        }
+      `}</style>
+      {pages.map((pagePackages, pageIndex) => (
+        <div key={pageIndex} className="receiving-qr-page">
+          <div className="grid auto-rows-[62mm] grid-cols-2 gap-[3mm]">
+            {pagePackages.map((pkg) => (
+              <article
+                key={pkg.id}
+                className="receiving-qr-label grid h-[62mm] min-w-0 grid-rows-[14mm_minmax(0,1fr)_7mm] gap-[1mm] border border-black bg-white p-[2mm] text-[8pt] leading-tight text-black"
+              >
+                <header className="flex min-w-0 items-stretch justify-between gap-[2mm] border-b border-black pb-[1mm]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/cci_logo.png"
+                    alt="CCI"
+                    className="h-[8mm] w-auto shrink-0 self-start object-contain"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-mono text-[11pt] font-bold">{materialCode}</p>
+                    <p className="line-clamp-2 text-[8pt]">{materialName}</p>
+                  </div>
+                  <div className="shrink-0 border-l border-black pl-[2mm] text-right">
+                    <p className="text-[16pt] font-bold tabular-nums leading-none">
+                      {formatNumber(Number(pkg.quantity))}
+                    </p>
+                    <p className="mt-[0.5mm] text-[7pt] font-medium">{unitLabel}</p>
+                  </div>
+                </header>
+                <div className="flex min-h-0 items-stretch gap-[3mm]">
+                  <div className="flex size-[34mm] shrink-0 items-center justify-center self-center bg-white p-[2mm]">
+                    {pkg.qrCode ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={pkg.qrCode}
+                        alt={`QR ${pkg.lotDetailNo ?? pkg.packageNo}`}
+                        className="size-[30mm] object-contain"
+                      />
+                    ) : (
+                      <span className="border border-dashed border-black p-[2mm] text-[7pt]">
+                        ไม่มี QR
+                      </span>
+                    )}
+                  </div>
+                  <dl className="flex min-w-0 flex-1 flex-col divide-y divide-gray-500">
+                    <LabelField label="Supplier" value={supplierLabel} strong />
+                    <LabelField label="Lot" value={receiving.internalLotNo} mono strong />
+                    <div className="grid min-h-0 flex-1 grid-cols-2 divide-x divide-gray-500">
+                      <LabelField label="Supplier Lot" value={receiving.supplierLotNo ?? "—"} mono />
+                      <LabelField
+                        label="กล่อง"
+                        value={`${pkg.packageNo}/${packages.length}`}
+                        padLeft
+                      />
+                    </div>
+                    <LabelField label="รับเข้า" value={receiving.receiveDate} />
+                  </dl>
+                </div>
+                <footer className="min-w-0 border-t border-black pt-[0.8mm]">
+                  <p className="break-all font-mono text-[7pt] font-semibold">
+                    {pkg.lotDetailNo ?? "—"}
+                  </p>
+                </footer>
+              </article>
+            ))}
+          </div>
+          {pages.length > 1 && (
+            <p className="mt-[1mm] text-right text-[7pt]">
+              {receiving.internalLotNo} · หน้า {pageIndex + 1}/{pages.length}
             </p>
-            <p className="text-[10px] text-gray-600">Lot: {receiving.internalLotNo}</p>
-          </section>
-        ))}
-      </div>
+          )}
+        </div>
+      ))}
     </div>,
     document.body
+  );
+}
+
+function LabelField({
+  label,
+  value,
+  mono,
+  strong,
+  padLeft,
+}: {
+  label: string;
+  value: string | null | undefined;
+  mono?: boolean;
+  strong?: boolean;
+  padLeft?: boolean;
+}) {
+  if (!value) return null;
+  return (
+    <div
+      className={`flex min-h-0 min-w-0 flex-1 flex-col justify-center ${padLeft ? "pl-[1.5mm]" : ""}`}
+    >
+      <dt className="text-[6.5pt] leading-none">{label}</dt>
+      <dd
+        className={`mt-[0.4mm] break-words leading-tight ${strong ? "text-[9.5pt] font-bold" : "text-[8.5pt] font-medium"} ${mono ? "font-mono" : ""}`}
+      >
+        {value}
+      </dd>
+    </div>
   );
 }

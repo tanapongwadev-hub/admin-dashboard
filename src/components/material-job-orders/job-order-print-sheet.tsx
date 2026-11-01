@@ -28,8 +28,9 @@ export function MaterialJobOrderPrintSheet({
 
   if (trigger === 0) return null;
 
-  const outstandingLines = jobOrder.pickLines.filter((line) => !line.releasedAt);
-  const materialGroups = groupPickLinesByMaterial(outstandingLines);
+  // Print every line, including ones already issued (released) — filtering
+  // them out left the sheet empty once the job order had been issued.
+  const materialGroups = groupPickLinesByMaterial(jobOrder.pickLines);
 
   return createPortal(
     <div className="hidden print:block">
@@ -71,8 +72,14 @@ export function MaterialJobOrderPrintSheet({
                   colSpan={5}
                   className="border border-gray-400 bg-gray-100 px-2 py-1 font-semibold"
                 >
-                  {group.materialCode} · {group.materialName} — ต้องใช้{" "}
-                  {group.reserved} ({group.lines.length} กล่อง)
+                  {group.materialCode} · {group.materialName}
+                  <span className="ml-2 font-mono text-lg font-bold">
+                    Lot{" "}
+                    {[...new Set(group.lines.map((line) => line.internalLotNo))].join(", ")}
+                  </span>
+                  <span className="ml-2 font-normal">
+                    — ต้องใช้ {group.reserved} ({group.lines.length} กล่อง)
+                  </span>
                 </td>
               </tr>
               {group.lines.map((line) => (
@@ -80,19 +87,19 @@ export function MaterialJobOrderPrintSheet({
                   key={line.reservationId}
                   className="break-inside-avoid border border-gray-400"
                 >
-                  <td className="border border-gray-400 px-2 py-1 text-center">
-                    {line.pickedAt ? "✓" : ""}
+                  <td className="border border-gray-400 px-2 py-2 text-center text-base">
+                    {line.pickedAt || line.releasedAt ? "✓" : ""}
                   </td>
-                  <td className="border border-gray-400 px-2 py-1 font-mono">
+                  <td className="border border-gray-400 px-2 py-2 font-mono text-[10px]">
                     {line.qrCode ?? "—"}
                   </td>
-                  <td className="border border-gray-400 px-2 py-1 font-mono">
+                  <td className="border border-gray-400 px-2 py-2 font-mono text-lg font-bold leading-tight">
                     {line.internalLotNo}
                   </td>
-                  <td className="border border-gray-400 px-2 py-1">
+                  <td className="border border-gray-400 px-2 py-2 text-center text-base font-bold">
                     {line.packageNo}
                   </td>
-                  <td className="border border-gray-400 px-2 py-1 text-right">
+                  <td className="border border-gray-400 px-2 py-2 text-right text-base font-bold">
                     {formatNumber(Number(line.reservedQuantity))}
                   </td>
                 </tr>

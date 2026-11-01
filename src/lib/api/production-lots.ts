@@ -131,6 +131,8 @@ export interface PackageView {
   initialQty: number;
   currentQty: number;
   status: string;
+  packedBy?: string | null;
+  packedByCode?: string | null;
   origins: OriginShare[];
 }
 

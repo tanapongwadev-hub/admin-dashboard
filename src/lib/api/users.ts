@@ -12,6 +12,8 @@ export interface UserRow {
   email: string | null;
   firstName: string | null;
   lastName: string | null;
+  /** รหัสพนักงาน (printed on production QR labels). */
+  employeeCode?: string | null;
   isActive: boolean;
   isLocked: boolean;
   createdAt: string;
@@ -63,6 +65,7 @@ export interface CreateUserPayload {
   lastName: string;
   email?: string;
   telephone?: string;
+  employeeCode?: string;
   assignments: AssignmentPayload[];
 }
 
@@ -71,6 +74,7 @@ export interface UpdateUserPayload {
   lastName?: string;
   email?: string;
   telephone?: string;
+  employeeCode?: string;
 }
 
 function auth(accessToken: string) {

@@ -4,6 +4,9 @@ import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import {
   createIssueReport,
+  listIssueDocuments,
+  type IssueDocumentOption,
+  type IssueReport,
   updateIssueReport,
   type CreateIssueReportPayload,
 } from "@/lib/api/issue-reports";
@@ -15,7 +18,7 @@ import {
 import { apiErrorMessage, CONNECTION_ERROR_MESSAGE } from "@/lib/user-error";
 
 export type IssueReportActionResult =
-  | { status: "success" }
+  | { status: "success"; report?: IssueReport }
   | { status: "error"; message: string };
 
 async function requireAccessToken() {
@@ -41,14 +44,29 @@ function revalidateIssues() {
   }
 }
 
+export async function listIssueDocumentsAction(
+  documentType: string,
+): Promise<
+  | { status: "success"; documents: IssueDocumentOption[] }
+  | { status: "error"; message: string }
+> {
+  const accessToken = await requireAccessToken();
+  try {
+    return { status: "success", documents: await listIssueDocuments(accessToken, documentType) };
+  } catch (err) {
+    const result = errorResult(err);
+    return result.status === "error" ? result : { status: "error", message: CONNECTION_ERROR_MESSAGE };
+  }
+}
+
 export async function createIssueReportAction(
   payload: CreateIssueReportPayload,
 ): Promise<IssueReportActionResult> {
   const accessToken = await requireAccessToken();
   try {
-    await createIssueReport(accessToken, payload);
+    const report = await createIssueReport(accessToken, payload);
     revalidateIssues();
-    return { status: "success" };
+    return { status: "success", report };
   } catch (err) {
     return errorResult(err);
   }

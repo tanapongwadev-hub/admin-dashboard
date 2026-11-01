@@ -60,6 +60,10 @@ export function PackageLabelSheet({
             { label: "กล่อง", value: `${pkg.boxNo}${pkg.unitType === "PARTIAL" ? " · กล่องเศษ" : ""}` },
             { label: "วันผลิตต้นทางแรก / กะ", value: pkg.origins[0] ? `${formatThaiDate(pkg.origins[0].productionDate)} / ${pkg.origins[0].shift}` : "—" },
           ]}
+          pairFields={[
+            { label: "ขั้นตอน", value: "แพ็กสินค้าเสร็จ" },
+            { label: "รหัสผู้ปิดงาน", value: pkg.packedByCode ?? pkg.packedBy ?? "—" },
+          ]}
         />
       ))}
     />,

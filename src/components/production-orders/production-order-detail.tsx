@@ -600,6 +600,24 @@ function PrintSheet({
               { label: "ขั้นตอนปัจจุบัน", value: packet.status === "COMPLETED" ? "ผลิตเสร็จแล้ว" : packet.currentStep?.name ?? "—" },
               { label: "แผนการผลิต", value: order.planCode ?? "—" },
             ]}
+            pairFields={[
+              {
+                label: "ขั้นตอน",
+                value:
+                  packet.currentStep?.name ??
+                  line.steps[line.steps.length - 1]?.name ??
+                  "—",
+              },
+              {
+                label: "รหัสผู้ปิดงาน",
+                value:
+                  packet.status === "COMPLETED"
+                    ? (packet.timeline[packet.timeline.length - 1]?.performedByCode ??
+                      packet.timeline[packet.timeline.length - 1]?.performedBy ??
+                      "—")
+                    : "—",
+              },
+            ]}
           />
         )),
       )}

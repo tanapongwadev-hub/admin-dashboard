@@ -4,7 +4,8 @@ export interface IssueReport {
   id: string;
   reportNo: string;
   documentType: string;
-  documentNo: string;
+  /** Null while the related document has not been saved yet. */
+  documentNo: string | null;
   title: string;
   description: string | null;
   severity: string;
@@ -35,7 +36,7 @@ export interface ListIssueReportsParams {
 
 export interface CreateIssueReportPayload {
   documentType: string;
-  documentNo: string;
+  documentNo?: string;
   title: string;
   description?: string;
   severity?: string;
@@ -55,6 +56,22 @@ export function listIssueReports(
   }
   const qs = query.toString();
   return apiFetch<PaginatedIssueReports>(`/issue-reports${qs ? `?${qs}` : ""}`, {
+    headers: auth(accessToken),
+  });
+}
+
+export interface IssueDocumentOption {
+  documentNo: string;
+  createdAt: string;
+}
+
+/** Latest document numbers of one type (max 200), for the create dialog. */
+export function listIssueDocuments(
+  accessToken: string,
+  documentType: string,
+): Promise<IssueDocumentOption[]> {
+  const qs = new URLSearchParams({ documentType });
+  return apiFetch<IssueDocumentOption[]>(`/issue-reports/documents?${qs}`, {
     headers: auth(accessToken),
   });
 }

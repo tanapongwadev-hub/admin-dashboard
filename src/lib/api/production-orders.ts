@@ -69,6 +69,8 @@ export interface ProductionOrderPacketEvent {
   toStepIndex: number;
   performedAt: string;
   performedBy: string | null;
+  /** รหัสพนักงาน of the performer, when set on the user. */
+  performedByCode?: string | null;
 }
 
 /** "บันทึกผลผลิต" at the first workflow step — creates the boxes + QR. */

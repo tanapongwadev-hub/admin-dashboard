@@ -236,7 +236,7 @@ export function IssueReportsClient({
                     <div className="text-xs text-fg-muted">
                       {labelOf(ISSUE_DOCUMENT_TYPES, report.documentType)}
                     </div>
-                    <div className="font-mono text-sm">{report.documentNo}</div>
+                    <div className="font-mono text-sm">{report.documentNo ?? "—"}</div>
                   </TableCell>
                   <TableCell className="max-w-xs">
                     <div className="font-medium text-fg">{report.title}</div>

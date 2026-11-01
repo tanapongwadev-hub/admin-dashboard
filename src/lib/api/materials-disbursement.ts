@@ -39,6 +39,8 @@ export interface MaterialsDisbursement {
   attachmentUrl: string | null;
   attachmentName: string | null;
   attachments?: { url: string; name: string }[];
+  issueReportId?: string | null;
+  issueReport?: IssueReportRef | null;
   remark: string | null;
   confirmedBy: string | null;
   confirmedAt: string | null;
@@ -80,7 +82,18 @@ export interface MaterialsDisbursementLookupMaterial {
   availableStock: string;
 }
 
+export interface IssueReportRef {
+  id: string;
+  reportNo: string;
+  documentType: string;
+  documentNo: string | null;
+  title: string;
+  status: string;
+}
+
 export interface MaterialsDisbursementLookups {
+  /** Open issue reports a stock-cut can reference (status <> CLOSED). */
+  issueReports: IssueReportRef[];
   disbursementTypes: { value: DisbursementType; label: string }[];
   materials: MaterialsDisbursementLookupMaterial[];
   units: { id: string; code: string; nameTh: string }[];
@@ -161,6 +174,8 @@ export interface CreateMaterialsDisbursementPayload {
   attachmentName?: string;
   // Multiple files (max 10); when sent it replaces the single-file fields above.
   attachments?: { url: string; name: string }[];
+  // Required by cps-api for stock_cut — the issue report that justifies the cut.
+  issueReportId?: string;
   remark?: string;
   items: DisbursementItemPayload[];
 }

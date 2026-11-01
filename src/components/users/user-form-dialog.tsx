@@ -32,6 +32,7 @@ const baseSchema = z.object({
   lastName: z.string().trim().min(1, "กรุณากรอกนามสกุล"),
   email: optionalEmail,
   telephone: z.string().trim(),
+  employeeCode: z.string().trim().max(30, "ไม่เกิน 30 ตัวอักษร"),
 });
 
 const createFields = {
@@ -63,6 +64,7 @@ const EMPTY: CreateValues = {
   lastName: "",
   email: "",
   telephone: "",
+  employeeCode: "",
   departmentId: "",
   roleId: "",
 };
@@ -103,6 +105,7 @@ export function UserFormDialog({
           firstName: user.firstName ?? "",
           lastName: user.lastName ?? "",
           email: user.email ?? "",
+          employeeCode: user.employeeCode ?? "",
         }
       : EMPTY,
     mode: "onChange",
@@ -114,6 +117,8 @@ export function UserFormDialog({
       lastName: values.lastName.trim(),
       email: values.email.trim() || undefined,
       telephone: values.telephone.trim() || undefined,
+      // Edit sends "" so a blanked field clears the code; create omits it.
+      employeeCode: values.employeeCode.trim() || (user ? "" : undefined),
     };
     const result = user
       ? await updateUserAction(user.id, contact)
@@ -213,6 +218,16 @@ export function UserFormDialog({
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="user-telephone">{isEdit ? "เบอร์โทร (เว้นว่าง = คงค่าเดิม)" : "เบอร์โทร (ไม่บังคับ)"}</Label>
               <Input id="user-telephone" type="tel" {...register("telephone")} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="user-employee-code">รหัสพนักงาน (ไม่บังคับ)</Label>
+              <Input
+                id="user-employee-code"
+                aria-invalid={!!errors.employeeCode}
+                aria-describedby={errors.employeeCode ? "user-employee-code-error" : undefined}
+                {...register("employeeCode")}
+              />
+              <FieldError id="user-employee-code-error" message={errors.employeeCode?.message} />
             </div>
 
             {!isEdit && (

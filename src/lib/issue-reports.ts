@@ -12,6 +12,17 @@ export const ISSUE_DOCUMENT_TYPES = [
   { value: "OTHER", label: "อื่นๆ" },
 ] as const;
 
+/** Common problem titles for the create dialog's select box; "อื่นๆ" lets the user type their own. */
+export const ISSUE_TITLE_PRESETS = [
+  "จำนวนไม่ตรงกับเอกสาร",
+  "วัสดุชำรุด/เสียหาย",
+  "วัสดุหมดอายุ/เสื่อมสภาพ",
+  "วัสดุสูญหาย",
+  "ยอดสต็อกไม่ตรงกับการนับจริง",
+  "ข้อมูลในเอกสารไม่ถูกต้อง",
+] as const;
+export const ISSUE_TITLE_OTHER = "อื่นๆ";
+
 export const ISSUE_SEVERITIES = [
   { value: "LOW", label: "ต่ำ" },
   { value: "MEDIUM", label: "ปานกลาง" },
