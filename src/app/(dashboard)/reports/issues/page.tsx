@@ -57,8 +57,7 @@ export default async function IssueReportsPage({
       <div>
         <h1 className="text-xl font-semibold text-fg">รายการแจ้งปัญหา</h1>
         <p className="mt-1 text-sm text-fg-muted">
-          รวมปัญหาที่แจ้งไว้กับเอกสารทุกประเภท (รับเข้า จ่ายออก ใบจัดงาน แผนผลิต ใบสั่งขาย ฯลฯ)
-          พร้อมติดตามสถานะการแก้ไข
+          ปัญหาที่แจ้งไว้กับเอกสารทุกประเภท พร้อมสถานะการแก้ไข
         </p>
       </div>
       <IssueReportsClient

@@ -143,14 +143,14 @@ function newItemDraft(): DisbursementItemDraft {
 // other, on top of (not instead of) the numbered badge + material name.
 const ROW_ACCENTS = [
   { badge: "bg-primary-soft text-primary", strip: "border-l-primary" },
-  { badge: "bg-success-soft text-success", strip: "border-l-success" },
-  { badge: "bg-warning-soft text-warning", strip: "border-l-warning" },
-  { badge: "bg-info-soft text-info", strip: "border-l-info" },
+  { badge: "bg-success-soft text-success-fg", strip: "border-l-success" },
+  { badge: "bg-warning-soft text-warning-fg", strip: "border-l-warning" },
+  { badge: "bg-info-soft text-info-fg", strip: "border-l-info" },
 ] as const;
 
 const TYPE_META: Record<DisbursementType, { icon: typeof Factory; tone: string; label: string }> = {
   production: { icon: Factory, tone: "bg-primary-soft text-primary", label: "เบิกเพื่อผลิต" },
-  stock_cut: { icon: PackageMinus, tone: "bg-warning-soft text-warning", label: "ตัดสต็อก" },
+  stock_cut: { icon: PackageMinus, tone: "bg-warning-soft text-warning-fg", label: "ตัดสต็อก" },
 };
 
 // Create + edit share this one dialog (edit is only ever reachable while
@@ -455,7 +455,7 @@ export function MaterialsDisbursementFormDialog({
                       </div>
                       <div className="grid gap-3 p-3 sm:grid-cols-2">
                         <div className="space-y-1.5">
-                          <Label>วัสดุ</Label>
+                          <Label htmlFor={`md-material-${item.key}`}>วัสดุ</Label>
                           {lookups.materials.length === 0 ? (
                             <MasterDataEmptyLink href="/materials/catalog" resourceLabel="วัสดุ" />
                           ) : (
@@ -463,7 +463,15 @@ export function MaterialsDisbursementFormDialog({
                               value={item.materialId}
                               onValueChange={(v) => updateItem(item.key, { materialId: v })}
                             >
-                              <SelectTrigger><SelectValue placeholder="เลือกวัสดุ" /></SelectTrigger>
+                              <SelectTrigger
+                                id={`md-material-${item.key}`}
+                                aria-invalid={!!errors.rows[item.key]?.material}
+                                aria-describedby={
+                                  errors.rows[item.key]?.material ? `md-material-${item.key}-error` : undefined
+                                }
+                              >
+                                <SelectValue placeholder="เลือกวัสดุ" />
+                              </SelectTrigger>
                               <SelectContent>
                                 {materialOptionsFor(item.key).map((m) => (
                                   <SelectItem key={m.id} value={m.id}>
@@ -473,23 +481,28 @@ export function MaterialsDisbursementFormDialog({
                               </SelectContent>
                             </Select>
                           )}
-                          <FieldError message={errors.rows[item.key]?.material} />
-                          <p className="text-xs text-fg-muted">วัสดุที่เลือกในรายการอื่นแล้วจะไม่แสดงซ้ำที่นี่</p>
+                          <FieldError id={`md-material-${item.key}-error`} message={errors.rows[item.key]?.material} />
+                          {items.length > 1 && (
+                            <p className="text-xs text-fg-muted">วัสดุที่เลือกในรายการอื่นแล้วจะไม่แสดงซ้ำที่นี่</p>
+                          )}
                         </div>
                         <div className="space-y-1.5">
-                          <Label>จำนวนที่จ่ายออก</Label>
+                          <Label htmlFor={`md-qty-${item.key}`}>จำนวนที่จ่ายออก</Label>
                           <Input
+                            id={`md-qty-${item.key}`}
                             type="number"
+                            inputMode="decimal"
                             min="0"
                             step="0.0001"
                             value={item.requestedQuantity}
                             onChange={(e) => updateItem(item.key, { requestedQuantity: e.target.value })}
                             placeholder="0"
                             aria-invalid={!!errors.rows[item.key]?.qty}
+                            aria-describedby={errors.rows[item.key]?.qty ? `md-qty-${item.key}-error` : undefined}
                           />
-                          <FieldError message={errors.rows[item.key]?.qty} />
+                          <FieldError id={`md-qty-${item.key}-error`} message={errors.rows[item.key]?.qty} />
                           {material && (
-                            <p className={overAvailable ? "text-xs text-danger" : "text-xs text-fg-muted"}>
+                            <p className={overAvailable ? "text-xs font-medium text-danger-fg" : "text-xs text-fg-muted"}>
                               คงเหลือ {formatNumber(available ?? 0)}
                               {overAvailable ? " — เกินจำนวนคงเหลือ" : ""}
                             </p>
@@ -522,11 +535,13 @@ export function MaterialsDisbursementFormDialog({
                 <div className="text-sm">
                   <p className="font-medium text-fg">{typeMeta.label}</p>
                   <p className="text-xs text-fg-muted">
-                    {new Date(disbursementDate).toLocaleDateString("th-TH", {
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
-                    })}
+                    {disbursementDate
+                      ? new Date(disbursementDate).toLocaleDateString("th-TH", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })
+                      : "ยังไม่ระบุวันที่"}
                   </p>
                 </div>
               </div>
@@ -534,11 +549,11 @@ export function MaterialsDisbursementFormDialog({
               <div className="grid grid-cols-2 gap-2 rounded-md border border-border bg-surface p-3 text-center">
                 <div>
                   <p className="text-lg font-semibold tabular-nums text-fg">{filledItems.length}</p>
-                  <p className="text-[11px] text-fg-muted">รายการวัสดุ</p>
+                  <p className="text-xs text-fg-muted">รายการวัสดุ</p>
                 </div>
                 <div className="border-l border-border">
                   <p className="text-lg font-semibold tabular-nums text-fg">{formatNumber(totalQuantity)}</p>
-                  <p className="text-[11px] text-fg-muted">จำนวนรวม</p>
+                  <p className="text-xs text-fg-muted">จำนวนรวม</p>
                 </div>
               </div>
 
@@ -566,7 +581,7 @@ export function MaterialsDisbursementFormDialog({
               </div>
 
               {anyOverAvailable && (
-                <p className="flex items-start gap-1.5 rounded-md bg-danger-soft p-2 text-xs text-danger">
+                <p className="flex items-start gap-1.5 rounded-md bg-danger-soft p-2 text-xs text-danger-fg">
                   <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
                   มีรายการที่จำนวนเกินคงเหลือ — ระบบจะตรวจสอบอีกครั้งตอนยืนยัน
                 </p>

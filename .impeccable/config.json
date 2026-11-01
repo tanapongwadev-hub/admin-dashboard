@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "src/components/materials-disbursement/materials-disbursement-form-dialog.tsx"
+        ],
+        "createdAt": "2026-11-01T17:16:07.438Z",
+        "reason": "user confirmed: keep, same accent-strip pattern as BOM rows in products wizard (AGENTS.md)"
+      }
+    ]
+  }
+}
