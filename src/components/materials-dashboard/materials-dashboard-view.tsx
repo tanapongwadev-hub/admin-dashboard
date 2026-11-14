@@ -235,7 +235,7 @@ function CriticalMaterials({
           <p className="mt-1 text-xs text-fg-muted">หมดสต็อกก่อน แล้วตามด้วยรายการต่ำกว่าจุดขั้นต่ำ</p>
         </div>
         {canViewMaterials && (
-          <Button asChild variant="link" size="sm">
+          <Button asChild variant="link" size="sm" className="min-h-6 pointer-coarse:min-h-11">
             <Link href="/materials/catalog">ดูทั้งหมด</Link>
           </Button>
         )}
@@ -264,7 +264,7 @@ function RecentReceiving({ items, total }: { items: MaterialReceiving[]; total: 
           <h2 className="text-lg font-semibold text-fg">รับเข้าล่าสุด</h2>
           <p className="mt-1 text-xs text-fg-muted">เอกสารและล็อตที่เคลื่อนไหวล่าสุด</p>
         </div>
-        <Button asChild variant="link" size="sm">
+        <Button asChild variant="link" size="sm" className="min-h-6 pointer-coarse:min-h-11">
           <Link href="/materials/receiving">ดูทั้งหมด</Link>
         </Button>
       </header>

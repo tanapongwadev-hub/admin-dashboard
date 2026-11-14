@@ -14,7 +14,8 @@
   --border-strong: #CBD5E1;
   --fg: #172033;
   --fg-secondary: #475569;
-  --fg-muted: #64748B;
+  /* #5B6B80: 5.4:1 on surface, 5.1:1 on bg, 4.8:1 on surface-2 (old #64748B was 4.4 / 4.2 on bg / surface-2). */
+  --fg-muted: #5B6B80;
 
   /* Accent Blue — the interactive/brand color: buttons, links, focus,
      active states. Distinct from --navy, which is the fixed dark surface
@@ -53,24 +54,26 @@
   --chart-4: #0F2747;
   --chart-5: #64748B;
 
-  /* Lot color coding (traceability report): 8 clearly different hues, each
+  /* Lot color coding (traceability report): 8 hues chosen to stay away from the
+     status colors (success green, primary blue, warning amber, danger red, info
+     sky) so a lot color is never read as a status; each
      with a soft tint. Assigned per lot number by lib/lot-colors.ts. */
-  --lot-1: #16A34A;
-  --lot-1-soft: #E4F6EA;
-  --lot-2: #7C3AED;
-  --lot-2-soft: #EFE8FD;
-  --lot-3: #1769D1;
-  --lot-3-soft: #E7F1FC;
-  --lot-4: #EA580C;
-  --lot-4-soft: #FDEDE2;
-  --lot-5: #0D9488;
-  --lot-5-soft: #DFF5F2;
-  --lot-6: #DB2777;
-  --lot-6-soft: #FCE7F1;
-  --lot-7: #A16207;
-  --lot-7-soft: #FBF1D9;
-  --lot-8: #4F46E5;
-  --lot-8-soft: #E8E7FC;
+  --lot-1: #6D28D9;
+  --lot-1-soft: #EFE8FD;
+  --lot-2: #0F766E;
+  --lot-2-soft: #DFF5F2;
+  --lot-3: #BE185D;
+  --lot-3-soft: #FCE7F1;
+  --lot-4: #3F6212;
+  --lot-4-soft: #EEF6DC;
+  --lot-5: #4338CA;
+  --lot-5-soft: #E8E7FC;
+  --lot-6: #92400E;
+  --lot-6-soft: #F6EBDD;
+  --lot-7: #A21CAF;
+  --lot-7-soft: #FAE8FC;
+  --lot-8: #475569;
+  --lot-8-soft: #E9EDF2;
 
   --ring: #1769D1;
   /* Slightly tighter than a typical SaaS default — the brief asks for a
@@ -276,7 +279,7 @@ body {
 }
 ::-webkit-scrollbar-thumb {
   background: var(--border-strong);
-  border-radius: 999px;
+  border-radius: 999px; /* pill-shaped scrollbar thumb: intentionally outside the DESIGN.md radius scale */
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--fg-muted);
@@ -284,8 +287,46 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
-    animation-duration: 0.01ms !important;
+    /* Short, not zero: state changes (fades, color) stay perceivable; no looping or sliding motion. */
+    animation-duration: 0.12s !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+    transition-duration: 0.12s !important;
+    scroll-behavior: auto !important;
   }
+}
+
+/* Horizontal-scroll cue for wide tables: a soft edge shadow shows on each
+ * side that still has hidden content, even where scrollbars are hidden.
+ * Cover gradients scroll with the content (local) and hide the shadow once
+ * the edge is reached. Uses background-image only, so any bg-* color on the
+ * element is kept. Cells with their own opaque background hide the shadow
+ * behind them; the shared Table keeps rows transparent. */
+@utility scroll-cue-x {
+  /* Contain absolutely positioned descendants (e.g. sr-only labels in cells) so they cannot widen the document. */
+  position: relative;
+  background-image:
+    linear-gradient(to right, var(--surface) 30%, transparent),
+    linear-gradient(to left, var(--surface) 30%, transparent),
+    radial-gradient(farthest-side at 0 50%, rgb(15 39 71 / 0.22), transparent),
+    radial-gradient(farthest-side at 100% 50%, rgb(15 39 71 / 0.22), transparent);
+  background-position: left center, right center, left center, right center;
+  background-repeat: no-repeat;
+  background-size: 40px 100%, 40px 100%, 14px 100%, 14px 100%;
+  background-attachment: local, local, scroll, scroll;
+}
+
+/* Vertical counterpart of scroll-cue-x for dialog/drawer bodies whose scrollbar
+ * is hidden: soft shadows at the top/bottom edge that still has hidden content.
+ * Needs a little padding on the scroller to show (the shadow sits behind
+ * opaque children). */
+@utility scroll-cue-y {
+  background-image:
+    linear-gradient(var(--surface) 30%, transparent),
+    linear-gradient(transparent, var(--surface) 70%),
+    radial-gradient(farthest-side at 50% 0, rgb(15 39 71 / 0.22), transparent),
+    radial-gradient(farthest-side at 50% 100%, rgb(15 39 71 / 0.22), transparent);
+  background-position: center top, center bottom, center top, center bottom;
+  background-repeat: no-repeat;
+  background-size: 100% 40px, 100% 40px, 100% 14px, 100% 14px;
+  background-attachment: local, local, scroll, scroll;
 }

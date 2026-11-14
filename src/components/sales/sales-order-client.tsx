@@ -169,7 +169,7 @@ export function SalesOrderClient({
           <p className="text-sm text-fg-muted">สร้างออเดอร์ หรือปรับตัวกรองเพื่อดูรายการอื่น</p>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-border bg-surface">
+        <div className="scroll-cue-x overflow-x-auto rounded-lg border border-border bg-surface">
           <table className="w-full min-w-[880px] text-sm">
             <thead className="bg-surface-2 text-left text-xs text-fg-muted">
               <tr>
@@ -237,7 +237,7 @@ export function SalesOrderClient({
                         <div className="flex flex-col items-start gap-1">
                           <Link
                             href={`/sales/job-orders/${order.jobOrder.id}`}
-                            className="font-mono text-xs font-medium text-primary hover:underline"
+                            className="inline-flex min-h-6 items-center font-mono text-xs font-medium text-primary hover:underline pointer-coarse:min-h-11"
                           >
                             {order.jobOrder.code}
                           </Link>

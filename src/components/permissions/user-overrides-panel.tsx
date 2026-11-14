@@ -303,7 +303,7 @@ export function UserOverridesPanel({
             />
           </div>
 
-          <div className="max-h-[60vh] overflow-auto rounded-lg border border-border bg-surface">
+          <div className="max-h-[60vh] scroll-cue-x overflow-auto rounded-lg border border-border bg-surface">
             <table className="w-full min-w-[56rem] border-separate border-spacing-0 text-sm">
               <thead>
                 <tr>

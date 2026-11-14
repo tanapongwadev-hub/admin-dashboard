@@ -152,7 +152,7 @@ export function UserFormDialog({
 
           <fieldset
             disabled={isSubmitting}
-            className="grid min-h-0 flex-1 gap-4 overflow-y-auto px-6 py-5 [scrollbar-width:none] sm:grid-cols-2 [&::-webkit-scrollbar]:hidden"
+            className="grid min-h-0 flex-1 gap-4 scroll-cue-y overflow-y-auto px-6 py-5 [scrollbar-width:none] sm:grid-cols-2 [&::-webkit-scrollbar]:hidden"
           >
             {!isEdit && (
               <>

@@ -118,7 +118,7 @@ export function MaterialsDisbursementDetailsDialog({
               </div>
             </DialogHeader>
 
-            <div className="flex-1 space-y-5 overflow-y-auto px-6 py-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="flex-1 space-y-5 scroll-cue-y overflow-y-auto px-6 py-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <dl className="grid gap-4 sm:grid-cols-3">
                 <Field label="สร้างเมื่อ">{formatDateTime(base.createdAt)}</Field>
                 <Field label="ยืนยันเมื่อ">{formatDateTime(base.confirmedAt)}</Field>

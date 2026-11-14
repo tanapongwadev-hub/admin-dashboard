@@ -104,7 +104,7 @@ export function MaterialsReceivingDetailsDialog({
               </p>
             )}
 
-            <div className="flex-1 overflow-y-auto px-1 py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="flex-1 scroll-cue-y overflow-y-auto px-1 py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {/* ยอดคงเหลือ is the number a warehouse user actually came here
                   to check — given its own gradient "stage" (not just a cell
                   in the facts grid) so it reads as the headline stat, with a

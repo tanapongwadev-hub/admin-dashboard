@@ -1,6 +1,7 @@
 import { PageTitle } from "@/components/ui/page-title";
 import type { Metadata } from "next";
 import { OrdersTable } from "@/components/orders/order-table";
+import { SampleDataNotice } from "@/components/layout/sample-data-notice";
 
 export const metadata: Metadata = { title: "คำสั่งซื้อ" };
 
@@ -11,6 +12,7 @@ export default function OrdersPage() {
         <PageTitle>คำสั่งซื้อ</PageTitle>
         <p className="mt-1 text-sm text-fg-muted">ติดตาม จัดส่ง และจัดการคำสั่งซื้อของลูกค้า</p>
       </div>
+      <SampleDataNotice />
       <OrdersTable />
     </div>
   );

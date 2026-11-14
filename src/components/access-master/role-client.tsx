@@ -85,7 +85,7 @@ function RoleFormDialog({ role, onClose }: { role: RoleSummary | null; onClose: 
               role กำหนดว่าทำ action อะไรได้ (ตั้งค่า action ที่แท็บ Role ของหน้าสิทธิ์การเข้าถึง) ส่วนแผนกกำหนดว่าเข้าเมนูไหนได้
             </DialogDescription>
           </DialogHeader>
-          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="min-h-0 flex-1 space-y-4 scroll-cue-y overflow-y-auto px-6 py-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <div className="space-y-1.5">
               <Label htmlFor="role-code">รหัส *</Label>
               <Input id="role-code" disabled={isEdit} {...register("code")} aria-invalid={!!errors.code} />

@@ -56,7 +56,7 @@ function View({ code, name, from, to }: { code: string; name: string; from: stri
         </DialogDescription>
       </header>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="min-h-0 flex-1 scroll-cue-y overflow-y-auto px-6 py-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {current?.status === "error" ? (
           <p className="text-sm text-danger">{current.message}</p>
         ) : !detail ? (

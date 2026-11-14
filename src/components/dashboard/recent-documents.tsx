@@ -70,7 +70,7 @@ export function RecentDocuments({
                 ) : (
                   <ArrowUpFromLine className="h-3.5 w-3.5 shrink-0 text-warning" />
                 )}
-                <Link className="whitespace-nowrap text-primary underline underline-offset-4" href={`${doc.type === "Receiving" ? "/materials/receiving" : "/materials/disbursements"}?search=${encodeURIComponent(doc.id)}`}>{doc.id}</Link>
+                <Link className="inline-flex min-h-6 items-center whitespace-nowrap text-primary underline underline-offset-4 pointer-coarse:min-h-11" href={`${doc.type === "Receiving" ? "/materials/receiving" : "/materials/disbursements"}?search=${encodeURIComponent(doc.id)}`}>{doc.id}</Link>
               </span>
             </TableCell>
             <TableCell className="text-fg-secondary">{doc.material}</TableCell>

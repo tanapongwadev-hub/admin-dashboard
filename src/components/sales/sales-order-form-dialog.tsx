@@ -180,7 +180,7 @@ export function SalesOrderFormDialog({
         <form
           id="sales-order-form"
           onSubmit={handleSubmit(onSubmit)}
-          className="min-h-0 flex-1 overflow-y-auto px-6 py-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="min-h-0 flex-1 scroll-cue-y overflow-y-auto px-6 py-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           <fieldset disabled={saving} className="flex flex-col gap-5">
             <div className="grid gap-4 sm:grid-cols-2">

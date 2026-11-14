@@ -159,22 +159,23 @@ export function DataTable<TData, TValue>({
               : `${pageIndex * pageSize + 1}–${Math.min((pageIndex + 1) * pageSize, totalRows)} จาก ${totalRows}`}
           </p>
           <div className="flex items-center gap-1">
-            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}>
+            <Button variant="outline" size="icon" className="h-8 w-8" aria-label="หน้าแรก" onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}>
               <ChevronsLeft className="h-4 w-4" />
             </Button>
-            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
+            <Button variant="outline" size="icon" className="h-8 w-8" aria-label="หน้าก่อนหน้า" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <span className="px-2 text-sm tabular-nums text-fg-secondary">
               {pageCount === 0 ? 0 : pageIndex + 1} / {pageCount}
             </span>
-            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
+            <Button variant="outline" size="icon" className="h-8 w-8" aria-label="หน้าถัดไป" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
               <ChevronRight className="h-4 w-4" />
             </Button>
             <Button
               variant="outline"
               size="icon"
               className="h-8 w-8"
+              aria-label="หน้าสุดท้าย"
               onClick={() => table.setPageIndex(pageCount - 1)}
               disabled={!table.getCanNextPage()}
             >

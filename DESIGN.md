@@ -14,7 +14,7 @@ colors:
   border-strong: "#CBD5E1"
   text: "#172033"
   text-secondary: "#475569"
-  text-muted: "#64748B"
+  text-muted: "#5B6B80"
   success: "#16A34A"
   success-soft: "#E7F6EC"
   success-text: "#166534"
@@ -107,7 +107,7 @@ Restrained and corporate: a saturated blue accent on cool neutrals, with semanti
 - **Card White** (#FFFFFF): cards, dialogs, inputs, header.
 - **Pale Slate** (#EDF1F6): hover, table header, secondary fills.
 - **Hairline** (#E2E8F0) and **Strong Hairline** (#CBD5E1): dividers and input borders.
-- **Ink** (#172033), **Slate Text** (#475569), **Quiet Slate** (#64748B): primary, secondary and muted text.
+- **Ink** (#172033), **Slate Text** (#475569), **Quiet Slate** (#5B6B80): primary, secondary and muted text.
 
 ### Semantic
 - **Success** (#16A34A, text #166534), **Warning** (#F59E0B, text #92400E), **Danger** (#DC2626, text #B91C1C), **Info** (#0EA5E9, text #0369A1), each with a soft tint fill for badges. Use the darker `-text` value for text on a tint.

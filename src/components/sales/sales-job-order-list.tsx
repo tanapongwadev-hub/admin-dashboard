@@ -34,7 +34,7 @@ export function SalesJobOrderList({
           <p className="text-sm text-fg-muted">ใบจัดงานถูกสร้างอัตโนมัติเมื่อยืนยันออเดอร์ขาย</p>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-border bg-surface">
+        <div className="scroll-cue-x overflow-x-auto rounded-lg border border-border bg-surface">
           <table className="w-full min-w-[860px] text-sm">
             <thead className="bg-surface-2 text-left text-xs text-fg-muted">
               <tr>

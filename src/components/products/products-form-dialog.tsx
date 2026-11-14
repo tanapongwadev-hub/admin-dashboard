@@ -84,7 +84,7 @@ export function ProductImagePicker({
         aria-describedby="product-image-hint product-image-error"
         aria-invalid={error ? true : undefined}
         onChange={onChange}
-        className="peer sr-only"
+        className="peer sr-only w-px!"
       />
 
       <label
@@ -317,7 +317,7 @@ export function ProductsFormDialog({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex-1 overflow-y-auto px-6 py-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex-1 scroll-cue-y overflow-y-auto px-6 py-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <div className="mb-5">
               <ProductImagePicker
                 file={imageFile}

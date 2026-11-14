@@ -426,7 +426,7 @@ export function LotOrderBoard({
                           >
                             <Link
                               href={`/reports/production?q=${encodeURIComponent(lot.lotNo)}`}
-                              className="min-w-0 break-all font-mono text-xs font-medium text-primary hover:underline focus-visible:outline-2 focus-visible:outline-primary"
+                              className="inline-flex min-h-6 min-w-0 items-center break-all font-mono pointer-coarse:min-h-11 text-xs font-medium text-primary hover:underline focus-visible:outline-2 focus-visible:outline-primary"
                               title="สอบกลับ Lot นี้"
                             >
                               {lot.lotNo}
@@ -539,7 +539,7 @@ export function LotOrderBoard({
 
       <Link
         href="/reports/production"
-        className="inline-flex w-fit items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+        className="inline-flex min-h-6 w-fit items-center gap-1.5 text-sm font-medium text-primary hover:underline pointer-coarse:min-h-11"
       >
         <Search className="size-4" aria-hidden /> สแกน QR / ค้นหา Lot
         เพื่อสอบกลับ

@@ -60,7 +60,7 @@ export function MaterialPcDeleteDialog({ material, onClose, onDeleted, onDeactiv
       </DialogHeader>
       <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col">
         <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-5 sm:p-6">
-          <section aria-label="วัสดุที่ต้องการลบ" className="overflow-hidden rounded-lg border border-border border-l-4 border-l-danger bg-surface">
+          <section aria-label="วัสดุที่ต้องการลบ" className="overflow-hidden rounded-lg border border-danger/40 bg-surface">
             <div className="space-y-2 p-4">
               <p className="text-xs font-medium text-fg-muted">รายการที่เลือก</p>
               <p className="break-all font-mono text-lg font-semibold tracking-tight text-fg">{identity.code}</p>

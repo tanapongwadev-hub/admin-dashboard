@@ -744,7 +744,7 @@ export function ProductsWizardView({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto border-t border-border px-6 py-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex-1 scroll-cue-y overflow-y-auto border-t border-border px-6 py-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <div className="flex flex-col gap-3">
             {canCreateBom && (
               <button
@@ -933,7 +933,7 @@ export function ProductsWizardView({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto border-t border-border px-6 py-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex-1 scroll-cue-y overflow-y-auto border-t border-border px-6 py-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <div className="flex flex-col gap-3">
             {workflowSteps.map((item, index) => {
               const accent = BOM_ROW_ACCENTS[index % BOM_ROW_ACCENTS.length];
@@ -941,7 +941,7 @@ export function ProductsWizardView({
               return (
                 <div
                   key={item.key}
-                  className={cn("overflow-hidden rounded-lg border border-l-4 border-border-strong", accent.strip)}
+                  className={cn("overflow-hidden rounded-lg border border-border-strong")}
                 >
                   <div className={cn("flex items-center justify-between gap-2 border-b border-border px-3 py-2", accent.band)}>
                     <div className="flex min-w-0 items-center gap-2">
@@ -1076,7 +1076,7 @@ export function ProductsWizardView({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto border-t border-border px-6 py-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex-1 scroll-cue-y overflow-y-auto border-t border-border px-6 py-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="wizard-bom-spec">ข้อกำหนด BOM (ไม่บังคับ)</Label>
             <Input
@@ -1100,7 +1100,7 @@ export function ProductsWizardView({
               return (
               <div
                 key={item.key}
-                className={cn("overflow-hidden rounded-lg border border-l-4 border-border-strong", accent.strip)}
+                className={cn("overflow-hidden rounded-lg border border-border-strong")}
               >
                 <div className={cn("flex items-center justify-between gap-2 border-b border-border px-3 py-2", accent.band)}>
                   <div className="flex min-w-0 items-center gap-2">
@@ -1261,7 +1261,7 @@ export function ProductsWizardView({
 
           <Stepper current={stepIndex} />
 
-          <div className="flex-1 overflow-y-auto border-t border-border px-6 py-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex-1 scroll-cue-y overflow-y-auto border-t border-border px-6 py-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {step.id === "identity" && (
               <div className="flex flex-col gap-4">
                 <ProductImagePicker

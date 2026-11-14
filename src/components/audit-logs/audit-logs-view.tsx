@@ -79,7 +79,7 @@ export function AuditLogsView({ auditLogs }: { auditLogs: PaginatedAuditLogs }) 
 
   return (
     <div className="flex flex-col gap-4">
-      <Card className="overflow-hidden border-l-4 border-l-primary">
+      <Card className="overflow-hidden">
         <CardContent className="flex flex-col gap-4 py-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-start gap-3">
             <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary">

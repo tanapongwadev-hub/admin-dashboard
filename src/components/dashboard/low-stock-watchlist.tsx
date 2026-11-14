@@ -33,8 +33,8 @@ export function LowStockWatchlist({ items = lowStockWatchlist, canViewCatalog = 
               </div>
               <p className="break-all text-xs text-fg-muted">{item.code}</p>
               <div className="flex flex-wrap gap-3 text-sm">
-                {canViewCatalog && <Link className="text-primary underline underline-offset-4" href={`/materials/catalog?search=${encodeURIComponent(item.code)}`}>ดูวัสดุ</Link>}
-                {canViewReceiving && <Link className="text-primary underline underline-offset-4" href={`/materials/receiving?materialCode=${encodeURIComponent(item.code)}`}>ดูการรับเข้า</Link>}
+                {canViewCatalog && <Link className="inline-flex min-h-6 items-center text-primary underline underline-offset-4 pointer-coarse:min-h-11" href={`/materials/catalog?search=${encodeURIComponent(item.code)}`}>ดูวัสดุ</Link>}
+                {canViewReceiving && <Link className="inline-flex min-h-6 items-center text-primary underline underline-offset-4 pointer-coarse:min-h-11" href={`/materials/receiving?materialCode=${encodeURIComponent(item.code)}`}>ดูการรับเข้า</Link>}
               </div>
               <div className="mt-1.5 flex items-center gap-2">
                 <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-2">

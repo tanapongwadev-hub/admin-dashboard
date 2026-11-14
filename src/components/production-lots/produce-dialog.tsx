@@ -252,7 +252,7 @@ export function ProduceDialog({
               บันทึกหลายครั้งในกะเดียวรวมเข้า Lot เดียวกัน
             </DialogDescription>
           </DialogHeader>
-          <div className="flex max-h-[60vh] flex-col gap-3 overflow-y-auto px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex max-h-[60vh] flex-col gap-3 scroll-cue-y overflow-y-auto px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {canPick && modes.length > 1 && (
               <div role="group" aria-label="วิธีเลือก Lot ต้นทาง" className="inline-flex w-fit rounded-md border border-border-strong p-0.5">
                 {modes.map((m) => (

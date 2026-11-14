@@ -77,7 +77,7 @@ export function MaterialTraceabilityAdvancedFilters({
           <p className="mt-1 text-xs text-fg-muted">ปรับได้ทุกช่อง แล้วกด &quot;ใช้ตัวกรอง&quot; เพื่อยืนยัน</p>
         </div>
 
-        <div className="flex-1 space-y-5 overflow-y-auto p-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex-1 space-y-5 scroll-cue-y overflow-y-auto p-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="mt-dateFrom">Date From</Label>

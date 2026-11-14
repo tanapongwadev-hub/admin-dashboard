@@ -348,7 +348,7 @@ export function MaterialsDisbursementFormDialog({
           </div>
         </DialogHeader>
 
-        <div className="grid flex-1 gap-5 overflow-y-auto px-6 py-5 [scrollbar-width:none] md:grid-cols-[1fr_280px] md:overflow-visible [&::-webkit-scrollbar]:hidden">
+        <div className="grid flex-1 gap-5 scroll-cue-y overflow-y-auto px-6 py-5 [scrollbar-width:none] md:grid-cols-[1fr_280px] md:overflow-visible [&::-webkit-scrollbar]:hidden">
           {/* Form column */}
           <div className="min-w-0 space-y-5 md:overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <div className="grid gap-4 sm:grid-cols-2">
@@ -423,7 +423,7 @@ export function MaterialsDisbursementFormDialog({
                   return (
                     <div
                       key={item.key}
-                      className={`overflow-hidden rounded-lg border border-border-strong border-l-4 ${accent.strip}`}
+                      className={`overflow-hidden rounded-lg border border-border-strong`}
                     >
                       <div className="flex items-center justify-between bg-surface-2 px-3 py-2">
                         <div className="flex items-center gap-2">

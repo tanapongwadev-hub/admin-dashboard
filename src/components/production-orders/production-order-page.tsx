@@ -60,7 +60,7 @@ export async function ProductionOrderPageContent({
   const backLink = (
     <Link
       href={`${basePath}?tab=orders`}
-      className="inline-flex w-fit items-center gap-1.5 text-sm font-medium text-fg-secondary hover:text-fg"
+      className="inline-flex min-h-6 w-fit items-center gap-1.5 text-sm font-medium text-fg-secondary hover:text-fg pointer-coarse:min-h-11"
     >
       <ArrowLeft className="size-4" aria-hidden /> กลับไปรายการสั่งผลิต
     </Link>

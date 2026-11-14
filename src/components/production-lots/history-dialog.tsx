@@ -91,7 +91,7 @@ export function HistoryDialog({
             (กล่องที่ยกเลิกจะกลับเข้า Lot และ QR เดิมใช้ไม่ได้)
           </DialogDescription>
         </DialogHeader>
-        <div className="max-h-[60vh] overflow-y-auto px-6 pb-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="max-h-[60vh] scroll-cue-y overflow-y-auto px-6 pb-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {!entries && !error && (
             <p className="flex items-center justify-center gap-2 py-10 text-sm text-fg-muted">
               <Loader2 className="size-4 animate-spin" /> กำลังโหลดประวัติ…

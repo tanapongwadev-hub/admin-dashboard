@@ -214,7 +214,7 @@ export function SalesReportView({
             <p className="text-sm text-fg-muted">ยังไม่มีรายการตัดสต็อกขายตามตัวกรองนี้</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="scroll-cue-x overflow-x-auto">
             <table className="w-full min-w-[920px] text-sm">
               <thead className="bg-surface-2 text-left text-xs text-fg-muted">
                 <tr>

@@ -108,7 +108,7 @@ export function MaterialTraceabilityView({
       <div
         role="group"
         aria-label="มุมมองรายการ"
-        className="inline-flex w-fit items-center gap-1 rounded-lg border border-border bg-surface-2 p-1"
+        className="inline-flex w-fit max-w-full flex-wrap items-center gap-1 rounded-lg border border-border bg-surface-2 p-1"
       >
         {(
           [

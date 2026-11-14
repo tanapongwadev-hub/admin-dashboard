@@ -122,7 +122,7 @@ export function RoleActionsTable({
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-border bg-surface">
+      <div className="scroll-cue-x overflow-x-auto rounded-lg border border-border bg-surface">
         <table className="w-full min-w-[48rem] border-separate border-spacing-0 text-sm">
           <thead>
             <tr>

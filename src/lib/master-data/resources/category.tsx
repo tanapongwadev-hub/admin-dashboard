@@ -67,6 +67,7 @@ export const categoryResource: MasterDataResourceConfig<Category> = {
       label: "สีไอคอน",
       type: "color",
       maxLength: 20,
+      // Sample value shown in the field, not a theme color.
       placeholder: "#4640DE",
       hint: "รูปแบบ hex เช่น #4640DE · ไม่บังคับ",
       fullWidth: true,

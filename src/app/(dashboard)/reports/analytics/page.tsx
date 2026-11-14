@@ -8,6 +8,7 @@ import { WeeklyChart } from "@/components/dashboard/weekly-chart";
 import { TrafficChart } from "@/components/dashboard/traffic-chart";
 import { CategoryChart } from "@/components/dashboard/category-chart";
 import { ConversionFunnel } from "@/components/dashboard/conversion-funnel";
+import { SampleDataNotice } from "@/components/layout/sample-data-notice";
 
 export const metadata: Metadata = { title: "การวิเคราะห์" };
 
@@ -18,6 +19,7 @@ export default function AnalyticsPage() {
         <PageTitle>การวิเคราะห์</PageTitle>
         <p className="mt-1 text-sm text-fg-muted">เจาะลึกการเติบโต การมีส่วนร่วม และอัตราการเปลี่ยนเป็นลูกค้า</p>
       </div>
+      <SampleDataNotice />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="อัตราการเปลี่ยนเป็นลูกค้า" value="3.42%" change="0.6%" trend="up" icon={Percent} accent="chart-1" />

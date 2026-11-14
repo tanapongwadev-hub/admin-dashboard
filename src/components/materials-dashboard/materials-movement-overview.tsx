@@ -328,7 +328,7 @@ export function Breakdown({
                 aria-pressed={mode === key}
                 title={label}
                 onClick={() => setMode(key)}
-                className={cn("flex items-center gap-1 rounded px-2 py-1 text-xs font-medium", mode === key ? "bg-primary-soft text-primary" : "text-fg-secondary hover:bg-surface-2")}
+                className={cn("flex min-h-6 items-center gap-1 rounded px-2 py-1 text-xs font-medium pointer-coarse:min-h-11", mode === key ? "bg-primary-soft text-primary" : "text-fg-secondary hover:bg-surface-2")}
               >
                 <Icon className="size-3.5" aria-hidden="true" />
                 {label}
@@ -422,7 +422,7 @@ export function MaterialsMovementOverview({
                   title={label}
                   aria-label={label}
                   onClick={() => setTrendView(key)}
-                  className={cn("flex items-center gap-1 rounded px-2 py-1 text-xs font-medium", trendView === key ? "bg-primary-soft text-primary" : "text-fg-secondary hover:bg-surface-2")}
+                  className={cn("flex min-h-6 items-center gap-1 rounded px-2 py-1 text-xs font-medium pointer-coarse:min-h-11", trendView === key ? "bg-primary-soft text-primary" : "text-fg-secondary hover:bg-surface-2")}
                 >
                   <Icon className="size-3.5" aria-hidden="true" />
                   <span className="hidden sm:inline">{label}</span>
@@ -437,7 +437,7 @@ export function MaterialsMovementOverview({
                   aria-pressed={metric === m}
                   onClick={() => setMetric(m)}
                   className={cn(
-                    "rounded px-2.5 py-1 text-xs font-medium",
+                    "min-h-6 rounded px-2.5 py-1 text-xs font-medium pointer-coarse:min-h-11",
                     metric === m ? "bg-primary-soft text-primary" : "text-fg-secondary hover:bg-surface-2",
                   )}
                 >
@@ -520,7 +520,7 @@ export function MaterialsMovementOverview({
             title="รายการรับเข้า"
             hint="ล่าสุดในช่วงเวลาที่เลือก"
             action={
-              <Link href="/materials/receiving" className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
+              <Link href="/materials/receiving" className="inline-flex min-h-6 items-center gap-1 text-xs font-medium text-primary hover:underline pointer-coarse:min-h-11">
                 ทั้งหมด <ArrowRight className="size-3" aria-hidden="true" />
               </Link>
             }
@@ -554,7 +554,7 @@ export function MaterialsMovementOverview({
             title="รายการจ่ายออก"
             hint="ล่าสุดในช่วงเวลาที่เลือก"
             action={
-              <Link href="/materials/disbursements" className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
+              <Link href="/materials/disbursements" className="inline-flex min-h-6 items-center gap-1 text-xs font-medium text-primary hover:underline pointer-coarse:min-h-11">
                 ทั้งหมด <ArrowRight className="size-3" aria-hidden="true" />
               </Link>
             }

@@ -224,7 +224,7 @@ export function ProductionPlanTable({
                     <button
                       type="button"
                       onClick={() => onViewJobOrder(plan)}
-                      className="inline-flex items-center gap-1.5 hover:underline"
+                      className="inline-flex min-h-6 items-center gap-1.5 hover:underline pointer-coarse:min-h-11"
                     >
                       <Badge
                         variant={JOB_ORDER_STATUS[plan.jobOrder.status].variant}

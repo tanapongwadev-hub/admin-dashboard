@@ -213,7 +213,7 @@ export function IssueReportCreateDialog({
             </div>
           </DialogHeader>
 
-          <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-6 py-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex min-h-0 flex-1 flex-col gap-5 scroll-cue-y overflow-y-auto px-6 py-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <section
               aria-labelledby="issue-doc-heading"
               className="flex flex-col gap-3"

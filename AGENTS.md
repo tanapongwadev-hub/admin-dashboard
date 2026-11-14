@@ -383,7 +383,7 @@ Activity-event design documents (2026-09-26): `docs/activity-logging/architectur
 | `border-border-strong`                  | `#CBD5E1`                | input borders                                                                                         |
 | `text-fg`                               | `#172033`                | primary text                                                                                          |
 | `text-fg-secondary`                     | `#475569`                | secondary text                                                                                        |
-| `text-fg-muted`                         | `#64748B`                | labels, hints                                                                                         |
+| `text-fg-muted`                         | `#5B6B80`                | labels, hints                                                                                         |
 | `bg-primary` / `text-primary`           | `#1769D1` (Accent Blue)  | primary action, links, focus ring, active states                                                      |
 | `bg-primary-soft`                       | `#E7F1FC`                | subtle primary accent                                                                                 |
 | `bg-navy` / `text-navy`                 | `#0F2747` (Primary Navy) | the sidebar's own fixed dark surface, the login/auth brand panels — **not** used for page content     |
@@ -498,7 +498,7 @@ Activity-event design documents (2026-09-26): `docs/activity-logging/architectur
 - Below `lg`, the desktop sidebar is replaced by the existing Radix `Sheet`. Keep the mobile navbar visible, render the menu inside its own bordered surface, and close the Sheet through `SidebarNav#onNavigate` after a route is selected.
 - Collapsed desktop navigation is icon-only, so every hidden-label link/button must retain an accessible name and hover title.
 - `SidebarNav` hides its visual scrollbar with standard `scrollbar-width` plus a WebKit fallback while retaining `overflow-y-auto`; wheel, touch, and keyboard scrolling must keep working in both the desktop sidebar and mobile Sheet.
-- **Scrollbar treatment is project-wide as of 2026-09-06** — every ordinary vertical scroller (`overflow-y-auto` / `overflow-auto`) in the app carries `[scrollbar-width:none] [&::-webkit-scrollbar]:hidden`, including the page-content scroller in `dashboard-shell.tsx` and the dialog primitive in `ui/dialog.tsx` (which propagates the treatment to every `<Dialog>` and `<Sheet>` without per-call-site duplication). The deliberate exception is a wide data table: Materials/Products use bounded `max-h-[68vh] overflow-auto` containers with visible scrollbars so users retain both the horizontal "more columns" cue and direct control over the independently scrolling table body. When adding a normal vertical scroller, mirror the hide classes; when adding a wide table, preserve its visible overflow cue.
+- **Scrollbar treatment is project-wide as of 2026-09-06** — every ordinary vertical scroller (`overflow-y-auto` / `overflow-auto`) in the app carries `[scrollbar-width:none] [&::-webkit-scrollbar]:hidden`, including the page-content scroller in `dashboard-shell.tsx` and the dialog primitive in `ui/dialog.tsx` (which propagates the treatment to every `<Dialog>` and `<Sheet>` without per-call-site duplication). The deliberate exception is a wide data table: Materials/Products use bounded `max-h-[68vh] overflow-auto` containers with visible scrollbars so users retain both the horizontal "more columns" cue and direct control over the independently scrolling table body. When adding a normal vertical scroller, mirror the hide classes; when adding a wide table, preserve its visible overflow cue. **Update 2026-11-14:** wide tables now carry the `scroll-cue-x` utility (globals.css; edge shadows on any side with hidden content), applied in `ui/table.tsx` and the raw overflow wrappers of sales, permissions and setup-wizard tables, so hidden scrollbars no longer hide that columns continue. The Materials PC table still hides its scrollbar; the visible-scrollbar wording above is superseded.
 
 ### State
 
@@ -1088,6 +1088,27 @@ Before writing any new route, component, data-layer file, or Server Action, chec
 ---
 
 ## Recent Changes
+
+- 2026-11-14: Added `docs/IMPECCABLE_UI_AUDIT.md` (report-only Impeccable audit + critique; no source changed; runtime limited to unauthenticated `/login`). Not run (R0): tsc, lint, tests.
+- 2026-11-14: Fixed audit P1s: aria-labels on `ui/data-table.tsx` pagination; new `(dashboard)/error.tsx` segment boundary (keeps shell); new `components/layout/sample-data-notice.tsx` shown on `/orders` and `/reports/analytics` (still mock data). Not run (R0): tsc, lint, tests, browser.
+- 2026-11-14: Fixed audit P2-1/P2-3/P2-5: removed `border-l-4` side stripes outside lot-color views (engineering form, audit logs, delete dialog, setup/products wizards, disbursement form); reduced-motion now 0.12s instead of 0.01ms kill; new `(dashboard)/loading.tsx` fallback. Not run (R0): tsc, lint, tests, browser.
+- 2026-11-14: Fixed audit P2-2 (user-approved): `--fg-muted` #64748B → #5B6B80 (4.8:1 on surface-2, 5.1 on bg); on-navy muted already 5.1:1, no change. DESIGN.md and token table updated. Not run (R0): browser check.
+- 2026-11-14: Added `docs/IMPECCABLE_RESPONSIVE_AUDIT.md` (report-only responsive audit; rendered checks only on public pages at 375/768; no source changed).
+- 2026-11-14: Fixed R-P2-1: new `scroll-cue-x` utility (globals.css) on `ui/table.tsx` and 9 raw wide-table wrappers. Not run (R0): tsc, lint, tests, browser.
+- 2026-11-14: Updated `docs/IMPECCABLE_UI_AUDIT.md` with a fix-status table and corrected the on-navy contrast estimate. tsc/lint/tests passed (447/447).
+- 2026-11-14: Authenticated responsive sweep (20 routes × 4 widths). Fixed sr-only leak widening document on 3 pages (`position: relative` in `scroll-cue-x`) and the `/reports/materials` tab switch overflow at 375px. Details in `docs/IMPECCABLE_RESPONSIVE_AUDIT.md`. Not run (R0): tsc, lint, tests after these two edits.
+- 2026-11-15: tsc/lint/tests passed (447/447) after the sweep fixes. Checked in the browser that `scroll-cue-x` compiles and applies on `/reports/materials` at 768px (gradients + position: relative; body cells transparent, sticky thead opaque); the shadow was not judged by eye (screenshot too small).
+- 2026-11-15: Touch-target sweep (17 routes at 375px) and one dialog check added to `docs/IMPECCABLE_RESPONSIVE_AUDIT.md`; no code changed. Biggest gap: 100 drill-down buttons at 16px on `/reports/materials`.
+- 2026-11-15: Fixed `/reports/materials` touch targets (`min-h-6 pointer-coarse:min-h-11` on the QR/doc buttons in `material-traceability-table.tsx`); measured 150 targets all 44px at 375px touch. Not run (R0): tsc, lint, tests.
+- 2026-11-15: Fixed small touch targets on `/dashboard`, `/materials`, `/production/products/plans`, `/sales/orders` (`min-h-6 pointer-coarse:min-h-11`); re-measured 0 under 24px at 375px. tsc/lint/tests passed (447/447).
+- 2026-11-15: Detail pages + create dialogs checked at 375px. Fixed small links on production-order/sales job-order detail, and a hidden file input (`w-px!`) that widened the add-product/add-material dialog by 23px. Print layout not verified. tsc/lint/tests passed.
+- 2026-11-15: Setup wizard step 1 checked at 375px (clean); steps 2-5, row-action dialogs and print remain unverified. No code changed.
+- 2026-11-15: Fixed P2-8: `--lot-1..8` in globals.css replaced with 8 hues away from status colors (old lot-1 was exactly `--success`, lot-3 exactly `--primary`); text/soft contrast 4.5-6.5:1; `lib/lot-colors.ts` comment updated. Lots keep their color by sequence number, but the color of an existing lot changes. tsc/lint/tests passed.
+- 2026-11-15: PRODUCT.md evidence line aligned with reality (dashboard live; orders/analytics mock with banner).
+- 2026-11-15: `pnpm build` passed (all routes listed, incl. new `(dashboard)/error.tsx`/`loading.tsx` segments).
+- 2026-11-15: P2-7: new `scroll-cue-y` utility (globals.css) on 29 dialog/drawer bodies; checkbox touch hit area enlarged (`ui/checkbox.tsx`); comments for 999px radius and export/sample hex. P2-4 and P2-6 still open. tsc/lint/tests passed (447/447); build not re-run after these.
+- 2026-11-15: P2-4 (partial): split `setup-wizard/setup-wizard-client.tsx` (2045→885 lines) into `bom-work-list.tsx`, `wizard-sections.tsx`, `wizard-ui.tsx`, and `materials-pc/material-pc-table.tsx` (1119→797) into `material-pc-parts.tsx` (table re-exports the old names). Pure moves; tsc/lint/tests (447)/build passed; wizard step 1 and the three Materials views checked in the browser; wizard steps 2-5 not exercised. P2-6 not changed.
+- 2026-11-15: Visual check of `/reports/materials` (desktop): new lot chip color (brown tint) reads clearly and is distinct from the blue status badges and green reconcile banner. Lots 021 and 013 share a color because color = (trailing sequence − 1) mod 8, by design.
 
 ### 2026-11-03 — Authenticated desktop/mobile visual pass
 

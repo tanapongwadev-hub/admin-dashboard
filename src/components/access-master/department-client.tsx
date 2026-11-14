@@ -97,7 +97,7 @@ function DepartmentFormDialog({
             <DialogTitle>{isEdit ? "แก้ไขแผนก" : "เพิ่มแผนก"}</DialogTitle>
             <DialogDescription>แผนกแบบสองระดับ: กลุ่ม (เช่น materials) และแผนกย่อยที่อยู่ใต้กลุ่ม แผนกย่อยได้สิทธิ์ตามกลุ่มอัตโนมัติ</DialogDescription>
           </DialogHeader>
-          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="min-h-0 flex-1 space-y-4 scroll-cue-y overflow-y-auto px-6 py-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <div className="space-y-1.5">
               <Label htmlFor="dept-code">รหัส *</Label>
               <Input id="dept-code" disabled={isEdit} {...register("code")} aria-invalid={!!errors.code} />

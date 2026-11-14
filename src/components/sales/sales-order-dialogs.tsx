@@ -141,7 +141,7 @@ export function SalesOrderDetailsDialog({
                 {order.customer.code} · {order.customer.nameTh}
               </DialogDescription>
             </DialogHeader>
-            <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="min-h-0 flex-1 scroll-cue-y overflow-y-auto px-6 py-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
                 {[
                   ["วันที่สั่ง", formatThaiDate(order.orderDate)],

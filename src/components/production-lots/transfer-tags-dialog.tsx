@@ -86,7 +86,7 @@ export function TransferTagsDialog({
               </p>
             )}
             {tags && tags.length > 0 && (
-              <ul className="max-h-72 divide-y divide-border overflow-y-auto rounded-md border border-border [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <ul className="max-h-72 divide-y divide-border scroll-cue-y overflow-y-auto rounded-md border border-border [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {tags.map((tag) => (
                   <li key={tag.qrCode} className="flex items-center gap-3 px-3 py-2">
                     {/* eslint-disable-next-line @next/next/no-img-element -- data: URL SVG */}

@@ -107,7 +107,7 @@ export function MaterialImagePicker({
         aria-describedby={`${id}-hint ${id}-error`}
         aria-invalid={error ? true : undefined}
         onChange={onChange}
-        className="peer sr-only"
+        className="peer sr-only w-px!"
       />
 
       <label
@@ -666,7 +666,7 @@ export function MaterialPcFormDialog({
             </nav>
           </DialogHeader>
 
-          <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div ref={scrollRef} className="min-h-0 flex-1 scroll-cue-y overflow-y-auto overscroll-contain px-6 py-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <h3 ref={stepHeadingRef} tabIndex={-1} className="mb-4 text-sm font-semibold text-fg focus:outline-none">ขั้นตอน {step + 1} จาก {steps.length} · {steps[step]}</h3>
             <div hidden={step !== 0}>
             <div className="space-y-3 rounded-lg border border-border bg-surface-2 p-4">

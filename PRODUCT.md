@@ -42,7 +42,7 @@ Navy Enterprise palette (Primary Navy `#0F2747`, Accent Blue `#1769D1`), IBM Ple
 
 ## Evidence on Hand
 
-Real data lives in the cps-api dev database. Do not fabricate customers, metrics or testimonials. The dashboard home still uses partly mock data from `lib/dashboard-data.ts`.
+Real data lives in the cps-api dev database. Do not fabricate customers, metrics or testimonials. The dashboard home reads live data (`lib/dashboard-loader.ts`); `/orders` and `/reports/analytics` still render mock data and show a "ข้อมูลตัวอย่าง" banner.
 
 ## Product Principles
 

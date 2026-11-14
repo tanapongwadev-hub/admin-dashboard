@@ -197,6 +197,7 @@ function buildPrintContent(summary: MaterialTraceabilitySummary, items: Material
       <div style="font-size:14px;font-weight:600;">${htmlEscape(value)}</div>
     </div>`;
 
+  // Hex colors below are for the exported/printed document, which is rendered outside the app theme.
   return `<style>@page { size: A4 landscape; margin: 12mm; }</style>
 <div style="font-family: 'IBM Plex Sans Thai', Tahoma, sans-serif; color: #172033;">
   ${summary.hasMismatch ? '<p style="color:#DC2626;font-weight:600;margin:0 0 10px;">⚠ STOCK MISMATCH DETECTED</p>' : ""}

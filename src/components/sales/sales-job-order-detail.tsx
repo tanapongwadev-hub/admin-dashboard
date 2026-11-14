@@ -179,7 +179,7 @@ export function SalesJobOrderDetailView({
     <div className="flex flex-col gap-6">
       <Link
         href="/sales/job-orders"
-        className="inline-flex w-fit items-center gap-1 text-sm text-fg-muted hover:text-fg"
+        className="inline-flex min-h-6 w-fit items-center gap-1 text-sm text-fg-muted hover:text-fg pointer-coarse:min-h-11"
       >
         <ArrowLeft className="size-4" />
         ใบจัดงานขายทั้งหมด
@@ -272,7 +272,7 @@ export function SalesJobOrderDetailView({
 
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold text-fg">กล่องที่จองไว้ (FIFO)</h2>
-        <div className="overflow-x-auto rounded-lg border border-border bg-surface">
+        <div className="scroll-cue-x overflow-x-auto rounded-lg border border-border bg-surface">
           <table className="w-full min-w-[760px] text-sm">
             <thead className="bg-surface-2 text-left text-xs text-fg-muted">
               <tr>

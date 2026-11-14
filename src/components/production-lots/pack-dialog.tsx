@@ -89,7 +89,7 @@ export function PackDialog({
                 Lot {lot.lotNo} · พิมพ์ฉลาก QR (60×40 มม.) แล้วติดที่กล่อง
               </DialogDescription>
             </DialogHeader>
-            <ul className="mx-6 max-h-72 divide-y divide-border overflow-y-auto rounded-md border border-border [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <ul className="mx-6 max-h-72 divide-y divide-border scroll-cue-y overflow-y-auto rounded-md border border-border [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {created.map((pkg) => (
                 <li key={pkg.id} className="flex items-center gap-3 px-3 py-2">
                   {/* eslint-disable-next-line @next/next/no-img-element -- data: URL SVG */}

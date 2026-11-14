@@ -234,7 +234,7 @@ export function MaterialsReceivingFormDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid flex-1 grid-cols-1 gap-0 overflow-y-auto md:grid-cols-2 md:overflow-visible [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="grid flex-1 grid-cols-1 gap-0 scroll-cue-y overflow-y-auto md:grid-cols-2 md:overflow-visible [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {/* Left: form */}
           <div className="flex flex-col gap-4 px-6 py-5 md:overflow-y-auto md:[scrollbar-width:none] md:[&::-webkit-scrollbar]:hidden">
             <div className="flex flex-col gap-1.5">
@@ -412,7 +412,7 @@ export function MaterialsReceivingFormDialog({
                   <Badge variant="primary">{packagePreview.length} กล่อง</Badge>
                 </div>
 
-                <div className="grid max-h-64 grid-cols-3 gap-2 overflow-y-auto p-3 sm:grid-cols-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <div className="grid max-h-64 grid-cols-3 gap-2 scroll-cue-y overflow-y-auto p-3 sm:grid-cols-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                   {packagePreview.map((row) => (
                     <div
                       key={row.packageNo}

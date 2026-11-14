@@ -1,5 +1,5 @@
 // Per-lot color coding for the traceability report: every lot number gets its
-// own color (e.g. CCI-26J26-003 green, CCI-26J26-001 purple) and keeps it in
+// own color (e.g. CCI-26J26-003 teal, CCI-26J26-001 violet) and keeps it in
 // every view — lot groups, disbursement dialog, movement table — so a lot can
 // be followed by color alone. Colors come from the --lot-N tokens in
 // globals.css; class strings are written out in full so Tailwind can see them.

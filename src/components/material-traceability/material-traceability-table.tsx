@@ -105,7 +105,7 @@ export function MaterialTraceabilityTable({
                   {row.mainQr ? (
                     <button
                       type="button"
-                      className="whitespace-nowrap font-mono text-xs text-primary underline-offset-2 hover:underline"
+                      className="inline-flex min-h-6 items-center whitespace-nowrap font-mono text-xs text-primary underline-offset-2 hover:underline pointer-coarse:min-h-11"
                       onClick={() => onOpenMainQr(row.mainQr!.id)}
                     >
                       {row.mainQr.code ?? row.mainQr.id}
@@ -118,7 +118,7 @@ export function MaterialTraceabilityTable({
                   {row.subQr ? (
                     <button
                       type="button"
-                      className="whitespace-nowrap font-mono text-xs text-primary underline-offset-2 hover:underline"
+                      className="inline-flex min-h-6 items-center whitespace-nowrap font-mono text-xs text-primary underline-offset-2 hover:underline pointer-coarse:min-h-11"
                       onClick={() => onOpenSubQr(row.subQr!.id)}
                     >
                       {row.subQr.code ?? row.subQr.id}
@@ -143,7 +143,7 @@ export function MaterialTraceabilityTable({
                     <Button
                       type="button"
                       variant="link"
-                      className="h-auto p-0 text-xs"
+                      className="h-auto min-h-6 p-0 text-xs pointer-coarse:min-h-11"
                       onClick={() => onOpenReceiving(row.receiving!.id)}
                     >
                       รับเข้า {row.receiving.no}
@@ -153,7 +153,7 @@ export function MaterialTraceabilityTable({
                     <Button
                       type="button"
                       variant="link"
-                      className="h-auto p-0 text-xs"
+                      className="h-auto min-h-6 p-0 text-xs pointer-coarse:min-h-11"
                       onClick={() => onOpenDisbursement(row.disbursement!.id)}
                     >
                       จ่ายออก {row.disbursement.no}

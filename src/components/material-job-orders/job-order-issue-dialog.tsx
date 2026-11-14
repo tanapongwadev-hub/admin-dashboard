@@ -97,7 +97,7 @@ export function MaterialJobOrderIssueDialog({
             ยังไม่มีกล่องที่หยิบแล้วและพร้อมจ่ายออก
           </p>
         ) : (
-          <div className="max-h-[60vh] space-y-2 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="max-h-[60vh] space-y-2 scroll-cue-y overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {eligibleLines.map((line) => (
               <div
                 key={line.reservationId}
