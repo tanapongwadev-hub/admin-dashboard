@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/ui/page-title";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { ShieldAlert } from "lucide-react";
@@ -31,7 +32,7 @@ export default async function MenuManagementPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-xl font-semibold text-fg">จัดการเมนู</h1>
+        <PageTitle>จัดการเมนู</PageTitle>
         <p className="mt-1 text-sm text-fg-muted">
           เพิ่ม แก้ไข และลบเมนู พร้อมลากเพื่อจัดลำดับหรือจัดชั้นใหม่ การเปลี่ยนตำแหน่งจะยังไม่บันทึกจนกว่าคุณจะกดบันทึก
         </p>

@@ -190,7 +190,7 @@ export function UserOverridesPanel({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-end justify-between gap-3 rounded-xl border border-border bg-surface p-4">
+      <div className="flex flex-wrap items-end justify-between gap-3 rounded-lg border border-border bg-surface p-4">
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex min-w-56 flex-col gap-1.5">
             <Label htmlFor="override-user">ผู้ใช้</Label>
@@ -303,7 +303,7 @@ export function UserOverridesPanel({
             />
           </div>
 
-          <div className="max-h-[60vh] overflow-auto rounded-xl border border-border bg-surface">
+          <div className="max-h-[60vh] overflow-auto rounded-lg border border-border bg-surface">
             <table className="w-full min-w-[56rem] border-separate border-spacing-0 text-sm">
               <thead>
                 <tr>
@@ -317,7 +317,7 @@ export function UserOverridesPanel({
                       className="sticky top-0 z-10 border-b border-border bg-surface-2 px-2 py-2.5 text-center text-xs font-semibold text-fg-secondary"
                     >
                       {action.nameTh}
-                      <span className="block font-mono text-[10px] font-normal text-fg-muted">{action.code}</span>
+                      <span className="block font-mono text-[13px] font-normal text-fg-muted">{action.code}</span>
                     </th>
                   ))}
                 </tr>
@@ -331,7 +331,7 @@ export function UserOverridesPanel({
                     >
                       <div style={{ paddingLeft: row.depth * INDENT }} className={cn(!row.menu.isActive && "opacity-60")}>
                         <span className={cn("text-fg", row.depth === 0 && "font-semibold")}>{row.menu.nameTh}</span>
-                        <span className="block truncate font-mono text-[11px] text-fg-muted">
+                        <span className="block truncate font-mono text-[13px] text-fg-muted">
                           {row.menu.path || row.menu.code}
                         </span>
                       </div>
@@ -392,8 +392,8 @@ export function UserOverridesPanel({
             </table>
           </div>
 
-          <section className="rounded-xl border border-border bg-surface">
-            <h2 className="border-b border-border px-4 py-3 text-sm font-semibold text-fg">
+          <section className="rounded-lg border border-border bg-surface">
+            <h2 className="border-b border-border px-4 py-3 text-lg font-semibold text-fg">
               ข้อยกเว้นของผู้ใช้นี้ ({overrideList.length})
             </h2>
             {overrideList.length === 0 ? (

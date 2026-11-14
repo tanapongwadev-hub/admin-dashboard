@@ -31,7 +31,7 @@ const STATUS_DISPLAY: Record<DisbursementStatus, { label: string; variant: "warn
 
 const TYPE_META: Record<DisbursementType, { label: string; icon: typeof Factory; tone: string }> = {
   production: { label: "เบิกเพื่อผลิต", icon: Factory, tone: "bg-primary-soft text-primary" },
-  stock_cut: { label: "ตัดสต็อก", icon: PackageMinus, tone: "bg-warning-soft text-warning" },
+  stock_cut: { label: "ตัดสต็อก", icon: PackageMinus, tone: "bg-warning-soft text-warning-fg" },
 };
 
 function formatDate(value: string | null): string {

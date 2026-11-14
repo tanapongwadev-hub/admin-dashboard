@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/ui/page-title";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { ShieldAlert } from "lucide-react";
@@ -111,7 +112,7 @@ export default async function MaterialsReceivingPage({
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-xl font-semibold text-fg">รับเข้าวัตถุดิบ</h1>
+        <PageTitle>รับเข้าวัตถุดิบ</PageTitle>
         <p className="mt-1 text-sm text-fg-muted">
           รับเข้าวัตถุดิบเข้าคลัง ระบบจะสร้าง Internal Lot, Supplier Lot, จำนวนกล่อง/แพ็ก และ QR Code ให้อัตโนมัติ
         </p>

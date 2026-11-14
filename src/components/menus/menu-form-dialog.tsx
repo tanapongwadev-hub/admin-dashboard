@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/incompatible-library -- Subscription-based RHF/TanStack components explicitly opt out of React Compiler via "use no memo" below. */
 "use client";
 
 import * as React from "react";
@@ -79,6 +80,8 @@ export function MenuFormDialog({
   items: FlatMenuNode[];
   onSaved: (result: Extract<MenuMutationResult, { status: "success" }>) => void;
 }) {
+  "use no memo"; // Subscription-based library APIs must keep their live reads.
+
   const isEdit = Boolean(menu);
   const hasChildren = menu ? items.some((item) => item.parentId === menu.id) : false;
   const eligibleParents = items.filter(

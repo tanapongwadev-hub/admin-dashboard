@@ -1,4 +1,5 @@
 "use client";
+import { PageTitle } from "@/components/ui/page-title";
 
 import { Check, CheckCircle2, Loader2, Printer, Split, StepForward } from "lucide-react";
 import * as React from "react";
@@ -80,7 +81,7 @@ function PacketTimeline({ packet, steps }: { packet: ProductionOrderPacket; step
             )}
             <span
               aria-hidden
-              className={`relative z-10 flex size-6 shrink-0 items-center justify-center rounded-full border-2 text-[10px] font-semibold ${
+              className={`relative z-10 flex size-6 shrink-0 items-center justify-center rounded-full border-2 text-xs font-semibold ${
                 state === "done"
                   ? "border-success bg-success text-white"
                   : state === "current"
@@ -319,7 +320,7 @@ export function ProductionOrderDetail({
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="font-mono text-xl font-semibold text-fg">ใบสั่งผลิต {order.code}</h1>
+          <PageTitle className="font-mono">ใบสั่งผลิต {order.code}</PageTitle>
           <p className="mt-1 text-sm text-fg-muted">
             แผน {order.planCode ?? "—"} · ผลิตเสร็จ {order.completedPacketCount}/{order.packetCount} กล่อง
           </p>
@@ -379,7 +380,7 @@ export function ProductionOrderDetail({
         return (
           <section key={line.id} className="flex flex-col gap-3">
             <div>
-              <h2 className="text-base font-semibold text-fg">
+              <h2 className="text-lg font-semibold text-fg">
                 <span className="font-mono text-fg-secondary">{line.product.code}</span> {line.product.name}
               </h2>
               <p className="text-sm text-fg-muted">

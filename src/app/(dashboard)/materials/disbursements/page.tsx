@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/ui/page-title";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { ShieldAlert } from "lucide-react";
@@ -114,7 +115,7 @@ export default async function MaterialsDisbursementPage({
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-xl font-semibold text-fg">จ่ายออกวัสดุ</h1>
+        <PageTitle>จ่ายออกวัสดุ</PageTitle>
         <p className="mt-1 text-sm text-fg-muted">สร้างและจัดการรายการจ่ายออกวัสดุ ตัดสต็อกหรือเบิกเพื่อผลิต</p>
       </div>
 

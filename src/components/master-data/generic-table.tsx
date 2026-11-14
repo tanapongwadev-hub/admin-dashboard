@@ -107,8 +107,8 @@ export function GenericMasterDataTable<TEntity extends BaseMasterEntity>({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="overflow-x-auto rounded-xl border border-border bg-surface">
-        <Table>
+      <div className="overflow-x-auto rounded-lg border border-border bg-surface">
+        <Table className="min-w-[40rem]">
           <TableHeader>
             <TableRow>
               <TableHead className="w-[16%]">รหัส</TableHead>

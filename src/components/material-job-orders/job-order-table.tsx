@@ -58,8 +58,8 @@ export function MaterialJobOrderTable({
       </div>
     );
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-surface">
-      <Table>
+    <div className="overflow-hidden rounded-lg border border-border bg-surface">
+      <Table className="min-w-[48rem]">
         <TableHeader>
           <TableRow>
             <TableHead>เลขใบจัดงาน</TableHead>

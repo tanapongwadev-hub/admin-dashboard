@@ -94,7 +94,7 @@ export function DiagramNode({
           {label}
         </p>
         {sublabel && (
-          <p className="truncate text-[10.5px] text-fg-muted" title={sublabel}>
+          <p className="truncate text-xs text-fg-muted" title={sublabel}>
             {sublabel}
           </p>
         )}

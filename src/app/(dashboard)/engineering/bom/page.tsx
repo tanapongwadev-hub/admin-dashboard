@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/ui/page-title";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { LayoutDashboard, ShieldAlert } from "lucide-react";
@@ -40,12 +41,12 @@ export default async function BomDashboardPage() {
   );
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex items-start gap-4 rounded-xl border border-border bg-surface p-5 sm:p-6">
+      <header className="flex items-start gap-4 rounded-lg border border-border bg-surface p-5 sm:p-6">
         <span className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-primary/15 bg-primary-soft text-primary">
           <LayoutDashboard className="size-6" aria-hidden="true" />
         </span>
         <div className="min-w-0">
-          <h1 className="text-2xl font-semibold tracking-tight text-fg">ภาพรวม BOM และขั้นตอนการผลิต</h1>
+          <PageTitle>ภาพรวม BOM และขั้นตอนการผลิต</PageTitle>
           <p className="mt-1 text-sm leading-relaxed text-fg-muted">
             ดูว่าสินค้าและวัตถุดิบภายในรายการไหนพร้อมผลิต ขาด BOM หรือ Workflow และมีฉบับร่างค้างอยู่
           </p>

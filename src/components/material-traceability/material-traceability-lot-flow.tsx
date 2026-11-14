@@ -27,7 +27,7 @@ function issuedTotal(lot: LotFlowEntry): number {
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0">
-      <p className="text-[11px] text-fg-muted">{label}</p>
+      <p className="text-xs text-fg-muted">{label}</p>
       <p className="truncate text-sm font-semibold text-fg tabular-nums">{value}</p>
     </div>
   );
@@ -57,8 +57,8 @@ export function MaterialTraceabilityLotFlow({
     <section className="rounded-lg border border-border bg-surface" aria-label="Material และ Lot">
       <div className="flex flex-col gap-3 border-b border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
-          <p className="text-[11px] uppercase tracking-wide text-fg-muted">Material</p>
-          <h2 className="truncate text-sm font-semibold text-fg">
+          <p className="text-xs uppercase tracking-wide text-fg-muted">Material</p>
+          <h2 className="truncate text-lg font-semibold text-fg">
             <span className="font-mono">{flow.material?.code ?? materialCode}</span>
             {flow.material?.name && <span className="font-normal text-fg-secondary"> · {flow.material.name}</span>}
           </h2>

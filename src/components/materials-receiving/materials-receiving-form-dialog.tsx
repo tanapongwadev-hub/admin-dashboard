@@ -60,22 +60,22 @@ function LotTicket({
   supplierLotPreview: string;
 }) {
   return (
-    <div className="relative overflow-hidden rounded-xl border border-dashed border-border-strong bg-surface-2">
+    <div className="relative overflow-hidden rounded-lg border border-dashed border-border-strong bg-surface-2">
       <span className="absolute -left-2 top-6 size-4 rounded-full bg-surface" aria-hidden="true" />
       <span className="absolute -left-2 bottom-6 size-4 rounded-full bg-surface" aria-hidden="true" />
       <div className="flex items-center justify-between gap-2 px-5 pb-1 pt-4">
-        <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-fg-muted">MAIN QR · ป้ายรับเข้า</span>
+        <span className="text-xs font-semibold uppercase tracking-[0.16em] text-fg-muted">MAIN QR · ป้ายรับเข้า</span>
         <Boxes className="size-3.5 text-fg-muted" aria-hidden="true" />
       </div>
       <div className="px-5 pb-2">
-        <p className="text-[10px] uppercase tracking-[0.12em] text-fg-muted">Internal Lot</p>
+        <p className="text-xs uppercase tracking-[0.12em] text-fg-muted">Internal Lot</p>
         <p className="break-all font-mono text-lg font-semibold uppercase tracking-wide text-fg">
           {internalLotPreview}
         </p>
-        <p className="text-[11px] text-fg-muted">เลขลำดับ (XXX) ระบบจะกำหนดจริงตอนบันทึก</p>
+        <p className="text-xs text-fg-muted">เลขลำดับ (XXX) ระบบจะกำหนดจริงตอนบันทึก</p>
       </div>
       <div className="border-t border-dashed border-border-strong px-5 py-3">
-        <p className="text-[10px] uppercase tracking-[0.12em] text-fg-muted">Supplier Lot</p>
+        <p className="text-xs uppercase tracking-[0.12em] text-fg-muted">Supplier Lot</p>
         <p className="font-mono text-base font-semibold uppercase tracking-wide text-fg-secondary">
           {supplierLotPreview || "—"}
         </p>
@@ -285,7 +285,7 @@ export function MaterialsReceivingFormDialog({
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-[11px] text-fg-muted">วัสดุนี้มีซัพพลายเออร์มากกว่า 1 ราย กรุณาเลือก</p>
+                <p className="text-xs text-fg-muted">วัสดุนี้มีซัพพลายเออร์มากกว่า 1 ราย กรุณาเลือก</p>
               </div>
             )}
             {materialId && !isLoadingSuppliers && suppliers.length === 0 && missingSupplierHref && (
@@ -321,7 +321,7 @@ export function MaterialsReceivingFormDialog({
                   onChange={(e) => setSupplierProductionDate(e.target.value)}
                 />
                 {isFutureProductionDate && (
-                  <p className="text-[11px] text-danger">วันที่ Supplier ผลิตต้องไม่เป็นวันที่ในอนาคต</p>
+                  <p className="text-xs text-danger">วันที่ Supplier ผลิตต้องไม่เป็นวันที่ในอนาคต</p>
                 )}
               </div>
             </div>
@@ -333,13 +333,13 @@ export function MaterialsReceivingFormDialog({
 
             {selectedMaterial && receiveQty > 0 && (receivesSheets || packingQuantity) ? (
               <div
-                className="rounded-xl border border-border bg-surface p-4"
+                className="rounded-lg border border-border bg-surface p-4"
                 aria-live="polite"
               >
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <div>
                     <p className="text-xs font-semibold text-fg">ตัวอย่างก่อนยืนยันรับเข้า</p>
-                    <p className="text-[11px] text-fg-muted">
+                    <p className="text-xs text-fg-muted">
                       {selectedMaterial.code} · {selectedMaterial.materialType ?? "ทั่วไป"}
                     </p>
                   </div>
@@ -384,7 +384,7 @@ export function MaterialsReceivingFormDialog({
             ) : null}
 
             {receivesSheets && receiveQty > 0 ? (
-              <div className="rounded-xl border border-border bg-surface p-4" aria-live="polite">
+              <div className="rounded-lg border border-border bg-surface p-4" aria-live="polite">
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-sm font-semibold text-fg">วัตถุดิบรับเข้าก่อนแปรรูป</p>
                   <Badge variant="primary">เต็ม</Badge>
@@ -403,7 +403,7 @@ export function MaterialsReceivingFormDialog({
               // body, and a footer strip that states the reconciliation
               // (total tiles == receive qty) as its own clear line instead of
               // a trailing "= X ✓" fragment easy to miss.
-              <div className="flex flex-1 flex-col overflow-hidden rounded-xl border border-border bg-surface">
+              <div className="flex flex-1 flex-col overflow-hidden rounded-lg border border-border bg-surface">
                 <div className="flex items-center justify-between border-b border-border px-4 py-3">
                   <div className="flex items-center gap-2">
                     <Boxes className="size-4 text-primary" aria-hidden="true" />
@@ -424,7 +424,7 @@ export function MaterialsReceivingFormDialog({
                       )}
                       title={row.isRemainder ? "กล่องเศษ (ไม่เต็มแพ็ก)" : undefined}
                     >
-                      <span className={cn("font-mono text-[10px] font-semibold", row.isRemainder ? "text-warning" : "text-primary")}>
+                      <span className={cn("font-mono text-[13px] font-semibold", row.isRemainder ? "text-warning" : "text-primary")}>
                         #{String(row.packageNo).padStart(3, "0")}
                       </span>
                       <span className="text-base font-bold leading-none tabular-nums text-fg">
@@ -441,15 +441,15 @@ export function MaterialsReceivingFormDialog({
                 </div>
 
                 <div className="flex items-center justify-between gap-2 border-t border-border bg-surface-2/60 px-4 py-2.5">
-                  <span className="text-[11px] text-fg-muted">
+                  <span className="text-xs text-fg-muted">
                     รวม {formatNumber(packagePreviewTotal)} จาก {formatNumber(preview.convertedQuantity)}
                   </span>
                   {packagePreviewTotal === preview.convertedQuantity && preview.convertedQuantity > 0 ? (
-                    <span className="flex items-center gap-1 text-[11px] font-semibold text-success">
+                    <span className="flex items-center gap-1 text-xs font-semibold text-success">
                       <CheckCircle2 className="size-3.5" aria-hidden="true" /> ครบตามจำนวนเข้าสต็อก
                     </span>
                   ) : (
-                    <span className="text-[11px] font-medium text-fg-muted">กำลังคำนวณ…</span>
+                    <span className="text-xs font-medium text-fg-muted">กำลังคำนวณ…</span>
                   )}
                 </div>
               </div>

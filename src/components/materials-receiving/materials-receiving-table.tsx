@@ -74,26 +74,7 @@ function getReceivingStatusDisplay(receiving: MaterialReceiving): { label: strin
   return STATUS_DISPLAY[receiving.status];
 }
 
-// Ties color directly to status meaning (not decoration) — a soft gradient
-// wash + left accent bar per status, using only existing design tokens, so
-// a row/card's overall color mood is scannable before reading any text:
-// draft = warm (needs attention/action), confirmed = settled/complete,
-// cancelled = deliberately muted (already resolved, lowest priority).
-// `barColor` is applied via inline style (not a `border-l-*` Tailwind
-// class) because it has to win over the base `border-border` class on the
-// same element for the same physical side — same specificity, same
-// cascade layer, so which one wins is not reliably "whichever comes last
-// in the className string" the way plain (non-layered) CSS behaves.
-// Confirmed empirically: even reordering classes / re-declaring
-// `@layer utilities` in a later <style> block did not make `border-l-success`
-// beat `border-border`'s left-side longhand. An inline style avoids the
-// ambiguity entirely.
-const STATUS_ACCENT: Record<MaterialReceivingStatus, { wash: string; barColor: string }> = {
-  draft: { wash: "from-warning-soft/70 via-surface-2 to-surface-2", barColor: "var(--warning)" },
-  confirmed: { wash: "from-success-soft/60 via-surface-2 to-surface-2", barColor: "var(--success)" },
-  cancelled: { wash: "from-surface-2 via-surface-2 to-surface-2", barColor: "var(--border-strong)" },
-};
-
+// Status meaning is carried by the shared text badges in every view.
 export function getMaterialsReceivingRowActions(
   receiving: MaterialReceiving,
   canConfirm: boolean,
@@ -162,10 +143,10 @@ interface MaterialsReceivingRowProps {
 function DataSheetRow({ label, value }: { label: string; value: string }) {
   return (
     <tr className="border-b border-border last:border-b-0">
-      <th scope="row" className="w-[42%] py-2.5 pl-[18px] pr-3 text-left align-top text-[12.5px] font-normal text-fg-muted">
+      <th scope="row" className="w-[42%] py-2.5 pl-[18px] pr-3 text-left align-top text-sm font-normal text-fg-muted">
         {label}
       </th>
-      <td className="py-2.5 pr-[18px] text-left align-top text-[13px] font-medium text-fg break-words">{value}</td>
+      <td className="py-2.5 pr-[18px] text-left align-top text-sm font-medium text-fg break-words">{value}</td>
     </tr>
   );
 }
@@ -193,7 +174,6 @@ function MaterialsReceivingCard({
   onProcess,
 }: MaterialsReceivingRowProps) {
   const statusDisplay = getReceivingStatusDisplay(receiving);
-  const accent = STATUS_ACCENT[receiving.status];
   const actions = getMaterialsReceivingRowActions(receiving, canConfirm, canCancel, canDelete, {
     onViewDetails,
     onConfirm,
@@ -205,21 +185,17 @@ function MaterialsReceivingCard({
 
   return (
     <article
-      className="group flex h-full flex-col overflow-hidden rounded-2xl border-y border-r border-l-4 border-border bg-surface transition-shadow duration-200 hover:shadow-[0_8px_24px_-6px_rgba(0,0,0,0.08)]"
-      style={{ borderLeftColor: accent.barColor }}
+      className="group flex h-full flex-col overflow-hidden rounded-lg border border-border bg-surface"
       role="group"
       aria-label={`บัตรรายการรับเข้า ${receiving.internalLotNo}`}
     >
-      {/* Status wash — a soft gradient tinted by status (draft=warm/needs
-          action, confirmed=settled, cancelled=muted) so the card's overall
-          color mood is scannable before reading any text, not just a small
-          badge in the corner. */}
-      <div className={cn("relative aspect-[4/3] overflow-hidden bg-gradient-to-br", accent.wash)}>
+      {/* Neutral image surface matches the material and product catalog cards. */}
+      <div className="relative aspect-[16/9] overflow-hidden bg-surface-2">
         <div className="absolute inset-3">
           <ReceivingMaterialPhoto
             imagePath={receiving.material?.imagePath}
             materialName={receiving.material?.name ?? "ไม่ระบุวัสดุ"}
-            className="h-full w-full rounded-[10px] bg-surface/70 backdrop-blur-[1px]"
+            className="h-full w-full rounded-md bg-surface"
           />
         </div>
         <div className="absolute right-3.5 top-3.5 z-10 flex items-center gap-1.5">
@@ -229,36 +205,33 @@ function MaterialsReceivingCard({
       </div>
 
       <div className="flex flex-1 flex-col px-[18px] pb-1 pt-[18px]">
-        <p className="mb-2 font-mono text-[11px] leading-none tracking-[0.05em] text-fg-secondary">
+        <p className="mb-2 font-mono text-[13px] leading-none tracking-[0.05em] text-fg-secondary">
           {receiving.internalLotNo}
         </p>
         <h2
-          className="mb-1 truncate text-[17px] font-semibold leading-tight tracking-[-0.01em] text-fg"
+          className="mb-1 truncate text-lg font-semibold leading-tight tracking-[-0.01em] text-fg"
           title={receiving.material?.name ?? ""}
         >
           {receiving.material?.name ?? "ไม่ระบุวัสดุ"}
         </h2>
-        <p className="truncate text-[12.5px] leading-tight text-fg-secondary">
+        <p className="truncate text-sm leading-tight text-fg-secondary">
           {receiving.material?.code ?? "—"}
         </p>
       </div>
 
-      {/* จำนวนรับเข้า is the single most important number on this card — a
-          dedicated gradient panel (not just larger text) gives it its own
-          visual "stage" so it reads as the headline stat, not one more line
-          of data among many. */}
-      <div className="mx-[18px] mb-3.5 mt-2.5 flex items-baseline justify-between gap-3 rounded-xl bg-gradient-to-br from-primary-soft/60 to-transparent px-3.5 py-3">
+      {/* Quantity uses the shared type scale and a neutral data panel. */}
+      <div className="mx-4 mb-4 mt-3 flex items-baseline justify-between gap-3 rounded-md bg-surface-2 px-4 py-3">
         <div className="min-w-0">
-          <span className="text-[10px] font-semibold uppercase leading-none tracking-[0.08em] text-primary">
+          <span className="text-xs font-semibold uppercase leading-none tracking-[0.08em] text-primary">
             จำนวนรับเข้า
           </span>
           <div className="mt-1.5">
-            <span className="text-[32px] font-bold leading-none tracking-[-0.025em] tabular-nums text-fg">
+            <span className="text-3xl font-semibold leading-none tracking-[-0.025em] tabular-nums text-fg">
               {formatNumber(Number(receiving.receiveQuantity))}
             </span>
           </div>
         </div>
-        <Badge variant="neutral" style={{ fontSize: "10.5px" }}>
+        <Badge variant="neutral">
           {receiving.packageCount} กล่อง
         </Badge>
       </div>
@@ -312,7 +285,6 @@ function MaterialsReceivingListItem({
   onProcess,
 }: MaterialsReceivingRowProps) {
   const statusDisplay = getReceivingStatusDisplay(receiving);
-  const accent = STATUS_ACCENT[receiving.status];
   const actions = getMaterialsReceivingRowActions(receiving, canConfirm, canCancel, canDelete, {
     onViewDetails,
     onConfirm,
@@ -325,11 +297,9 @@ function MaterialsReceivingListItem({
   return (
     <article
       className={cn(
-        "group grid grid-cols-[1fr_auto] items-center gap-3 rounded-xl border-y border-r border-l-4 border-border bg-gradient-to-r bg-surface px-3 py-2.5 transition-colors hover:border-border-strong sm:grid-cols-[auto_1fr_auto_auto] sm:gap-4 sm:px-4 sm:py-3",
-        accent.wash,
+        "group grid grid-cols-[1fr_auto] items-center gap-3 rounded-lg border border-border bg-surface px-3 py-2.5 transition-colors hover:border-border-strong sm:grid-cols-[auto_1fr_auto_auto] sm:gap-4 sm:px-4 sm:py-3",
         receiving.status === "cancelled" && "opacity-70"
       )}
-      style={{ borderLeftColor: accent.barColor }}
       role="group"
       aria-label={`รายการรับเข้า ${receiving.internalLotNo}`}
     >
@@ -342,13 +312,13 @@ function MaterialsReceivingListItem({
 
       <div className="col-span-2 min-w-0 sm:col-span-1">
         <div className="mb-1 flex flex-wrap items-center gap-2">
-          <span className="text-[10px] font-medium uppercase leading-none tracking-[0.06em] text-fg-muted">Lot ภายใน</span>
-          <span className="font-mono text-[11px] font-semibold leading-none text-fg">{receiving.internalLotNo}</span>
+          <span className="text-xs font-medium uppercase leading-none tracking-[0.06em] text-fg-muted">Lot ภายใน</span>
+          <span className="font-mono text-[13px] font-semibold leading-none text-fg">{receiving.internalLotNo}</span>
           <Badge variant={statusDisplay.variant} style={{ fontSize: "10.5px", padding: "1px 6px" }}>
             {statusDisplay.label}
           </Badge>
         </div>
-        <h2 className="mb-1 truncate text-sm font-semibold leading-tight text-fg" title={receiving.material?.name ?? ""}>
+        <h2 className="mb-1 truncate text-lg font-semibold leading-tight text-fg" title={receiving.material?.name ?? ""}>
           {receiving.material?.code ?? "—"} · {receiving.material?.name ?? "ไม่ระบุวัสดุ"}
         </h2>
         <div className="flex items-center gap-2 truncate text-xs leading-tight text-fg-secondary">
@@ -359,10 +329,10 @@ function MaterialsReceivingListItem({
       </div>
 
       <div className="text-right">
-        <p className="mb-0.5 text-[10px] uppercase leading-none tracking-[0.08em] text-fg-muted">จำนวน / กล่อง</p>
+        <p className="mb-0.5 text-xs uppercase leading-none tracking-[0.08em] text-fg-muted">จำนวน / กล่อง</p>
         <p className="text-sm font-bold leading-none tracking-[-0.01em] tabular-nums text-fg sm:text-base">
           {formatNumber(Number(receiving.receiveQuantity))}
-          <span className="ml-1 text-[11px] font-medium text-fg-muted">· {receiving.packageCount} กล่อง</span>
+          <span className="ml-1 text-xs font-medium text-fg-muted">· {receiving.packageCount} กล่อง</span>
         </p>
       </div>
 
@@ -407,7 +377,7 @@ export function MaterialsReceivingCollection({
 
   if (view === "table") {
     return (
-      <div className="overflow-x-auto rounded-xl border border-border bg-surface">
+      <div className="overflow-x-auto rounded-lg border border-border bg-surface">
         <Table>
           <TableHeader>
             <TableRow>
@@ -422,7 +392,6 @@ export function MaterialsReceivingCollection({
           <TableBody>
             {receivings.map((receiving) => {
               const statusDisplay = getReceivingStatusDisplay(receiving);
-              const accent = STATUS_ACCENT[receiving.status];
               const actions = getMaterialsReceivingRowActions(receiving, canConfirm, canCancel, canDelete, {
                 onViewDetails,
                 onConfirm,
@@ -434,8 +403,7 @@ export function MaterialsReceivingCollection({
               return (
                 <TableRow
                   key={receiving.id}
-                  className={cn("border-l-4 bg-gradient-to-r", accent.wash, receiving.status === "cancelled" && "opacity-70")}
-                  style={{ borderLeftColor: accent.barColor }}
+                  className={cn(receiving.status === "cancelled" && "opacity-70")}
                 >
                   <TableCell>
                     <div className="flex items-center gap-2.5">
@@ -460,11 +428,11 @@ export function MaterialsReceivingCollection({
                   <TableCell>
                     <div className="flex flex-col gap-1">
                       <div>
-                        <span className="mr-1.5 text-[10px] uppercase tracking-wide text-fg-muted">Lot ภายใน</span>
+                        <span className="mr-1.5 text-xs uppercase tracking-wide text-fg-muted">Lot ภายใน</span>
                         <span className="font-mono text-xs font-semibold text-fg">{receiving.internalLotNo}</span>
                       </div>
                       <div>
-                        <span className="mr-1.5 text-[10px] uppercase tracking-wide text-fg-muted">Lot ผู้ผลิต</span>
+                        <span className="mr-1.5 text-xs uppercase tracking-wide text-fg-muted">Lot ผู้ผลิต</span>
                         <span className="font-mono text-xs text-fg-secondary">{receiving.supplierLotNo ?? "—"}</span>
                       </div>
                     </div>

@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/ui/page-title";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, KeyRound } from "lucide-react";
@@ -14,7 +15,7 @@ export default function ForgotPasswordPage() {
         <KeyRound className="h-5 w-5" aria-hidden />
       </span>
       <div>
-        <h1 className="text-2xl font-semibold text-fg">ลืมรหัสผ่านใช่ไหม?</h1>
+        <PageTitle>ลืมรหัสผ่านใช่ไหม?</PageTitle>
         <p className="mt-1.5 text-sm text-fg-secondary">
           ระบบ CPS ยังไม่รองรับการรีเซ็ตรหัสผ่านด้วยตนเอง กรุณาติดต่อผู้ดูแลระบบหรือหัวหน้างานของคุณ
           เพื่อขอตั้งรหัสผ่านใหม่ โดยแจ้งชื่อผู้ใช้ของคุณ

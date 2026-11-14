@@ -73,7 +73,7 @@ export function MenuTreeRow({
             <p className="truncate text-sm font-medium text-fg">{item.nameTh}</p>
             <span className="hidden truncate text-xs text-fg-muted sm:inline">{item.nameEn}</span>
           </div>
-          <p className="truncate text-[11px] text-fg-muted">
+          <p className="truncate text-xs text-fg-muted">
             <span className="font-mono">{item.code}</span>
             {item.path && <span className="hidden sm:inline"> · {item.path}</span>}
           </p>
@@ -92,7 +92,7 @@ export function MenuTreeRow({
               <span className="sr-only">ซ่อนจากแถบเมนู</span>
             </span>
           )}
-          <Badge variant={typeBadgeVariant[item.menuType]} className="text-[10px]">
+          <Badge variant={typeBadgeVariant[item.menuType]} className="text-xs">
             {item.menuType}
           </Badge>
           {actionsEnabled && (

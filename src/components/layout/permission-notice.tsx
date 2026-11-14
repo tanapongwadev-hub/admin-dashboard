@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/ui/page-title";
 import Link from "next/link";
 import { ArrowLeft, LayoutGrid, LockKeyhole } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -22,12 +23,12 @@ export function PermissionNotice({
     <div className="flex min-h-[60vh] items-center justify-center p-4">
       <section
         role="alert"
-        className="w-full max-w-lg rounded-2xl border border-border bg-surface p-8 text-center shadow-sm"
+        className="w-full max-w-lg rounded-xl border border-border bg-surface p-8 text-center shadow-sm"
       >
-        <span className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-warning-soft text-warning-fg ring-1 ring-warning/20">
+        <span className="mx-auto flex size-14 items-center justify-center rounded-xl bg-warning-soft text-warning-fg ring-1 ring-warning/20">
           <LockKeyhole className="size-7" aria-hidden="true" />
         </span>
-        <h1 className="mt-5 text-xl font-semibold text-fg">{title}</h1>
+        <PageTitle className="mt-5">{title}</PageTitle>
         <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-fg-secondary">{description}</p>
 
         {required.length > 0 && (

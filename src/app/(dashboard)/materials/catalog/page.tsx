@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/ui/page-title";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { ShieldAlert } from "lucide-react";
@@ -175,7 +176,7 @@ export default async function MaterialsPcPage({
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-fg">จัดการวัสดุ</h1>
+        <PageTitle>จัดการวัสดุ</PageTitle>
         <p className="mt-1 text-sm text-fg-muted">ควบคุมข้อมูลวัสดุทุกประเภท (PC/OF/OF-MAT) ยอดคงเหลือ และการรับเข้าชิ้นส่วนสำหรับคลังและสายการผลิต</p>
       </div>
 

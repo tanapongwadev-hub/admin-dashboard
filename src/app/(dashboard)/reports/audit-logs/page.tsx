@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/ui/page-title";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { ShieldAlert } from "lucide-react";
@@ -40,7 +41,7 @@ export default async function AuditLogsPage({
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-xl font-semibold text-fg">บันทึกการใช้งาน</h1>
+        <PageTitle>บันทึกการใช้งาน</PageTitle>
         <p className="mt-1 text-sm text-fg-muted">
           ตรวจสอบเหตุการณ์ที่ระบบบันทึกไว้ พร้อมผู้ดำเนินการ เป้าหมาย และผลลัพธ์ของแต่ละรายการ
         </p>

@@ -412,7 +412,7 @@ export function ProduceDialog({
                             {formatThaiDate(source.productionDate)} กะ {source.shift}
                           </span>
                           {source.origins.some((o) => o.lotNo !== source.lotNo) && (
-                            <p className="text-[11px] text-fg-muted">
+                            <p className="text-xs text-fg-muted">
                               ต้นทาง {source.origins.map((o) => `${o.lotNo} ${o.qty}`).join(", ")}
                             </p>
                           )}

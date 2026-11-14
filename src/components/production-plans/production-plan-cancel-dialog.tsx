@@ -31,7 +31,7 @@ export function ProductionPlanCancelDialog({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <div className="flex items-start gap-3">
-            <span className="flex size-9 items-center justify-center rounded-full bg-danger-soft text-danger">
+            <span className="flex size-9 items-center justify-center rounded-full bg-danger-soft text-danger-fg">
               <Ban className="size-4" />
             </span>
             <div>

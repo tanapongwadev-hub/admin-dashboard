@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/ui/page-title";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import Link from "next/link";
@@ -40,8 +41,7 @@ export default async function ProductsOverviewPage({
     <div className="@container flex flex-col gap-5">
       <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.15em] text-primary">Products control tower</p>
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-fg sm:text-3xl">ภาพรวมสินค้า</h1>
+          <PageTitle>ภาพรวมสินค้า</PageTitle>
           <p className="mt-1.5 text-sm text-fg-muted">การรับเข้าจากการผลิตและการจ่ายออกของสินค้าสำเร็จรูป</p>
         </div>
         <Button asChild variant="outline">

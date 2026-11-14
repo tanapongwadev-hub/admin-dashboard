@@ -98,10 +98,10 @@ function SidebarUserProfile({
       <div className="flex items-center gap-3 px-3 py-3">
         <UserAvatar name={name} color="chart-1" className="h-9 w-9 shrink-0" />
         <div className="flex min-w-0 flex-1 flex-col">
-          <p className="truncate text-[13px] font-semibold text-fg" title={name}>
+          <p className="truncate text-sm font-semibold text-fg" title={name}>
             {name}
           </p>
-          <p className="truncate text-[11px] text-fg-muted" title={role}>
+          <p className="truncate text-xs text-fg-muted" title={role}>
             {role}
           </p>
         </div>

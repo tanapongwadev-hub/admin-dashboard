@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/ui/page-title";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -37,7 +38,7 @@ export default async function ManualDetailPage({ params }: Params) {
 
       <header className="flex flex-col gap-3">
         <Badge variant="primary" className="w-fit"><category.icon className="size-3.5" aria-hidden />{category.title}</Badge>
-        <h1 className="text-2xl font-semibold text-fg">{manual.title}</h1>
+        <PageTitle>{manual.title}</PageTitle>
         <p className="text-fg-secondary">{manual.summary}</p>
         <div className="flex flex-wrap items-center gap-3">
           {manual.href && (
@@ -56,7 +57,7 @@ export default async function ManualDetailPage({ params }: Params) {
 
       <ol className="flex flex-col gap-6" aria-label="ขั้นตอน">
         {manual.steps.map((step, index) => (
-          <li key={step.title} className="rounded-xl border border-border bg-surface p-5">
+          <li key={step.title} className="rounded-lg border border-border bg-surface p-5">
             <div className="flex gap-3">
               <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-fg" aria-hidden>
                 {index + 1}

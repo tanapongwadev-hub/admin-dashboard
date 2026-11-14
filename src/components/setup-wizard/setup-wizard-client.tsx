@@ -213,7 +213,7 @@ const MATERIAL_SOURCE_OPTIONS = [
 
 function StepRail({ current, done, visible, labels, onSelect }: { current: number; done: boolean[]; visible: number[]; labels: string[]; onSelect: (index: number) => void }) {
   return (
-    <nav aria-label="ขั้นตอนการสร้างครบชุด" className="rounded-xl border border-border bg-surface px-3 py-3 sm:px-5">
+    <nav aria-label="ขั้นตอนการสร้างครบชุด" className="rounded-lg border border-border bg-surface px-3 py-3 sm:px-5">
       <ol className="flex items-center">
         {visible.map((index, pos) => {
           const state = index === current ? "active" : done[index] ? "done" : "upcoming";
@@ -444,7 +444,7 @@ export function SetupWizardClient({ materialLookups, productLookups, products, m
 
   if (finished) {
     return (
-      <div className="flex flex-col items-center gap-4 rounded-xl border border-border bg-surface px-6 py-14 text-center">
+      <div className="flex flex-col items-center gap-4 rounded-lg border border-border bg-surface px-6 py-14 text-center">
         <CheckCircle2 className="size-12 text-success" aria-hidden="true" />
         <h2 className="text-lg font-semibold text-fg">{data.mode === "material" ? "สร้าง BOM + Workflow ของวัสดุเรียบร้อย" : "สร้างครบชุดเรียบร้อย"}</h2>
         <ul className="text-sm text-fg-secondary">
@@ -504,7 +504,7 @@ export function SetupWizardClient({ materialLookups, productLookups, products, m
       <StepRail current={step} done={done} visible={visible} labels={labels} onSelect={goToStep} />
       <div className="grid items-start gap-4">
 
-      <div className="min-w-0 rounded-xl border border-border bg-surface">
+      <div className="min-w-0 rounded-lg border border-border bg-surface">
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-t-xl border-b border-border px-5 py-3">
           <div className="flex min-w-0 items-center gap-3">
             <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary">
@@ -909,7 +909,7 @@ export function SetupWizardClient({ materialLookups, productLookups, products, m
                               return (
                                 <tr key={row.key} className="align-middle">
                                   <td className="px-3 py-2">
-                                    <span className="flex size-7 items-center justify-center rounded-full bg-success-soft text-xs font-semibold text-success">{index + 1}</span>
+                                    <span className="flex size-7 items-center justify-center rounded-full bg-success-soft text-xs font-semibold text-success-fg">{index + 1}</span>
                                   </td>
                                   <td className="min-w-[14rem] px-3 py-2">
                                     <MasterDataSelect options={options} value={row.processStepId} onValueChange={(v) => update({ processStepId: v })} placeholder="เลือกกระบวนการ" href="/master-data/process-steps" resourceLabel="กระบวนการผลิต" />
@@ -1046,7 +1046,7 @@ function CodeFeedback({ id, state, label }: { id: string; state: CodeAvailabilit
 function StepHeading({ title, desc }: { title: string; desc: string }) {
   return (
     <div>
-      <h2 className="text-base font-semibold text-fg">{title}</h2>
+      <h2 className="text-lg font-semibold text-fg">{title}</h2>
       <p className="text-sm text-fg-muted">{desc}</p>
     </div>
   );
@@ -1405,7 +1405,7 @@ function InternalProcess({
           const options = stepOptions.filter((o) => o.id === row.processStepId || !m.workflowRows.some((r) => r.processStepId === o.id));
           return (
             <div key={row.key} className="grid gap-3 rounded-lg border border-border border-l-4 border-l-success p-3 sm:grid-cols-[2.5rem_1fr_1fr_auto] sm:items-end">
-              <span className="flex size-8 items-center justify-center rounded-full bg-success-soft text-sm font-semibold text-success">{index + 1}</span>
+              <span className="flex size-8 items-center justify-center rounded-full bg-success-soft text-sm font-semibold text-success-fg">{index + 1}</span>
               <Field label="กระบวนการ">
                 <MasterDataSelect options={options} value={row.processStepId} onValueChange={(v) => updateStep(row.key, { processStepId: v })} placeholder="เลือกกระบวนการ" href="/master-data/process-steps" resourceLabel="กระบวนการผลิต" />
               </Field>
@@ -1569,8 +1569,8 @@ function DraftList({
   className?: string;
 }) {
   return (
-    <section className={cn("rounded-xl border border-border bg-surface", className)} aria-label="ร่างของฉัน">
-      <h2 className="flex items-center gap-2 border-b border-border px-4 py-3 text-sm font-semibold text-fg">
+    <section className={cn("rounded-lg border border-border bg-surface", className)} aria-label="ร่างของฉัน">
+      <h2 className="flex items-center gap-2 border-b border-border px-4 py-3 text-lg font-semibold text-fg">
         <FolderOpen className="size-4 text-primary" aria-hidden="true" /> ร่างของฉัน
         <Badge variant="neutral" className="ml-auto">{drafts.length}</Badge>
       </h2>
@@ -1705,7 +1705,7 @@ function BomWorkList({
   }
 
   return (
-    <section className="rounded-xl border border-border bg-surface" aria-label="รายการ BOM และ Workflow">
+    <section className="rounded-lg border border-border bg-surface" aria-label="รายการ BOM และ Workflow">
       <div className="flex flex-col gap-3 border-b border-border p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div role="tablist" aria-label="ประเภท" className="inline-flex rounded-lg bg-surface-2 p-1">

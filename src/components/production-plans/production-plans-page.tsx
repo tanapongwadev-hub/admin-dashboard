@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/ui/page-title";
 import { cookies } from "next/headers";
 import { ShieldAlert } from "lucide-react";
 import { ProductionPlanClient } from "@/components/production-plans/production-plan-client";
@@ -67,7 +68,7 @@ export async function ProductionPlansPageContent({
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-xl font-semibold text-fg">{targetType === "material" ? "แผนผลิตวัตถุดิบภายใน" : "แผนผลิตสินค้า"}</h1>
+        <PageTitle>{targetType === "material" ? "แผนผลิตวัตถุดิบภายใน" : "แผนผลิตสินค้า"}</PageTitle>
         <p className="mt-1 text-sm text-fg-muted">
           วางแผน กันวัตถุดิบตาม FIFO และสร้างใบจัดงานให้ฝ่ายคลังจ่ายออก
         </p>

@@ -84,6 +84,8 @@ export type SetupMode = "product" | "material";
  * materials (0), the BOM (2), the Workflow (3) and the review (4). Indices stay fixed (drafts store them).
  */
 export function visibleSteps(_mode?: SetupMode): number[] {
+  // Retain the mode argument for callers; both modes intentionally share ordering.
+  void _mode;
   return [1, 0, 2, 3, 4];
 }
 

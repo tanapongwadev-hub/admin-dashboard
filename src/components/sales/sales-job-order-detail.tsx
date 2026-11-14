@@ -1,4 +1,5 @@
 "use client";
+import { PageTitle } from "@/components/ui/page-title";
 
 import * as React from "react";
 import Link from "next/link";
@@ -187,7 +188,7 @@ export function SalesJobOrderDetailView({
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="font-mono text-xl font-semibold text-fg">{jobOrder.code}</h1>
+            <PageTitle className="font-mono">{jobOrder.code}</PageTitle>
             <SalesJobOrderStatusBadge status={jobOrder.status} />
           </div>
           <p className="mt-1 text-sm text-fg-secondary">
@@ -270,7 +271,7 @@ export function SalesJobOrderDetailView({
       )}
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-sm font-semibold text-fg">กล่องที่จองไว้ (FIFO)</h2>
+        <h2 className="text-lg font-semibold text-fg">กล่องที่จองไว้ (FIFO)</h2>
         <div className="overflow-x-auto rounded-lg border border-border bg-surface">
           <table className="w-full min-w-[760px] text-sm">
             <thead className="bg-surface-2 text-left text-xs text-fg-muted">
@@ -332,7 +333,7 @@ export function SalesJobOrderDetailView({
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="flex items-center gap-2 text-sm font-semibold text-fg">
+        <h2 className="flex items-center gap-2 text-lg font-semibold text-fg">
           <Truck className="size-4 text-primary" />
           ประวัติการตัดสต็อกขาย
         </h2>
@@ -390,7 +391,7 @@ function SalesJobOrderPrintSheet({
   const groups = groupSalesPickLines(jobOrder.pickLines.filter((l) => !l.releasedAt));
   return createPortal(
     <div data-qr-print-sheet className="hidden p-4 text-black print:block">
-      <h1 className="text-base font-semibold">ใบจัดงานขาย {jobOrder.code}</h1>
+      <PageTitle>ใบจัดงานขาย {jobOrder.code}</PageTitle>
       <p className="text-sm">
         ออเดอร์ {jobOrder.salesOrder.code} · ลูกค้า {jobOrder.customer.code} {jobOrder.customer.nameTh}
       </p>

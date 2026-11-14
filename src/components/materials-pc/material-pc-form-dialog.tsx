@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/incompatible-library -- Subscription-based RHF/TanStack components explicitly opt out of React Compiler via "use no memo" below. */
 "use client";
 
 import * as React from "react";
@@ -302,6 +303,8 @@ export function MaterialPcFormDialog({
   lookups: MaterialLookups;
   onSaved: (created?: Material) => void;
 }) {
+  "use no memo"; // Subscription-based library APIs must keep their live reads.
+
   const isEdit = !!material;
   const [step, setStep] = React.useState(() => draft?.data.materialType ? Math.min(draft.step, draft.data.materialType === "PCS" ? 1 : 2) : 0);
   const [advancing, setAdvancing] = React.useState(false);
@@ -666,7 +669,7 @@ export function MaterialPcFormDialog({
           <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <h3 ref={stepHeadingRef} tabIndex={-1} className="mb-4 text-sm font-semibold text-fg focus:outline-none">ขั้นตอน {step + 1} จาก {steps.length} · {steps[step]}</h3>
             <div hidden={step !== 0}>
-            <div className="space-y-3 rounded-xl border border-border bg-surface-2 p-4">
+            <div className="space-y-3 rounded-lg border border-border bg-surface-2 p-4">
               <div className="space-y-1"><Label htmlFor="materialType">ชนิดเหล็ก <span className="text-danger">*</span></Label><p className="text-xs text-fg-muted">เลือกชนิดเหล็กก่อน เพื่อแสดงแบบฟอร์ม Material ที่ต้องกรอก</p></div>
               <Select value={materialType} disabled={busy} onValueChange={(value) => setValue("materialType", value as MaterialShape, { shouldValidate: true, shouldDirty: true })}>
                 <SelectTrigger id="materialType" className="h-11 bg-surface text-base sm:text-sm" aria-required="true" aria-invalid={!!errors.materialType} aria-describedby={`materialType-hint${errors.materialType ? " materialType-error" : ""}`}><SelectValue placeholder="เลือกชนิดเหล็ก" /></SelectTrigger>
@@ -917,7 +920,7 @@ export function MaterialPcFormDialog({
             {isRawMaterial && (
               <fieldset hidden={step !== 2} disabled={busy} className="min-w-0">
               <legend className="sr-only">ข้อมูล Material หลังแปรรูป</legend>
-              <section className="space-y-4 rounded-xl border border-border bg-surface-2 p-4 sm:p-5" aria-labelledby="material-output-heading">
+              <section className="space-y-4 rounded-lg border border-border bg-surface-2 p-4 sm:p-5" aria-labelledby="material-output-heading">
                 <div className="flex items-start gap-3">
                   <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary"><Scissors className="size-4" aria-hidden="true" /></span>
                   <div><h3 id="material-output-heading" className="text-sm font-semibold text-fg">Material 2 · ชิ้นงานหลังแปรรูป</h3><p className="mt-1 text-xs leading-relaxed text-fg-muted">บันทึกเป็น Material ชนิด PCS รหัสแยกจากต้นทาง และใช้เป็นค่าเริ่มต้นตอนแปรรูป</p></div>

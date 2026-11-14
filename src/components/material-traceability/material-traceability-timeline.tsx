@@ -44,7 +44,7 @@ export function MaterialTraceabilityTimeline({ movements }: { movements: Movemen
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="outline">{TRANSACTION_TYPE_LABELS[m.transactionType]}</Badge>
               <span className="text-xs text-fg-muted">{formatDateTime(m.transactionDate)}</span>
-              <span className="font-mono text-[11px] text-fg-muted">{m.transactionNo}</span>
+              <span className="font-mono text-[13px] text-fg-muted">{m.transactionNo}</span>
             </div>
             <p className="mt-1 text-sm text-fg">
               {formatQty(m.quantityBefore)} → {movementNum > 0 ? "+" : ""}

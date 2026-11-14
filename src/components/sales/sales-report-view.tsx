@@ -36,7 +36,7 @@ function Kpi({
   hint?: string;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-surface px-4 py-3">
+    <div className="rounded-lg border border-border bg-surface px-4 py-3">
       <div className="flex items-center gap-2 text-xs text-fg-muted">
         <Icon className="size-4 text-primary" />
         {label}

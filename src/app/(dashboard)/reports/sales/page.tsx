@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/ui/page-title";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { SalesAccessDenied } from "@/components/sales/sales-access-denied";
@@ -39,7 +40,7 @@ export default async function SalesReportPage({
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-xl font-semibold text-fg">รายงานการขาย</h1>
+        <PageTitle>รายงานการขาย</PageTitle>
         <p className="mt-1 text-sm text-fg-muted">
           ยอดออเดอร์ ยอดส่งสินค้า และรายการตัดสต็อกขายรายกล่อง — ยอดส่งนับตามวันที่ตัดสต็อก ยอดออเดอร์นับตามวันที่สั่ง
         </p>

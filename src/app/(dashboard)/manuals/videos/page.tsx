@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/ui/page-title";
 import type { Metadata } from "next";
 import { Fragment } from "react";
 import Link from "next/link";
@@ -23,7 +24,7 @@ export default async function VideoManualsPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold text-fg">คู่มือการใช้งานแบบวิดีโอ</h1>
+        <PageTitle>คู่มือการใช้งานแบบวิดีโอ</PageTitle>
         <p className="text-sm text-fg-secondary">แต่ละการ์ดมีวิดีโออยู่ด้านบน และรายละเอียดขั้นตอนอยู่ด้านล่าง</p>
       </div>
       <nav aria-label="หมวดคู่มือวิดีโอ" className="flex flex-wrap gap-2">
@@ -50,7 +51,7 @@ export default async function VideoManualsPage() {
               {showGroup && (
                 <li className="mt-2 text-sm font-semibold text-fg-secondary lg:col-span-2" role="presentation">{video.group}</li>
               )}
-              <li className="flex flex-col overflow-hidden rounded-xl border border-border bg-surface">
+              <li className="flex flex-col overflow-hidden rounded-lg border border-border bg-surface">
                 {src ? (
                   <video
                     controls

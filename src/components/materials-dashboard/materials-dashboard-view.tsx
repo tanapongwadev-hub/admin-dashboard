@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/ui/page-title";
 import Link from "next/link";
 import {
   AlertTriangle,
@@ -77,14 +78,14 @@ function MetricCard({
   tone: string;
 }) {
   return (
-    <Card className="materials-dashboard-panel min-w-0 p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+    <Card className="materials-dashboard-panel min-w-0 p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-xs font-medium text-fg-muted">{label}</p>
           <p className="mt-2 text-3xl font-semibold tracking-tight tabular-nums text-fg">
             {value === null ? "—" : formatCount(value)}
           </p>
-          <p className="mt-1 truncate text-xs text-fg-secondary">{note}</p>
+          <p className="mt-1 text-xs text-fg-secondary">{note}</p>
         </div>
         <span className={cn("flex size-10 shrink-0 items-center justify-center rounded-md", tone)} aria-hidden="true">
           <Icon className="size-5" strokeWidth={1.8} />
@@ -102,7 +103,7 @@ function StockHealth({ summary, canViewMaterials }: { summary: MaterialInventory
   const outWidth = summary.total > 0 ? (summary.outOfStock / summary.total) * 100 : 0;
 
   return (
-    <Card className="materials-dashboard-panel overflow-hidden shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+    <Card className="materials-dashboard-panel overflow-hidden">
       <div className="grid gap-0 lg:grid-cols-[minmax(0,1.25fr)_minmax(18rem,0.75fr)]">
         <div className="p-5 sm:p-6">
           <div className="flex flex-wrap items-start justify-between gap-5">
@@ -227,10 +228,10 @@ function CriticalMaterials({
   canViewMaterials: boolean;
 }) {
   return (
-    <Card className="materials-dashboard-panel min-w-0 overflow-hidden shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+    <Card className="materials-dashboard-panel min-w-0 overflow-hidden">
       <header className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
         <div>
-          <h2 className="text-sm font-semibold text-fg">คิววัตถุดิบที่ต้องดูแล</h2>
+          <h2 className="text-lg font-semibold text-fg">คิววัตถุดิบที่ต้องดูแล</h2>
           <p className="mt-1 text-xs text-fg-muted">หมดสต็อกก่อน แล้วตามด้วยรายการต่ำกว่าจุดขั้นต่ำ</p>
         </div>
         {canViewMaterials && (
@@ -257,10 +258,10 @@ function CriticalMaterials({
 
 function RecentReceiving({ items, total }: { items: MaterialReceiving[]; total: number | null }) {
   return (
-    <Card className="materials-dashboard-panel min-w-0 overflow-hidden shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+    <Card className="materials-dashboard-panel min-w-0 overflow-hidden">
       <header className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
         <div>
-          <h2 className="text-sm font-semibold text-fg">รับเข้าล่าสุด</h2>
+          <h2 className="text-lg font-semibold text-fg">รับเข้าล่าสุด</h2>
           <p className="mt-1 text-xs text-fg-muted">เอกสารและล็อตที่เคลื่อนไหวล่าสุด</p>
         </div>
         <Button asChild variant="link" size="sm">
@@ -350,8 +351,7 @@ export function MaterialsDashboardView({
     <div className="@container flex flex-col gap-5">
       <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.15em] text-primary">Materials control tower</p>
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-fg sm:text-3xl">ภาพรวมวัตถุดิบ</h1>
+          <PageTitle>ภาพรวมวัตถุดิบ</PageTitle>
           <p className="mt-1.5 text-sm text-fg-muted">สถานะคลังและงานรับเข้า ณ {formatUpdatedDate()}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -381,11 +381,11 @@ export function MaterialsDashboardView({
       ) : (
         <Card className="materials-dashboard-panel border-dashed p-6">
           <div className="flex items-start gap-3">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-info-soft text-info" aria-hidden="true">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-info-soft text-info-fg" aria-hidden="true">
               <Warehouse className="size-5" />
             </span>
             <div>
-              <h2 className="text-sm font-semibold text-fg">ภาพรวมสต็อกถูกจำกัดตามสิทธิ์</h2>
+              <h2 className="text-lg font-semibold text-fg">ภาพรวมสต็อกถูกจำกัดตามสิทธิ์</h2>
               <p className="mt-1 text-sm leading-6 text-fg-muted">คุณยังดูและจัดการข้อมูล Material Master ได้ แต่ยอดคงเหลือและรายการรับเข้าต้องใช้สิทธิ์ Materials Receiving View</p>
             </div>
           </div>
@@ -394,9 +394,9 @@ export function MaterialsDashboardView({
 
       <section className="grid grid-cols-2 gap-3 @min-[52rem]:grid-cols-4" aria-label="ตัวชี้วัดวัตถุดิบ">
         <MetricCard label="วัสดุใช้งาน" value={materialTotal} note="รายการใน Material Master" icon={Boxes} tone="bg-primary-soft text-primary" />
-        <MetricCard label="สต็อกปกติ" value={inventorySummary?.normal ?? null} note="พร้อมจ่ายเข้าสายการผลิต" icon={CheckCircle2} tone="bg-success-soft text-success" />
-        <MetricCard label="สต็อกต่ำ" value={inventorySummary?.lowStock ?? null} note="ต่ำกว่าจุดขั้นต่ำ" icon={AlertTriangle} tone="bg-warning-soft text-warning" />
-        <MetricCard label="หมดสต็อก" value={inventorySummary?.outOfStock ?? null} note="ควรดำเนินการก่อน" icon={TriangleAlert} tone="bg-danger-soft text-danger" />
+        <MetricCard label="สต็อกปกติ" value={inventorySummary?.normal ?? null} note="พร้อมจ่ายเข้าสายการผลิต" icon={CheckCircle2} tone="bg-success-soft text-success-fg" />
+        <MetricCard label="สต็อกต่ำ" value={inventorySummary?.lowStock ?? null} note="ต่ำกว่าจุดขั้นต่ำ" icon={AlertTriangle} tone="bg-warning-soft text-warning-fg" />
+        <MetricCard label="หมดสต็อก" value={inventorySummary?.outOfStock ?? null} note="ควรดำเนินการก่อน" icon={TriangleAlert} tone="bg-danger-soft text-danger-fg" />
       </section>
 
       <div className={cn("grid min-w-0 gap-5", !overview && "xl:grid-cols-[minmax(0,1.2fr)_minmax(20rem,0.8fr)]")}>
@@ -406,7 +406,7 @@ export function MaterialsDashboardView({
         ) : (
           <Card className="materials-dashboard-panel min-w-0 overflow-hidden">
             <header className="border-b border-border px-5 py-4">
-              <h2 className="text-sm font-semibold text-fg">รับเข้าล่าสุด</h2>
+              <h2 className="text-lg font-semibold text-fg">รับเข้าล่าสุด</h2>
               <p className="mt-1 text-xs text-fg-muted">เอกสารและล็อตที่เคลื่อนไหวล่าสุด</p>
             </header>
             <EmptyPanel icon={ClipboardList} title="ไม่มีสิทธิ์ดูรายการรับเข้า" description="ขอสิทธิ์ Materials Receiving View เพื่อดูประวัติล็อตและสถานะเอกสาร" />

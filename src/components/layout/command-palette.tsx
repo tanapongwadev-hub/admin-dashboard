@@ -34,7 +34,7 @@ export function CommandPalette() {
       >
         <Search className="h-4 w-4" />
         <span className="flex-1 text-left">ค้นหาหรือไปยัง...</span>
-        <kbd className="rounded border border-border bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] text-fg-muted">⌘K</kbd>
+        <kbd className="rounded border border-border bg-surface-2 px-1.5 py-0.5 font-mono text-[13px] text-fg-muted">⌘K</kbd>
       </button>
 
       <Command.Dialog

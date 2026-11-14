@@ -44,7 +44,7 @@ const SheetContent = React.forwardRef<
         // not a flush edge-to-edge drawer. Height comes from the top/bottom
         // insets, so no `h-full` (which would resolve to the full viewport and
         // overflow past the bottom inset).
-        "fixed inset-y-2 left-2 z-50 flex w-[17rem] max-w-[calc(100vw-1rem)] flex-col overflow-hidden rounded-2xl border border-border bg-surface p-0 shadow-2xl",
+        "fixed inset-y-2 left-2 z-50 flex w-[17rem] max-w-[calc(100vw-1rem)] flex-col overflow-hidden rounded-xl border border-border bg-surface p-0 shadow-2xl",
         "sm:inset-y-3 sm:left-3 sm:max-w-[calc(100vw-1.5rem)]",
         "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left duration-200 ease-out",
         className
@@ -53,7 +53,7 @@ const SheetContent = React.forwardRef<
     >
       <DialogPrimitive.Title className="sr-only">{title}</DialogPrimitive.Title>
       {children}
-      <DialogPrimitive.Close className="absolute right-3 top-3 rounded-md p-1.5 text-fg-muted transition-colors hover:bg-surface-2 hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+      <DialogPrimitive.Close className="absolute right-3 top-3 flex items-center justify-center rounded-md p-1.5 text-fg-muted transition-colors hover:bg-surface-2 hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:size-11">
         <X className="h-4 w-4" />
         <span className="sr-only">ปิด</span>
       </DialogPrimitive.Close>

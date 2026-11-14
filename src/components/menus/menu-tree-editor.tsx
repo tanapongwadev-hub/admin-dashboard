@@ -174,14 +174,14 @@ export function MenuTreeEditor({
 
   return (
     <div className="flex flex-col gap-4">
-      <section className="overflow-hidden rounded-xl border border-border bg-surface">
+      <section className="overflow-hidden rounded-lg border border-border bg-surface">
         <div className="flex flex-col gap-4 border-b border-border bg-primary-soft/50 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
             <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary text-white shadow-sm">
               <FolderTree className="size-5" />
             </span>
             <div>
-              <h2 className="text-base font-semibold text-fg">โครงสร้างการนำทาง</h2>
+              <h2 className="text-lg font-semibold text-fg">โครงสร้างการนำทาง</h2>
               <p className="mt-0.5 text-xs text-fg-muted">
                 {items.length} เมนู · {rootCount} เมนูหลัก · {visibleCount} รายการที่ผู้ใช้มองเห็น
               </p>
@@ -201,9 +201,9 @@ export function MenuTreeEditor({
         </div>
 
         <div className="grid grid-cols-1 divide-y divide-border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-          <div className="px-4 py-3"><p className="text-[11px] font-medium uppercase tracking-wide text-fg-muted">โครงสร้าง</p><p className="mt-0.5 text-sm font-semibold text-fg">สูงสุด 4 ระดับ</p></div>
-          <div className="px-4 py-3"><p className="text-[11px] font-medium uppercase tracking-wide text-fg-muted">การมองเห็น</p><p className="mt-0.5 text-sm font-semibold text-fg">{visibleCount} / {items.length} เปิดแสดงผล</p></div>
-          <div className="px-4 py-3"><p className="text-[11px] font-medium uppercase tracking-wide text-fg-muted">การแก้ไข</p><p className="mt-0.5 text-sm font-semibold text-fg">ลากเพื่อย้าย · เมนูจุดสามจุดเพื่อแก้ไข</p></div>
+          <div className="px-4 py-3"><p className="text-xs font-medium uppercase tracking-wide text-fg-muted">โครงสร้าง</p><p className="mt-0.5 text-sm font-semibold text-fg">สูงสุด 4 ระดับ</p></div>
+          <div className="px-4 py-3"><p className="text-xs font-medium uppercase tracking-wide text-fg-muted">การมองเห็น</p><p className="mt-0.5 text-sm font-semibold text-fg">{visibleCount} / {items.length} เปิดแสดงผล</p></div>
+          <div className="px-4 py-3"><p className="text-xs font-medium uppercase tracking-wide text-fg-muted">การแก้ไข</p><p className="mt-0.5 text-sm font-semibold text-fg">ลากเพื่อย้าย · เมนูจุดสามจุดเพื่อแก้ไข</p></div>
         </div>
       </section>
 
@@ -246,7 +246,7 @@ export function MenuTreeEditor({
         }}
       >
         <SortableContext items={visibleItems.map((item) => item.id)} strategy={verticalListSortingStrategy}>
-          <div className="flex flex-col gap-0.5 rounded-xl border border-border bg-surface p-2">
+          <div className="flex flex-col gap-0.5 rounded-lg border border-border bg-surface p-2">
             {resolvedVisible.length === 0 ? (
               <div className="flex flex-col items-center gap-3 px-4 py-14 text-center">
                 <FolderTree className="size-8 text-fg-muted" />

@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/ui/page-title";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { Eye, ShieldAlert, Workflow } from "lucide-react";
@@ -131,7 +132,7 @@ export async function ProcessOrdersPageContent({
           hint={`แผนผลิต${targetLabel}ที่ใบจัดงานจ่ายวัตถุดิบออกครบและยังไม่ได้สั่งผลิตจะแสดงที่นี่`}
         />
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-border bg-surface">
+        <div className="overflow-x-auto rounded-lg border border-border bg-surface">
           <Table>
             <TableHeader>
               <TableRow>
@@ -241,7 +242,7 @@ export async function ProcessOrdersPageContent({
           hint="กด “สั่งผลิต” ในแท็บ รอสั่งผลิต เพื่อสร้างใบสั่งผลิต แล้วบันทึกผลผลิตจริงเพื่อสร้างกล่องและ QR"
         />
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-border bg-surface">
+        <div className="overflow-x-auto rounded-lg border border-border bg-surface">
           <Table>
             <TableHeader>
               <TableRow>
@@ -328,7 +329,7 @@ export async function ProcessOrdersPageContent({
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-xl font-semibold text-fg">การสั่งผลิตตามกระบวนการ{targetLabel}</h1>
+        <PageTitle>การสั่งผลิตตามกระบวนการ{targetLabel}</PageTitle>
         <p className="mt-1 text-sm text-fg-muted">
           {isMaterial
             ? "สั่งผลิตวัตถุดิบภายในจากแผนที่เบิกครบ บันทึกผลผลิตตาม Workflow และรับกล่องที่ผลิตเสร็จเข้าสต็อกวัตถุดิบ"

@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/ui/page-title";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { cookies } from "next/headers";
@@ -57,7 +58,7 @@ export default async function TraceabilityPage({ searchParams }: { searchParams:
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <h1 className="text-2xl font-semibold text-fg">สอบกลับการผลิต</h1>
+        <PageTitle>สอบกลับการผลิต</PageTitle>
         <p className="text-sm text-fg-secondary">สแกน QR กล่อง หรือพิมพ์เลข Lot ของสินค้า เพื่อดูว่าผลิตวันไหน กะไหน ขายวันไหน และใช้วัตถุดิบ Lot ใดบ้าง</p>
       </div>
       <form method="get" className="flex max-w-xl gap-2" role="search">
@@ -176,7 +177,7 @@ function TraceResult({ result }: { result: ScanResult }) {
 
         {result.kind === "TRANSFER" && <TransferWhere result={result} />}
 
-        <h2 className="mt-4 text-sm font-semibold text-fg">ผลิตจาก Lot ต้นทาง</h2>
+        <h2 className="mt-4 text-lg font-semibold text-fg">ผลิตจาก Lot ต้นทาง</h2>
         <div className="mt-2 flex h-3 overflow-hidden rounded-full bg-surface-2" aria-hidden>
           {origins.map((o) => (
             <div key={o.lotNo} className={palette.get(o.lotNo)?.bar} style={{ width: `${total ? (o.qty / total) * 100 : 0}%` }} />
@@ -195,7 +196,7 @@ function TraceResult({ result }: { result: ScanResult }) {
       </section>
 
       <section className="rounded-md border border-border bg-surface p-4 shadow-sm" aria-labelledby="lineage-title">
-        <h2 id="lineage-title" className="text-sm font-semibold text-fg">
+        <h2 id="lineage-title" className="text-lg font-semibold text-fg">
           เส้นทางการผลิต (ย้อนกลับ)
         </h2>
         <ol className="mt-3">
@@ -234,7 +235,7 @@ function TransferWhere({ result }: { result: TransferTagTrace }) {
           </span>
         </p>
       )}
-      <h2 className="text-sm font-semibold text-fg">ตอนนี้งานชุดนี้อยู่ที่ไหน</h2>
+      <h2 className="text-lg font-semibold text-fg">ตอนนี้งานชุดนี้อยู่ที่ไหน</h2>
       <ul className="mt-2 flex flex-col gap-1.5 text-sm">
         {result.waitingQty > 0 && (
           <li className="flex flex-wrap items-center gap-2">

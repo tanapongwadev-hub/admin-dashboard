@@ -137,7 +137,7 @@ export function Kpi({
   tone: string;
 }) {
   return (
-    <Card className="min-w-0 p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+    <Card className="min-w-0 p-4">
       <div className="flex items-start justify-between gap-2">
         <p className="text-xs font-medium text-fg-muted">{label}</p>
         <span className={cn("flex size-8 items-center justify-center rounded-md", tone)} aria-hidden="true">
@@ -162,10 +162,10 @@ export function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <Card className="min-w-0 overflow-hidden shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+    <Card className="min-w-0 overflow-hidden">
       <header className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
         <div className="min-w-0">
-          <h2 className="text-sm font-semibold text-fg">{title}</h2>
+          <h2 className="text-lg font-semibold text-fg">{title}</h2>
           {hint && <p className="mt-0.5 text-xs text-fg-muted">{hint}</p>}
         </div>
         {action}
@@ -199,7 +199,7 @@ export function RankList({ rows, barClass }: { rows: MaterialsOverviewTop[]; bar
           <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-2">
             <div className={cn("h-full rounded-full", barClass)} style={{ width: `${Math.max(3, (row.qty / max) * 100)}%` }} />
           </div>
-          <p className="mt-1 text-[11px] text-fg-muted">{row.docs} เอกสาร</p>
+          <p className="mt-1 text-xs text-fg-muted">{row.docs} เอกสาร</p>
         </li>
       ))}
     </ol>
@@ -215,11 +215,11 @@ export function Split({ rows }: { rows: Array<{ label: string; qty: number; docs
         <li key={row.label} className="flex items-center justify-between gap-3 px-5 py-3">
           <div className="min-w-0">
             <p className="truncate text-sm text-fg">{row.label}</p>
-            <p className="text-[11px] text-fg-muted">{row.docs} เอกสาร</p>
+            <p className="text-xs text-fg-muted">{row.docs} เอกสาร</p>
           </div>
           <div className="text-right">
             <p className="text-sm font-semibold tabular-nums text-fg">{nf.format(row.qty)}</p>
-            <p className="text-[11px] tabular-nums text-fg-muted">{Math.round((row.qty / total) * 100)}%</p>
+            <p className="text-xs tabular-nums text-fg-muted">{Math.round((row.qty / total) * 100)}%</p>
           </div>
         </li>
       ))}
@@ -366,7 +366,7 @@ export function MaterialsMovementOverview({
     <section className="flex flex-col gap-4" aria-label="รับเข้าและจ่ายออก">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h2 className="flex items-center gap-2 text-base font-semibold text-fg">
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-fg">
             <CalendarRange className="size-4 text-primary" aria-hidden="true" />
             รับเข้า – จ่ายออก
           </h2>
@@ -383,14 +383,14 @@ export function MaterialsMovementOverview({
           value={access.receiving ? nf.format(totals.receivedQty) : "—"}
           note={access.receiving ? `${nf.format(totals.receivedDocs)} เอกสาร` : "ไม่มีสิทธิ์ดูข้อมูลรับเข้า"}
           icon={ArrowDownToLine}
-          tone="bg-success-soft text-success"
+          tone="bg-success-soft text-success-fg"
         />
         <Kpi
           label="จ่ายออก"
           value={access.disbursement ? nf.format(totals.disbursedQty) : "—"}
           note={access.disbursement ? `${nf.format(totals.disbursedDocs)} เอกสาร` : "ไม่มีสิทธิ์ดูข้อมูลจ่ายออก"}
           icon={ArrowUpFromLine}
-          tone="bg-warning-soft text-warning"
+          tone="bg-warning-soft text-warning-fg"
         />
         <Kpi
           label="สุทธิ (รับ − จ่าย)"
@@ -536,7 +536,7 @@ export function MaterialsMovementOverview({
                         <span className="font-mono text-xs text-primary">{r.materialCode}</span>
                         <span className="ml-2 text-fg-secondary">{r.materialName}</span>
                       </p>
-                      <p className="truncate text-[11px] text-fg-muted">
+                      <p className="truncate text-xs text-fg-muted">
                         <span className="font-mono">{r.lotNo}</span> · {r.supplier ?? "ไม่ระบุผู้จัดจำหน่าย"} · {formatThaiDate(r.date)}
                       </p>
                     </div>
@@ -570,7 +570,7 @@ export function MaterialsMovementOverview({
                         <span className="font-mono text-xs text-primary">{d.documentNo}</span>
                         <Badge variant="neutral" className="ml-2">{TYPE_LABEL[d.type] ?? d.type}</Badge>
                       </p>
-                      <p className="truncate text-[11px] text-fg-muted">
+                      <p className="truncate text-xs text-fg-muted">
                         {d.items} รายการ{d.firstMaterial ? ` · ${d.firstMaterial}${d.items > 1 ? " และอื่นๆ" : ""}` : ""} · {formatThaiDate(d.date)}
                       </p>
                     </div>

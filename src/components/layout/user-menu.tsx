@@ -79,8 +79,8 @@ export function UserMenu({
         <button className="flex items-center gap-2 rounded-lg p-1 pr-2 transition-colors hover:bg-surface-2">
           <UserAvatar name={name} color="chart-1" className="h-8 w-8" />
           <div className="hidden text-left leading-tight sm:block">
-            <p className="text-[13px] font-medium text-fg">{name}</p>
-            <p className="text-[11px] text-fg-muted">{role}</p>
+            <p className="text-sm font-medium text-fg">{name}</p>
+            <p className="text-xs text-fg-muted">{role}</p>
           </div>
         </button>
       </DropdownMenuTrigger>
@@ -92,7 +92,7 @@ export function UserMenu({
         <DropdownMenuSeparator />
         {departments.length > 1 && (
           <>
-            <DropdownMenuLabel className="flex items-center gap-1.5 px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-fg-muted">
+            <DropdownMenuLabel className="flex items-center gap-1.5 px-2 py-1 text-xs font-semibold uppercase tracking-wide text-fg-muted">
               <Repeat className="h-3 w-3" aria-hidden="true" /> สลับแผนก
             </DropdownMenuLabel>
             {departments.map((department) => (

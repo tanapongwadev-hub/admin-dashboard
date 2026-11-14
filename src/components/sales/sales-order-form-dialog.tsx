@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/incompatible-library -- Subscription-based RHF/TanStack components explicitly opt out of React Compiler via "use no memo" below. */
 "use client";
 
 import * as React from "react";
@@ -105,6 +106,8 @@ export function SalesOrderFormDialog({
   lookups: SalesLookups;
   onSaved: (order: SalesOrderDetail) => void;
 }) {
+  "use no memo"; // Subscription-based library APIs must keep their live reads.
+
   const isEdit = !!order;
   const [saving, setSaving] = React.useState(false);
   const form = useForm<FormInput, unknown, FormValues>({

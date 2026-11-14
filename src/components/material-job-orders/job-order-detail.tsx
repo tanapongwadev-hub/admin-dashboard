@@ -1,4 +1,5 @@
 "use client";
+import { PageTitle } from "@/components/ui/page-title";
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
@@ -157,9 +158,9 @@ export function MaterialJobOrderDetailView({
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="font-mono text-xl font-semibold text-fg">
+            <PageTitle className="font-mono">
               {jobOrder.code}
-            </h1>
+            </PageTitle>
             <Badge variant={STATUS[jobOrder.status].variant} dot>
               {STATUS[jobOrder.status].label}
             </Badge>
@@ -211,8 +212,8 @@ export function MaterialJobOrderDetailView({
         </div>
       </div>
 
-      <section className="rounded-xl border border-border bg-surface p-4">
-        <h2 className="mb-3 text-sm font-medium text-fg-muted">
+      <section className="rounded-lg border border-border bg-surface p-4">
+        <h2 className="mb-3 text-lg font-medium text-fg-muted">
           รายการที่ผลิต
         </h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -232,8 +233,8 @@ export function MaterialJobOrderDetailView({
         </div>
       </section>
 
-      <section className="rounded-xl border border-border bg-surface p-4">
-        <h2 className="mb-3 text-sm font-medium text-fg-muted">วัสดุที่ต้องใช้</h2>
+      <section className="rounded-lg border border-border bg-surface p-4">
+        <h2 className="mb-3 text-lg font-medium text-fg-muted">วัสดุที่ต้องใช้</h2>
         <div className="overflow-hidden rounded-lg border border-border">
           <table className="w-full text-sm">
             <thead className="bg-surface-2 text-left text-fg-muted">
@@ -267,8 +268,8 @@ export function MaterialJobOrderDetailView({
       </section>
 
       {canPick && jobOrder.status !== "CANCELLED" && jobOrder.status !== "ISSUED" && (
-        <section className="rounded-xl border border-border bg-surface p-4">
-          <h2 className="mb-3 text-sm font-medium text-fg-muted">
+        <section className="rounded-lg border border-border bg-surface p-4">
+          <h2 className="mb-3 text-lg font-medium text-fg-muted">
             สแกน/พิมพ์ QR เพื่อยืนยันการหยิบสินค้า
           </h2>
           <form
@@ -302,8 +303,8 @@ export function MaterialJobOrderDetailView({
         </section>
       )}
 
-      <section className="rounded-xl border border-border bg-surface">
-        <h2 className="border-b border-border px-4 py-3 text-sm font-medium text-fg-muted">
+      <section className="rounded-lg border border-border bg-surface">
+        <h2 className="border-b border-border px-4 py-3 text-lg font-medium text-fg-muted">
           รายการที่ต้องหยิบ ({jobOrder.pickLines.length} กล่อง ·{" "}
           {materialGroups.length} วัสดุ)
         </h2>
@@ -387,8 +388,8 @@ export function MaterialJobOrderDetailView({
       </section>
 
       {jobOrder.disbursements.length > 0 && (
-        <section className="rounded-xl border border-border bg-surface p-4">
-          <h2 className="mb-3 text-sm font-medium text-fg-muted">
+        <section className="rounded-lg border border-border bg-surface p-4">
+          <h2 className="mb-3 text-lg font-medium text-fg-muted">
             ใบจ่ายออกที่สร้างจากใบจัดงานนี้
           </h2>
           <ul className="space-y-1 text-sm">

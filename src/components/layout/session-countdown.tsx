@@ -32,7 +32,7 @@ export function SessionCountdown({ endsAt }: { endsAt: number | null }) {
       setRemaining(left);
       if (left <= 0 && !done) {
         done = true;
-        window.location.assign("/api/auth/clear-cookies?next=/login");
+        window.location.assign(new URL("/api/auth/clear-cookies?next=/login", window.location.origin));
       }
     };
     tick();

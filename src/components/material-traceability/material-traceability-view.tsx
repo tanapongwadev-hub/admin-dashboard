@@ -132,7 +132,7 @@ export function MaterialTraceabilityView({
               <Icon className="size-4" />
               {tab.label}
               {tab.count !== null && (
-                <span className="rounded-full bg-surface-2 px-1.5 text-[11px] tabular-nums text-fg-muted">
+                <span className="rounded-full bg-surface-2 px-1.5 text-xs tabular-nums text-fg-muted">
                   {tab.count.toLocaleString("th-TH")}
                 </span>
               )}

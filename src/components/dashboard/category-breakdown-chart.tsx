@@ -23,8 +23,8 @@ export function CategoryBreakdownChart({
     return (
       <DashboardEmptyState
         icon={PieChartIcon}
-        title="ไม่มีข้อมูลหมวดหมู่"
-        description="ไม่มีหมวดหมู่วัสดุที่ตรงกับตัวกรองที่เลือก ลองล้างตัวกรองหมวดหมู่"
+        title="ยังไม่มีข้อมูลสัดส่วนวัสดุ"
+        description="ยังไม่มีวัสดุที่ใช้งานให้แสดงสัดส่วน"
       />
     );
   }
@@ -63,12 +63,12 @@ export function CategoryBreakdownChart({
         </ResponsiveContainer>
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
           <span className="text-lg font-semibold tabular-nums text-fg">{format(total)}</span>
-          <span className="text-[11px] text-fg-muted">{totalLabel}</span>
+          <span className="text-xs text-fg-muted">{totalLabel}</span>
         </div>
       </div>
       <div className="flex w-full min-w-0 flex-1 flex-col gap-2.5">
         {data.map((source) => (
-          <div key={source.name} className="flex items-center justify-between gap-2 text-[13px]">
+          <div key={source.name} className="flex items-center justify-between gap-2 text-sm">
             <div className="flex min-w-0 items-center gap-2 text-fg-secondary">
               <span
                 className="size-2 shrink-0 rounded-full"

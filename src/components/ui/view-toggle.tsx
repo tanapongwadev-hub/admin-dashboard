@@ -42,7 +42,7 @@ export function ViewToggle({
             title={label}
             onClick={() => onChange(mode)}
             className={cn(
-              "flex h-7 w-7 items-center justify-center rounded-md text-fg-muted transition-colors hover:text-fg",
+              "flex h-7 w-7 items-center justify-center rounded-md text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:size-11",
               value === mode && "bg-primary-soft text-primary hover:text-primary"
             )}
           >

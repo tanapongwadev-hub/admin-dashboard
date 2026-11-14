@@ -61,7 +61,7 @@ export function MenuIconPicker({
           id={id}
           type="button"
           disabled={disabled}
-          aria-invalid={ariaInvalid || undefined}
+          data-invalid={ariaInvalid || undefined}
           aria-describedby={ariaDescribedBy}
           className={cn(
             "flex h-9 w-full items-center gap-2 rounded-md border bg-surface px-3 text-sm text-fg outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-50",
@@ -119,7 +119,7 @@ export function MenuIconPicker({
               )}
             >
               <Circle className={cn("size-4", !value ? "text-primary" : "text-fg-muted")} />
-              <span className="w-full truncate text-[10px] leading-none text-fg-muted">ไม่มี</span>
+              <span className="w-full truncate text-xs leading-none text-fg-muted">ไม่มี</span>
             </DropdownMenuPrimitive.Item>
 
             {filtered.map(({ name, Icon }) => {
@@ -135,7 +135,7 @@ export function MenuIconPicker({
                   )}
                 >
                   <Icon className={cn("size-4", isSelected ? "text-primary" : "text-fg-secondary")} />
-                  <span className="w-full truncate text-[10px] leading-none text-fg-muted">{name}</span>
+                  <span className="w-full truncate text-xs leading-none text-fg-muted">{name}</span>
                 </DropdownMenuPrimitive.Item>
               );
             })}

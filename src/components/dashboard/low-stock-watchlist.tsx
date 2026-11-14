@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { PackageCheck } from "lucide-react";
 import { lowStockWatchlist, type WatchlistItem } from "@/lib/dashboard-data";
 import { DashboardEmptyState } from "@/components/dashboard/chart-card";
@@ -5,13 +6,13 @@ import { cn } from "@/lib/utils";
 
 // `items` defaults to the full watchlist so a bare <LowStockWatchlist /> is
 // unchanged; the dashboard passes its search-filtered subset.
-export function LowStockWatchlist({ items = lowStockWatchlist }: { items?: WatchlistItem[] }) {
+export function LowStockWatchlist({ items = lowStockWatchlist, canViewCatalog = false, canViewReceiving = false }: { items?: WatchlistItem[]; canViewCatalog?: boolean; canViewReceiving?: boolean }) {
   if (items.length === 0) {
     return (
       <DashboardEmptyState
         icon={PackageCheck}
         title="ไม่มีรายการเฝ้าระวัง"
-        description="ไม่มีวัสดุที่ต่ำกว่าจุดสั่งซื้อตรงกับคำค้นหาปัจจุบัน"
+        description="ไม่พบวัสดุที่หมดสต็อกหรือต่ำกว่าสต็อกขั้นต่ำ"
       />
     );
   }
@@ -23,15 +24,17 @@ export function LowStockWatchlist({ items = lowStockWatchlist }: { items?: Watch
         const critical = ratio < 0.5;
         return (
           <div key={item.code} className="flex items-center gap-3">
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-surface-2 text-[10px] font-semibold text-fg-secondary">
-              {item.code.slice(-4)}
-            </span>
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between gap-2">
                 <p className="truncate text-sm font-medium text-fg">{item.name}</p>
                 <p className="shrink-0 text-sm tabular-nums text-fg-muted">
                   {item.qty.toLocaleString()} / {item.reorderPoint.toLocaleString()} {item.unit}
                 </p>
+              </div>
+              <p className="break-all text-xs text-fg-muted">{item.code}</p>
+              <div className="flex flex-wrap gap-3 text-sm">
+                {canViewCatalog && <Link className="text-primary underline underline-offset-4" href={`/materials/catalog?search=${encodeURIComponent(item.code)}`}>ดูวัสดุ</Link>}
+                {canViewReceiving && <Link className="text-primary underline underline-offset-4" href={`/materials/receiving?materialCode=${encodeURIComponent(item.code)}`}>ดูการรับเข้า</Link>}
               </div>
               <div className="mt-1.5 flex items-center gap-2">
                 <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-2">

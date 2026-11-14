@@ -43,7 +43,7 @@ export function SessionClient({ page, nowIso }: { page: SessionsPage; nowIso: st
   const { meta } = page;
   return (
     <div className="flex flex-col gap-4">
-      <div className="overflow-x-auto rounded-xl border border-border bg-surface">
+      <div className="overflow-x-auto rounded-lg border border-border bg-surface">
         <Table>
           <TableHeader>
             <TableRow>

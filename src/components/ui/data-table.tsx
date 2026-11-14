@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/incompatible-library -- Subscription-based RHF/TanStack components explicitly opt out of React Compiler via "use no memo" below. */
 "use client";
 
 import * as React from "react";
@@ -42,6 +43,8 @@ export function DataTable<TData, TValue>({
   onRowSelectionChange,
   emptyMessage = "ไม่พบข้อมูล",
 }: DataTableProps<TData, TValue>) {
+  "use no memo"; // Subscription-based library APIs must keep their live reads.
+
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
   const [pageSize, setPageSize] = React.useState(10);

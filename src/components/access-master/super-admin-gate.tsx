@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/ui/page-title";
 import { ShieldAlert } from "lucide-react";
 
 // Every cps-api /departments, /roles and /sessions route is SUPER_ADMIN only
@@ -15,7 +16,7 @@ export function SuperAdminGate({ what }: { what: string }) {
 export function AccessPageHeader({ title, description }: { title: string; description: string }) {
   return (
     <div>
-      <h1 className="text-xl font-semibold text-fg">{title}</h1>
+      <PageTitle>{title}</PageTitle>
       <p className="mt-1 text-sm text-fg-muted">{description}</p>
     </div>
   );

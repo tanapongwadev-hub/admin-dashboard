@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/ui/page-title";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, ListOrdered, Search, X } from "lucide-react";
@@ -21,7 +22,7 @@ export default async function ManualsPage({ searchParams }: { searchParams: Prom
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold text-fg">คู่มือการใช้งาน</h1>
+        <PageTitle>คู่มือการใช้งาน</PageTitle>
         <p className="text-sm text-fg-secondary">
           วิธีใช้งานแต่ละหน้าทีละขั้นตอน พร้อมภาพหน้าจอจริง จัดหมวดตามเมนูของระบบ
         </p>

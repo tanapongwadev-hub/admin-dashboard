@@ -64,7 +64,7 @@ export function MaterialTraceabilitySummaryCards({ summary }: { summary: Materia
             <CheckCircle2 className="size-5 shrink-0 text-success" />
           )}
           <div>
-            <p className={`text-sm font-semibold ${summary.hasMismatch ? "text-danger" : "text-success"}`}>
+            <p className={`text-sm font-semibold ${summary.hasMismatch ? "text-danger-fg" : "text-success-fg"}`}>
               {summary.hasMismatch ? "STOCK MISMATCH — พบยอดไม่ตรงกัน" : "Stock Reconciled — ยอดตรงกันทุกวัสดุ"}
             </p>
             <p className="text-xs text-fg-muted">

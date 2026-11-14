@@ -6,6 +6,8 @@ import type { StockDocument, StockDocStatus, StockMovementPoint, WatchlistItem }
 
 export interface DashboardData {
   canViewStock: boolean;
+  canViewCatalog: boolean;
+  failedSources: string[];
   canViewReceiving: boolean;
   canViewDisbursement: boolean;
   /** One point per day (oldest first). Values are confirmed document counts. */
@@ -57,14 +59,14 @@ function receivingDoc(receiving: MaterialReceiving): StockDocument {
 function disbursementDoc(disbursement: MaterialsDisbursement): StockDocument {
   const first = disbursement.items[0];
   const extra = disbursement.items.length - 1;
-  const confirmed = disbursement.status === "confirmed";
+
   return {
     id: disbursement.disbursementNo,
     type: "Disbursement",
     material: first ? `${first.material?.name ?? "—"}${extra > 0 ? ` +${extra}` : ""}` : "—",
     counterparty: disbursement.disbursementType === "production" ? "เบิกเพื่อผลิต" : "ตัดสต็อก",
-    qty: disbursement.items.reduce((sum, item) => sum + Number(confirmed ? item.disbursedQuantity : item.requestedQuantity), 0),
-    unit: "",
+    qty: disbursement.items.length,
+    unit: "รายการ",
     status: disbursementStatus(disbursement.status),
     date: disbursement.disbursementDate,
   };
@@ -82,7 +84,7 @@ function watchItem(item: MaterialInventoryItem): WatchlistItem {
 
 // Summary counts come from cps-api /dashboard/summary, open to every signed-in
 // user. The detail lists (watchlist, recent documents) stay gated by the
-// viewer's own permissions, and every block degrades to empty on failure so
+// viewer's own permissions. failedSources distinguishes failure from empty data so
 // one unavailable endpoint never takes the page down.
 export async function loadDashboardData(accessToken: string, session: Session): Promise<DashboardData> {
   const canViewReceiving = can(session, "MATERIALS_RECEIVING_VIEW");
@@ -112,6 +114,13 @@ export async function loadDashboardData(accessToken: string, session: Session): 
 
   return {
     canViewStock,
+    canViewCatalog: can(session, "MATERIAL_VIEW"),
+    failedSources: [
+      ...(!summary ? ["ข้อมูลสรุป"] : []),
+      ...(canViewStock && (!inventoryLow || !inventoryOut) ? ["รายการเฝ้าระวังสต็อก"] : []),
+      ...(canViewReceiving && !recentReceivings ? ["เอกสารรับเข้า"] : []),
+      ...(canViewDisbursement && !recentDisbursements ? ["เอกสารเบิกจ่าย"] : []),
+    ],
     canViewReceiving,
     canViewDisbursement,
     trend: (summary?.trend ?? []).map((point) => ({ date: dayLabel(point.date), received: point.received, disbursed: point.disbursed })),

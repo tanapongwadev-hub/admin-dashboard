@@ -65,7 +65,7 @@ const DialogContent = React.forwardRef<
       {...props}
     >
       {children}
-      <DialogPrimitive.Close className="absolute right-4 top-4 rounded-md p-1 text-fg-muted opacity-70 transition-opacity hover:opacity-100 hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+      <DialogPrimitive.Close className="absolute right-4 top-4 flex items-center justify-center rounded-md p-1 text-fg-muted opacity-70 transition-opacity hover:opacity-100 hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:size-11">
         <X className="h-4 w-4" />
         <span className="sr-only">ปิด</span>
       </DialogPrimitive.Close>
@@ -75,7 +75,7 @@ const DialogContent = React.forwardRef<
 DialogContent.displayName = DialogPrimitive.Content.displayName;
 
 const DialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("flex flex-col gap-1 px-6 pt-6 pb-4 border-b border-border", className)} {...props} />
+  <div className={cn("flex flex-col gap-1 px-6 pr-16 pt-6 pb-4 border-b border-border", className)} {...props} />
 );
 
 const DialogFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
@@ -86,7 +86,7 @@ const DialogTitle = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Title>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title>
 >(({ className, ...props }, ref) => (
-  <DialogPrimitive.Title ref={ref} className={cn("text-base font-semibold text-fg", className)} {...props} />
+  <DialogPrimitive.Title ref={ref} className={cn("text-lg font-semibold leading-snug text-fg", className)} {...props} />
 ));
 DialogTitle.displayName = DialogPrimitive.Title.displayName;
 

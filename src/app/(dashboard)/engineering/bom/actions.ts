@@ -21,7 +21,7 @@ function failure(error: unknown) {
   redirectIfSessionExpired(error);
   return { status: 'error' as const, message: error instanceof ApiError ? apiErrorMessage(error) : CONNECTION_ERROR_MESSAGE };
 }
-function refresh(scope: EngineeringScope) {
+function refresh() {
   try {
     revalidatePath("/engineering/setup"); revalidatePath('/engineering/products'); revalidatePath('/engineering/products/list');
     revalidatePath('/materials/catalog');
@@ -38,24 +38,24 @@ export async function createEngineeringAction(scope: EngineeringScope, kind: Eng
   if (!token) return { status: 'error' as const, message: 'คุณไม่มีสิทธิ์เพิ่มข้อมูลนี้' };
   try {
     const version = await createEngineeringVersion(token, scope, kind, id, payload);
-    refresh(scope); return { status: 'success' as const, id: version.id };
+    refresh(); return { status: 'success' as const, id: version.id };
   } catch (error) { return failure(error); }
 }
 export async function updateEngineeringAction(scope: EngineeringScope, kind: EngineeringKind, id: string, payload: EngineeringPayload) {
   const token = await tokenFor(scope, kind, 'UPDATE');
   if (!token) return { status: 'error' as const, message: 'คุณไม่มีสิทธิ์แก้ไขข้อมูลนี้' };
-  try { await updateEngineeringVersion(token, scope, kind, id, payload); refresh(scope); return { status: 'success' as const }; }
+  try { await updateEngineeringVersion(token, scope, kind, id, payload); refresh(); return { status: 'success' as const }; }
   catch (error) { return failure(error); }
 }
 export async function deleteEngineeringAction(scope: EngineeringScope, kind: EngineeringKind, id: string) {
   const token = await tokenFor(scope, kind, 'UPDATE');
   if (!token) return { status: 'error' as const, message: 'คุณไม่มีสิทธิ์ลบข้อมูลนี้' };
-  try { await deleteEngineeringVersion(token, scope, kind, id); refresh(scope); return { status: 'success' as const }; }
+  try { await deleteEngineeringVersion(token, scope, kind, id); refresh(); return { status: 'success' as const }; }
   catch (error) { return failure(error); }
 }
 export async function activateEngineeringAction(scope: EngineeringScope, kind: EngineeringKind, id: string) {
   const token = await tokenFor(scope, kind, 'UPDATE');
   if (!token) return { status: 'error' as const, message: 'คุณไม่มีสิทธิ์เปิดใช้เวอร์ชัน' };
-  try { await activateEngineeringVersion(token, scope, kind, id); refresh(scope); return { status: 'success' as const }; }
+  try { await activateEngineeringVersion(token, scope, kind, id); refresh(); return { status: 'success' as const }; }
   catch (error) { return failure(error); }
 }

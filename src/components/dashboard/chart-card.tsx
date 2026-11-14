@@ -1,12 +1,13 @@
 import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
+import { cardStyles } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 // One wrapper for every panel on the dashboard so title/description weight,
 // padding, border, and hover treatment can't drift card to card. Built on the
-// same box shape as ui/card.tsx (rounded-xl, 1px border, bg-surface) rather
+// shared cardStyles from ui/card.tsx rather
 // than a second card language — this one just adds the dashboard's header /
-// body / footer slots and the soft-shadow hover state.
+// body / footer slots.
 export function ChartCard({
   title,
   description,
@@ -28,17 +29,18 @@ export function ChartCard({
   return (
     <section
       className={cn(
-        "flex min-w-0 flex-col rounded-xl border border-border bg-surface shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-[border-color,box-shadow] duration-200 hover:border-border-strong hover:shadow-[0_4px_16px_-4px_rgba(15,23,42,0.08)]",
+        cardStyles,
+        "flex min-w-0 flex-col",
         className
       )}
       aria-label={title}
     >
-      <header className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
+      <header className="flex flex-wrap items-start justify-between gap-4 border-b border-border px-5 py-4">
         <div className="min-w-0">
-          <h2 className="text-sm font-semibold leading-tight text-fg">{title}</h2>
-          {description && <p className="mt-1 text-[12.5px] leading-snug text-fg-muted">{description}</p>}
+          <h2 className="text-lg font-semibold leading-snug text-fg">{title}</h2>
+          {description && <p className="mt-1 text-sm leading-snug text-fg-muted">{description}</p>}
         </div>
-        {actions && <div className="flex shrink-0 items-center gap-3">{actions}</div>}
+        {actions && <div className="flex min-w-0 max-w-full flex-wrap items-center gap-3">{actions}</div>}
       </header>
 
       <div className={cn("min-w-0 flex-1 px-5 py-4", bodyClassName)}>{children}</div>

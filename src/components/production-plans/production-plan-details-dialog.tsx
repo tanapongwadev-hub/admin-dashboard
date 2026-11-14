@@ -110,7 +110,7 @@ export function ProductionPlanDetailsDialog({
                   <Stage active={plan.status === "ISSUED"} label="จ่ายออกแล้ว" />
                 </div>
                 {(plan.status === "CANCELLED" || plan.status === "EXPIRED") && (
-                  <p className="mt-3 rounded-md bg-danger-soft px-3 py-2 text-sm text-danger">
+                  <p className="mt-3 rounded-md bg-danger-soft px-3 py-2 text-sm text-danger-fg">
                     {plan.status === "EXPIRED"
                       ? "แผนหมดอายุและปล่อยสต็อกแล้ว"
                       : `ยกเลิก: ${plan.cancelReason || "ไม่ระบุเหตุผล"}`}

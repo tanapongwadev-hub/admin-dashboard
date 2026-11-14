@@ -78,7 +78,7 @@ export function ProductsBulkDeleteDialog({ products, onClose, onDone }: {
     <DialogContent fullScreenOnMobile size="lg" className="overflow-hidden sm:max-w-xl">
       <DialogHeader className="shrink-0 gap-3 pr-12">
         <div className="flex items-start gap-3">
-          <span className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-danger/20 bg-danger-soft text-danger"><Trash2 className="size-5" aria-hidden="true" /></span>
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-danger/20 bg-danger-soft text-danger-fg"><Trash2 className="size-5" aria-hidden="true" /></span>
           <div>
             <DialogTitle className="text-lg">ลบสินค้าถาวร {products.length} รายการ</DialogTitle>
             <DialogDescription className="mt-1 leading-relaxed">ลบสินค้าพร้อม BOM และ Workflow ของสินค้า เฉพาะรายการที่ไม่มีประวัติสต็อก แผนผลิต ใบสั่งผลิต หรือการขาย</DialogDescription>
@@ -116,7 +116,7 @@ export function ProductsBulkDeleteDialog({ products, onClose, onDone }: {
               <Input id="product-bulk-delete-word" className="h-11" autoComplete="off" value={word} onChange={(event) => setWord(event.target.value)} disabled={pending} />
             </div>
           </div>}
-          {error && <p role="alert" className="whitespace-pre-line break-words rounded-lg border border-danger/20 bg-danger-soft p-3 text-sm text-danger">{error}</p>}
+          {error && <p role="alert" className="whitespace-pre-line break-words rounded-lg border border-danger/20 bg-danger-soft p-3 text-sm text-danger-fg">{error}</p>}
         </div>
         <DialogFooter className="shrink-0 flex-wrap bg-surface-2/50 px-5 sm:px-6">
           <Button type="button" variant="outline" className="h-11 flex-1 sm:flex-none" disabled={pending} onClick={onClose}>{deletable.length === 0 && !checking ? "ปิดหน้าต่าง" : "ยกเลิก"}</Button>

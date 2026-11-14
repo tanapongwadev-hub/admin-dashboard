@@ -202,7 +202,7 @@ export function DepartmentPermissionMatrix({ initialMatrix }: { initialMatrix: P
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-end justify-between gap-3 rounded-xl border border-border bg-surface p-4">
+      <div className="flex flex-wrap items-end justify-between gap-3 rounded-lg border border-border bg-surface p-4">
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex min-w-56 flex-col gap-1.5">
             <Label htmlFor="permission-department">กลุ่มแผนก</Label>
@@ -268,7 +268,7 @@ export function DepartmentPermissionMatrix({ initialMatrix }: { initialMatrix: P
         </span>
       </div>
 
-      <div className="max-h-[68vh] overflow-auto rounded-xl border border-border bg-surface">
+      <div className="max-h-[68vh] overflow-auto rounded-lg border border-border bg-surface">
         <table className="w-full min-w-[56rem] border-separate border-spacing-0 text-sm">
           <thead>
             <tr>
@@ -282,7 +282,7 @@ export function DepartmentPermissionMatrix({ initialMatrix }: { initialMatrix: P
                   className="sticky top-0 z-10 border-b border-border bg-surface-2 px-2 py-2.5 text-center text-xs font-semibold text-fg-secondary"
                 >
                   {action.nameTh}
-                  <span className="block font-mono text-[10px] font-normal text-fg-muted">{action.code}</span>
+                  <span className="block font-mono text-[13px] font-normal text-fg-muted">{action.code}</span>
                 </th>
               ))}
               <th className="sticky top-0 z-10 border-b border-border bg-surface-2 px-3 py-2.5 text-right text-xs font-semibold text-fg-secondary">
@@ -423,7 +423,7 @@ function MatrixTableRow({
               {menu.isActive && !menu.isVisible && <Badge>ซ่อน</Badge>}
               {menu.menuType === "BUTTON" && <Badge variant="info">ปุ่ม</Badge>}
             </div>
-            <span className="block truncate font-mono text-[11px] text-fg-muted">{menu.path || menu.code}</span>
+            <span className="block truncate font-mono text-[13px] text-fg-muted">{menu.path || menu.code}</span>
           </div>
         </div>
       </th>

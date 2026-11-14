@@ -278,7 +278,7 @@ function MainQrDetail({ trace, onNavigate }: { trace: MainQrTrace; onNavigate: (
           {Number(processed) > 0 && <p className="mt-3 rounded-md bg-primary-soft px-3 py-2 text-sm text-primary">ใช้แปรรูปแล้ว {formatQty(processed)} {unit} · แยกจากยอดจ่ายออกทั่วไป</p>}
 
           <div className="mt-3">
-            <div className="mb-1 flex justify-between text-[11px] text-fg-muted">
+            <div className="mb-1 flex justify-between text-xs text-fg-muted">
               <span>สัดส่วนคงเหลือจากยอดรับเข้า</span>
               <span className="tabular-nums">{remainingPct}%</span>
             </div>
@@ -461,7 +461,7 @@ function IssueHistoryTable({
 function MetaCell({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="min-w-0">
-      <dt className="text-[11px] text-fg-muted">{label}</dt>
+      <dt className="text-xs text-fg-muted">{label}</dt>
       <dd className="break-words text-sm font-medium leading-relaxed text-fg">{value || "—"}</dd>
     </div>
   );
@@ -470,7 +470,7 @@ function MetaCell({ label, value }: { label: string; value: React.ReactNode }) {
 function KpiCell({ label, value, tone }: { label: string; value: string; tone?: "primary" }) {
   return (
     <div className={`min-w-0 rounded-lg border px-3 py-3 ${tone === "primary" ? "border-primary/20 bg-primary-soft" : "border-border bg-surface-2"}`}>
-      <p className="text-[11px] text-fg-muted">{label}</p>
+      <p className="text-xs text-fg-muted">{label}</p>
       <p className={`text-lg font-semibold tabular-nums ${tone === "primary" ? "text-primary" : "text-fg"}`}>{value}</p>
     </div>
   );
@@ -488,7 +488,7 @@ function DisbursementDetail({ trace, onNavigate }: { trace: DisbursementTrace; o
       <section className="rounded-lg border border-border p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[11px] uppercase tracking-wide text-fg-muted">เลขที่เอกสารจ่ายออก</p>
+            <p className="text-xs uppercase tracking-wide text-fg-muted">เลขที่เอกสารจ่ายออก</p>
             <p className="font-mono text-xl font-semibold text-fg">{d.disbursementNo}</p>
             <p className="mt-0.5 text-xs text-fg-muted">
               {formatDate(d.disbursementDate)} · {d.disbursementType}
@@ -515,7 +515,7 @@ function DisbursementDetail({ trace, onNavigate }: { trace: DisbursementTrace; o
         </dl>
 
         {cancelled && (
-          <p className="mt-4 rounded-md bg-danger-soft px-3 py-2 text-sm text-danger">
+          <p className="mt-4 rounded-md bg-danger-soft px-3 py-2 text-sm text-danger-fg">
             ยกเลิกเมื่อ {formatDateTime(d.cancelledAt)} · เหตุผล: {d.cancelReason ?? "—"}
           </p>
         )}

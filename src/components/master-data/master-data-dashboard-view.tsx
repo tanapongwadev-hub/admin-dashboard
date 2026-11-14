@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/ui/page-title";
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, Database, Layers, ShieldOff, type LucideIcon } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -46,12 +47,12 @@ function MetricCard({
   tone: string;
 }) {
   return (
-    <Card className="min-w-0 p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+    <Card className="min-w-0 p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-xs font-medium text-fg-muted">{label}</p>
           <p className="mt-2 text-3xl font-semibold tracking-tight tabular-nums text-fg">{formatCount(value)}</p>
-          <p className="mt-1 truncate text-xs text-fg-secondary">{note}</p>
+          <p className="mt-1 text-xs text-fg-secondary">{note}</p>
         </div>
         <span className={cn("flex size-10 shrink-0 items-center justify-center rounded-md", tone)} aria-hidden="true">
           <Icon className="size-5" strokeWidth={1.8} />
@@ -109,13 +110,13 @@ function ResourceCard({ resource }: { resource: MasterDataResourceCard }) {
 
   if (locked) {
     return (
-      <Card className="min-w-0 border-dashed p-5 opacity-70 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">{body}</Card>
+      <Card className="min-w-0 border-dashed p-5 opacity-70">{body}</Card>
     );
   }
 
   return (
     <Link href={resource.href} className="group block min-w-0">
-      <Card className="min-w-0 p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-colors group-hover:border-primary/40 group-hover:bg-surface-2/40">
+      <Card className="min-w-0 p-5 transition-colors group-hover:border-primary/40 group-hover:bg-surface-2/40">
         {body}
       </Card>
     </Link>
@@ -132,8 +133,7 @@ export function MasterDataDashboardView({ resources }: { resources: MasterDataRe
     <div className="@container flex flex-col gap-5">
       <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.15em] text-primary">Master data control tower</p>
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-fg sm:text-3xl">ข้อมูลหลัก</h1>
+          <PageTitle>ข้อมูลหลัก</PageTitle>
           <p className="mt-1.5 text-sm text-fg-muted">ภาพรวมข้อมูลอ้างอิงของระบบ ณ {formatUpdatedDate()}</p>
         </div>
       </header>
@@ -141,11 +141,11 @@ export function MasterDataDashboardView({ resources }: { resources: MasterDataRe
       {visible.length === 0 ? (
         <Card className="border-dashed p-6">
           <div className="flex items-start gap-3">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-info-soft text-info" aria-hidden="true">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-info-soft text-info-fg" aria-hidden="true">
               <ShieldOff className="size-5" />
             </span>
             <div>
-              <h2 className="text-sm font-semibold text-fg">คุณไม่มีสิทธิ์เข้าถึงข้อมูลหลักรายการใด</h2>
+              <h2 className="text-lg font-semibold text-fg">คุณไม่มีสิทธิ์เข้าถึงข้อมูลหลักรายการใด</h2>
               <p className="mt-1 text-sm leading-6 text-fg-muted">กรุณาติดต่อผู้ดูแลระบบเพื่อขอสิทธิ์ View ของข้อมูลหลักที่ต้องการ</p>
             </div>
           </div>
@@ -154,8 +154,8 @@ export function MasterDataDashboardView({ resources }: { resources: MasterDataRe
         <>
           <section className="grid grid-cols-2 gap-3 @min-[40rem]:grid-cols-3" aria-label="ตัวชี้วัดข้อมูลหลัก">
             <MetricCard label="หมวดข้อมูลที่เข้าถึงได้" value={visible.length} note={`จากทั้งหมด ${resources.length} หมวด`} icon={Database} tone="bg-primary-soft text-primary" />
-            <MetricCard label="ใช้งานอยู่" value={totalActive} note="รายการที่เปิดใช้งานทุกหมวด" icon={CheckCircle2} tone="bg-success-soft text-success" />
-            <MetricCard label="ปิดใช้งาน" value={totalInactive} note="รายการที่ถูกปิดใช้งานทุกหมวด" icon={Layers} tone="bg-warning-soft text-warning" />
+            <MetricCard label="ใช้งานอยู่" value={totalActive} note="รายการที่เปิดใช้งานทุกหมวด" icon={CheckCircle2} tone="bg-success-soft text-success-fg" />
+            <MetricCard label="ปิดใช้งาน" value={totalInactive} note="รายการที่ถูกปิดใช้งานทุกหมวด" icon={Layers} tone="bg-warning-soft text-warning-fg" />
           </section>
 
           {MASTER_DATA_GROUPS.map((group) => {
@@ -164,7 +164,7 @@ export function MasterDataDashboardView({ resources }: { resources: MasterDataRe
             return (
               <section key={group.id} aria-labelledby={`md-group-${group.id}`} className="flex flex-col gap-3">
                 <div className="flex items-baseline gap-3">
-                  <h2 id={`md-group-${group.id}`} className="text-base font-semibold text-fg">{group.label}</h2>
+                  <h2 id={`md-group-${group.id}`} className="text-lg font-semibold text-fg">{group.label}</h2>
                   <p className="hidden text-xs text-fg-muted sm:block">{group.description}</p>
                   <span className="h-px flex-1 bg-border" aria-hidden="true" />
                   <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs text-fg-muted">{cards.length}</span>

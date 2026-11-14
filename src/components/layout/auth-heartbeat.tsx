@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 // Receives scheduling metadata only. Neither token is exposed to browser JS.
 export function AuthHeartbeat({ expiresAt }: { expiresAt: number | null }) {
+  const router = useRouter();
   useEffect(() => {
     let stopped = false;
     let deadline = expiresAt ?? Date.now();
@@ -26,7 +28,7 @@ export function AuthHeartbeat({ expiresAt }: { expiresAt: number | null }) {
           });
           if (stopped) return;
           if (response.status === 401) {
-            window.location.assign("/login");
+            router.replace("/login");
             return;
           }
           if (!response.ok) throw new Error("Refresh unavailable");
@@ -53,6 +55,6 @@ export function AuthHeartbeat({ expiresAt }: { expiresAt: number | null }) {
       clearTimeout(timer);
       document.removeEventListener("visibilitychange", wake);
     };
-  }, [expiresAt]);
+  }, [expiresAt, router]);
   return null;
 }

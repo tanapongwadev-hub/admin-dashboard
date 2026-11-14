@@ -114,7 +114,7 @@ export function MaterialsReceivingDetailsDialog({
                 className={`flex items-center justify-between gap-4 rounded-xl bg-gradient-to-br ${overallTone.wash} px-4 py-3.5 sm:px-5 sm:py-4`}
               >
                 <div className="min-w-0">
-                  <span className={`text-[11px] font-semibold uppercase leading-none tracking-[0.08em] ${overallTone.text}`}>
+                  <span className={`text-xs font-semibold uppercase leading-none tracking-[0.08em] ${overallTone.text}`}>
                     ยอดคงเหลือทั้งหมด
                   </span>
                   <div className="mt-1.5 flex items-baseline gap-2">
@@ -131,42 +131,42 @@ export function MaterialsReceivingDetailsDialog({
 
               <dl className="mt-3 grid grid-cols-2 gap-3 rounded-lg border border-border bg-surface-2 p-3 text-sm sm:grid-cols-4">
                 <div>
-                  <dt className="text-[11px] text-fg-muted">Supplier Lot</dt>
+                  <dt className="text-xs text-fg-muted">Supplier Lot</dt>
                   <dd className="font-mono font-semibold text-fg">{receiving.supplierLotNo ?? "—"}</dd>
                 </div>
                 <div>
-                  <dt className="text-[11px] text-fg-muted">จำนวนรับเข้าจริง</dt>
+                  <dt className="text-xs text-fg-muted">จำนวนรับเข้าจริง</dt>
                   <dd className="font-semibold text-fg">
                     {formatNumber(Number(receiving.receiveQuantity))} {receiving.unit?.symbol ?? ""}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-[11px] text-fg-muted">รูปทรง / อัตราส่วน</dt>
+                  <dt className="text-xs text-fg-muted">รูปทรง / อัตราส่วน</dt>
                   <dd className="font-semibold text-fg">
                     {receiving.materialType ?? "ทั่วไป"}
                     {receiving.ratio ? ` · ${formatNumber(receiving.ratio)}` : ""}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-[11px] text-fg-muted">จำนวนเข้าสต็อก</dt>
+                  <dt className="text-xs text-fg-muted">จำนวนเข้าสต็อก</dt>
                   <dd className="font-semibold text-primary">
                     {formatNumber(Number(receiving.convertedQuantity ?? receiving.piecesQuantity ?? receiving.receiveQuantity))}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-[11px] text-fg-muted">จำนวนกล่อง</dt>
+                  <dt className="text-xs text-fg-muted">จำนวนกล่อง</dt>
                   <dd className="font-semibold text-fg">{receiving.packageCount}</dd>
                 </div>
                 <div>
-                  <dt className="text-[11px] text-fg-muted">วันที่รับเข้า</dt>
+                  <dt className="text-xs text-fg-muted">วันที่รับเข้า</dt>
                   <dd className="font-semibold text-fg">{receiving.receiveDate}</dd>
                 </div>
                 <div>
-                  <dt className="text-[11px] text-fg-muted">วันที่ Supplier ผลิต</dt>
+                  <dt className="text-xs text-fg-muted">วันที่ Supplier ผลิต</dt>
                   <dd className="font-semibold text-fg">{receiving.supplierProductionDate ?? "—"}</dd>
                 </div>
                 <div>
-                  <dt className="text-[11px] text-fg-muted">สถานะ</dt>
+                  <dt className="text-xs text-fg-muted">สถานะ</dt>
                   <dd className="font-semibold text-fg">
                     {receiving.status === "draft" ? "ร่าง" : receiving.status === "confirmed" ? "ยืนยันแล้ว" : "ยกเลิก"}
                   </dd>
@@ -196,19 +196,19 @@ export function MaterialsReceivingDetailsDialog({
                           </div>
                         )}
                       </div>
-                      <p className="text-center font-mono text-[11px] text-fg-muted">{pkg.lotDetailNo ?? "—"}</p>
+                      <p className="text-center font-mono text-[13px] text-fg-muted">{pkg.lotDetailNo ?? "—"}</p>
                       {/* Per-box remaining stat gets the same gradient
                           treatment as the overall hero, scaled down — so
                           "which boxes still have stock" is scannable at a
                           glance across a grid of many boxes. */}
                       <div className={`flex items-baseline justify-between gap-2 rounded-md bg-gradient-to-br ${pkgTone.wash} px-2.5 py-2`}>
                         <div>
-                          <p className="text-[9.5px] uppercase leading-none tracking-[0.06em] text-fg-muted">คงเหลือ</p>
+                          <p className="text-xs uppercase leading-none tracking-[0.06em] text-fg-muted">คงเหลือ</p>
                           <p className={`mt-1 text-lg font-bold leading-none tabular-nums ${pkgTone.text}`}>
                             {formatNumber(Number(pkg.remainingQuantity))}
                           </p>
                         </div>
-                        <span className="text-[11px] font-medium text-fg-muted">จาก {formatNumber(Number(pkg.quantity))}</span>
+                        <span className="text-xs font-medium text-fg-muted">จาก {formatNumber(Number(pkg.quantity))}</span>
                       </div>
                     </div>
                   );

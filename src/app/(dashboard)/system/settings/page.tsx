@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/ui/page-title";
 import type { Metadata } from "next";
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
@@ -12,7 +13,7 @@ export const metadata: Metadata = { title: "การตั้งค่าบั
 
 function InfoTile({ Icon, label, value }: { Icon: LucideIcon; label: string; value: string }) {
   return (
-    <div className="flex items-start gap-3 rounded-xl border border-border bg-surface p-4">
+    <div className="flex items-start gap-3 rounded-lg border border-border bg-surface p-4">
       <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary">
         <Icon className="size-5" aria-hidden="true" />
       </span>
@@ -44,25 +45,24 @@ export default async function SettingsPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-fg">การตั้งค่าบัญชี</h1>
+        <PageTitle>การตั้งค่าบัญชี</PageTitle>
         <p className="mt-1 text-sm text-fg-secondary">ข้อมูลบัญชีและสิทธิ์การเข้าถึงของคุณ</p>
       </div>
 
-      <section className="relative overflow-hidden rounded-2xl bg-navy p-6 text-white sm:p-8">
-        <div aria-hidden className="pointer-events-none absolute -right-16 -top-20 size-64 rounded-full bg-primary/30 blur-3xl" />
+      <section className="relative overflow-hidden rounded-lg border border-border bg-surface p-6 text-fg sm:p-8">
         <div className="relative flex flex-col items-start gap-5 sm:flex-row sm:items-center">
-          <UserAvatar name={fullName} className="size-20 text-2xl ring-4 ring-white/15" />
+          <UserAvatar name={fullName} className="size-20 text-2xl ring-4 ring-border" />
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="truncate text-2xl font-semibold">{fullName}</h2>
               {user?.isSuperAdmin && <Badge variant="primary">Super Admin</Badge>}
             </div>
-            <p className="mt-1 text-sm text-white/70">@{user?.username ?? "—"}</p>
+            <p className="mt-1 text-sm text-fg-muted">@{user?.username ?? "—"}</p>
             <div className="mt-4 flex flex-wrap gap-2 text-xs font-medium">
-              <span className="rounded-full bg-white/10 px-3 py-1 ring-1 ring-white/15">{roleName}</span>
-              {parentName && <span className="rounded-full bg-white/10 px-3 py-1 ring-1 ring-white/15">กลุ่ม: {parentName}</span>}
-              <span className="rounded-full bg-white/10 px-3 py-1 ring-1 ring-white/15">{parentName ? `แผนกย่อย: ${departmentName}` : departmentName}</span>
-              <span className="rounded-full bg-white/10 px-3 py-1 ring-1 ring-white/15">เข้าถึงได้ {pageCount} หน้า</span>
+              <span className="rounded-full bg-surface-2 px-3 py-1 ring-1 ring-border">{roleName}</span>
+              {parentName && <span className="rounded-full bg-surface-2 px-3 py-1 ring-1 ring-border">กลุ่ม: {parentName}</span>}
+              <span className="rounded-full bg-surface-2 px-3 py-1 ring-1 ring-border">{parentName ? `แผนกย่อย: ${departmentName}` : departmentName}</span>
+              <span className="rounded-full bg-surface-2 px-3 py-1 ring-1 ring-border">เข้าถึงได้ {pageCount} หน้า</span>
             </div>
           </div>
         </div>
@@ -79,11 +79,11 @@ export default async function SettingsPage() {
         />
       </section>
 
-      <section className="rounded-2xl border border-border bg-surface p-5">
+      <section className="rounded-lg border border-border bg-surface p-5">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <KeyRound className="size-4 text-fg-muted" aria-hidden="true" />
-            <h2 className="text-base font-semibold text-fg">เมนูที่คุณเข้าถึงได้</h2>
+            <h2 className="text-lg font-semibold text-fg">เมนูที่คุณเข้าถึงได้</h2>
           </div>
           <Link href="/menu-hub" className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">
             <LayoutGrid className="size-4" aria-hidden="true" />

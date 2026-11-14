@@ -54,7 +54,7 @@ export function MenuDeleteDialog({
     <Dialog open={open} onOpenChange={(nextOpen) => !isDeleting && onOpenChange(nextOpen)}>
       <DialogContent className="max-w-sm">
         <DialogHeader className="flex-row items-start gap-3 space-y-0">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-danger-soft text-danger">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-danger-soft text-danger-fg">
             <AlertTriangle className="h-4.5 w-4.5" />
           </span>
           <div>

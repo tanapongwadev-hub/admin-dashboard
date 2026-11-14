@@ -73,10 +73,10 @@ export function DashboardFilters({
   return (
     <div className={cn("flex min-w-0 flex-col", className)}>
       <div className={cn("flex items-center justify-between gap-2 border-b border-border px-4 py-3", headerClassName)}>
-        <h2 className="text-sm font-semibold text-fg">
+        <h2 className="text-lg font-semibold text-fg">
           ตัวกรอง
           {activeCount > 0 && (
-            <span className="ml-2 inline-flex min-w-5 items-center justify-center rounded-full bg-primary-soft px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-primary">
+            <span className="ml-2 inline-flex min-w-5 items-center justify-center rounded-full bg-primary-soft px-1.5 py-0.5 text-xs font-semibold tabular-nums text-primary">
               {activeCount}
             </span>
           )}
@@ -95,7 +95,7 @@ export function DashboardFilters({
 
       <div className="flex flex-col gap-5 px-4 py-4">
         <div className="flex flex-col gap-1.5">
-          <label htmlFor={`${idPrefix}-search`} className="text-[11px] font-semibold uppercase tracking-[0.08em] text-fg-muted">
+          <label htmlFor={`${idPrefix}-search`} className="text-xs font-semibold uppercase tracking-[0.08em] text-fg-muted">
             ค้นหา
           </label>
           <div className="relative">
@@ -108,18 +108,18 @@ export function DashboardFilters({
               value={value.search}
               onChange={(event) => onChange({ ...value, search: event.target.value })}
               placeholder="เอกสาร, วัสดุ, ผู้จัดจำหน่าย"
-              className="h-9 pl-8 text-[13px]"
+              className="h-9 pl-8 text-sm"
             />
           </div>
         </div>
 
         <fieldset className="flex flex-col gap-2">
-          <legend className="mb-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-fg-muted">ประเภทเอกสาร</legend>
+          <legend className="mb-1 text-xs font-semibold uppercase tracking-[0.08em] text-fg-muted">ประเภทเอกสาร</legend>
           {DOC_TYPE_OPTIONS.map((option) => (
             <label
               key={option.value}
               htmlFor={`${idPrefix}-type-${option.value}`}
-              className="flex cursor-pointer items-center gap-2.5 text-[13px] text-fg-secondary transition-colors hover:text-fg"
+              className="flex cursor-pointer items-center gap-2.5 text-sm text-fg-secondary transition-colors hover:text-fg"
             >
               <Checkbox
                 id={`${idPrefix}-type-${option.value}`}
@@ -132,12 +132,12 @@ export function DashboardFilters({
         </fieldset>
 
         <fieldset className="flex flex-col gap-2">
-          <legend className="mb-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-fg-muted">สถานะ</legend>
+          <legend className="mb-1 text-xs font-semibold uppercase tracking-[0.08em] text-fg-muted">สถานะ</legend>
           {STATUS_OPTIONS.map((option) => (
             <label
               key={option.value}
               htmlFor={`${idPrefix}-status-${option.value}`}
-              className="flex cursor-pointer items-center gap-2.5 text-[13px] text-fg-secondary transition-colors hover:text-fg"
+              className="flex cursor-pointer items-center gap-2.5 text-sm text-fg-secondary transition-colors hover:text-fg"
             >
               <Checkbox
                 id={`${idPrefix}-status-${option.value}`}
@@ -150,12 +150,12 @@ export function DashboardFilters({
         </fieldset>
 
         <fieldset className="flex flex-col gap-2">
-          <legend className="mb-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-fg-muted">หมวดหมู่วัสดุ</legend>
+          <legend className="mb-1 text-xs font-semibold uppercase tracking-[0.08em] text-fg-muted">หมวดหมู่วัสดุ</legend>
           {categoryOptions.map((category) => (
             <label
               key={category}
               htmlFor={`${idPrefix}-cat-${category}`}
-              className="flex cursor-pointer items-center gap-2.5 text-[13px] text-fg-secondary transition-colors hover:text-fg"
+              className="flex cursor-pointer items-center gap-2.5 text-sm text-fg-secondary transition-colors hover:text-fg"
             >
               <Checkbox
                 id={`${idPrefix}-cat-${category}`}

@@ -216,7 +216,7 @@ export function LotOrderBoard({
         return (
           <section
             key={line.id}
-            className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4 sm:p-6"
+            className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4 sm:p-6"
             aria-labelledby={`line-${line.id}`}
           >
             <div className="flex flex-wrap items-end justify-between gap-3">
@@ -431,7 +431,7 @@ export function LotOrderBoard({
                             >
                               {lot.lotNo}
                             </Link>
-                            <span className="text-[11px] text-fg-muted">
+                            <span className="text-xs text-fg-muted">
                               {formatThaiDate(lot.productionDate)} {lot.shift}
                             </span>
                             <span className="ml-auto text-xs tabular-nums text-fg">

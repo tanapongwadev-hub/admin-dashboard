@@ -394,7 +394,7 @@ Activity-event design documents (2026-09-26): `docs/activity-logging/architectur
 | `text-info`                             | `#0EA5E9`                | informational status (not in the original brief; added for a 4th semantic tone distinct from primary) |
 | `bg-{success,warning,danger,info}-soft` | —                        | soft tinted backgrounds for the corresponding status color, e.g. badges                               |
 
-**Radius**: `--radius: 0.5rem` (8px, down from the old 10px) — intentionally a little tighter than a typical SaaS default, per the Navy Enterprise brief's "avoid overly rounded cards" direction. Components default to `rounded-md`.
+**Radius**: `--radius: 0.5rem` (8px). Cards use `rounded-lg` (8px), controls `rounded-md` (6px), dialogs/drawers/chrome `rounded-xl` (12px), and small chips `rounded-sm` (4px). Avoid larger rounded utilities in screen UI.
 
 **The `.on-navy` scoping class** (see globals.css) redefines `--surface`, `--surface-2`, `--border`, `--border-strong`, `--fg`, `--fg-secondary`, `--fg-muted`, `--primary`, and `--primary-soft` for its subtree — apply it to a container (`<aside className="on-navy ...">`) to make every _already-token-driven_ class inside it (`bg-surface`, `text-fg-secondary`, `bg-primary-soft`, ...) resolve against the dark-navy palette instead of the light one, with zero changes to the descendant components themselves. This is the same mechanism the old `.dark` class used — see Conventions § Theme.
 
@@ -468,6 +468,10 @@ Activity-event design documents (2026-09-26): `docs/activity-logging/architectur
 
 ### Styling
 
+- **Shared screen style (2026-11-03):** follow `DESIGN.md` and `docs/ui-style-guide.md` before adding or changing UI. Visible page headings use `ui/page-title.tsx` (`PageTitle`, 24px semibold); card/dialog headings are 18px; body/controls are 14px and supporting text is at least 12px. Actual codes may use `font-mono text-[13px]`. Screen body density is scoped to `@media screen` so print layouts retain their physical scale.
+- `Card`, `ChartCard` and `KpiCard` share `cardStyles` from `ui/card.tsx`; ordinary surfaces use token borders without hover lift. Input/Textarea/SelectTrigger share `ui/field-styles.ts` for border, focus, disabled and invalid states; single-line fields have a minimum 44px height on coarse pointers. Use the shared Button/Table/Badge primitives for actions, table headings and statuses. On status tints, text uses the corresponding darker `*-fg` token.
+- **Authenticated visual refinement (2026-11-03):** receiving/disbursement cards, rows and tables now use neutral surfaces with text status badges; this supersedes historical `STATUS_ACCENT` gradient/4px-side-border conventions below. Wide tables keep minimum readable widths and scroll inside a contained Table wrapper; screen-only root overflow clipping preserves the fixed dashboard shell. ChartCard actions and material/menu-hub navigation wrap. Shared view toggles and dialog/sheet close buttons use 44px coarse-pointer targets; dialog headers reserve close-button space. See `docs/ui-visual-review.md` for browser coverage and limits.
+- ESLint config includes `design-system/consistent-styles` from `scripts/eslint-design-system.mjs` to reject screen text below 12px, oversized corner utilities and visible raw h1 headings. Print/QR layouts, the self-contained global-error fallback and hidden report headings are explicit exceptions. Run validation only when explicitly requested, per R0.
 - Always reference tokens (`bg-primary`, `text-fg-muted`) — never raw hex.
 - **No dark mode / theme toggle** — this app has one fixed Navy Enterprise theme (see Conventions § Theme above). Don't add `dark:` variants or a `useTheme()` call; there is no `.dark` class anymore.
 - Tailwind 4 syntax — no `tailwind.config.*`. All tokens live in `globals.css` via `@theme inline`.
@@ -1084,6 +1088,24 @@ Before writing any new route, component, data-layer file, or Server Action, chec
 ---
 
 ## Recent Changes
+
+### 2026-11-03 — Authenticated desktop/mobile visual pass
+
+- Captured and visually reviewed 57 static dashboard routes (including aliases) at desktop 1440×960 and touch mobile 390×844; opened receiving/category/sales create forms without saving. Fixed Dashboard action overflow and uneven KPI grid, hidden material tabs, narrow table text, truncated product/master summaries, inconsistent receiving/disbursement accents/gradients/type, report header/contrast, hub eyebrows/card shapes and undersized touch controls. A follow-up of 14 affected routes at both sizes reported no page errors or document/main horizontal overflow; checked tab selection, all receiving views and dialog close behavior. Screenshots/JSON live in the chat's visualization directory, with scope in `docs/ui-visual-review.md`. Browser contexts closed and temporary session state/scripts removed. No lint/test/build/typecheck rerun in this visual-only request, per R0.
+
+### 2026-11-03 — Validation after shared-style migration
+
+- At the user's explicit request, lint, tests and typecheck passed: `pnpm lint` with no errors/warnings, `pnpm test` with 447 main tests plus 2 pretests, and `pnpm exec tsc --noEmit -p tsconfig.json`. Fixed remaining fractional/template-literal small text, unused bindings and the style plugin's anonymous export. ESLint excludes installed `.agents`/`.claude` tooling and generated `.ua` analysis artifacts. RHF/TanStack components explicitly use `"use no memo"`; a documented file-local exception for `react-hooks/incompatible-library` reflects that intentional compiler boundary without disabling other rules. AuthHeartbeat uses router.replace on expiration; cookie-clear Route Handler navigation remains a full document navigation. The icon picker uses a data-invalid styling attribute and retains its error description association instead of unsupported aria-invalid on a button.
+
+### 2026-11-03 — Shared style across screen modules
+
+- Migrated visible page headings to `PageTitle` across materials, production, sales, reports, engineering, master data, system and auth screens; consolidated small type to the shared scale, card corners and tinted status text. Shared primitives now align field states/touch heights, card surfaces, section/dialog headings, buttons and table headers. Account settings uses the common light surface. Added `docs/ui-style-guide.md`, refreshed DESIGN.md and added scoped ESLint style guardrails. Inspected the login at desktop/mobile sizes and fixed the mobile footer wrapping; authenticated pages redirect to login in the inspection session. No lint, tests, build or typecheck run, per R0.
+
+### 2026-11-03 — Dashboard reliability and drill-downs
+
+- `/dashboard` uses live `dashboard-loader.ts` data; the historical mock/filter description below is superseded. `failedSources` distinguishes failed summary/watchlist/document fetches from successful empty results. Unavailable summary metrics render a dash and chart error; refresh retries all sources. Header health describes material stock only and shows fetch time in Asia/Bangkok.
+- Watchlist shows full material codes with permission-gated catalog/receiving links. Document numbers link to the matching list search. Disbursements display item counts because the list API has no item units. CSV exports only the displayed latest eight documents, is labeled in that card, and is disabled if a document source failed. Empty-state copy matches the actual controls.
+
 
 ### 2026-11-02 — Understand Anything knowledge graph
 

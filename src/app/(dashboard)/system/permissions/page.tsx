@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/ui/page-title";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { ShieldAlert } from "lucide-react";
@@ -52,7 +53,7 @@ export default async function PermissionManagementPage({
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-xl font-semibold text-fg">สิทธิ์การเข้าถึง</h1>
+        <PageTitle>สิทธิ์การเข้าถึง</PageTitle>
         <p className="mt-1 text-sm text-fg-muted">
           แผนกกำหนดว่าเข้าเมนูไหนได้ role กำหนดว่าทำ action อะไรได้ การเปลี่ยนแปลงจะยังไม่บันทึกจนกว่าจะกดบันทึก
         </p>

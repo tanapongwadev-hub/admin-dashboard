@@ -99,7 +99,7 @@ export function OrdersTable() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-border bg-surface">
+      <div className="rounded-lg border border-border bg-surface">
         <DataTable columns={columns} data={filteredData} onRowSelectionChange={setSelected} emptyMessage="ไม่พบคำสั่งซื้อที่ตรงกับตัวกรองของคุณ" />
       </div>
 

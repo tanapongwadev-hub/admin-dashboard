@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/ui/page-title";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { ShieldAlert } from "lucide-react";
@@ -55,7 +56,7 @@ export default async function IssueReportsPage({
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-xl font-semibold text-fg">รายการแจ้งปัญหา</h1>
+        <PageTitle>รายการแจ้งปัญหา</PageTitle>
         <p className="mt-1 text-sm text-fg-muted">
           ปัญหาที่แจ้งไว้กับเอกสารทุกประเภท พร้อมสถานะการแก้ไข
         </p>

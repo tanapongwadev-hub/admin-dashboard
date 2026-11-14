@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/ui/page-title";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { SalesAccessDenied } from "@/components/sales/sales-access-denied";
@@ -34,7 +35,7 @@ export default async function SalesJobOrdersPage({
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-xl font-semibold text-fg">ใบจัดงานขาย / ตัดสต็อก</h1>
+        <PageTitle>ใบจัดงานขาย / ตัดสต็อก</PageTitle>
         <p className="mt-1 text-sm text-fg-muted">
           พิมพ์ใบจัดงาน สแกน QR กล่อง FG ที่ระบบจองไว้ แล้วตัดสต็อกขายเพื่อออกเลขที่ใบส่งของ (DO)
         </p>

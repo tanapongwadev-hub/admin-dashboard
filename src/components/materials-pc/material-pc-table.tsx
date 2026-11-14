@@ -462,11 +462,11 @@ function MaterialEditorialCard({
       </div>
 
       <div className="flex flex-1 flex-col px-4 pb-1 pt-4">
-        <p className="mb-1.5 font-mono text-[11px] leading-none tracking-[0.05em] text-primary">{material.code}</p>
-        <h2 className="mb-1 truncate text-base font-semibold leading-tight text-fg" title={material.name}>
+        <p className="mb-1.5 font-mono text-[13px] leading-none tracking-[0.05em] text-primary">{material.code}</p>
+        <h2 className="mb-1 truncate text-lg font-semibold leading-tight text-fg" title={material.name}>
           {material.name}
         </h2>
-        <p className="truncate text-[12.5px] leading-tight text-fg-secondary">
+        <p className="truncate text-sm leading-tight text-fg-secondary">
           {material.materialType}
           {material.ratio ? ` · ${material.ratio}` : ""}
         </p>
@@ -479,7 +479,7 @@ function MaterialEditorialCard({
           <div className="min-w-0">
             <span
               className={cn(
-                "text-[10px] font-semibold uppercase leading-none tracking-[0.08em]",
+                "text-xs font-semibold uppercase leading-none tracking-[0.08em]",
                 tone === "warning" ? "text-warning" : tone === "muted" ? "text-fg-secondary" : "text-primary"
               )}
             >
@@ -547,7 +547,7 @@ function MaterialEditorialCard({
 function CardMeta({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0 border-r border-border px-3 py-2.5 last:border-r-0">
-      <p className="mb-1 text-[10px] text-fg-muted">{label}</p>
+      <p className="mb-1 text-xs text-fg-muted">{label}</p>
       <p className="truncate font-medium text-fg-secondary" title={value}>{value}</p>
     </div>
   );
@@ -620,7 +620,7 @@ function MaterialListItem({
   return (
     <article
       className={cn(
-        "group grid grid-cols-[44px_1fr_auto] items-center gap-3 rounded-xl border bg-surface px-3 py-2.5 transition-colors hover:border-border-strong sm:grid-cols-[56px_1fr_auto] sm:gap-4 sm:px-4 sm:py-3",
+        "group grid grid-cols-[44px_1fr_auto] items-center gap-3 rounded-lg border bg-surface px-3 py-2.5 transition-colors hover:border-border-strong sm:grid-cols-[56px_1fr_auto] sm:gap-4 sm:px-4 sm:py-3",
         material.isActive ? "border-border" : "border-border opacity-70",
         tone === "warning" && "border-warning/40"
       )}
@@ -633,7 +633,7 @@ function MaterialListItem({
 
       <div className="min-w-0">
         <div className="mb-1 flex flex-wrap items-center gap-2">
-          <span className="font-mono text-[11px] leading-none text-fg-muted">{material.code}</span>
+          <span className="font-mono text-[13px] leading-none text-fg-muted">{material.code}</span>
           <MaterialTypeTag material={material} />
           <MaterialStatus material={material} />
           {stockByMaterialId && quantity >= 0 && (
@@ -642,7 +642,7 @@ function MaterialListItem({
             </Badge>
           )}
         </div>
-        <h2 className="mb-1 truncate text-sm font-semibold leading-tight text-fg" title={material.name}>
+        <h2 className="mb-1 truncate text-lg font-semibold leading-tight text-fg" title={material.name}>
           {material.name}
         </h2>
         <p className="mb-1 text-xs text-fg-secondary">Location Type: {locationTypeLabel(material)}</p>
@@ -660,7 +660,7 @@ function MaterialListItem({
       <div className="flex items-center gap-2 sm:gap-3">
         {stockByMaterialId && (
           <div className="min-w-[68px] text-right">
-            <p className="mb-0.5 text-[10px] uppercase leading-none tracking-[0.08em] text-fg-muted">คงเหลือ</p>
+            <p className="mb-0.5 text-xs uppercase leading-none tracking-[0.08em] text-fg-muted">คงเหลือ</p>
             <p
               className={cn(
                 "text-lg font-bold leading-none tracking-[-0.01em] tabular-nums sm:text-xl",
@@ -668,7 +668,7 @@ function MaterialListItem({
               )}
             >
               {formatNumber(quantity)}
-              {unit && <span className="ml-1 text-[11px] font-medium text-fg-muted sm:text-xs">{unit}</span>}
+              {unit && <span className="ml-1 text-xs font-medium text-fg-muted sm:text-xs">{unit}</span>}
             </p>
           </div>
         )}
@@ -763,7 +763,7 @@ function MaterialPcSelectableTable({
         />
       )}
       {collectionHeader}
-      <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm [&>div:last-child]:max-h-[68vh] [&>div:last-child]:overflow-auto [&>div:last-child]:[scrollbar-width:none] [&>div:last-child::-webkit-scrollbar]:hidden">
+      <div className="overflow-hidden rounded-lg border border-border bg-surface shadow-sm [&>div:last-child]:max-h-[68vh] [&>div:last-child]:overflow-auto [&>div:last-child]:[scrollbar-width:none] [&>div:last-child::-webkit-scrollbar]:hidden">
         <Table className="min-w-[1080px]">
           <TableHeader className="sticky top-0 z-20 bg-surface-2 shadow-[0_1px_0_0_var(--border)] [&_th]:h-12">
             <TableRow>
@@ -812,7 +812,7 @@ function MaterialPcSelectableTable({
                       {isSub && <CornerDownRight className="size-4 shrink-0 text-primary/60" aria-hidden="true" />}
                       <MaterialThumbnail material={material} onPreview={onPreview} />
                       <div className="min-w-0 space-y-1">
-                        <div className="flex flex-wrap items-center gap-2"><button type="button" onClick={() => onViewDetails(material)} className="break-all text-left font-mono text-xs font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label={`ดูรายละเอียดวัสดุ ${material.code}`}>{material.code}</button>{group.members.length > 1 && <Badge variant={material.id === group.main.id ? "primary" : "info"} className="text-[10px]">{material.id === group.main.id ? "Main" : "Sub"}</Badge>}</div>
+                        <div className="flex flex-wrap items-center gap-2"><button type="button" onClick={() => onViewDetails(material)} className="break-all text-left font-mono text-xs font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label={`ดูรายละเอียดวัสดุ ${material.code}`}>{material.code}</button>{group.members.length > 1 && <Badge variant={material.id === group.main.id ? "primary" : "info"} className="text-xs">{material.id === group.main.id ? "Main" : "Sub"}</Badge>}</div>
                         <p className="max-w-64 truncate text-sm font-medium text-fg" title={material.name}>{material.name}</p>
                         <p className="max-w-64 truncate text-xs text-fg-muted" title={modelLabel(material)}>รุ่น: {modelLabel(material)}</p>
                         {isSub && <span className="sr-only">Material sub ของ {group.main.code}</span>}
@@ -824,7 +824,7 @@ function MaterialPcSelectableTable({
                   {stockByMaterialId && (
                     <TableCell className="min-w-36">
                       <p className="text-right text-lg font-semibold tabular-nums text-fg">{formatNumber(quantity)} <span className="text-xs font-normal text-fg-muted">{unitLabel(material) !== "—" ? unitLabel(material) : ""}</span></p>
-                      <p className="mt-0.5 text-right text-[11px] text-fg-muted">ขั้นต่ำ {formatNumber(Number(material.minimumStock))}</p>
+                      <p className="mt-0.5 text-right text-xs text-fg-muted">ขั้นต่ำ {formatNumber(Number(material.minimumStock))}</p>
                       <div className="mt-1.5 flex justify-end"><Badge variant={stockHealth.variant} dot>{stockHealth.label}</Badge></div>
                     </TableCell>
                   )}
@@ -935,7 +935,7 @@ export function MaterialPcCollection({
             <div key={group.id} className="min-w-0 h-full">
               {view === "list" ? <MaterialListItem material={group.main} {...commonProps} /> : <MaterialEditorialCard material={group.main} {...commonProps} />}
             </div>
-          ) : <section key={group.id} aria-label={`กลุ่มวัสดุ ${group.main.code}`} className={cn("min-w-0 overflow-hidden rounded-xl border border-border bg-surface-2/40", view === "card" && "@min-[36rem]:col-span-2")}>
+          ) : <section key={group.id} aria-label={`กลุ่มวัสดุ ${group.main.code}`} className={cn("min-w-0 overflow-hidden rounded-lg border border-border bg-surface-2/40", view === "card" && "@min-[36rem]:col-span-2")}>
             <div className="border-b border-border bg-primary-soft/40"><MaterialGroupHeading group={group} /></div>
             <ul className={view === "list" ? "space-y-3 p-3" : "grid grid-cols-1 gap-3 p-3 @min-[36rem]:grid-cols-2"}>
               {group.members.map((material) => <li key={material.id} className="flex min-w-0 flex-col gap-2">

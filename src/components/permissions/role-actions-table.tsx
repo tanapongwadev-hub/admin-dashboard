@@ -100,7 +100,7 @@ export function RoleActionsTable({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-surface p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-surface p-4">
         <p className="flex max-w-2xl items-start gap-2 text-sm text-fg-secondary">
           <Info className="mt-0.5 size-4 shrink-0 text-info" aria-hidden />
           role กำหนดว่าผู้ใช้ทำ action ไหนได้บ้าง ใช้กับทุกเมนูที่แผนกของผู้ใช้เปิดไว้ การเปิด action อื่นจะเปิด &quot;อ่าน&quot; ให้อัตโนมัติ และการปิด &quot;อ่าน&quot; จะปิดทุก action ของ role นั้น
@@ -122,7 +122,7 @@ export function RoleActionsTable({
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-border bg-surface">
+      <div className="overflow-x-auto rounded-lg border border-border bg-surface">
         <table className="w-full min-w-[48rem] border-separate border-spacing-0 text-sm">
           <thead>
             <tr>
@@ -136,7 +136,7 @@ export function RoleActionsTable({
                   className="border-b border-border bg-surface-2 px-2 py-2.5 text-center text-xs font-semibold text-fg-secondary"
                 >
                   {action.nameTh}
-                  <span className="block font-mono text-[10px] font-normal text-fg-muted">{action.code}</span>
+                  <span className="block font-mono text-[13px] font-normal text-fg-muted">{action.code}</span>
                 </th>
               ))}
             </tr>
@@ -165,7 +165,7 @@ export function RoleActionsTable({
                         </Badge>
                       )}
                     </div>
-                    <span className="block font-mono text-[11px] text-fg-muted">
+                    <span className="block font-mono text-[13px] text-fg-muted">
                       {role.code} · ผู้ใช้ {role.userCount} คน
                     </span>
                   </th>

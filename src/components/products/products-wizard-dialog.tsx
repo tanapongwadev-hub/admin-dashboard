@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/incompatible-library -- Subscription-based RHF/TanStack components explicitly opt out of React Compiler via "use no memo" below. */
 "use client";
 
 import * as React from "react";
@@ -108,9 +109,9 @@ let bomRowKeySeed = 0;
 // at a glance — see the comment at its one call site in the "bom" phase JSX.
 const BOM_ROW_ACCENTS = [
   { badge: "bg-primary-soft text-primary", band: "bg-primary-soft/60", strip: "border-l-primary" },
-  { badge: "bg-success-soft text-success", band: "bg-success-soft/60", strip: "border-l-success" },
-  { badge: "bg-warning-soft text-warning", band: "bg-warning-soft/60", strip: "border-l-warning" },
-  { badge: "bg-info-soft text-info", band: "bg-info-soft/60", strip: "border-l-info" },
+  { badge: "bg-success-soft text-success-fg", band: "bg-success-soft/60", strip: "border-l-success" },
+  { badge: "bg-warning-soft text-warning-fg", band: "bg-warning-soft/60", strip: "border-l-warning" },
+  { badge: "bg-info-soft text-info-fg", band: "bg-info-soft/60", strip: "border-l-info" },
 ] as const;
 
 interface BomItemDraft {
@@ -221,7 +222,7 @@ function Stepper({ current }: { current: number }) {
               </span>
               <span
                 className={cn(
-                  "hidden max-w-20 truncate text-center text-[10px] font-medium sm:block",
+                  "hidden max-w-20 truncate text-center text-xs font-medium sm:block",
                   state === "upcoming" ? "text-fg-muted" : "text-fg-secondary"
                 )}
               >
@@ -270,6 +271,8 @@ export function ProductsWizardView({
   canCreateWorkflow: boolean;
   onSaved: () => void;
 }) {
+  "use no memo"; // Subscription-based library APIs must keep their live reads.
+
   const isEdit = !!product;
   // "form" = the 5-step product form.
   //
@@ -774,7 +777,7 @@ export function ProductsWizardView({
                 disabled={isLoadingBom || isLoadingWorkflow}
                 className="flex items-center gap-3 rounded-lg border border-border-strong bg-surface p-4 text-left transition-colors hover:border-primary hover:bg-surface-2 disabled:pointer-events-none disabled:opacity-60"
               >
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-info-soft text-info">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-info-soft text-info-fg">
                   <WorkflowIcon className="size-5" aria-hidden="true" />
                 </span>
                 <span className="flex min-w-0 flex-1 flex-col">
@@ -809,7 +812,7 @@ export function ProductsWizardView({
           <span
             className={cn(
               "flex size-14 items-center justify-center rounded-full",
-              bomDoneResult.activated ? "bg-success-soft text-success" : "bg-primary-soft text-primary"
+              bomDoneResult.activated ? "bg-success-soft text-success-fg" : "bg-primary-soft text-primary"
             )}
           >
             <CheckCircle2 className="size-8" aria-hidden="true" />
@@ -825,7 +828,7 @@ export function ProductsWizardView({
           <span
             className={cn(
               "inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium",
-              bomDoneResult.activated ? "border-transparent bg-success-soft text-success" : "border-border-strong bg-transparent text-fg-secondary"
+              bomDoneResult.activated ? "border-transparent bg-success-soft text-success-fg" : "border-border-strong bg-transparent text-fg-secondary"
             )}
           >
             <span className="size-1.5 rounded-full bg-current" />
@@ -870,7 +873,7 @@ export function ProductsWizardView({
           <span
             className={cn(
               "flex size-14 items-center justify-center rounded-full",
-              workflowDoneResult.activated ? "bg-success-soft text-success" : "bg-primary-soft text-primary"
+              workflowDoneResult.activated ? "bg-success-soft text-success-fg" : "bg-primary-soft text-primary"
             )}
           >
             <CheckCircle2 className="size-8" aria-hidden="true" />
@@ -887,7 +890,7 @@ export function ProductsWizardView({
             className={cn(
               "inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium",
               workflowDoneResult.activated
-                ? "border-transparent bg-success-soft text-success"
+                ? "border-transparent bg-success-soft text-success-fg"
                 : "border-border-strong bg-transparent text-fg-secondary"
             )}
           >
@@ -978,7 +981,7 @@ export function ProductsWizardView({
                         onClick={() => removeWorkflowStep(item.key)}
                         disabled={workflowSteps.length === 1}
                         aria-label={`ลบขั้นตอนที่ ${index + 1}`}
-                        className="rounded-md p-1 text-fg-muted transition-colors hover:bg-danger-soft hover:text-danger disabled:pointer-events-none disabled:opacity-40"
+                        className="rounded-md p-1 text-fg-muted transition-colors hover:bg-danger-soft hover:text-danger-fg disabled:pointer-events-none disabled:opacity-40"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
@@ -1005,7 +1008,7 @@ export function ProductsWizardView({
                         </Select>
                       )}
                       {processSteps.length > 0 && (
-                        <p className="text-[11px] text-fg-muted">ขั้นตอนที่เลือกในรายการอื่นแล้วจะไม่แสดงซ้ำที่นี่</p>
+                        <p className="text-xs text-fg-muted">ขั้นตอนที่เลือกในรายการอื่นแล้วจะไม่แสดงซ้ำที่นี่</p>
                       )}
                     </div>
                     <div className="flex flex-col gap-1.5">
@@ -1118,7 +1121,7 @@ export function ProductsWizardView({
                     onClick={() => removeBomItem(item.key)}
                     disabled={bomItems.length === 1}
                     aria-label={`ลบรายการที่ ${index + 1}`}
-                    className="shrink-0 rounded-md p-1 text-fg-muted transition-colors hover:bg-danger-soft hover:text-danger disabled:pointer-events-none disabled:opacity-40"
+                    className="shrink-0 rounded-md p-1 text-fg-muted transition-colors hover:bg-danger-soft hover:text-danger-fg disabled:pointer-events-none disabled:opacity-40"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
@@ -1140,7 +1143,7 @@ export function ProductsWizardView({
                         </SelectContent>
                       </Select>
                     )}
-                    <p className="text-[11px] text-fg-muted">วัตถุดิบที่เลือกในรายการอื่นแล้วจะไม่แสดงซ้ำที่นี่</p>
+                    <p className="text-xs text-fg-muted">วัตถุดิบที่เลือกในรายการอื่นแล้วจะไม่แสดงซ้ำที่นี่</p>
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <Label>จำนวน</Label>

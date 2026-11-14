@@ -71,7 +71,7 @@ function activeChainIds(menus: ResolvedMenuNode[], pathname: string): Set<string
 //   open parent  → bg-surface-2 fill + full-strength text
 //   idle         → transparent + secondary text + bg-surface-2 on hover
 const rowBase =
-  "group relative flex w-full min-w-0 items-center rounded-lg text-[13px] font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
+  "group relative flex w-full min-w-0 items-center rounded-lg text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
 
 function rowTone(active: boolean, emphasized = false) {
   if (active) return "bg-primary-soft text-primary font-semibold";
@@ -255,7 +255,7 @@ export function SidebarNav({
     <nav className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-2.5 py-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       <div className="flex flex-col gap-0.5">
         {!collapsed && (
-          <p className="mb-2 px-2.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-fg-muted">พื้นที่ทำงาน</p>
+          <p className="mb-2 px-2.5 text-xs font-semibold uppercase tracking-[0.12em] text-fg-muted">พื้นที่ทำงาน</p>
         )}
         {items.length === 0 && !collapsed && (
           <p className="px-2.5 py-1 text-xs text-fg-muted">ไม่มีรายการเมนูสำหรับสิทธิ์การใช้งานของคุณ</p>

@@ -141,8 +141,8 @@ export function MaterialPcClient({
   }
 
   const collectionHeader = (
-    <div className="min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <TabsList aria-label="ประเภทรายการวัสดุ" className="h-auto min-w-max gap-1 p-1">
+    <div className="min-w-0">
+        <TabsList aria-label="ประเภทรายการวัสดุ" className="flex h-auto w-full flex-wrap gap-1 p-1 sm:w-fit">
           <TabsTrigger value="all" className="gap-2">รายการปกติ <span className="text-xs tabular-nums">{tabCounts.all.toLocaleString("th-TH")}</span></TabsTrigger>
           <TabsTrigger value="raw" className="gap-2">Pipe / Sheet / Coil <span className="text-xs tabular-nums">{tabCounts.raw.toLocaleString("th-TH")}</span></TabsTrigger>
           <TabsTrigger value="bom" disabled={!canViewBom} title={!canViewBom ? "ต้องมีสิทธิ์ดู Material BOM" : undefined} className="gap-2">รายการวัสดุ ภายใน {canViewBom && <span className="text-xs tabular-nums">{tabCounts.bom.toLocaleString("th-TH")}</span>}</TabsTrigger>

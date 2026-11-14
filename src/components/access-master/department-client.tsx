@@ -226,7 +226,7 @@ export function DepartmentClient({ departments }: { departments: Department[] })
       <div className="flex justify-end">
         <Button onClick={() => setForm(null)}><Plus className="mr-1.5 size-4" aria-hidden />เพิ่มแผนก</Button>
       </div>
-      <div className="overflow-x-auto rounded-xl border border-border bg-surface">
+      <div className="overflow-x-auto rounded-lg border border-border bg-surface">
         <Table>
           <TableHeader>
             <TableRow>

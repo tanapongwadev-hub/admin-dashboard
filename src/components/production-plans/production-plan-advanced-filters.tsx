@@ -51,7 +51,7 @@ export function ProductionPlanAdvancedFilters({
           <Filter className="size-4" />
           ตัวกรองขั้นสูง
           {count > 0 && (
-            <span className="flex size-5 items-center justify-center rounded-full bg-primary text-[11px] text-primary-fg">
+            <span className="flex size-5 items-center justify-center rounded-full bg-primary text-xs text-primary-fg">
               {count}
             </span>
           )}

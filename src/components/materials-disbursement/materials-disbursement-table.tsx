@@ -80,24 +80,14 @@ const TYPE_LABELS: Record<DisbursementType, string> = {
 // everywhere it appears: the create dialog, and now every list view here.
 const TYPE_META: Record<DisbursementType, { icon: typeof Factory; tone: string }> = {
   production: { icon: Factory, tone: "bg-primary-soft text-primary" },
-  stock_cut: { icon: PackageMinus, tone: "bg-warning-soft text-warning" },
+  stock_cut: { icon: PackageMinus, tone: "bg-warning-soft text-warning-fg" },
 };
 
 function formatDate(value: string): string {
   return new Intl.DateTimeFormat("th-TH", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(value));
 }
 
-// Same status-driven color language as materials-receiving-table.tsx's
-// STATUS_ACCENT (see AGENTS.md § Material Receiving: status-driven gradient
-// accent) — draft = warm/needs action, confirmed = settled, cancelled =
-// deliberately muted. `barColor` is applied via inline style, not a
-// `border-l-*` Tailwind class, for the same cascade-precedence reason
-// documented there.
-const STATUS_ACCENT: Record<DisbursementStatus, { wash: string; barColor: string }> = {
-  draft: { wash: "from-warning-soft/70 via-surface-2 to-surface-2", barColor: "var(--warning)" },
-  confirmed: { wash: "from-success-soft/60 via-surface-2 to-surface-2", barColor: "var(--success)" },
-  cancelled: { wash: "from-surface-2 via-surface-2 to-surface-2", barColor: "var(--border-strong)" },
-};
+// Status meaning is carried by shared text badges, consistent with receiving.
 
 function materialsSummary(items: MaterialsDisbursement["items"]): string {
   if (items.length === 0) return "—";
@@ -173,10 +163,10 @@ interface MaterialsDisbursementRowProps {
 function DataSheetRow({ label, value }: { label: string; value: string }) {
   return (
     <tr className="border-b border-border last:border-b-0">
-      <th scope="row" className="w-[42%] py-2.5 pl-[18px] pr-3 text-left align-top text-[12.5px] font-normal text-fg-muted">
+      <th scope="row" className="w-[42%] py-2.5 pl-[18px] pr-3 text-left align-top text-sm font-normal text-fg-muted">
         {label}
       </th>
-      <td className="py-2.5 pr-[18px] text-left align-top text-[13px] font-medium text-fg break-words">{value}</td>
+      <td className="py-2.5 pr-[18px] text-left align-top text-sm font-medium text-fg break-words">{value}</td>
     </tr>
   );
 }
@@ -203,7 +193,6 @@ function MaterialsDisbursementCard({
   onDelete,
 }: MaterialsDisbursementRowProps) {
   const statusDisplay = STATUS_DISPLAY[disbursement.status];
-  const accent = STATUS_ACCENT[disbursement.status];
   const typeMeta = TYPE_META[disbursement.disbursementType];
   const TypeIcon = typeMeta.icon;
   const actions = getMaterialsDisbursementRowActions(disbursement, canUpdate, canConfirm, canCancel, canDelete, {
@@ -218,14 +207,13 @@ function MaterialsDisbursementCard({
 
   return (
     <article
-      className="group flex h-full flex-col overflow-hidden rounded-2xl border-y border-r border-l-4 border-border bg-surface transition-shadow duration-200 hover:shadow-[0_8px_24px_-6px_rgba(0,0,0,0.08)]"
-      style={{ borderLeftColor: accent.barColor }}
+      className="group flex h-full flex-col overflow-hidden rounded-lg border border-border bg-surface"
       role="group"
       aria-label={`บัตรรายการจ่ายออก ${disbursement.disbursementNo}`}
     >
-      <div className={cn("relative flex aspect-[4/3] items-center justify-center overflow-hidden bg-gradient-to-br", accent.wash)}>
+      <div className="relative flex aspect-[16/9] items-center justify-center overflow-hidden bg-surface-2">
         {disbursement.items.length === 0 ? (
-          <span className={cn("flex size-14 items-center justify-center rounded-2xl bg-surface/80 backdrop-blur-[1px]", typeMeta.tone)}>
+          <span className={cn("flex size-14 items-center justify-center rounded-xl bg-surface/80 backdrop-blur-[1px]", typeMeta.tone)}>
             <TypeIcon className="size-7" aria-hidden="true" />
           </span>
         ) : (
@@ -259,30 +247,30 @@ function MaterialsDisbursementCard({
       </div>
 
       <div className="flex flex-1 flex-col px-[18px] pb-1 pt-[18px]">
-        <p className="mb-2 font-mono text-[11px] leading-none tracking-[0.05em] text-fg-secondary">
+        <p className="mb-2 font-mono text-[13px] leading-none tracking-[0.05em] text-fg-secondary">
           {disbursement.disbursementNo}
         </p>
         <h2
-          className="mb-1 truncate text-[17px] font-semibold leading-tight tracking-[-0.01em] text-fg"
+          className="mb-1 truncate text-lg font-semibold leading-tight tracking-[-0.01em] text-fg"
           title={materialsSummary(disbursement.items)}
         >
           {materialsSummary(disbursement.items)}
         </h2>
-        <p className="truncate text-[12.5px] leading-tight text-fg-secondary">{TYPE_LABELS[disbursement.disbursementType]}</p>
+        <p className="truncate text-sm leading-tight text-fg-secondary">{TYPE_LABELS[disbursement.disbursementType]}</p>
       </div>
 
-      <div className="mx-[18px] mb-3.5 mt-2.5 flex items-baseline justify-between gap-3 rounded-xl bg-gradient-to-br from-primary-soft/60 to-transparent px-3.5 py-3">
+      <div className="mx-4 mb-4 mt-3 flex items-baseline justify-between gap-3 rounded-md bg-surface-2 px-4 py-3">
         <div className="min-w-0">
-          <span className="text-[10px] font-semibold uppercase leading-none tracking-[0.08em] text-primary">
+          <span className="text-xs font-semibold uppercase leading-none tracking-[0.08em] text-primary">
             {disbursement.status === "draft" ? "จำนวนที่ขอเบิก" : "จำนวนที่จ่ายออก"}
           </span>
           <div className="mt-1.5">
-            <span className="text-[32px] font-bold leading-none tracking-[-0.025em] tabular-nums text-fg">
+            <span className="text-3xl font-semibold leading-none tracking-[-0.025em] tabular-nums text-fg">
               {formatNumber(total)}
             </span>
           </div>
         </div>
-        <Badge variant="neutral" style={{ fontSize: "10.5px" }}>
+        <Badge variant="neutral">
           {disbursement.items.length} รายการ
         </Badge>
       </div>
@@ -334,7 +322,6 @@ function MaterialsDisbursementListItem({
   onDelete,
 }: MaterialsDisbursementRowProps) {
   const statusDisplay = STATUS_DISPLAY[disbursement.status];
-  const accent = STATUS_ACCENT[disbursement.status];
   const typeMeta = TYPE_META[disbursement.disbursementType];
   const TypeIcon = typeMeta.icon;
   const actions = getMaterialsDisbursementRowActions(disbursement, canUpdate, canConfirm, canCancel, canDelete, {
@@ -349,11 +336,9 @@ function MaterialsDisbursementListItem({
   return (
     <article
       className={cn(
-        "group grid grid-cols-[1fr_auto] items-center gap-3 rounded-xl border-y border-r border-l-4 border-border bg-gradient-to-r bg-surface px-3 py-2.5 transition-colors hover:border-border-strong sm:grid-cols-[auto_1fr_auto_auto] sm:gap-4 sm:px-4 sm:py-3",
-        accent.wash,
+        "group grid grid-cols-[1fr_auto] items-center gap-3 rounded-lg border border-border bg-surface px-3 py-2.5 transition-colors hover:border-border-strong sm:grid-cols-[auto_1fr_auto_auto] sm:gap-4 sm:px-4 sm:py-3",
         disbursement.status === "cancelled" && "opacity-70"
       )}
-      style={{ borderLeftColor: accent.barColor }}
       role="group"
       aria-label={`รายการจ่ายออก ${disbursement.disbursementNo}`}
     >
@@ -367,12 +352,12 @@ function MaterialsDisbursementListItem({
 
       <div className="col-span-2 min-w-0 sm:col-span-1">
         <div className="mb-1 flex flex-wrap items-center gap-2">
-          <span className="font-mono text-[11px] font-semibold leading-none text-fg">{disbursement.disbursementNo}</span>
-          <Badge variant={statusDisplay.variant} style={{ fontSize: "10.5px", padding: "1px 6px" }}>
+          <span className="font-mono text-[13px] font-semibold leading-none text-fg">{disbursement.disbursementNo}</span>
+          <Badge variant={statusDisplay.variant}>
             {statusDisplay.label}
           </Badge>
         </div>
-        <h2 className="mb-1 truncate text-sm font-semibold leading-tight text-fg" title={materialsSummary(disbursement.items)}>
+        <h2 className="mb-1 truncate text-lg font-semibold leading-tight text-fg" title={materialsSummary(disbursement.items)}>
           {materialsSummary(disbursement.items)}
         </h2>
         <div className="flex items-center gap-2 truncate text-xs leading-tight text-fg-secondary">
@@ -383,12 +368,12 @@ function MaterialsDisbursementListItem({
       </div>
 
       <div className="text-right">
-        <p className="mb-0.5 text-[10px] uppercase leading-none tracking-[0.08em] text-fg-muted">
+        <p className="mb-0.5 text-xs uppercase leading-none tracking-[0.08em] text-fg-muted">
           {disbursement.status === "draft" ? "ขอเบิก" : "จ่ายออก"}
         </p>
         <p className="text-sm font-bold leading-none tracking-[-0.01em] tabular-nums text-fg sm:text-base">
           {formatNumber(total)}
-          <span className="ml-1 text-[11px] font-medium text-fg-muted">· {disbursement.items.length} รายการ</span>
+          <span className="ml-1 text-xs font-medium text-fg-muted">· {disbursement.items.length} รายการ</span>
         </p>
       </div>
 
@@ -460,9 +445,9 @@ function MaterialsDisbursementCollection({
   }
 
   return (
-    <div className="max-h-[68vh] overflow-auto rounded-md border border-border bg-surface">
-      <Table>
-        <TableHeader className="sticky top-0 z-20 bg-surface shadow-[0_1px_0_0_var(--border)]">
+    <div className="max-h-[68vh] overflow-auto rounded-lg border border-border bg-surface">
+      <Table className="min-w-[48rem]">
+        <TableHeader className="sticky top-0 z-20 bg-surface-2 shadow-[0_1px_0_0_var(--border)]">
           <TableRow>
             <TableHead>วัสดุ</TableHead>
             <TableHead>เลขที่ใบจ่ายออก</TableHead>
@@ -475,7 +460,6 @@ function MaterialsDisbursementCollection({
         <TableBody>
           {disbursements.map((disbursement) => {
             const status = STATUS_DISPLAY[disbursement.status];
-            const accent = STATUS_ACCENT[disbursement.status];
             const actions = getMaterialsDisbursementRowActions(
               disbursement,
               canUpdate,
@@ -487,8 +471,7 @@ function MaterialsDisbursementCollection({
             return (
               <TableRow
                 key={disbursement.id}
-                className={cn("border-l-4 bg-gradient-to-r", accent.wash, disbursement.status === "cancelled" && "opacity-70")}
-                style={{ borderLeftColor: accent.barColor }}
+                className={cn(disbursement.status === "cancelled" && "opacity-70")}
               >
                 <TableCell className="text-fg-secondary">
                   {disbursement.items.length === 0 ? (
@@ -520,11 +503,11 @@ function MaterialsDisbursementCollection({
                 <TableCell>
                   <div className="flex flex-col gap-1">
                     <div>
-                      <span className="mr-1.5 text-[10px] uppercase tracking-wide text-fg-muted">เลขที่ใบจ่ายออก</span>
+                      <span className="mr-1.5 text-xs uppercase tracking-wide text-fg-muted">เลขที่ใบจ่ายออก</span>
                       <span className="font-mono text-xs font-semibold text-fg">{disbursement.disbursementNo}</span>
                     </div>
                     <div>
-                      <span className="mr-1.5 text-[10px] uppercase tracking-wide text-fg-muted">ประเภท</span>
+                      <span className="mr-1.5 text-xs uppercase tracking-wide text-fg-muted">ประเภท</span>
                       <span className="text-xs text-fg-secondary">{TYPE_LABELS[disbursement.disbursementType]}</span>
                     </div>
                   </div>

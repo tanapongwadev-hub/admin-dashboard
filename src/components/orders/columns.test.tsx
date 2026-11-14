@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/incompatible-library -- Subscription-based RHF/TanStack components explicitly opt out of React Compiler via "use no memo" below. */
 import test from "node:test";
 import assert from "node:assert/strict";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -17,6 +18,8 @@ const order: Order = {
 };
 
 function TableBody({ order, opts }: { order: Order; opts: Parameters<typeof getOrderColumns>[0] }) {
+  "use no memo"; // Subscription-based library APIs must keep their live reads.
+
   const columns = getOrderColumns(opts);
   const table = useReactTable({ data: [order], columns, getCoreRowModel: getCoreRowModel() });
   return (

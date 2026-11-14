@@ -164,6 +164,7 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 4px);
 
   --font-sans: var(--font-plex-sans-thai);
   --font-mono: var(--font-geist-mono);
@@ -196,6 +197,23 @@ body {
   background: var(--bg);
   color: var(--fg);
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  accent-color: var(--primary);
+}
+
+/* Screen density must not change physical document/QR typography. */
+@media screen {
+  /* The authenticated workspace scrolls inside main, never the document.
+     Keep wide, independently scrollable data tables from widening the mobile
+     layout viewport while streamed content is arriving. */
+  html:has(#dashboard-shell),
+  body:has(#dashboard-shell) {
+    overflow: clip;
+  }
+
+  body {
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
 }
 
 /* Self-contained data regions on /materials. The intrinsic size prevents a

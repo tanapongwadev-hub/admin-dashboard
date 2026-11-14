@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/ui/page-title";
 import { cookies } from "next/headers";
 import { ShieldAlert } from "lucide-react";
 import { MaterialJobOrderClient } from "@/components/material-job-orders/job-order-client";
@@ -62,7 +63,7 @@ export async function MaterialJobOrdersPageContent({
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-xl font-semibold text-fg">{title}</h1>
+        <PageTitle>{title}</PageTitle>
         <p className="mt-1 text-sm text-fg-muted">
           รายการเตรียมวัตถุดิบจากแผนการผลิตที่อนุมัติแล้ว — พิมพ์ใบจัดงาน
           หยิบสินค้าตาม QR ที่กันไว้ แล้วจ่ายออก

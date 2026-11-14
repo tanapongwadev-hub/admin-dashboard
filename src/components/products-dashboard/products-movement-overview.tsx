@@ -45,9 +45,9 @@ function StockHealth({ stock }: { stock: ProductsOverview["stock"] }) {
     { label: "หมดสต็อก", value: stock.outOfStock, bar: "bg-danger", text: "text-danger-fg" },
   ];
   return (
-    <Card className="p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+    <Card className="p-5">
       <div className="flex items-baseline justify-between gap-3">
-        <h2 className="text-sm font-semibold text-fg">สถานะสต็อกสินค้า</h2>
+        <h2 className="text-lg font-semibold text-fg">สถานะสต็อกสินค้า</h2>
         <p className="text-xs text-fg-muted">{nf.format(stock.total)} รายการที่ใช้งาน · คงเหลือรวม {nf.format(stock.totalQty)}</p>
       </div>
       <div className="mt-3 flex h-3 overflow-hidden rounded-full bg-surface-2" role="img" aria-label="สัดส่วนสถานะสต็อก">
@@ -84,7 +84,7 @@ export function ProductsMovementOverview({ overview, today }: { overview: Produc
     <section className="flex flex-col gap-4" aria-label="รับเข้าและจ่ายออกสินค้า">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h2 className="flex items-center gap-2 text-base font-semibold text-fg">
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-fg">
             <CalendarRange className="size-4 text-primary" aria-hidden="true" />
             รับเข้า – จ่ายออก
           </h2>
@@ -96,8 +96,8 @@ export function ProductsMovementOverview({ overview, today }: { overview: Produc
       </div>
 
       <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-        <Kpi label="รับเข้า" value={nf.format(totals.receivedQty)} note={`${nf.format(totals.receivedDocs)} รายการ`} icon={ArrowDownToLine} tone="bg-success-soft text-success" />
-        <Kpi label="จ่ายออก" value={nf.format(totals.disbursedQty)} note={`${nf.format(totals.disbursedDocs)} รายการ`} icon={ArrowUpFromLine} tone="bg-warning-soft text-warning" />
+        <Kpi label="รับเข้า" value={nf.format(totals.receivedQty)} note={`${nf.format(totals.receivedDocs)} รายการ`} icon={ArrowDownToLine} tone="bg-success-soft text-success-fg" />
+        <Kpi label="จ่ายออก" value={nf.format(totals.disbursedQty)} note={`${nf.format(totals.disbursedDocs)} รายการ`} icon={ArrowUpFromLine} tone="bg-warning-soft text-warning-fg" />
         <Kpi label="สุทธิ (รับ − จ่าย)" value={`${net > 0 ? "+" : ""}${nf.format(net)}`} note={net >= 0 ? "สต็อกเพิ่มขึ้นในช่วงนี้" : "สต็อกลดลงในช่วงนี้"} icon={Scale} tone="bg-primary-soft text-primary" />
         <Kpi label="คงเหลือรวมตอนนี้" value={nf.format(stock.totalQty)} note={`ต่ำ/หมด ${nf.format(stock.lowStock + stock.outOfStock)} จาก ${nf.format(stock.total)} รายการ`} icon={PackageCheck} tone="bg-surface-2 text-fg-secondary" />
       </div>
@@ -243,7 +243,7 @@ export function ProductsMovementOverview({ overview, today }: { overview: Produc
                         <span className="font-mono text-xs text-primary">{r.productCode}</span>
                         <span className="ml-2 text-fg-secondary">{r.productName}</span>
                       </p>
-                      <p className="truncate text-[11px] text-fg-muted">
+                      <p className="truncate text-xs text-fg-muted">
                         <span className="font-mono">{r.referenceNo}</span> · {formatThaiDate(r.date)}
                       </p>
                     </div>

@@ -34,7 +34,7 @@ export function ProductionPlanApproveDialog({
       <DialogContent fullScreenOnMobile size="lg">
         <DialogHeader>
           <div className="flex items-start gap-3">
-            <span className="flex size-10 items-center justify-center rounded-full bg-info-soft text-info">
+            <span className="flex size-10 items-center justify-center rounded-full bg-info-soft text-info-fg">
               <CheckCircle2 className="size-5" />
             </span>
             <div>

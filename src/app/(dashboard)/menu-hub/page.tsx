@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/ui/page-title";
 import type { Metadata } from "next";
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
@@ -66,7 +67,7 @@ export default async function MenuHubPage({ searchParams }: { searchParams: Prom
     <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-fg">รวมเมนู</h1>
+          <PageTitle>รวมเมนู</PageTitle>
           <p className="mt-1 text-sm text-fg-secondary">
             {q ? `พบ ${total} หน้า จากคำค้น “${q}”` : `ทุกหน้าที่คุณเข้าถึงได้ ${total} หน้า ใน ${sections.length} หมวด`}
           </p>
@@ -75,7 +76,7 @@ export default async function MenuHubPage({ searchParams }: { searchParams: Prom
           <div className="relative flex-1">
             <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-fg-muted" aria-hidden />
             <label htmlFor="hub-q" className="sr-only">ค้นหาเมนู</label>
-            <Input id="hub-q" name="q" defaultValue={q} placeholder="ค้นหาเมนู…" className="h-11 rounded-full bg-surface pl-10" autoComplete="off" />
+            <Input id="hub-q" name="q" defaultValue={q} placeholder="ค้นหาเมนู…" className="h-11 rounded-md bg-surface pl-10" autoComplete="off" />
           </div>
           {q && (
             <Button asChild variant="ghost" className="h-11 rounded-full">
@@ -86,9 +87,9 @@ export default async function MenuHubPage({ searchParams }: { searchParams: Prom
       </header>
 
       {sections.length > 1 && (
-        <nav aria-label="ข้ามไปยังหมวด" className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <nav aria-label="ข้ามไปยังหมวด" className="flex flex-wrap gap-2">
           {sections.map(({ root, accent }) => (
-            <a key={root.id} href={`#hub-${root.id}`} className="flex shrink-0 items-center gap-2 rounded-full border border-border bg-surface px-3.5 py-1.5 text-sm text-fg-secondary transition-colors hover:bg-surface-2 hover:text-fg">
+            <a key={root.id} href={`#hub-${root.id}`} className="flex min-h-10 shrink-0 items-center gap-2 rounded-md border border-border bg-surface px-3.5 py-1.5 text-sm text-fg-secondary transition-colors hover:bg-surface-2 hover:text-fg">
               <span className={`size-2 rounded-full ${accent.dot}`} aria-hidden />
               {root.name}
             </a>
@@ -97,7 +98,7 @@ export default async function MenuHubPage({ searchParams }: { searchParams: Prom
       )}
 
       {sections.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border-strong py-16 text-center">
+        <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border-strong py-16 text-center">
           <SearchX className="size-8 text-fg-muted" aria-hidden />
           <p className="text-sm font-medium text-fg">ไม่พบเมนูที่ตรงกับคำค้น</p>
           <Button asChild variant="outline" size="sm"><Link href="/menu-hub">ดูเมนูทั้งหมด</Link></Button>
@@ -110,14 +111,14 @@ export default async function MenuHubPage({ searchParams }: { searchParams: Prom
                 <span className={`flex size-9 items-center justify-center rounded-xl ${accent.tile}`}>
                   <HubIcon Icon={root.Icon} className="size-[18px]" />
                 </span>
-                <h2 id={`hub-title-${root.id}`} className="text-base font-semibold text-fg">{root.name}</h2>
+                <h2 id={`hub-title-${root.id}`} className="text-lg font-semibold text-fg">{root.name}</h2>
                 <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs text-fg-muted">{links.length}</span>
                 <span className="h-px flex-1 bg-border" aria-hidden />
               </div>
               <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                 {links.map((link) => (
                   <li key={link.id}>
-                    <Link href={link.href} className={`group flex h-full items-center gap-3 rounded-xl border border-border bg-surface p-3.5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${accent.hover}`}>
+                    <Link href={link.href} className={`group flex h-full items-center gap-3 rounded-lg border border-border bg-surface p-3.5 transition-colors ${accent.hover}`}>
                       <span className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${accent.tile}`}>
                         <HubIcon Icon={link.Icon} className="size-5" />
                       </span>

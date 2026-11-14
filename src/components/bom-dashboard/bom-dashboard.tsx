@@ -42,7 +42,7 @@ function analyse(owners: Owner[], listed: BomOverviewOwner[]) {
 const pct = (value: number, total: number) => (total === 0 ? 0 : Math.round((value / total) * 100));
 
 function Kpi({ label, value, hint, tone = "default", icon: Icon }: { label: string; value: string; hint?: string; tone?: "default" | "success" | "warning" | "danger"; icon: typeof Layers }) {
-  const toneClass = { default: "bg-primary-soft text-primary", success: "bg-success-soft text-success", warning: "bg-warning-soft text-warning", danger: "bg-danger-soft text-danger" }[tone];
+  const toneClass = { default: "bg-primary-soft text-primary", success: "bg-success-soft text-success-fg", warning: "bg-warning-soft text-warning-fg", danger: "bg-danger-soft text-danger-fg" }[tone];
   return (
     <div className="flex items-center gap-3 rounded-lg border border-border bg-surface p-4">
       <span className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${toneClass}`}>
@@ -75,7 +75,7 @@ function Coverage({ label, value, total, tone }: { label: string; value: number;
   );
 }
 
-function OwnerList({ title, empty, owners, scope, icon: Icon, tone }: { title: string; empty: string; owners: { owner: Owner; note?: string }[]; scope: "products" | "materials"; icon: typeof Layers; tone: "warning" | "danger" }) {
+function OwnerList({ title, empty, owners, icon: Icon, tone }: { title: string; empty: string; owners: { owner: Owner; note?: string }[]; scope: "products" | "materials"; icon: typeof Layers; tone: "warning" | "danger" }) {
   const shown = owners.slice(0, 6);
   return (
     <div className="rounded-lg border border-border bg-surface">

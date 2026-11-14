@@ -64,7 +64,7 @@ export function NotificationsMenu() {
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-fg">{n.title}</p>
                   <p className="mt-0.5 line-clamp-2 text-xs text-fg-muted">{n.description}</p>
-                  <p className="mt-1 text-[11px] text-fg-muted">{n.time}</p>
+                  <p className="mt-1 text-xs text-fg-muted">{n.time}</p>
                 </div>
                 {!n.read && <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />}
               </div>

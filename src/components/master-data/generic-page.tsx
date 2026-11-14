@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/ui/page-title";
 import { cookies } from "next/headers";
 import { ShieldAlert } from "lucide-react";
 import { getCurrentSession } from "@/lib/session";
@@ -73,7 +74,7 @@ export async function MasterDataResourcePage<TEntity extends BaseMasterEntity>({
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-xl font-semibold text-fg">{resource.pageTitle}</h1>
+        <PageTitle>{resource.pageTitle}</PageTitle>
         <p className="mt-1 text-sm text-fg-muted">{resource.pageDescription}</p>
       </div>
 

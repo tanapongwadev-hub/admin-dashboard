@@ -73,7 +73,7 @@ export function ProductStockDialog({ product, canManageStock, onClose, onSaved }
         <div className="min-h-0 space-y-5 overflow-y-auto p-6">
           <ProductStockBalance product={product} quantity={stock?.quantity} />
           {stock && <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs text-fg-secondary"><p>รับเข้าสะสม {formatProductQuantity(stock.receivedQuantity)}</p><p>จ่ายออกสะสม {formatProductQuantity(stock.issuedQuantity)}</p></div>}
-          {error && <div role="alert" className="rounded-md border border-danger/30 bg-danger-soft p-3 text-sm text-danger">{error}{!stock && <Button variant="secondary" size="sm" className="ml-2" onClick={() => setReload((value) => value + 1)}>โหลดใหม่</Button>}</div>}
+          {error && <div role="alert" className="rounded-md border border-danger/30 bg-danger-soft p-3 text-sm text-danger-fg">{error}{!stock && <Button variant="secondary" size="sm" className="ml-2" onClick={() => setReload((value) => value + 1)}>โหลดใหม่</Button>}</div>}
           {!stock && !error && <p role="status" className="text-sm text-fg-muted">กำลังโหลดยอดคงเหลือ…</p>}
           {canManageStock && product.isActive && stock && (
             <form onSubmit={(event) => void form.handleSubmit(submit)(event)} className="rounded-md border border-border bg-surface-2/40 p-4">

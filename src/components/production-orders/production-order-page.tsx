@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/ui/page-title";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
@@ -81,7 +82,7 @@ export async function ProductionOrderPageContent({
       <div className="flex flex-col gap-4">
         {backLink}
         <div className="flex flex-wrap items-center gap-2">
-          <h1 className="font-mono text-xl font-semibold text-fg">{order.code}</h1>
+          <PageTitle className="font-mono">{order.code}</PageTitle>
           <Badge variant="info">ระบบ Lot</Badge>
           {order.status === "COMPLETED" && <Badge variant="success">เสร็จสิ้น</Badge>}
         </div>

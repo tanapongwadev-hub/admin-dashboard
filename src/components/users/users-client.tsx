@@ -150,8 +150,8 @@ export function UsersClient({
           </p>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-border bg-surface">
-          <Table>
+        <div className="overflow-x-auto rounded-lg border border-border bg-surface">
+          <Table className="min-w-[48rem]">
             <TableHeader>
               <TableRow>
                 <TableHead>ผู้ใช้</TableHead>
@@ -182,7 +182,7 @@ export function UsersClient({
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm">
+                    <TableCell className="min-w-64 text-sm">
                       {user.assignments && user.assignments.length > 0 ? (
                         <ul className="flex flex-col gap-1">
                           {user.assignments.map((assignment) => (

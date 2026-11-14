@@ -44,7 +44,7 @@ export function ProductionPlanImportDialog({
       <DialogContent fullScreenOnMobile size="lg">
         <DialogHeader>
           <div className="flex items-start gap-3">
-            <span className="flex size-10 items-center justify-center rounded-lg bg-success-soft text-success">
+            <span className="flex size-10 items-center justify-center rounded-lg bg-success-soft text-success-fg">
               <FileSpreadsheet className="size-5" />
             </span>
             <div>

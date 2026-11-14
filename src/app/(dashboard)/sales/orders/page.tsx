@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/ui/page-title";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { SalesAccessDenied } from "@/components/sales/sales-access-denied";
@@ -37,7 +38,7 @@ export default async function SalesOrdersPage({
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-xl font-semibold text-fg">ออเดอร์ขาย</h1>
+        <PageTitle>ออเดอร์ขาย</PageTitle>
         <p className="mt-1 text-sm text-fg-muted">
           สร้างออเดอร์ตามคำสั่งซื้อของลูกค้า — ยืนยันแล้วระบบสร้างใบจัดงานขายและจองกล่อง FG ให้อัตโนมัติ
         </p>

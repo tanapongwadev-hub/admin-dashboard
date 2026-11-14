@@ -90,7 +90,7 @@ export function MaterialPcDetailsView({
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       <header className="shrink-0 border-b border-border px-5 py-5 pr-12 sm:px-6">
-        <h2 className="text-base font-semibold text-fg">รายละเอียด Materials</h2>
+        <h2 className="text-lg font-semibold text-fg">รายละเอียด Materials</h2>
         <p className="mt-1 text-sm text-fg-muted">{isRaw ? "ข้อมูลวัตถุดิบและ Material ปลายทางที่เชื่อมโยง" : "ข้อมูลวัสดุและการจัดเก็บ"}</p>
       </header>
 
@@ -115,8 +115,8 @@ export function MaterialPcDetailsView({
         )}
 
         <div className={cn("grid items-start gap-5", isRaw && "sm:grid-cols-2")}>
-          <section aria-labelledby={`${sectionId}-source`} className="min-w-0 rounded-xl border border-border bg-surface p-4">
-            <h2 id={`${sectionId}-source`} className="mb-4 text-sm font-semibold text-fg">{isRaw ? "Material 1 · วัตถุดิบก่อนแปรรูป" : "ข้อมูล Material"}</h2>
+          <section aria-labelledby={`${sectionId}-source`} className="min-w-0 rounded-lg border border-border bg-surface p-4">
+            <h2 id={`${sectionId}-source`} className="mb-4 text-lg font-semibold text-fg">{isRaw ? "Material 1 · วัตถุดิบก่อนแปรรูป" : "ข้อมูล Material"}</h2>
             <MaterialPhoto material={material} onPreview={setPreview} />
             <Identity material={material} shape={material.materialType || "—"} />
             <dl className="mt-3">
@@ -131,8 +131,8 @@ export function MaterialPcDetailsView({
           </section>
 
           {isRaw && (
-            <section aria-labelledby={`${sectionId}-output`} className="min-w-0 rounded-xl border border-border bg-surface p-4">
-              <h2 id={`${sectionId}-output`} className="mb-4 text-sm font-semibold text-fg">Material 2 · ชิ้นงานหลังแปรรูป</h2>
+            <section aria-labelledby={`${sectionId}-output`} className="min-w-0 rounded-lg border border-border bg-surface p-4">
+              <h2 id={`${sectionId}-output`} className="mb-4 text-lg font-semibold text-fg">Material 2 · ชิ้นงานหลังแปรรูป</h2>
               {output ? <>
                 <MaterialPhoto material={{ ...output, imagePath: output.imagePath ?? null }} onPreview={setPreview} />
                 <Identity material={{ ...output, imagePath: output.imagePath ?? null }} shape="PCS" />

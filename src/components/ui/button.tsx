@@ -3,11 +3,11 @@ import { Slot } from "@radix-ui/react-slot";
 import { cn } from "@/lib/utils";
 
 const variants = {
-  primary: "bg-primary text-primary-fg hover:bg-primary-hover shadow-sm",
+  primary: "bg-primary text-primary-fg hover:bg-primary-hover",
   secondary: "bg-surface-2 text-fg hover:bg-border border border-border",
   outline: "border border-border-strong text-fg hover:bg-surface-2 bg-transparent",
   ghost: "text-fg-secondary hover:bg-surface-2 hover:text-fg",
-  danger: "bg-danger text-white hover:opacity-90",
+  danger: "bg-danger text-primary-fg hover:opacity-90",
   link: "text-primary underline-offset-4 hover:underline p-0 h-auto",
 };
 
@@ -16,7 +16,7 @@ const sizes = {
   // the compact sizes.
   sm: "h-8 px-3 text-sm gap-1.5 pointer-coarse:h-10",
   md: "h-9 px-4 text-sm gap-2 pointer-coarse:h-11",
-  lg: "h-10 px-5 text-[15px] gap-2",
+  lg: "h-10 px-5 text-sm gap-2 pointer-coarse:min-h-11",
   icon: "h-9 w-9 pointer-coarse:h-11 pointer-coarse:w-11",
 };
 

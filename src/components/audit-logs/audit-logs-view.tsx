@@ -101,7 +101,7 @@ export function AuditLogsView({ auditLogs }: { auditLogs: PaginatedAuditLogs }) 
       <form
         key={`${urlAction}|${urlUserId}`}
         onSubmit={applyFilters}
-        className="flex flex-col gap-2 rounded-xl border border-border bg-surface p-3 sm:flex-row sm:items-end"
+        className="flex flex-col gap-2 rounded-lg border border-border bg-surface p-3 sm:flex-row sm:items-end"
       >
         <div className="w-full sm:max-w-sm">
           <label htmlFor="audit-action" className="mb-1 block text-xs font-medium text-fg-muted">
@@ -144,7 +144,7 @@ export function AuditLogsView({ auditLogs }: { auditLogs: PaginatedAuditLogs }) 
           </p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-border bg-surface">
+        <div className="overflow-hidden rounded-lg border border-border bg-surface">
           <Table>
             <TableHeader>
               <TableRow>

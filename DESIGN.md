@@ -29,6 +29,11 @@ colors:
   info-text: "#0369A1"
   on-navy-primary: "#4C9AEF"
 typography:
+  page:
+    fontFamily: "IBM Plex Sans Thai, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "1.5rem"
+    fontWeight: 600
+    lineHeight: 1.25
   body:
     fontFamily: "IBM Plex Sans Thai, ui-sans-serif, system-ui, sans-serif"
     fontSize: "0.875rem"
@@ -132,6 +137,11 @@ Restrained and corporate: a saturated blue accent on cool neutrals, with semanti
 ### Named Rules
 **The Thai Glyph Rule.** Any new font must cover Thai, otherwise Thai text falls back to a mismatched system font.
 
+**The Shared Heading Rule.** Visible screen page headings use `PageTitle` from
+`components/ui/page-title.tsx`. Card and dialog headings use `text-lg`; supporting
+text uses at least `text-xs` (12px). Real code strings can use `font-mono
+text-[13px]`. Printed documents retain their physical type scale.
+
 ## Layout
 
 A floating-box shell fills the full viewport height: a rounded bordered sidebar, a rounded topbar and a separately scrolling content surface, with a small outer gap. The document itself never scrolls. Below `lg` the sidebar becomes a floating sheet. Content grids use container queries (not viewport breakpoints), because the sidebar eats variable width; card grids run 1, 2 or 4 columns by container width.
@@ -162,6 +172,22 @@ Tight, practical corners: base radius 8px (cards, inputs `rounded-md` 6px), 12px
 
 ### Inputs / Fields
 - **Style:** white fill, Strong Hairline border, 6px radius; labelled, with error text linked by `aria-describedby`. Selects are searchable by default.
+- **Shared implementation:** Input, Textarea and SelectTrigger consume
+  `fieldStyles` from `components/ui/field-styles.ts`; single-line fields are
+  36px on desktop and at least 44px for coarse pointers. Focus, disabled and
+  `aria-invalid` states come from that same source.
+
+### Shared implementation and maintenance
+
+- `Card`, dashboard `ChartCard` and `KpiCard` share `cardStyles`: 8px radius,
+  white surface, token border. Static panels use borders rather than hover lift.
+- `TableHeader` uses the muted surface; header labels are 12px semibold with
+  ordinary Thai letter spacing and body cells are 14px.
+- `Button` owns action colors, sizes and focus states; use its variants rather
+  than introducing per-page button styles.
+- See `docs/ui-style-guide.md` for the screen-wide role map and justified
+  exceptions. ESLint's `design-system/consistent-styles` rule prevents new
+  undersized text, oversized corner utilities and raw visible h1 headings.
 
 ### Badges and Status
 - Soft tinted fill, tone text colour, always a text label; status pairs with a dot or icon.

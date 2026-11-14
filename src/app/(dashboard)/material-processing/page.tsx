@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/ui/page-title";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { ShieldAlert, Scissors } from "lucide-react";
@@ -25,7 +26,7 @@ export default async function MaterialProcessingPage({ searchParams }: { searchP
     getProcessingLookups(token),
   ]);
   return <div className="flex flex-col gap-6">
-    <div className="flex items-start gap-3"><div className="rounded-xl bg-primary-soft p-3 text-primary"><Scissors className="size-6" /></div><div><h1 className="text-xl font-semibold text-fg">แปรรูปวัตถุดิบ</h1><p className="mt-1 text-sm text-fg-secondary">รับเข้าต้นทาง → ตัดชิ้นงาน → บรรจุและรับเข้า Material ปลายทางแยก</p></div></div>
+    <div className="flex items-start gap-3"><div className="rounded-xl bg-primary-soft p-3 text-primary"><Scissors className="size-6" /></div><div><PageTitle>แปรรูปวัตถุดิบ</PageTitle><p className="mt-1 text-sm text-fg-secondary">รับเข้าต้นทาง → ตัดชิ้นงาน → บรรจุและรับเข้า Material ปลายทางแยก</p></div></div>
     <MaterialProcessingClient list={list} lookups={lookups} canProcess={session.user.isSuperAdmin || session.permissions.includes("MATERIAL_PROCESSING_CREATE")} />
   </div>;
 }

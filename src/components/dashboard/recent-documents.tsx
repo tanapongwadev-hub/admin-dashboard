@@ -24,8 +24,10 @@ const statusLabel: Record<StockDocStatus, string> = {
 export function RecentDocuments({
   documents = recentDocuments.slice(0, 6),
   onClearFilters,
+  unavailable = false,
 }: {
   documents?: StockDocument[];
+  unavailable?: boolean;
   onClearFilters?: () => void;
 }) {
   const recent = documents;
@@ -34,8 +36,8 @@ export function RecentDocuments({
     return (
       <DashboardEmptyState
         icon={FileSearch}
-        title="ไม่พบเอกสารในช่วงที่เลือก"
-        description="ไม่มีเอกสารรับเข้าหรือเบิกจ่ายที่ตรงกับตัวกรองปัจจุบัน"
+        title={unavailable ? "ยังแสดงเอกสารไม่ได้ครบ" : "ยังไม่มีเอกสาร"}
+        description={unavailable ? "กดรีเฟรชด้านบนเพื่อลองโหลดเอกสารใหม่" : "ยังไม่มีเอกสารรับเข้าหรือเบิกจ่ายตามสิทธิ์ของคุณ"}
         action={
           onClearFilters && (
             <Button variant="outline" size="sm" onClick={onClearFilters}>
@@ -48,19 +50,19 @@ export function RecentDocuments({
   }
 
   return (
-    <Table>
+    <Table className="min-w-[44rem]">
       <TableHeader>
         <TableRow>
           <TableHead>เอกสาร</TableHead>
           <TableHead>วัสดุ</TableHead>
           <TableHead>ผู้จัดจำหน่าย / สายการผลิต</TableHead>
           <TableHead>สถานะ</TableHead>
-          <TableHead className="text-right">จำนวน</TableHead>
+          <TableHead className="text-right">จำนวน / รายการ</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {recent.map((doc) => (
-          <TableRow key={doc.id}>
+          <TableRow key={`${doc.type}-${doc.id}`}>
             <TableCell className="font-medium text-fg">
               <span className="flex items-center gap-1.5">
                 {doc.type === "Receiving" ? (
@@ -68,7 +70,7 @@ export function RecentDocuments({
                 ) : (
                   <ArrowUpFromLine className="h-3.5 w-3.5 shrink-0 text-warning" />
                 )}
-                {doc.id}
+                <Link className="whitespace-nowrap text-primary underline underline-offset-4" href={`${doc.type === "Receiving" ? "/materials/receiving" : "/materials/disbursements"}?search=${encodeURIComponent(doc.id)}`}>{doc.id}</Link>
               </span>
             </TableCell>
             <TableCell className="text-fg-secondary">{doc.material}</TableCell>
@@ -90,10 +92,9 @@ export function RecentDocuments({
   );
 }
 
-export function RecentDocumentsFooter() {
-  return (
-    <Button variant="ghost" size="sm" asChild className="text-fg-secondary">
-      <Link href="/materials">ดูเอกสารทั้งหมด</Link>
-    </Button>
-  );
+export function RecentDocumentsFooter({ canViewReceiving = false, canViewDisbursement = false }: { canViewReceiving?: boolean; canViewDisbursement?: boolean }) {
+  return <>
+    {canViewReceiving && <Button variant="ghost" size="sm" asChild><Link href="/materials/receiving">ดูเอกสารรับเข้า</Link></Button>}
+    {canViewDisbursement && <Button variant="ghost" size="sm" asChild><Link href="/materials/disbursements">ดูเอกสารเบิกจ่าย</Link></Button>}
+  </>;
 }

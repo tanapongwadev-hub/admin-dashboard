@@ -1,4 +1,5 @@
 "use client";
+import { PageTitle } from "@/components/ui/page-title";
 
 import * as React from "react";
 import Image from "next/image";
@@ -129,14 +130,14 @@ export default function LoginPage() {
 
         {/* Top — status + wordmark */}
         <div className="relative z-10 flex items-start justify-between p-10 xl:p-14">
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-medium tracking-wide text-white/70 backdrop-blur-sm">
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-medium tracking-wide text-white/70 backdrop-blur-sm">
             <span className="relative flex h-1.5 w-1.5">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-warning/70" />
               <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-warning" />
             </span>
             ระบบทำงานปกติทั้งหมด
           </span>
-          <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-white/40">
+          <span className="font-mono text-[13px] uppercase tracking-[0.22em] text-white/40">
             v1.0
           </span>
         </div>
@@ -144,7 +145,7 @@ export default function LoginPage() {
         {/* Middle — logo + headline + features */}
         <div className="relative z-10 max-w-md space-y-9 px-10 xl:px-14">
           <div className="flex items-center gap-4">
-            <span className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white/95 shadow-2xl shadow-black/40 ring-1 ring-black/5">
+            <span className="flex h-20 w-20 items-center justify-center rounded-xl bg-white/95 shadow-2xl shadow-black/40 ring-1 ring-black/5">
               <Image
                 src="/cci_logo.png"
                 alt="Chiewchan Industry"
@@ -155,10 +156,10 @@ export default function LoginPage() {
               />
             </span>
             <div>
-              <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-warning">
+              <p className="font-mono text-[13px] uppercase tracking-[0.22em] text-warning">
                 Chiewchan Industry
               </p>
-              <h2 className="text-[28px] font-semibold leading-none tracking-tight text-white xl:text-[32px]">
+              <h2 className="text-3xl font-semibold leading-none tracking-tight text-white xl:text-3xl">
                 CPS
               </h2>
               <p className="mt-0.5 text-xs text-white/60">
@@ -168,7 +169,7 @@ export default function LoginPage() {
           </div>
 
           <div className="space-y-3">
-            <p className="text-[15px] leading-relaxed text-white/75">
+            <p className="text-base leading-relaxed text-white/75">
               บริหารสายการผลิตจากคอนโซลเดียวอย่างเป็นระบบ — ออเดอร์ สต็อก
               และแผนกต่าง ๆ อยู่ในที่เดียว ไม่ต้องสลับหน้าจอไปมา
               หรือมานั่งแก้สเปรดชีตดึกดื่น
@@ -197,12 +198,12 @@ export default function LoginPage() {
             <div className="flex-1 bg-navy" />
             <div className="w-1/5 bg-primary" />
             <div className="pointer-events-none absolute inset-0 flex items-center justify-end pr-3">
-              <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-white/85">
+              <span className="font-mono text-[13px] font-semibold uppercase tracking-[0.18em] text-white/85">
                 CPS · CHIEWCHAN INDUSTRY
               </span>
             </div>
           </div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/30">
+          <p className="font-mono text-[13px] uppercase tracking-[0.2em] text-white/30">
             © 2026 Chiewchan Industry Co., Ltd.
           </p>
         </div>
@@ -239,7 +240,7 @@ export default function LoginPage() {
               />
             </span>
             <div>
-              <p className="font-mono text-[9px] uppercase tracking-[0.22em] text-warning">
+              <p className="font-mono text-[13px] uppercase tracking-[0.22em] text-warning">
                 Chiewchan Industry
               </p>
               <p className="text-sm font-semibold leading-tight text-white">
@@ -251,14 +252,14 @@ export default function LoginPage() {
 
         {/* Centered card area */}
         <div className="flex flex-1 items-center justify-center px-4 py-8 sm:px-6 sm:py-12 lg:px-10 xl:px-16">
-          <div className="w-full max-w-[440px] overflow-hidden rounded-2xl bg-surface shadow-2xl shadow-black/10 ring-1 ring-border">
+          <div className="w-full max-w-[440px] overflow-hidden rounded-xl bg-surface shadow-2xl shadow-black/10 ring-1 ring-border">
             {/* Asset-tag strip — the signature element */}
             <div className="relative flex h-7 items-stretch">
               <div className="w-1/3 bg-warning" />
               <div className="flex-1 bg-navy" />
               <div className="w-1/5 bg-primary" />
               <div className="pointer-events-none absolute inset-0 flex items-center justify-end pr-3">
-                <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-white/85">
+                <span className="font-mono text-[13px] font-semibold uppercase tracking-[0.18em] text-white/85">
                   CPS · CHIEWCHAN INDUSTRY
                 </span>
               </div>
@@ -277,9 +278,9 @@ export default function LoginPage() {
                     priority
                   />
                 </div>
-                <h1 className="text-[22px] font-semibold leading-tight tracking-tight text-fg sm:text-[24px]">
+                <PageTitle>
                   {departmentStep ? "เลือกแผนก" : "เข้าสู่ระบบ"}
-                </h1>
+                </PageTitle>
                 <p className="mt-1.5 text-sm text-fg-muted">
                   {departmentStep
                     ? "บัญชีของคุณมีสิทธิ์เข้าถึงหลายแผนก กรุณาเลือกแผนกเพื่อดำเนินการต่อ"
@@ -416,7 +417,7 @@ export default function LoginPage() {
 
             {/* Card footer — compliance line */}
             <div className="border-t border-border bg-surface-2 px-6 py-3 sm:px-8">
-              <p className="flex items-center justify-center gap-1.5 text-[11px] text-fg-muted">
+              <p className="flex items-center justify-center gap-1.5 text-xs text-fg-muted">
                 <ShieldCheck className="h-3 w-3" />
                 <span>
                   เซสชันปลอดภัย ได้รับการปกป้องโดยระบบควบคุมการเข้าถึงของ CPS
@@ -427,7 +428,7 @@ export default function LoginPage() {
         </div>
 
         {/* Below-card meta (mobile only) */}
-        <p className="pb-6 text-center font-mono text-[10px] uppercase tracking-[0.2em] text-fg-muted lg:hidden">
+        <p className="px-4 pb-6 text-center text-xs leading-relaxed text-fg-muted lg:hidden">
           © 2026 Chiewchan Industry Co., Ltd. — v1.0
         </p>
       </main>

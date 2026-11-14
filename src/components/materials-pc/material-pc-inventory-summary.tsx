@@ -13,9 +13,9 @@ const cards: Array<{
   tone: string;
 }> = [
   { key: "total", label: "วัสดุทั้งหมด", status: null, icon: Boxes, tone: "text-primary bg-primary-soft" },
-  { key: "normal", label: "สต็อกปกติ", status: "NORMAL", icon: CircleCheck, tone: "text-success bg-success-soft" },
-  { key: "lowStock", label: "สต็อกต่ำ", status: "LOW_STOCK", icon: CircleGauge, tone: "text-warning bg-warning-soft" },
-  { key: "outOfStock", label: "หมดสต็อก", status: "OUT_OF_STOCK", icon: TriangleAlert, tone: "text-danger bg-danger-soft" },
+  { key: "normal", label: "สต็อกปกติ", status: "NORMAL", icon: CircleCheck, tone: "text-success-fg bg-success-soft" },
+  { key: "lowStock", label: "สต็อกต่ำ", status: "LOW_STOCK", icon: CircleGauge, tone: "text-warning-fg bg-warning-soft" },
+  { key: "outOfStock", label: "หมดสต็อก", status: "OUT_OF_STOCK", icon: TriangleAlert, tone: "text-danger-fg bg-danger-soft" },
 ];
 
 export function MaterialPcInventorySummary({ summary }: { summary: MaterialInventorySummary }) {

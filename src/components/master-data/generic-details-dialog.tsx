@@ -28,13 +28,13 @@ function DataSheetRow({
       <th
         scope="row"
         className={cn(
-          "py-2.5 pl-5 pr-3 text-left align-top text-[12.5px] font-normal text-fg-muted",
+          "py-2.5 pl-5 pr-3 text-left align-top text-sm font-normal text-fg-muted",
           fullWidth ? "sm:w-[28%]" : "sm:w-[36%]"
         )}
       >
         {label}
       </th>
-      <td className="py-2.5 pr-5 text-left align-top text-[13px] font-medium text-fg break-words">{value}</td>
+      <td className="py-2.5 pr-5 text-left align-top text-sm font-medium text-fg break-words">{value}</td>
     </tr>
   );
 }
@@ -50,7 +50,7 @@ function DataSheetTable({ children }: { children: React.ReactNode }) {
 }
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
-  return <h3 className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-fg-muted">{children}</h3>;
+  return <h3 className="mb-2.5 text-xs font-semibold uppercase tracking-[0.08em] text-fg-muted">{children}</h3>;
 }
 
 function formatDateTime(iso: string): string {
@@ -101,7 +101,7 @@ export function GenericMasterDataDetailsView<TEntity extends BaseMasterEntity>({
       <header className="border-b border-border px-6 py-6">
         <div className="flex flex-col gap-3">
           <p className="font-mono text-xs tracking-[0.05em] text-fg-muted">{entity.code}</p>
-          <h2 className="text-[22px] font-semibold leading-tight tracking-[-0.015em] text-fg">{entity.nameTh}</h2>
+          <h2 className="text-2xl font-semibold leading-tight tracking-[-0.015em] text-fg">{entity.nameTh}</h2>
           {nameEn && <p className="text-sm text-fg-secondary">{nameEn}</p>}
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant={entity.isActive ? "success" : "neutral"} dot>

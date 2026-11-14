@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/ui/page-title";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { ShieldAlert } from "lucide-react";
@@ -44,7 +45,7 @@ export default async function UsersPage({
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-xl font-semibold text-fg">ผู้ใช้งาน</h1>
+        <PageTitle>ผู้ใช้งาน</PageTitle>
         <p className="mt-1 text-sm text-fg-muted">
           สร้างบัญชี กำหนดแผนกและ role ตั้งรหัสผ่านใหม่ และปิดใช้งานผู้ใช้ สิทธิ์รายบุคคลจัดการที่หน้าสิทธิ์การเข้าถึง
         </p>

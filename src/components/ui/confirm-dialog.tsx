@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 
 const iconStyles = {
-  danger: "bg-danger-soft text-danger",
+  danger: "bg-danger-soft text-danger-fg",
   default: "bg-primary-soft text-primary",
 };
 

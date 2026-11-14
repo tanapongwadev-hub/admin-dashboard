@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/incompatible-library -- Subscription-based RHF/TanStack components explicitly opt out of React Compiler via "use no memo" below. */
 "use client";
 
 import * as React from "react";
@@ -39,6 +40,8 @@ type NumericField = "sourceQuantity" | "piecesPerUnit" | "scrapQuantity" | "pack
 export function MaterialProcessingFormDialog({ source, lookups, onClose, onSaved }: {
   source: ProcessingSource; lookups: MaterialReceivingLookups; onClose: () => void; onSaved: () => void;
 }) {
+  "use no memo"; // Subscription-based library APIs must keep their live reads.
+
   const [requestKey] = React.useState(() => crypto.randomUUID());
   const [submitting, setSubmitting] = React.useState(false);
   const sourceMaterial = lookups.materials.find((material) => material.id === source.materialId);
@@ -187,7 +190,7 @@ export function MaterialProcessingFormDialog({ source, lookups, onClose, onSaved
                 </section>
               </fieldset>
 
-              <aside className="min-w-0 self-start overflow-hidden rounded-xl border border-border bg-surface-2 md:sticky md:top-6" aria-labelledby="mp-preview-heading">
+              <aside className="min-w-0 self-start overflow-hidden rounded-lg border border-border bg-surface-2 md:sticky md:top-6" aria-labelledby="mp-preview-heading">
                 <div className="border-b border-border bg-surface px-5 py-4">
                   <h3 id="mp-preview-heading" className="flex items-center gap-2 text-sm font-semibold text-fg"><Boxes className="size-4 text-primary" aria-hidden="true" /> สรุปก่อนรับเข้า</h3>
                   <p className="mt-1 text-xs text-fg-muted">อัปเดตตามจำนวนที่กรอก</p>

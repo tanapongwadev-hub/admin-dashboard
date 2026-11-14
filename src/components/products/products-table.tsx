@@ -238,7 +238,7 @@ function ProductEditorialPhoto({ product, onPreview }: { product: Product; onPre
 function CardMeta({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0 border-r border-border px-3 py-2.5 last:border-r-0">
-      <p className="mb-1 text-[10px] text-fg-muted">{label}</p>
+      <p className="mb-1 text-xs text-fg-muted">{label}</p>
       <p className="truncate font-medium text-fg-secondary" title={value}>{value}</p>
     </div>
   );
@@ -277,8 +277,8 @@ function ProductEditorialCard({
       </div>
 
       <div className="flex flex-1 flex-col px-4 pb-4 pt-4">
-        <p className="mb-1.5 font-mono text-[11px] leading-none tracking-[0.05em] text-primary">{product.code}</p>
-        <h2 className="mb-1 truncate text-base font-semibold leading-tight text-fg" title={product.name}>
+        <p className="mb-1.5 font-mono text-[13px] leading-none tracking-[0.05em] text-primary">{product.code}</p>
+        <h2 className="mb-1 truncate text-lg font-semibold leading-tight text-fg" title={product.name}>
           {product.name}
         </h2>
         <p className="truncate text-xs leading-tight text-fg-secondary" title={productTypeLabel(product)}>{productTypeLabel(product)}</p>
@@ -294,7 +294,7 @@ function ProductEditorialCard({
 
       <div className="grid grid-cols-2 divide-x divide-border px-4 pb-3">
         <div className="min-w-0 pr-3">
-          <span className="text-[10px] leading-none text-fg-muted">จำนวนบรรจุ</span>
+          <span className="text-xs leading-none text-fg-muted">จำนวนบรรจุ</span>
           <div className="mt-1.5">
             <span className="text-sm font-medium tabular-nums text-fg-secondary">
               {formatNumber(product.packing)}
@@ -303,7 +303,7 @@ function ProductEditorialCard({
           </div>
         </div>
         <div className="min-w-0 pl-3">
-          <span className="text-[10px] leading-none text-fg-muted">ล็อตผลิต</span>
+          <span className="text-xs leading-none text-fg-muted">ล็อตผลิต</span>
           <div className="mt-1.5">
             <span className="text-sm font-medium tabular-nums text-fg-secondary">
               {formatNumber(product.lotSize)}
@@ -407,10 +407,10 @@ function ProductListItem({
 
       <div className="min-w-0">
         <div className="mb-1 flex flex-wrap items-center gap-2">
-          <span className="font-mono text-[11px] leading-none text-fg-muted">{product.code}</span>
+          <span className="font-mono text-[13px] leading-none text-fg-muted">{product.code}</span>
           <ProductStatus product={product} />
         </div>
-        <h2 className="mb-1 truncate text-sm font-semibold leading-tight text-fg" title={product.name}>
+        <h2 className="mb-1 truncate text-lg font-semibold leading-tight text-fg" title={product.name}>
           {product.name}
         </h2>
         <div className="flex items-center gap-2 truncate text-xs leading-tight text-fg-secondary sm:gap-2.5">
@@ -425,10 +425,10 @@ function ProductListItem({
 
       <div className="flex items-center gap-3 sm:gap-4">
         <div className="hidden text-right @min-[36rem]:block">
-          <p className="mb-0.5 text-[10px] leading-none text-fg-muted">สินค้าคงเหลือ</p>
+          <p className="mb-0.5 text-xs leading-none text-fg-muted">สินค้าคงเหลือ</p>
           <p className="text-sm font-bold leading-none tracking-[-0.01em] tabular-nums text-fg">
             {stockByProductId ? formatProductQuantity(stockByProductId[product.id] ?? "0") : "—"}
-            {unit !== "—" && <span className="ml-1 text-[11px] font-medium text-fg-muted">{unit}</span>}
+            {unit !== "—" && <span className="ml-1 text-xs font-medium text-fg-muted">{unit}</span>}
           </p>
         </div>
         <RowActionsMenu

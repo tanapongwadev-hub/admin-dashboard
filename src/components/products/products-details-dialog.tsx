@@ -53,16 +53,16 @@ const WORKFLOW_STATUS_DISPLAY: Record<ProductWorkflowStatus, { label: string; va
 function DataSheetRow({ label, value }: { label: string; value: string }) {
   return (
     <tr className="border-b border-border last:border-b-0">
-      <th scope="row" className="w-[36%] py-2.5 pl-5 pr-3 text-left align-top text-[12.5px] font-normal text-fg-muted">
+      <th scope="row" className="w-[36%] py-2.5 pl-5 pr-3 text-left align-top text-sm font-normal text-fg-muted">
         {label}
       </th>
-      <td className="py-2.5 pr-5 text-left align-top text-[13px] font-medium text-fg break-words">{value}</td>
+      <td className="py-2.5 pr-5 text-left align-top text-sm font-medium text-fg break-words">{value}</td>
     </tr>
   );
 }
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
-  return <h3 className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-fg-muted">{children}</h3>;
+  return <h3 className="mb-2.5 text-xs font-semibold uppercase tracking-[0.08em] text-fg-muted">{children}</h3>;
 }
 
 function formatDateTime(iso: string): string {
@@ -212,7 +212,7 @@ export function ProductsDetailsView({
                 own code eyebrow color so the same product reads as the same
                 product across both surfaces. */}
             <p className="font-mono text-xs tracking-[0.05em] text-primary">{product.code}</p>
-            <h2 className="text-[22px] font-semibold leading-tight tracking-[-0.015em] text-fg">{product.name}</h2>
+            <h2 className="text-2xl font-semibold leading-tight tracking-[-0.015em] text-fg">{product.name}</h2>
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant={product.isActive ? "success" : "neutral"} dot>
                 {product.isActive ? "ใช้งาน" : "ไม่ใช้งาน"}
@@ -371,7 +371,7 @@ export function ProductsDetailsView({
                           <div key={item.id} className="space-y-2 px-3 py-3">
                             <div className="flex items-start justify-between gap-3">
                               <div className="min-w-0">
-                                <p className="font-mono text-[11px] text-fg-muted">{item.materialCode}</p>
+                                <p className="font-mono text-[13px] text-fg-muted">{item.materialCode}</p>
                                 <p className="mt-0.5 text-sm font-medium text-fg">{item.materialName}</p>
                               </div>
                               <p className="shrink-0 text-sm font-semibold tabular-nums text-fg">
@@ -388,7 +388,7 @@ export function ProductsDetailsView({
                       </div>
                       <table className="hidden w-full text-sm sm:table">
                         <thead>
-                          <tr className="border-b border-border text-left text-[11px] uppercase tracking-wide text-fg-muted">
+                          <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-fg-muted">
                             <th className="px-4 py-2 font-medium">วัตถุดิบ</th>
                             <th className="px-4 py-2 font-medium">จำนวน</th>
                             <th className="px-4 py-2 font-medium">สูญเสีย</th>
@@ -401,7 +401,7 @@ export function ProductsDetailsView({
                               <td className="px-4 py-2 text-fg">
                                 {item.materialCode} · {item.materialName}
                                 {item.isScrap && (
-                                  <Badge variant="outline" className="ml-1.5 px-1.5 py-0 text-[10px]">
+                                  <Badge variant="outline" className="ml-1.5 px-1.5 py-0 text-xs">
                                     เศษ
                                   </Badge>
                                 )}
@@ -462,13 +462,13 @@ export function ProductsDetailsView({
                             key={step.id}
                             className="relative flex items-start gap-3 border-b border-border px-4 py-3 last:border-b-0"
                           >
-                            <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary-soft text-[11px] font-semibold text-primary">
+                            <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary-soft text-xs font-semibold text-primary">
                               {index + 1}
                             </span>
                             <div className="min-w-0 flex-1">
                               <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
                                 <p className="text-sm font-medium text-fg">{step.stepName}</p>
-                                <span className="font-mono text-[10px] text-fg-muted">{step.processStepCode}</span>
+                                <span className="font-mono text-[13px] text-fg-muted">{step.processStepCode}</span>
                               </div>
                               {step.description && <p className="mt-0.5 text-xs text-fg-muted">{step.description}</p>}
                             </div>

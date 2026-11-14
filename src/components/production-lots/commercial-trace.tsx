@@ -8,7 +8,7 @@ const fmt = (n: number) => n.toLocaleString("th-TH");
 function Section({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
   return (
     <section className="rounded-md border border-border bg-surface p-4 shadow-sm">
-      <h2 className="text-sm font-semibold text-fg">{title}</h2>
+      <h2 className="text-lg font-semibold text-fg">{title}</h2>
       {hint && <p className="mt-0.5 text-xs text-fg-muted">{hint}</p>}
       <div className="mt-3">{children}</div>
     </section>

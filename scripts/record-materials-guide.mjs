@@ -356,7 +356,7 @@ async function recordOverview(page, { wait, say, title, moveTo, unspot }) {
 /* ================================================================= */
 /*                    ตอน 2: Read / Search / Filter                    */
 /* ================================================================= */
-async function recordRead(page, { wait, say, title, click, typeInto, selectOption, moveTo, unspot }) {
+async function recordRead(page, { wait, say, title, click, typeInto, selectOption, unspot }) {
   await login(page);
   await gotoMaterials(page);
   await title("ดูรายการ / Search / Filter", "/materials/pc", 2800);
@@ -617,7 +617,7 @@ async function recordBom(page, { wait, say, title, click, moveTo, unspot }) {
 /* ================================================================= */
 /*                    ตอน 11: Stock                                     */
 /* ================================================================= */
-async function recordStock(page, { wait, say, title, click, selectOption, moveTo, unspot }) {
+async function recordStock(page, { wait, say, title, selectOption, moveTo, unspot }) {
   await login(page);
   await page.goto(`${BASE}/materials`);
   await page.waitForLoadState("networkidle");

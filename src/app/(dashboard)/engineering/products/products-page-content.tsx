@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/ui/page-title";
 import { cookies } from "next/headers";
 import { ShieldAlert } from "lucide-react";
 import { getCurrentSession } from "@/lib/session";
@@ -100,7 +101,7 @@ export async function ProductsPageContent({
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-fg">{title}</h1>
+        <PageTitle>{title}</PageTitle>
         <p className="mt-1 text-sm text-fg-muted">{description}</p>
       </div>
 

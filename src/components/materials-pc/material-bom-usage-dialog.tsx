@@ -99,7 +99,7 @@ export function MaterialBomUsageView({ material }: { material: Material }) {
                       </div>
                       <p className="shrink-0 tabular-nums text-fg-secondary">
                         {formatNumber(item.quantity)} {item.unitNameTh}
-                        {item.isScrap && <Badge variant="outline" className="ml-1.5 px-1.5 py-0 text-[10px]">เศษ</Badge>}
+                        {item.isScrap && <Badge variant="outline" className="ml-1.5 px-1.5 py-0 text-xs">เศษ</Badge>}
                       </p>
                     </li>
                   ))}
@@ -135,7 +135,7 @@ export function MaterialBomUsageView({ material }: { material: Material }) {
                   <div key={row.bomItemId} className="space-y-2 px-3 py-3">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="font-mono text-[11px] text-fg-muted">{row.productCode}</p>
+                        <p className="font-mono text-[13px] text-fg-muted">{row.productCode}</p>
                         <p className="mt-0.5 text-sm font-medium text-fg">{row.productName}</p>
                       </div>
                       <p className="shrink-0 text-sm font-semibold tabular-nums text-fg">
@@ -143,7 +143,7 @@ export function MaterialBomUsageView({ material }: { material: Material }) {
                       </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="font-mono text-[11px] text-fg-muted">{row.bomVersion}</span>
+                      <span className="font-mono text-[13px] text-fg-muted">{row.bomVersion}</span>
                       <Badge variant={status.variant} style={{ fontSize: "10.5px" }}>
                         {status.label}
                       </Badge>
@@ -158,7 +158,7 @@ export function MaterialBomUsageView({ material }: { material: Material }) {
             <div className="hidden overflow-hidden rounded-lg border border-border sm:block">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border bg-surface-2 text-left text-[11px] uppercase tracking-wide text-fg-muted">
+                  <tr className="border-b border-border bg-surface-2 text-left text-xs uppercase tracking-wide text-fg-muted">
                     <th className="px-4 py-2.5 font-medium">Product Code</th>
                     <th className="px-4 py-2.5 font-medium">Product Name</th>
                     <th className="px-4 py-2.5 font-medium">BOM</th>
@@ -183,7 +183,7 @@ export function MaterialBomUsageView({ material }: { material: Material }) {
                         <td className="px-4 py-2.5 tabular-nums text-fg-secondary">
                           {formatNumber(row.quantity)} {row.unitNameTh}
                           {row.isScrap && (
-                            <Badge variant="outline" className="ml-1.5 px-1.5 py-0 text-[10px]">
+                            <Badge variant="outline" className="ml-1.5 px-1.5 py-0 text-xs">
                               เศษ
                             </Badge>
                           )}

@@ -1,3 +1,4 @@
+import { PageTitle } from "@/components/ui/page-title";
 import type { Metadata } from "next";
 import { TrendingUp, Users, MousePointerClick, Percent } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
@@ -14,7 +15,7 @@ export default function AnalyticsPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-xl font-semibold text-fg">การวิเคราะห์</h1>
+        <PageTitle>การวิเคราะห์</PageTitle>
         <p className="mt-1 text-sm text-fg-muted">เจาะลึกการเติบโต การมีส่วนร่วม และอัตราการเปลี่ยนเป็นลูกค้า</p>
       </div>
 

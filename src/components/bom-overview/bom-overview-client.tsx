@@ -105,12 +105,12 @@ function WorkflowChain({ wf }: { wf: BomOverviewOwner["workflows"][number] }) {
       {wf.steps.map((s, idx) => (
         <li key={`${s.code}-${idx}`} className="relative flex items-center gap-3 pb-4 last:pb-0">
           {idx < wf.steps.length - 1 && <span className="absolute left-[15px] top-8 h-[calc(100%-1.5rem)] w-px bg-border-strong" aria-hidden="true" />}
-          <span className="relative z-10 flex size-8 shrink-0 items-center justify-center rounded-full border-2 border-success bg-success-soft text-xs font-semibold text-success">
+          <span className="relative z-10 flex size-8 shrink-0 items-center justify-center rounded-full border-2 border-success bg-success-soft text-xs font-semibold text-success-fg">
             {idx + 1}
           </span>
           <div className="min-w-0 rounded-md border border-border bg-surface px-3 py-1.5">
             <p className="truncate text-sm font-medium text-fg">{s.name}</p>
-            <p className="truncate text-[11px] text-fg-muted">{s.code}</p>
+            <p className="truncate text-xs text-fg-muted">{s.code}</p>
           </div>
         </li>
       ))}
@@ -171,7 +171,7 @@ export function BomOverviewClient({ overview }: { overview: BomOverview }) {
   ];
 
   return (
-    <section className="rounded-xl border border-border bg-surface" aria-label="รายการ BOM และ Workflow">
+    <section className="rounded-lg border border-border bg-surface" aria-label="รายการ BOM และ Workflow">
       <div role="tablist" className="flex gap-1 border-b border-border px-3 pt-2">
         {tabs.map((t) => (
           <button

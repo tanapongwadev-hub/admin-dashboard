@@ -201,7 +201,7 @@ export function RoleClient({ roles }: { roles: RoleSummary[] }) {
         </Button>
         <Button onClick={() => setForm(null)}><Plus className="mr-1.5 size-4" aria-hidden />เพิ่ม role</Button>
       </div>
-      <div className="overflow-x-auto rounded-xl border border-border bg-surface">
+      <div className="overflow-x-auto rounded-lg border border-border bg-surface">
         <Table>
           <TableHeader>
             <TableRow>

@@ -1,4 +1,5 @@
 import { ArrowDownRight, ArrowUpRight, Minus, type LucideIcon } from "lucide-react";
+import { cardStyles } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 // Direction the number moved, and whether that movement is good or bad —
@@ -101,11 +102,11 @@ export function KpiCard({
 
   return (
     <article
-      className="group flex min-w-0 flex-col rounded-xl border border-border bg-surface p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-[border-color,box-shadow] duration-200 hover:border-border-strong hover:shadow-[0_4px_16px_-4px_rgba(15,23,42,0.08)]"
+      className={cn(cardStyles, "group flex min-w-0 flex-col p-5")}
       aria-label={label}
     >
       <div className="flex items-start justify-between gap-3">
-        <p className="min-w-0 text-[13px] font-medium leading-tight text-fg-secondary">{label}</p>
+        <p className="min-w-0 text-sm font-medium leading-tight text-fg-secondary">{label}</p>
         <span
           className={cn(
             "flex size-8 shrink-0 items-center justify-center rounded-lg",
@@ -118,7 +119,7 @@ export function KpiCard({
       </div>
 
       <p className="mt-3 flex items-baseline gap-1.5">
-        <span className="text-[30px] font-bold leading-none tracking-[-0.025em] tabular-nums text-fg">{value}</span>
+        <span className="text-3xl font-bold leading-none tracking-[-0.025em] tabular-nums text-fg">{value}</span>
         {unit && <span className="text-sm font-medium text-fg-muted">{unit}</span>}
       </p>
 

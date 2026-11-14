@@ -4,6 +4,7 @@ import * as React from "react";
 import * as SelectPrimitive from "@radix-ui/react-select";
 import { Check, ChevronDown, ChevronUp, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { fieldStyles, singleLineFieldStyles } from "@/components/ui/field-styles";
 
 const SelectSearchContext = React.createContext<{
   open: boolean;
@@ -79,7 +80,9 @@ const SelectTrigger = React.forwardRef<
     ref={ref}
     aria-haspopup="dialog"
     className={cn(
-      "flex h-9 w-full items-center justify-between gap-2 rounded-md border border-border-strong bg-surface px-3 py-1 text-sm text-fg transition-colors focus:outline-none focus:ring-2 focus:ring-ring/40 disabled:cursor-not-allowed disabled:opacity-50",
+      fieldStyles,
+      singleLineFieldStyles,
+      "flex items-center justify-between gap-2 px-3 py-1",
       className
     )}
     {...props}

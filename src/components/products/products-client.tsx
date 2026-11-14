@@ -102,7 +102,7 @@ export function ProductsClient({
       {/* Keep view controls and creation together; filters get a full-width row. */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="text-sm font-semibold text-fg">รายการสินค้า</h2>
+          <h2 className="text-lg font-semibold text-fg">รายการสินค้า</h2>
           <p className="mt-0.5 text-xs text-fg-muted">ข้อมูลสินค้า การบรรจุ และล็อตผลิต</p>
         </div>
         <div className="ml-auto flex flex-wrap items-center justify-end gap-2">

@@ -55,9 +55,9 @@ export function MaterialTraceabilityTable({
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-border">
-      <Table>
-        <TableHeader className="bg-surface">
+    <div className="overflow-x-auto rounded-lg border border-border">
+      <Table className="min-w-[88rem]">
+        <TableHeader>
           <TableRow>
             <TableHead>วันที่/เวลา</TableHead>
             <TableHead>ประเภท</TableHead>
@@ -87,7 +87,7 @@ export function MaterialTraceabilityTable({
                   <div className="text-xs text-fg-muted">{row.material.name}</div>
                 </TableCell>
                 <TableCell className="whitespace-nowrap text-xs">
-                  <div className="flex items-center gap-1.5 font-mono text-fg-secondary">
+                  <div className="flex items-center gap-1.5 whitespace-nowrap font-mono text-fg-secondary">
                     {row.internalLotNo ? (
                       <span
                         className={`inline-flex items-center gap-1.5 rounded-md px-1.5 py-0.5 ${lotColor(row.internalLotNo).soft} ${lotColor(row.internalLotNo).text}`}
@@ -105,7 +105,7 @@ export function MaterialTraceabilityTable({
                   {row.mainQr ? (
                     <button
                       type="button"
-                      className="font-mono text-xs text-primary underline-offset-2 hover:underline"
+                      className="whitespace-nowrap font-mono text-xs text-primary underline-offset-2 hover:underline"
                       onClick={() => onOpenMainQr(row.mainQr!.id)}
                     >
                       {row.mainQr.code ?? row.mainQr.id}
@@ -118,7 +118,7 @@ export function MaterialTraceabilityTable({
                   {row.subQr ? (
                     <button
                       type="button"
-                      className="font-mono text-xs text-primary underline-offset-2 hover:underline"
+                      className="whitespace-nowrap font-mono text-xs text-primary underline-offset-2 hover:underline"
                       onClick={() => onOpenSubQr(row.subQr!.id)}
                     >
                       {row.subQr.code ?? row.subQr.id}

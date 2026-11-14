@@ -51,7 +51,7 @@ export function MaterialPcDeleteDialog({ material, onClose, onDeleted, onDeactiv
     <DialogContent fullScreenOnMobile size="lg" className="overflow-hidden sm:max-w-xl">
       <DialogHeader className="shrink-0 gap-3 pr-12">
         <div className="flex items-start gap-3">
-          <span className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-danger/20 bg-danger-soft text-danger"><Trash2 className="size-5" aria-hidden="true" /></span>
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-danger/20 bg-danger-soft text-danger-fg"><Trash2 className="size-5" aria-hidden="true" /></span>
           <div>
             <DialogTitle className="text-lg">ลบ Material ถาวร</DialogTitle>
             <DialogDescription className="mt-1 leading-relaxed">ตรวจสอบรายการและข้อมูลอ้างอิงก่อนยืนยัน</DialogDescription>
@@ -96,7 +96,7 @@ export function MaterialPcDeleteDialog({ material, onClose, onDeleted, onDeactiv
               </div>
             </div>
           </>}
-          {error && <p role="alert" className="rounded-lg border border-danger/20 bg-danger-soft p-3 text-sm text-danger">{error}</p>}
+          {error && <p role="alert" className="rounded-lg border border-danger/20 bg-danger-soft p-3 text-sm text-danger-fg">{error}</p>}
         </div>
         <DialogFooter className="shrink-0 flex-wrap bg-surface-2/50 px-5 sm:px-6">
           <Button type="button" variant="outline" className="h-11 flex-1 sm:flex-none" disabled={pending} onClick={onClose}>{blocked ? "ปิดหน้าต่าง" : "ยกเลิก"}</Button>

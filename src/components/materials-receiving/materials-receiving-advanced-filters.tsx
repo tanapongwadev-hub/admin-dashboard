@@ -47,7 +47,7 @@ export function MaterialsReceivingAdvancedFilters({
         <Button type="button" variant="outline" className="w-fit shrink-0">
           <Filter className="size-4" /> ตัวกรองขั้นสูง
           {advancedActiveCount > 0 && (
-            <span className="flex size-5 items-center justify-center rounded-full bg-primary text-[11px] text-primary-fg">
+            <span className="flex size-5 items-center justify-center rounded-full bg-primary text-xs text-primary-fg">
               {advancedActiveCount}
             </span>
           )}

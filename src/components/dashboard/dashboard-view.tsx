@@ -10,6 +10,8 @@ import { CategoryBreakdownChart } from "@/components/dashboard/category-breakdow
 import { RecentDocuments, RecentDocumentsFooter } from "@/components/dashboard/recent-documents";
 import { LowStockWatchlist } from "@/components/dashboard/low-stock-watchlist";
 import type { DashboardData } from "@/lib/dashboard-loader";
+import { Button } from "@/components/ui/button";
+import { DashboardEmptyState } from "@/components/dashboard/chart-card";
 import { formatNumber } from "@/lib/utils";
 
 // Renders server-fetched data (lib/dashboard-loader.ts). Only the 7/14-day
@@ -19,6 +21,9 @@ export function DashboardView({ greeting, data }: { greeting: string; data: Dash
   const [range, setRange] = useState<TrendRange>("14");
 
   const { inventory, watchlist, documents } = data;
+  const summaryUnavailable = data.failedSources.includes("ข้อมูลสรุป");
+  const watchlistUnavailable = data.failedSources.includes("รายการเฝ้าระวังสต็อก");
+  const documentsUnavailable = data.failedSources.some((source) => source.startsWith("เอกสาร"));
   const alertCount = inventory ? inventory.lowStock + inventory.outOfStock : 0;
   const needsAttention = alertCount > 0;
   const activeOrders = data.productionOrders.IN_PROGRESS ?? 0;
@@ -38,7 +43,7 @@ export function DashboardView({ greeting, data }: { greeting: string; data: Dash
     : [];
 
   function handleExport() {
-    const header = ["เอกสาร", "ประเภท", "วัสดุ", "ผู้จัดจำหน่าย/ประเภท", "สถานะ", "จำนวน", "หน่วย", "วันที่"];
+    const header = ["เอกสาร", "ประเภท", "วัสดุ", "ผู้จัดจำหน่าย/ประเภท", "สถานะ", "จำนวน / จำนวนรายการ", "หน่วย", "วันที่"];
     const rows = documents.map((doc) => [doc.id, doc.type, doc.material, doc.counterparty, doc.status, String(doc.qty), doc.unit, doc.date]);
     const csv = [header, ...rows].map((row) => row.map((cell) => `"${cell.replace(/"/g, '""')}"`).join(",")).join("\r\n");
     // Leading BOM so Excel opens the Thai headers as UTF-8 instead of mojibake.
@@ -59,11 +64,13 @@ export function DashboardView({ greeting, data }: { greeting: string; data: Dash
         lowStockCount={alertCount}
         range={range}
         onRangeChange={setRange}
-        onExport={handleExport}
+        healthAvailable={inventory !== null}
+        loadedAt={data.loadedAt}
+        failedSources={data.failedSources}
       />
 
       <section aria-label="สรุปตัวชี้วัดหลัก" className="@container">
-        <div className="grid grid-cols-1 gap-4 @min-[30rem]:grid-cols-2 @min-[54rem]:grid-cols-4">
+        <div className={`grid grid-cols-1 gap-4 @min-[30rem]:grid-cols-2 ${hasProduction ? "@min-[54rem]:grid-cols-3" : "@min-[54rem]:grid-cols-4"}`}>
           {inventory && (
             <KpiCard
               label="วัสดุที่ใช้งาน"
@@ -76,7 +83,7 @@ export function DashboardView({ greeting, data }: { greeting: string; data: Dash
           {(
             <KpiCard
               label="รับเข้า 7 วันล่าสุด"
-              value={formatNumber(data.receivedLast7)}
+              value={summaryUnavailable ? "—" : formatNumber(data.receivedLast7)}
               unit="เอกสาร"
               comparison="เฉพาะที่ยืนยันแล้ว"
               icon={ArrowDownToLine}
@@ -87,7 +94,7 @@ export function DashboardView({ greeting, data }: { greeting: string; data: Dash
           {(
             <KpiCard
               label="เบิกจ่าย 7 วันล่าสุด"
-              value={formatNumber(data.disbursedLast7)}
+              value={summaryUnavailable ? "—" : formatNumber(data.disbursedLast7)}
               unit="เอกสาร"
               comparison="เฉพาะที่ยืนยันแล้ว"
               icon={ArrowUpFromLine}
@@ -139,14 +146,14 @@ export function DashboardView({ greeting, data }: { greeting: string; data: Dash
                   <ChartLegendItem color="var(--chart-3)" label="เบิกจ่าย" />
                 </>
               }
-              footer={
+              footer={summaryUnavailable ? undefined : (
                 <>
                   <ChartLegendItem color="var(--chart-2)" label="รวมรับเข้า" value={`${formatNumber(receivedTotal)} เอกสาร`} />
                   <ChartLegendItem color="var(--chart-3)" label="รวมเบิกจ่าย" value={`${formatNumber(disbursedTotal)} เอกสาร`} />
                 </>
-              }
+              )}
             >
-              <StockMovementChart data={trend} format={formatNumber} labels={{ received: "รับเข้า", disbursed: "เบิกจ่าย" }} />
+              {summaryUnavailable ? <DashboardEmptyState icon={TriangleAlert} title="โหลดข้อมูลสรุปไม่สำเร็จ" description="กดรีเฟรชด้านบนเพื่อลองใหม่" /> : <StockMovementChart data={trend} format={formatNumber} labels={{ received: "รับเข้า", disbursed: "เบิกจ่าย" }} />}
             </ChartCard>
           )}
 
@@ -156,32 +163,44 @@ export function DashboardView({ greeting, data }: { greeting: string; data: Dash
             </ChartCard>
           )}
 
-          {inventory && data.canViewStock && (
+          {data.canViewStock && (
             <ChartCard
               title="รายการเฝ้าระวังสต็อก"
               description="วัสดุที่หมดหรือต่ำกว่าสต็อกขั้นต่ำ"
               className="@min-[38rem]:col-span-2"
               actions={
-                watchlist.length > 0 ? (
-                  <span className="rounded-md bg-warning-soft px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-warning">
+                watchlist.length > 0 && !watchlistUnavailable ? (
+                  <span className="rounded-md bg-warning-soft px-1.5 py-0.5 text-xs font-semibold tabular-nums text-warning-fg">
                     {watchlist.length} รายการ
                   </span>
                 ) : undefined
               }
             >
-              <LowStockWatchlist items={watchlist} />
+              {watchlistUnavailable ? <DashboardEmptyState icon={TriangleAlert} title="โหลดรายการเฝ้าระวังไม่สำเร็จ" description="กดรีเฟรชด้านบนเพื่อลองใหม่" /> : <LowStockWatchlist items={watchlist} canViewCatalog={data.canViewCatalog} canViewReceiving={data.canViewReceiving} />}
             </ChartCard>
           )}
 
           {hasDocuments && (
           <ChartCard
             title="เอกสารล่าสุด"
-            description={`เอกสารรับเข้าและเบิกจ่ายล่าสุด ${documents.length} รายการ`}
+            description="สูงสุด 8 เอกสารล่าสุดตามสิทธิ์ · ไม่ขึ้นกับช่วงเวลาของกราฟ · เบิกจ่ายแสดงจำนวนรายการวัสดุ"
             className="@min-[38rem]:col-span-2 @min-[62rem]:col-span-3"
             bodyClassName="p-0"
-            actions={<RecentDocumentsFooter />}
+            actions={
+              <div className="flex flex-wrap gap-2">
+                <RecentDocumentsFooter
+                  canViewReceiving={data.canViewReceiving}
+                  canViewDisbursement={data.canViewDisbursement}
+                />
+                <Button variant="secondary" size="sm" onClick={handleExport}
+                  disabled={documents.length === 0 || documentsUnavailable}>
+                  ส่งออก {documents.length} เอกสารที่แสดง (CSV)
+                </Button>
+              </div>
+            }
           >
-            <RecentDocuments documents={documents} />
+            {documentsUnavailable && <p role="status" className="p-4 text-sm text-warning-fg">เอกสารบางประเภทโหลดไม่สำเร็จ รายการอาจไม่ครบ กดรีเฟรชเพื่อลองใหม่</p>}
+            <RecentDocuments documents={documents} unavailable={documentsUnavailable} />
           </ChartCard>
           )}
         </div>
