@@ -44,3 +44,8 @@ next-env.d.ts
 
 # manual videos uploaded at runtime
 /data/manual-videos/
+
+# Obsidian vault: personal UI state
+vault/.obsidian/workspace.json
+vault/.obsidian/workspaces.json
+vault/.obsidian/cache
